@@ -21,11 +21,20 @@ export default function AppTabs() {
       <TabSlot style={{ height: '100%' }} />
       <TabList asChild>
         <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+          <TabTrigger name="index" href="/" asChild>
+            <TabButton>For You</TabButton>
           </TabTrigger>
           <TabTrigger name="explore" href="/explore" asChild>
             <TabButton>Explore</TabButton>
+          </TabTrigger>
+          <TabTrigger name="compare" href="/compare" asChild>
+            <TabButton>Compare</TabButton>
+          </TabTrigger>
+          <TabTrigger name="you" href="/you" asChild>
+            <TabButton>You</TabButton>
+          </TabTrigger>
+          <TabTrigger name="admin" href="/admin" asChild>
+            <TabButton>Admin</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -55,21 +64,14 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+          apparently.
         </ThemedText>
 
         {props.children}
 
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
+        <ThemedText type="small" themeColor="textSecondary">
+          ✦
+        </ThemedText>
       </ThemedView>
     </View>
   );

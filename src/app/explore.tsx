@@ -1,180 +1,99 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Brand, BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
+const categories = ['Love', 'Friendship', 'Food', 'Money', 'Nostalgia', 'Ridiculous'];
+const quizzes = [
+  { title: 'How petty are you actually?', meta: '8 questions · Be honest', color: '#FFE5EF', accent: Brand.pink, badge: 'Approved' },
+  { title: 'Build your perfect Sunday', meta: '10 questions · Personality', color: '#E8E3FF', accent: Brand.violet, badge: 'Daily pick' },
+  { title: 'What kind of friend are you?', meta: '7 questions · Friendship', color: '#DDF5EE', accent: '#318F7D', badge: 'Approved' },
+];
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
-
+export default function ExploreScreen() {
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
-
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ThemedText style={styles.wordmark}>apparently.</ThemedText>
+          <ThemedText style={styles.eyebrow}>EXPLORE</ThemedText>
+          <ThemedText style={styles.heading}>A little quiz for every side of you.</ThemedText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
+            {categories.map((category, index) => (
+              <Pressable key={category} style={[styles.category, index === 0 && styles.categoryActive]} onPress={() => {}}>
+                <ThemedText style={[styles.categoryText, index === 0 && styles.categoryTextActive]}>{category}</ThemedText>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <View style={styles.featured}>
+            <View style={styles.featuredHeader}>
+              <ThemedText style={styles.featuredEyebrow}>FEATURED QUIZ</ThemedText>
+              <View style={styles.featuredBadge}>
+                <ThemedText style={styles.featuredBadgeText}>Daily pick</ThemedText>
+              </View>
+            </View>
+            <ThemedText style={styles.featuredTitle}>Which version of you shows up in a crisis?</ThemedText>
+            <ThemedText style={styles.featuredMeta}>12 questions · 3 min · Personality · Approved</ThemedText>
+            <Pressable style={styles.startButton} onPress={() => {}}>
+              <ThemedText style={styles.startText}>Take the quiz →</ThemedText>
             </Pressable>
-          </ExternalLink>
-        </ThemedView>
-
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+          </View>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>Popular right now</ThemedText>
+            <ThemedText style={styles.seeAll}>See all</ThemedText>
+          </View>
+          <View style={styles.quizList}>
+            {quizzes.map((quiz) => (
+              <Pressable key={quiz.title} style={[styles.quizCard, { backgroundColor: quiz.color }]} onPress={() => {}}>
+                <View style={styles.quizHeader}>
+                  <View style={[styles.quizDot, { backgroundColor: quiz.accent }]} />
+                  <View style={styles.quizBadge}>
+                    <ThemedText style={styles.quizBadgeText}>{quiz.badge}</ThemedText>
+                  </View>
+                </View>
+                <ThemedText style={styles.quizTitle}>{quiz.title}</ThemedText>
+                <ThemedText style={styles.quizMeta}>{quiz.meta}</ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#FFF9F5' },
+  safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  content: { padding: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
+  wordmark: { fontSize: 26, lineHeight: 30, fontWeight: '800', letterSpacing: -1 },
+  eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3, marginTop: Spacing.five },
+  heading: { fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
+  categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
+  category: { backgroundColor: '#FFFFFF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
+  categoryActive: { backgroundColor: Brand.pink, borderColor: Brand.pink },
+  categoryText: { fontSize: 13, fontWeight: '800' },
+  categoryTextActive: { color: '#FFFFFF' },
+  featured: { backgroundColor: Brand.violet, borderRadius: 26, padding: Spacing.four, gap: Spacing.two },
+  featuredHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
+  featuredEyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  featuredBadge: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  featuredBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  featuredTitle: { color: '#FFFFFF', fontSize: 25, lineHeight: 30, fontWeight: '800' },
+  featuredMeta: { color: '#DCD6FF', fontSize: 13, fontWeight: '600' },
+  startButton: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  startText: { color: Brand.violet, fontSize: 14, fontWeight: '800' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.one },
+  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  seeAll: { color: Brand.pink, fontSize: 13, fontWeight: '800' },
+  quizList: { gap: Spacing.two },
+  quizCard: { minHeight: 116, borderRadius: 20, padding: Spacing.three, justifyContent: 'space-between' },
+  quizHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
+  quizDot: { width: 12, height: 12, borderRadius: 6 },
+  quizBadge: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  quizBadgeText: { color: '#1E1A26', fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
+  quizTitle: { fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
+  quizMeta: { color: '#746D79', fontSize: 12, fontWeight: '600' },
 });
