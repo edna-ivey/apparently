@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { commitDailyAnswer, hydrateDailyAnswers, useCommittedDailyAnswer } from '@/data/daily-answer';
 import { initialQuestions, useDailyQuestions, type DailyQuestion } from '@/data/daily-questions';
+import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import {
   getDemoPersonalityAnswers,
   getDemoPersonalityProfile,
   getConsensusLanguage,
+  getEffectLabel,
   getPersonalitySignalCopy,
   scorePersonalityProfile,
 } from '@/data/personality';
@@ -17,13 +20,18 @@ import {
 const fallbackQuestion: DailyQuestion = initialQuestions.find((item) => item.id === 5) ?? initialQuestions[0];
 
 export default function HomeScreen() {
+  const contentWidth = useResponsiveContentWidth();
+  const topInset = useResponsiveTopInset();
   const questions = useDailyQuestions();
   const liveQuestion = questions.find((question) => question.status === 'Live') ?? null;
   const question = liveQuestion ?? fallbackQuestion;
+  const committedAnswer = useCommittedDailyAnswer(question.id);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answeredCount, setAnsweredCount] = useState(43);
+  const [worldExpanded, setWorldExpanded] = useState(false);
   const answered = selectedOption !== null;
   const selectedChoice = question.options[selectedOption ?? 0] ?? question.options[0];
+  const selectedTraitLine = (selectedChoice.personalityEffects ?? []).map(getEffectLabel).join(' · ');
   const baselineProfile = useMemo(() => getDemoPersonalityProfile(43), []);
   const selectedProfile = useMemo(() => {
     if (!answered || !selectedChoice.personalityEffects) {
@@ -56,32 +64,51 @@ export default function HomeScreen() {
   const remainingToReveal = Math.max(0, 50 - answeredCount);
 
   useEffect(() => {
-    setSelectedOption(null);
+    void hydrateDailyAnswers();
+  }, []);
+
+  // committedAnswer is already scoped to THIS question's id (useCommittedDailyAnswer
+  // looks it up by key), so a non-null value here restores the original selection
+  // (reopening the Daily preserves it) and a null value starts fresh — it can never leak
+  // in a stale answer that actually belongs to a different, previously-answered question.
+  // This is also what makes a Daily answer immutable: once committedAnswer is non-null,
+  // selectedOption is always non-null for this question, so selectOption below never gets
+  // a chance to accept a second choice.
+  useEffect(() => {
+    setSelectedOption(committedAnswer);
     setAnsweredCount(43);
-  }, [liveQuestion?.id]);
+    setWorldExpanded(false);
+  }, [liveQuestion?.id, question.id, committedAnswer]);
 
   const selectOption = (index: number) => {
-    if (selectedOption === null) {
-      setAnsweredCount((count) => count + 1);
+    // A submitted Daily answer is final — the reveal it produces (world percentages,
+    // personality signal, rarity language) must reflect the user's instinctive first
+    // choice, not something they changed after seeing the reveal. commitDailyAnswer
+    // itself also refuses a second commit for the same question, so this holds even if
+    // some future screen calls selectOption without going through this guard.
+    if (selectedOption !== null) {
+      return;
+    }
+    if (!commitDailyAnswer(question.id, index)) {
+      return;
     }
     setSelectedOption(index);
+    setAnsweredCount((count) => count + 1);
   };
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <ThemedText style={styles.wordmark}>apparently.</ThemedText>
-            <View style={styles.streak}>
-              <ThemedText style={styles.fire}>✦</ThemedText>
-              <ThemedText style={styles.streakText}>7</ThemedText>
-            </View>
-          </View>
-
+      <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}>
           <View style={styles.intro}>
             <View style={styles.metaRow}>
               <ThemedText style={styles.eyebrow}>TODAY'S QUESTION</ThemedText>
+              <View style={styles.streak}>
+                <ThemedText style={styles.fire}>✦</ThemedText>
+                <ThemedText style={styles.streakText}>7</ThemedText>
+              </View>
             </View>
             <ThemedText type="title" style={styles.heading}>
               Let&apos;s see what that says about you.
@@ -93,15 +120,21 @@ export default function HomeScreen() {
             <View style={styles.options}>
               {question.options.map((option, index) => {
                 const isSelected = selectedOption === index;
+                // Once answered, a Daily choice is final: unselected options become
+                // inert (not just visually muted) so the committed answer can never be
+                // swapped out after the reveal has been seen.
+                const isLocked = answered && !isSelected;
                 return (
                   <Pressable
                     key={option.label}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: isSelected }}
+                    accessibilityState={{ selected: isSelected, disabled: isLocked }}
+                    disabled={isLocked}
                     onPress={() => selectOption(index)}
                     style={({ pressed }) => [
                       styles.option,
                       isSelected && styles.optionSelected,
+                      isLocked && styles.optionLocked,
                       pressed && styles.pressed,
                     ]}>
                     <View style={[styles.optionNumber, isSelected && styles.optionNumberSelected]}>
@@ -117,54 +150,61 @@ export default function HomeScreen() {
                 );
               })}
             </View>
-            <ThemedText style={styles.microcopy} themeColor="textSecondary">
-              {answered ? 'Your answer unlocked the world.' : 'Answer to unlock the world.'}
-            </ThemedText>
+            {!answered && (
+              <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                Answer to unlock the world.
+              </ThemedText>
+            )}
           </View>
 
           {answered && (
             <View style={styles.revealCard}>
-              <View style={styles.revealHeader}>
-                <ThemedText style={styles.eyebrow}>YOU PICKED</ThemedText>
-                <ThemedText style={styles.revealPercent}>
-                  {selectedChoice.percent}%
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.revealTitle}>
-                {selectedChoice.label}
-              </ThemedText>
-              <ThemedText style={styles.revealCopy}>
-                {consensus?.sentence}
-              </ThemedText>
-              <View style={styles.worldDistribution}>
-                {question.options.map((option, index) => {
-                  const isSelected = index === selectedOption;
-                  return (
-                  <View key={option.id} style={[styles.distributionRow, isSelected && styles.distributionRowSelected]}>
-                    <ThemedText style={[styles.distributionLabel, isSelected && styles.distributionLabelSelected]}>
-                      {isSelected ? 'YOU → ' : ''}{option.percent}%
-                    </ThemedText>
-                    <View style={styles.distributionTrack}>
-                      <View style={[styles.distributionFill, isSelected && styles.distributionFillSelected, { width: `${option.percent}%` }]} />
-                    </View>
-                    {!isSelected && <ThemedText style={styles.distributionPercent}>{option.percent}%</ThemedText>}
-                  </View>
-                  );
-                })}
-              </View>
-              <View style={styles.divider} />
               <ThemedText style={styles.revealEyebrow}>APPARENTLY...</ThemedText>
               <ThemedText style={styles.observation}>
                 {selectedChoice.apparentlyFeedback ?? 'Apparently, you gave us something to think about.'}
               </ThemedText>
-              {selectedSignal && (
-                <View style={styles.signalCard}>
-                  <ThemedText style={styles.revealEyebrow}>PERSONALITY SIGNAL</ThemedText>
-                  <ThemedText style={styles.signalLabel}>{selectedSignal.displayPole}</ThemedText>
-                  <ThemedText style={styles.signalName}>({selectedSignal.displayName})</ThemedText>
+
+              <ThemedText style={styles.revealPercentLine}>
+                {selectedChoice.percent}% agreed with you.
+                {consensus ? ` ${consensus.label.charAt(0).toUpperCase()}${consensus.label.slice(1)}.` : ''}
+              </ThemedText>
+
+              {selectedTraitLine.length > 0 && (
+                <View style={styles.signalLine}>
+                  <ThemedText style={styles.signalChips}>{selectedTraitLine}</ThemedText>
                   <ThemedText style={styles.signalCopy}>{signalCopy}</ThemedText>
                 </View>
               )}
+
+              <Pressable style={styles.worldToggle} onPress={() => setWorldExpanded((value) => !value)}>
+                <ThemedText style={styles.worldToggleText}>
+                  {worldExpanded ? 'Hide how everyone voted ↑' : 'See how everyone voted ↓'}
+                </ThemedText>
+              </Pressable>
+
+              {worldExpanded && (
+                <View style={styles.worldDistribution}>
+                  {question.options.map((option, index) => {
+                    const isSelected = index === selectedOption;
+                    return (
+                      <View
+                        key={option.id}
+                        style={[styles.distributionRow, isSelected && styles.distributionRowSelected]}>
+                        <ThemedText
+                          style={[styles.distributionLabel, isSelected && styles.distributionLabelSelected]}
+                          numberOfLines={1}>
+                          {String.fromCharCode(65 + index)}. {option.label}
+                        </ThemedText>
+                        <ThemedText
+                          style={[styles.distributionPercent, isSelected && styles.distributionPercentSelected]}>
+                          {option.percent}%
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
               <Pressable style={styles.worldButton} onPress={() => {}}>
                 <ThemedText style={styles.worldButtonText}>One more? 👀</ThemedText>
               </Pressable>
@@ -174,21 +214,15 @@ export default function HomeScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statBlock}>
               <ThemedText style={styles.statValue}>37%</ThemedText>
-              <ThemedText style={styles.statLabel} themeColor="textSecondary">
-                commonality
-              </ThemedText>
+              <ThemedText style={styles.statLabel}>commonality</ThemedText>
             </View>
             <View style={styles.statBlock}>
               <ThemedText style={styles.statValue}>{answeredCount}</ThemedText>
-              <ThemedText style={styles.statLabel} themeColor="textSecondary">
-                your answers
-              </ThemedText>
+              <ThemedText style={styles.statLabel}>your answers</ThemedText>
             </View>
             <View style={styles.statBlock}>
               <ThemedText style={styles.statValue}>06</ThemedText>
-              <ThemedText style={styles.statLabel} themeColor="textSecondary">
-                rare picks
-              </ThemedText>
+              <ThemedText style={styles.statLabel}>rare picks</ThemedText>
             </View>
           </View>
 
@@ -205,9 +239,7 @@ export default function HomeScreen() {
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${Math.min(100, (answeredCount / 50) * 100)}%` }]} />
             </View>
-            <ThemedText style={styles.progressCopy} themeColor="textSecondary">
-              Your answers are becoming a pattern.
-            </ThemedText>
+            <ThemedText style={styles.progressCopy}>Your answers are becoming a pattern.</ThemedText>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -218,30 +250,30 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F5',
+    // Slightly deeper than the app's own cream so the app column reads as a deliberate
+    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
+    // Invisible on native, where safeArea always fills the container exactly.
+    backgroundColor: '#F0E8DD',
   },
   safeArea: {
     flex: 1,
     width: '100%',
-    maxWidth: MaxContentWidth,
     alignSelf: 'center',
+    backgroundColor: '#FFF9F5',
+    ...Platform.select({
+      web: {
+        marginVertical: 28,
+        borderRadius: 28,
+        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        overflow: 'hidden',
+      },
+      default: {},
+    }),
   },
   content: {
     paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.five,
     gap: Spacing.four,
-  },
-  header: {
-    paddingTop: Spacing.two,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  wordmark: {
-    fontSize: 26,
-    lineHeight: 30,
-    fontWeight: '800',
-    letterSpacing: -1,
   },
   streak: {
     flexDirection: 'row',
@@ -263,7 +295,6 @@ const styles = StyleSheet.create({
   },
   intro: {
     gap: Spacing.two,
-    paddingTop: Spacing.five,
   },
   metaRow: {
     flexDirection: 'row',
@@ -278,6 +309,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
   },
   heading: {
+    color: Brand.ink,
     fontSize: 37,
     lineHeight: 41,
     fontWeight: '800',
@@ -318,6 +350,9 @@ const styles = StyleSheet.create({
   optionSelected: {
     backgroundColor: '#FFFFFF',
   },
+  optionLocked: {
+    opacity: 0.45,
+  },
   optionNumber: {
     width: 30,
     height: 30,
@@ -357,6 +392,9 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.82,
   },
+  // The reveal is one card, hero-first: the Apparently response is the payoff, everything
+  // else (percentage, personality nudge, full breakdown) is deliberately smaller/secondary
+  // so it doesn't compete with it — see Part 2 of the visual QA correction.
   revealCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -365,79 +403,6 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     gap: Spacing.two,
   },
-  revealHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  revealPercent: {
-    color: Brand.pink,
-    fontSize: 38,
-    lineHeight: 42,
-    fontWeight: '900',
-  },
-  revealTitle: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '800',
-  },
-  revealCopy: {
-    color: '#746D79',
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  worldDistribution: {
-    gap: Spacing.one,
-    marginTop: Spacing.one,
-  },
-  distributionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-    borderRadius: 10,
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-  },
-  distributionRowSelected: {
-    backgroundColor: '#F7F3FF',
-  },
-  distributionLabel: {
-    flex: 1,
-    color: '#5D5571',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  distributionLabelSelected: {
-    color: Brand.violet,
-    fontWeight: '800',
-  },
-  distributionTrack: {
-    width: 92,
-    height: 7,
-    borderRadius: 99,
-    overflow: 'hidden',
-    backgroundColor: '#F1ECF8',
-  },
-  distributionFill: {
-    height: '100%',
-    borderRadius: 99,
-    backgroundColor: Brand.violet,
-  },
-  distributionFillSelected: {
-    backgroundColor: Brand.pink,
-  },
-  distributionPercent: {
-    width: 34,
-    color: Brand.pink,
-    fontSize: 11,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0E6E8',
-    marginVertical: Spacing.one,
-  },
   revealEyebrow: {
     color: Brand.pink,
     fontSize: 11,
@@ -445,33 +410,76 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
   },
   observation: {
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: '700',
-  },
-  signalCard: {
-    backgroundColor: '#F7F3FF',
-    borderRadius: 16,
-    padding: Spacing.three,
-    gap: Spacing.one,
-    marginTop: Spacing.one,
-  },
-  signalLabel: {
-    color: Brand.violet,
+    color: Brand.ink,
     fontSize: 20,
-    fontWeight: '900',
+    lineHeight: 27,
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
-  signalName: {
-    color: '#5D5571',
+  revealPercentLine: {
+    color: Brand.inkSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  signalLine: {
+    marginTop: Spacing.one,
+    gap: 2,
+  },
+  signalChips: {
+    color: Brand.violet,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  signalCopy: {
+    color: Brand.inkSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
+  worldToggle: {
+    alignSelf: 'flex-start',
+    marginTop: Spacing.one,
+  },
+  worldToggleText: {
+    color: Brand.violet,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  worldDistribution: {
+    gap: 6,
+    marginTop: Spacing.one,
+  },
+  distributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.two,
+  },
+  distributionRowSelected: {
+    backgroundColor: '#F7F3FF',
+  },
+  distributionLabel: {
+    flex: 1,
+    color: Brand.inkSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  distributionLabelSelected: {
+    color: Brand.violet,
+    fontWeight: '800',
+  },
+  distributionPercent: {
+    color: Brand.inkSecondary,
     fontSize: 13,
     fontWeight: '700',
   },
-  signalCopy: {
-    color: '#17151D',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '700',
+  distributionPercentSelected: {
+    color: Brand.pink,
+    fontWeight: '800',
   },
   worldButton: {
     backgroundColor: Brand.pink,
@@ -494,11 +502,13 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   statValue: {
+    color: Brand.ink,
     fontSize: 25,
     lineHeight: 29,
     fontWeight: '800',
   },
   statLabel: {
+    color: Brand.inkSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -514,6 +524,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   progressTitle: {
+    color: Brand.ink,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
@@ -537,6 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.pink,
   },
   progressCopy: {
+    color: Brand.inkSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '600',

@@ -318,6 +318,20 @@ export const getDimensionConfig = (dimensionId: PersonalityDimensionId) => {
   return dimension;
 };
 
+// Translates a single signed personality effect into the editorial label a human
+// reviewer actually reads — e.g. { dimension: 'protective_hands_off', value: -2 } becomes
+// "Hands-off +2", not "Protective -2". A positive value points at the dimension's
+// positiveLabel pole, a negative value points at its negativeLabel pole; the magnitude is
+// always shown as a plain positive number since the label itself already carries the
+// direction. This is the single source of truth for human-readable effect labels — do not
+// build a second/parallel label mapping elsewhere.
+export const getEffectLabel = (effect: PersonalityEffect): string => {
+  const dimension = getDimensionConfig(effect.dimension);
+  const magnitude = Math.abs(effect.value);
+  const label = effect.value > 0 ? dimension.positiveLabel : dimension.negativeLabel;
+  return `${label} +${magnitude}`;
+};
+
 export const calculateConfidence = (evidenceCount: number) => {
   return Math.min(1, 1 - Math.exp(-evidenceCount / 8));
 };

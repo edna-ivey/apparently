@@ -62,7 +62,13 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// Consumer screens now compute a responsive width themselves (see useResponsiveContentWidth)
+// — this is kept only as the historical top-end cap some layout math still references.
 export const MaxContentWidth = 800;
+// Admin/Review Studio are internal editorial tools, not the consumer mobile column — they
+// get a wider fixed desktop workspace. Still full-width on mobile via the same Platform gate
+// pattern used on the consumer screens.
+export const AdminMaxContentWidth = 960;
 
 export const Brand = {
   pink: '#F33C83',
@@ -71,4 +77,11 @@ export const Brand = {
   gold: '#F6B83F',
   mint: '#65C7B1',
   ink: '#17151D',
+  // Secondary/supporting text on light or pastel card backgrounds. The bespoke consumer
+  // screens hardcode their own light/pastel backgrounds rather than following the
+  // device color scheme, so their text must stay fixed too — using ThemedText's
+  // theme-following `textSecondary` color here goes near-white on a device set to dark
+  // mode while the background stays pale, which is what made this text unreadable.
+  // #5D5571 is also already used ad hoc for this purpose elsewhere in these screens.
+  inkSecondary: '#5D5571',
 } as const;

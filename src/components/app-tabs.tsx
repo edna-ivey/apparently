@@ -1,17 +1,16 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { Brand } from '@/constants/theme';
 
+// Fixed brand colors, deliberately not device-theme-following: the brand does not have a
+// dark mode, so this bar always renders the same light/cream shell with a pink active
+// state regardless of the device's color scheme.
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      backgroundColor="#FFFFFF"
+      indicatorColor="#FFE5EF"
+      labelStyle={{ selected: { color: Brand.pink } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>For You</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
@@ -40,14 +39,6 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>You</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="admin">
-        <NativeTabs.Trigger.Label>Admin</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>

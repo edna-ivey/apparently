@@ -1,9 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
 const categories = ['Love', 'Friendship', 'Food', 'Money', 'Nostalgia', 'Ridiculous'];
 const quizzes = [
@@ -13,12 +14,15 @@ const quizzes = [
 ];
 
 export default function ExploreScreen() {
+  const contentWidth = useResponsiveContentWidth();
+  const topInset = useResponsiveTopInset();
+
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <ThemedText style={styles.wordmark}>apparently.</ThemedText>
-          <ThemedText style={styles.eyebrow}>EXPLORE</ThemedText>
+      <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}>
           <ThemedText style={styles.heading}>A little quiz for every side of you.</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
             {categories.map((category, index) => (
@@ -65,16 +69,34 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF9F5' },
-  safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  content: { padding: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
-  wordmark: { fontSize: 26, lineHeight: 30, fontWeight: '800', letterSpacing: -1 },
-  eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3, marginTop: Spacing.five },
-  heading: { fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
+  container: {
+    flex: 1,
+    // Slightly deeper than the app's own cream so the app column reads as a deliberate
+    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
+    // Invisible on native, where safeArea always fills the container exactly.
+    backgroundColor: '#F0E8DD',
+  },
+  safeArea: {
+    flex: 1,
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: '#FFF9F5',
+    ...Platform.select({
+      web: {
+        marginVertical: 28,
+        borderRadius: 28,
+        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        overflow: 'hidden',
+      },
+      default: {},
+    }),
+  },
+  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
+  heading: { color: Brand.ink, fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
   categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
   category: { backgroundColor: '#FFFFFF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
   categoryActive: { backgroundColor: Brand.pink, borderColor: Brand.pink },
-  categoryText: { fontSize: 13, fontWeight: '800' },
+  categoryText: { color: Brand.ink, fontSize: 13, fontWeight: '800' },
   categoryTextActive: { color: '#FFFFFF' },
   featured: { backgroundColor: Brand.violet, borderRadius: 26, padding: Spacing.four, gap: Spacing.two },
   featuredHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
@@ -86,7 +108,7 @@ const styles = StyleSheet.create({
   startButton: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
   startText: { color: Brand.violet, fontSize: 14, fontWeight: '800' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.one },
-  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
   seeAll: { color: Brand.pink, fontSize: 13, fontWeight: '800' },
   quizList: { gap: Spacing.two },
   quizCard: { minHeight: 116, borderRadius: 20, padding: Spacing.three, justifyContent: 'space-between' },
@@ -94,6 +116,6 @@ const styles = StyleSheet.create({
   quizDot: { width: 12, height: 12, borderRadius: 6 },
   quizBadge: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
   quizBadgeText: { color: '#1E1A26', fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
-  quizTitle: { fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
-  quizMeta: { color: '#746D79', fontSize: 12, fontWeight: '600' },
+  quizTitle: { color: Brand.ink, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
+  quizMeta: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600' },
 });

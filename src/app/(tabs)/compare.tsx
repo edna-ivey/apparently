@@ -1,17 +1,21 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
 export default function CompareScreen() {
+  const contentWidth = useResponsiveContentWidth();
+  const topInset = useResponsiveTopInset();
+
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <ThemedText style={styles.wordmark}>apparently.</ThemedText>
-          <ThemedText style={styles.eyebrow}>COMPARE</ThemedText>
+      <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}>
           <ThemedText style={styles.heading}>Find out where you two line up.</ThemedText>
           <View style={styles.hero}>
             <ThemedText style={styles.heroEmoji}>✦ + ✦</ThemedText>
@@ -29,9 +33,7 @@ export default function CompareScreen() {
               <ThemedText style={styles.emptyIcon}>?</ThemedText>
               <View style={styles.emptyCopy}>
                 <ThemedText style={styles.emptyTitle}>Your first one is waiting.</ThemedText>
-                <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                  Compare answers, not relationship futures.
-                </ThemedText>
+                <ThemedText style={styles.emptyText}>Compare answers, not relationship futures.</ThemedText>
               </View>
             </View>
           </View>
@@ -42,12 +44,30 @@ export default function CompareScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF9F5' },
-  safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  content: { padding: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.two },
-  wordmark: { fontSize: 26, lineHeight: 30, fontWeight: '800', letterSpacing: -1 },
-  eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3, marginTop: Spacing.five },
-  heading: { fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1, marginTop: Spacing.one },
+  container: {
+    flex: 1,
+    // Slightly deeper than the app's own cream so the app column reads as a deliberate
+    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
+    // Invisible on native, where safeArea always fills the container exactly.
+    backgroundColor: '#F0E8DD',
+  },
+  safeArea: {
+    flex: 1,
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: '#FFF9F5',
+    ...Platform.select({
+      web: {
+        marginVertical: 28,
+        borderRadius: 28,
+        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        overflow: 'hidden',
+      },
+      default: {},
+    }),
+  },
+  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.two },
+  heading: { color: Brand.ink, fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
   hero: { backgroundColor: Brand.coral, borderRadius: 28, padding: Spacing.four, gap: Spacing.two, marginTop: Spacing.three },
   heroEmoji: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
   heroTitle: { color: '#FFFFFF', fontSize: 24, lineHeight: 29, fontWeight: '800' },
@@ -55,10 +75,10 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: Spacing.two, alignItems: 'center', marginTop: Spacing.two },
   buttonText: { color: Brand.coral, fontSize: 14, fontWeight: '800' },
   recent: { gap: Spacing.two, marginTop: Spacing.three },
-  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, backgroundColor: '#FFFFFF', borderRadius: 20, padding: Spacing.three },
   emptyIcon: { width: 40, height: 40, borderRadius: 20, textAlign: 'center', paddingTop: 8, color: Brand.violet, backgroundColor: '#EEEAFE', fontSize: 20, fontWeight: '800' },
   emptyCopy: { flex: 1, gap: Spacing.one },
-  emptyTitle: { fontSize: 15, fontWeight: '800' },
-  emptyText: { fontSize: 13, lineHeight: 18 },
+  emptyTitle: { color: Brand.ink, fontSize: 15, fontWeight: '800' },
+  emptyText: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18 },
 });

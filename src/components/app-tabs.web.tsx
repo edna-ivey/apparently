@@ -1,19 +1,7 @@
-import {
-  Tabs,
-  TabList,
-  TabTrigger,
-  TabSlot,
-  TabTriggerSlotProps,
-  TabListProps,
-} from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
+import { Pressable, Text, View, StyleSheet } from 'react-native';
 
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, MaxContentWidth, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
@@ -33,46 +21,32 @@ export default function AppTabs() {
           <TabTrigger name="you" href="/you" asChild>
             <TabButton>You</TabButton>
           </TabTrigger>
-          <TabTrigger name="admin" href="/admin" asChild>
-            <TabButton>Admin</TabButton>
-          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>
   );
 }
 
+// Fixed brand colors, deliberately not theme-following (ThemedView/ThemedText): this bar
+// previously used `theme.backgroundElement`, which is a dark near-black in the device's
+// dark color scheme — that's what showed up as a "black nav bar" in QA. The brand does not
+// have a dark mode, so this shell always renders the same light/cream shell regardless of
+// device theme.
 export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
+    <Pressable {...props} style={({ pressed }) => [styles.tabButtonView, isFocused && styles.tabButtonActive, pressed && styles.pressed]}>
+      <Text style={[styles.tabButtonText, isFocused && styles.tabButtonTextActive]}>{children}</Text>
     </Pressable>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          apparently.
-        </ThemedText>
-
+      <View style={styles.innerContainer}>
+        <Text style={styles.brandText}>apparently.</Text>
         {props.children}
-
-        <ThemedText type="small" themeColor="textSecondary">
-          ✦
-        </ThemedText>
-      </ThemedView>
+      </View>
     </View>
   );
 }
@@ -87,16 +61,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   innerContainer: {
+    backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
+    paddingHorizontal: Spacing.four,
     borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
+    boxShadow: '0 8px 24px rgba(23, 21, 29, 0.10)',
   },
   brandText: {
+    color: Brand.ink,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: -0.3,
     marginRight: 'auto',
   },
   pressed: {
@@ -106,12 +86,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+    backgroundColor: 'transparent',
   },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
+  tabButtonActive: {
+    backgroundColor: '#FFE5EF',
+  },
+  tabButtonText: {
+    color: Brand.inkSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  tabButtonTextActive: {
+    color: Brand.pink,
+    fontWeight: '800',
   },
 });
