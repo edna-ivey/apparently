@@ -1,14 +1,17 @@
 {
   "expo": {
-    "name": "Apparently",
-    "slug": "Apparently",
+    "name": "Apparently You",
+    "slug": "apparently-you",
+    "owner": "mekityus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "apparently",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.supergreatventures.apparently",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +40,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9f1ed80a-7ccc-4b32-a580-71e6ed68bd07"
+      }
     }
   }
 }
