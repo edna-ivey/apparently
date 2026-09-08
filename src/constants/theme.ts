@@ -62,6 +62,18 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// The consumer nav (src/components/app-tabs.web.tsx) is a web-only floating pill —
+// position:'absolute' on top of the page content, not a normal document-flow header — so
+// screens must reserve enough top space to clear it. Measured directly against the
+// rendered nav's own styles, top-to-bottom: outer pill padding (Spacing.three, 16px) +
+// inner pill vertical padding (Spacing.two, 8px) + a tab button's own vertical padding
+// (Spacing.one, 4px) + its text line height (20px, the browser default for the nav's
+// 14px font — the nav sets no explicit lineHeight). 16 + 8 + 4 + 20 + 4 + 8 + 16 = 76.
+// This is the single source of truth useResponsiveTopInset uses to clear the nav; native
+// doesn't need it at all (expo-router's NativeTabs renders as a normal bottom tab bar via
+// app-tabs.tsx, which is why BottomTabInset above exists instead) — re-measure and update
+// this constant if the nav's padding or font size ever changes.
+export const ConsumerNavHeight = 76;
 // Consumer screens now compute a responsive width themselves (see useResponsiveContentWidth)
 // — this is kept only as the historical top-end cap some layout math still references.
 export const MaxContentWidth = 800;

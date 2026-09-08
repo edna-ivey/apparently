@@ -1,4 +1,6 @@
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
+
+import { ConsumerNavHeight } from '@/constants/theme';
 
 // Mobile: no cap — content uses the device width with the screen's own padding.
 // Tablet: comfortably wider than a phone, still narrow enough to feel like an app.
@@ -23,15 +25,27 @@ export const useResponsiveContentWidth = (): number | undefined => {
   return undefined;
 };
 
-const MOBILE_TOP_INSET = 20;
-const DESKTOP_TOP_INSET = 28;
+// The VISUAL gap desired strictly below the nav — not the full top offset. The previous
+// version of this hook treated this alone as the entire top offset, which is what made
+// content look tucked underneath the nav: the nav floats (position:'absolute') on top of
+// the page, so a screen needs to clear its full height first, THEN add this gap.
+const MOBILE_GAP = 20;
+const DESKTOP_GAP = 24;
 
-// The single source of truth for the gap between the floating nav pill and the first
-// piece of page content on every consumer screen — centralized here so no screen has to
-// carry its own guess at how much room the nav needs. Shares the same tablet breakpoint
-// as useResponsiveContentWidth (tablet gets the desktop-range value; the spec only calls
-// out mobile vs desktop explicitly).
+// The single source of truth for consumer screens' top offset:
+//   CONSUMER CONTENT TOP OFFSET = ConsumerNavHeight (theme.ts) + responsive gap
+// On web, the nav is a floating overlay, so screens must reserve its full measured height
+// before the visual gap even starts. On native, expo-router's NativeTabs renders as a
+// normal OS bottom tab bar (see BottomTabInset in theme.ts) — it never overlays the top of
+// the screen, so there's nothing to clear there; native just gets the plain gap as
+// ordinary top breathing room.
 export const useResponsiveTopInset = (): number => {
   const { width } = useWindowDimensions();
-  return width >= TABLET_BREAKPOINT ? DESKTOP_TOP_INSET : MOBILE_TOP_INSET;
+  const gap = width >= TABLET_BREAKPOINT ? DESKTOP_GAP : MOBILE_GAP;
+
+  if (Platform.OS !== 'web') {
+    return gap;
+  }
+
+  return ConsumerNavHeight + gap;
 };
