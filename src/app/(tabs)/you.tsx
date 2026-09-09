@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
@@ -22,8 +23,11 @@ export default function YouScreen() {
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
+          <BrandSignature variant="mark" />
           <View style={styles.profileHeader}>
-            <View style={styles.avatar}><ThemedText style={styles.avatarText}>M</ThemedText></View>
+            <View style={styles.avatar}>
+              <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={styles.avatarImage} />
+            </View>
             <ThemedText style={styles.name}>Michelle, apparently.</ThemedText>
             <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
           </View>
@@ -79,8 +83,23 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
   profileHeader: { alignItems: 'center', gap: Spacing.one, paddingBottom: Spacing.three },
-  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: Brand.violet, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: '#E8E2FF' },
-  avatarText: { color: '#FFFFFF', fontSize: 36, fontWeight: '800' },
+  // A tight circle with a solid fill was built around the old letter avatar; the Magnetic
+  // Loop mark already carries its own rounded-square shape and background, so a matching
+  // soft rounded-square frame (rather than forcing it into a circle) is what lets the mark
+  // read cleanly instead of looking like an icon awkwardly stuffed into a different shape.
+  avatar: {
+    width: 92,
+    height: 92,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(23, 21, 29, 0.08)',
+    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.14)',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: 92, height: 92 },
   name: { color: Brand.ink, fontSize: 22, fontWeight: '800' },
   subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   scoreCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#F0E6E8' },

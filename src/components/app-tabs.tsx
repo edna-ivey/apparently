@@ -12,7 +12,7 @@ export default function AppTabs() {
       indicatorColor="#FFE5EF"
       labelStyle={{ selected: { color: Brand.pink } }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>For You</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
           renderingMode="template"

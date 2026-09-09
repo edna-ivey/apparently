@@ -1,6 +1,7 @@
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
@@ -16,6 +17,7 @@ export default function CompareScreen() {
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
+          <BrandSignature variant="mark" />
           <ThemedText style={styles.heading}>Find out where you two line up.</ThemedText>
           <View style={styles.hero}>
             <ThemedText style={styles.heroEmoji}>✦ + ✦</ThemedText>

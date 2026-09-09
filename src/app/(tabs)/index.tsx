@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
@@ -102,6 +103,7 @@ export default function HomeScreen() {
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
+          <BrandSignature variant="full" />
           <View style={styles.intro}>
             <View style={styles.metaRow}>
               <ThemedText style={styles.eyebrow}>TODAY'S QUESTION</ThemedText>
