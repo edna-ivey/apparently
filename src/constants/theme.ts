@@ -96,4 +96,14 @@ export const Brand = {
   // mode while the background stays pale, which is what made this text unreadable.
   // #5D5571 is also already used ad hoc for this purpose elsewhere in these screens.
   inkSecondary: '#5D5571',
+  // Deep blackberry/plum — sampled directly from the approved Magnetic Loop asset's own
+  // background (assets/images/brand/app-icon.png, corner pixels averaged ~#24011F), so the
+  // premium/private surface treatment (onboarding welcome screen, the Private Drop teaser)
+  // reads as an extension of the logo itself rather than an invented color. Reserved for
+  // authority/premium moments — not a general-purpose dark background.
+  plum: '#24011F',
+  // Warm cream foreground for text/icons sitting on the plum surface — the same tone as the
+  // light theme's own background (Colors.light.background), so the plum surface feels like
+  // part of the same product rather than a different app bolted on.
+  cream: '#FFF9F5',
 } as const;

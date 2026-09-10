@@ -21,7 +21,7 @@ export default function CompareScreen() {
           <ThemedText style={styles.heading}>Find out where you two line up.</ThemedText>
           <View style={styles.hero}>
             <ThemedText style={styles.heroEmoji}>✦ + ✦</ThemedText>
-            <ThemedText style={styles.heroTitle}>You + someone else, apparently.</ThemedText>
+            <ThemedText style={styles.heroTitle}>You + someone else. This should be interesting.</ThemedText>
             <ThemedText style={styles.heroCopy}>
               Send a link. They answer a few questions. We&apos;ll reveal the chemistry and the chaos.
             </ThemedText>

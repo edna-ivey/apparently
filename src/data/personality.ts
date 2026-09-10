@@ -332,6 +332,15 @@ export const getEffectLabel = (effect: PersonalityEffect): string => {
   return `${label} +${magnitude}`;
 };
 
+// The consumer-facing counterpart to getEffectLabel above — same trait/pole, no weight
+// number. Admin/Review Studio (admin/review/[id].tsx) needs the editorial "+2" weight to do
+// its job; a consumer looking at the Daily reveal should see "Comfort-seeking," not
+// "Comfort-seeking +2." Deliberately built by trimming getEffectLabel's own output rather
+// than re-deriving the pole/label logic, so there's still exactly one place that decides
+// which label a given effect maps to.
+export const getEffectDisplayLabel = (effect: PersonalityEffect): string =>
+  getEffectLabel(effect).replace(/\s*[+-]\d+$/, '');
+
 export const calculateConfidence = (evidenceCount: number) => {
   return Math.min(1, 1 - Math.exp(-evidenceCount / 8));
 };
@@ -595,20 +604,46 @@ export const getDemoPersonalityProfile = (answerCount = MICRO_PERSONALITY_SAMPLE
   return scorePersonalityProfile(getDemoPersonalityAnswers(answerCount));
 };
 
-export const getPersonalitySignalCopy = (displayName: string, evidenceCount: number) => {
+// Trait-agnostic on purpose — the consumer reveal already shows the trait name as its own
+// chip (see "WE'RE NOTICING" in index.tsx), so this line doesn't need to repeat it. Same
+// evidenceCount tiers as before (thresholds unchanged, this is presentation only), just
+// observational instead of naming a name — no algorithm-sounding language, no weights.
+export const getPersonalitySignalCopy = (evidenceCount: number): string => {
   if (evidenceCount <= 1) {
-    return `${displayName} noticed that. 👀`;
+    return 'Interesting. That one just entered the chat.';
   }
 
   if (evidenceCount <= 3) {
-    return `This nudged ${displayName}.`;
+    return 'Not the first vote for this one.';
   }
 
   if (evidenceCount <= 6) {
-    return `Okay... ${displayName} is showing up again.`;
+    return 'Okay. This is becoming a thing.';
   }
 
-  return `${displayName} keeps making a case for Your 7.`;
+  return "You've made this case more than once.";
+};
+
+// A qualitative read on topTraits' existing signatureStrength (unchanged math, see
+// calculateSignatureStrength above) — for the You page's pattern cards, which used to show
+// a numeric percent (displayPercent) that clamps to 88 for nearly every top trait once a
+// dimension's evidence is even mildly consistent, making five different traits all display
+// the same fake-looking "88%". signatureStrength doesn't have that ceiling problem — it's
+// the real value topTraits is already ranked by — so bucketing it into a few honest, varied
+// phrases avoids inventing data while fixing the "identical numbers" look. Thresholds are
+// calibrated against the actual demo profile's observed range (~0.14–0.28 at 43 answers);
+// they leave headroom for stronger real signals as more answers accumulate.
+export const getSignatureStrengthLabel = (signatureStrength: number): string => {
+  if (signatureStrength >= 0.4) {
+    return 'Defining trait';
+  }
+  if (signatureStrength >= 0.25) {
+    return 'Strong signal';
+  }
+  if (signatureStrength >= 0.15) {
+    return 'Building';
+  }
+  return 'Early read';
 };
 
 export type ConsensusLanguage = {
@@ -645,4 +680,35 @@ export const getConsensusLanguage = (options: Array<{ percent: number }>, select
     label,
     sentence: `${selected.percent}% chose this — ${label}.`,
   };
+};
+
+// Presentation language for the Daily reveal's percent line — reuses getConsensusLanguage's
+// existing rarity classification (rank/label), never touches the underlying percent or how
+// rarity is computed. Rare picks get called out ("you found the X%"), common ones get framed
+// as company kept, and the broad middle stays a plain, low-key statement rather than
+// generic "X% agreed with you" phrasing repeated every day.
+export const getPercentLanguage = (percent: number, label: ConsensusLanguage['label']): string => {
+  if (label === 'very rare' || label === 'one of the rarer picks') {
+    return `Only ${percent}% went there. You found the ${percent}%.`;
+  }
+
+  if (label === 'majority choice' || label === 'one of the popular choices') {
+    return `You had company. ${percent}% picked it too.`;
+  }
+
+  return `${percent}% went there too.`;
+};
+
+// Strips a leading "Apparently," (or "Apparently ") from reveal copy at display time, rather
+// than hand-editing every apparentlyFeedback string in daily-questions.ts — this keeps that
+// content file untouched while normalizing the presentation for existing AND any future
+// Admin/Review-Studio-authored feedback that happens to start the same way. The response
+// itself is meant to be the joke; it no longer needs to announce its own name first.
+export const stripApparentlyPrefix = (text: string): string => {
+  const match = text.match(/^apparently,?\s+(.*)$/i);
+  if (!match) {
+    return text;
+  }
+  const rest = match[1];
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
 };

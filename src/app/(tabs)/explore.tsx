@@ -9,9 +9,9 @@ import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-re
 
 const categories = ['Love', 'Friendship', 'Food', 'Money', 'Nostalgia', 'Ridiculous'];
 const quizzes = [
-  { title: 'How petty are you actually?', meta: '8 questions · Be honest', color: '#FFE5EF', accent: Brand.pink, badge: 'Approved' },
+  { title: 'How petty are you actually?', meta: '8 questions · Be honest', color: '#FFE5EF', accent: Brand.pink, badge: 'Free' },
   { title: 'Build your perfect Sunday', meta: '10 questions · Personality', color: '#E8E3FF', accent: Brand.violet, badge: 'Daily pick' },
-  { title: 'What kind of friend are you?', meta: '7 questions · Friendship', color: '#DDF5EE', accent: '#318F7D', badge: 'Approved' },
+  { title: 'What kind of friend are you?', meta: '7 questions · Friendship', color: '#DDF5EE', accent: '#318F7D', badge: 'Free' },
 ];
 
 export default function ExploreScreen() {
@@ -25,7 +25,10 @@ export default function ExploreScreen() {
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
           <BrandSignature variant="mark" />
-          <ThemedText style={styles.heading}>A little quiz for every side of you.</ThemedText>
+          <View style={styles.headingGroup}>
+            <ThemedText style={styles.heading}>You weren&apos;t stopping at one.</ThemedText>
+            <ThemedText style={styles.headingSupport}>Good. Neither were we.</ThemedText>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
             {categories.map((category, index) => (
               <Pressable key={category} style={[styles.category, index === 0 && styles.categoryActive]} onPress={() => {}}>
@@ -41,13 +44,13 @@ export default function ExploreScreen() {
               </View>
             </View>
             <ThemedText style={styles.featuredTitle}>Which version of you shows up in a crisis?</ThemedText>
-            <ThemedText style={styles.featuredMeta}>12 questions · 3 min · Personality · Approved</ThemedText>
+            <ThemedText style={styles.featuredMeta}>12 questions · 3 min · Personality · Free</ThemedText>
             <Pressable style={styles.startButton} onPress={() => {}}>
               <ThemedText style={styles.startText}>Take the quiz →</ThemedText>
             </Pressable>
           </View>
           <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>Popular right now</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Currently irresistible</ThemedText>
             <ThemedText style={styles.seeAll}>See all</ThemedText>
           </View>
           <View style={styles.quizList}>
@@ -63,6 +66,19 @@ export default function ExploreScreen() {
                 <ThemedText style={styles.quizMeta}>{quiz.meta}</ThemedText>
               </Pressable>
             ))}
+            {/* A clearly-labeled teaser, not a real purchasable quiz — the existing Explore
+                data here is just a local static array (no backend/content pipeline behind
+                it), so this doesn't need to register anywhere else. No-op onPress, same as
+                every other quiz card above; "Locked" + the plum treatment is what signals
+                this is a preview of a more exclusive layer, not that anything unlocks. */}
+            <Pressable style={styles.privateQuizCard} onPress={() => {}}>
+              <View style={styles.quizHeader}>
+                <ThemedText style={styles.privateQuizBadge}>PRIVATE</ThemedText>
+                <ThemedText style={styles.privateQuizLocked}>Locked</ThemedText>
+              </View>
+              <ThemedText style={styles.privateQuizTitle}>How emotionally expensive are you?</ThemedText>
+              <ThemedText style={styles.privateQuizMeta}>9 questions · Private</ThemedText>
+            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -94,7 +110,9 @@ const styles = StyleSheet.create({
     }),
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
+  headingGroup: { gap: Spacing.one },
   heading: { color: Brand.ink, fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
+  headingSupport: { color: Brand.inkSecondary, fontSize: 15, fontWeight: '600' },
   categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
   category: { backgroundColor: '#FFFFFF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
   categoryActive: { backgroundColor: Brand.pink, borderColor: Brand.pink },
@@ -120,4 +138,10 @@ const styles = StyleSheet.create({
   quizBadgeText: { color: '#1E1A26', fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
   quizTitle: { color: Brand.ink, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
   quizMeta: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600' },
+  // The plum premium surface — visibly a different room from the pastel free cards above it.
+  privateQuizCard: { minHeight: 116, borderRadius: 20, padding: Spacing.three, justifyContent: 'space-between', backgroundColor: Brand.plum },
+  privateQuizBadge: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
+  privateQuizLocked: { color: 'rgba(255,249,245,0.6)', fontSize: 11, fontWeight: '800' },
+  privateQuizTitle: { color: Brand.cream, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
+  privateQuizMeta: { color: 'rgba(255,249,245,0.7)', fontSize: 12, fontWeight: '600' },
 });

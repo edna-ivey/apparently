@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,29 +14,41 @@ import {
   getDemoPersonalityAnswers,
   getDemoPersonalityProfile,
   getConsensusLanguage,
-  getEffectLabel,
+  getEffectDisplayLabel,
+  getPercentLanguage,
   getPersonalitySignalCopy,
   scorePersonalityProfile,
+  stripApparentlyPrefix,
 } from '@/data/personality';
 
 const fallbackQuestion: DailyQuestion = initialQuestions.find((item) => item.id === 5) ?? initialQuestions[0];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
   const questions = useDailyQuestions();
   const liveQuestion = questions.find((question) => question.status === 'Live') ?? null;
   const question = liveQuestion ?? fallbackQuestion;
   const committedAnswer = useCommittedDailyAnswer(question.id);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  // committedAnswer (Daily answer history) is the single source of truth for whether this
+  // Daily is final. draftOption is purely a local, pre-commit UI selection — it is never
+  // itself written to storage, and it's irrelevant once isCommitted is true (displayedOption
+  // reads from committedAnswer instead). This is what makes a Daily answer immutable: the
+  // only path to persistence is confirmAnswer below, and commitDailyAnswer itself also
+  // refuses a second commit for the same question.
+  const [draftOption, setDraftOption] = useState<number | null>(null);
   const [answeredCount, setAnsweredCount] = useState(43);
   const [worldExpanded, setWorldExpanded] = useState(false);
-  const answered = selectedOption !== null;
-  const selectedChoice = question.options[selectedOption ?? 0] ?? question.options[0];
-  const selectedTraitLine = (selectedChoice.personalityEffects ?? []).map(getEffectLabel).join(' · ');
+  const isCommitted = committedAnswer !== null;
+  const displayedOption = isCommitted ? committedAnswer : draftOption;
+  const selectedChoice = question.options[displayedOption ?? 0] ?? question.options[0];
+  // Trait names only, no "+2" weight — that mechanical detail stays in Review Studio
+  // (getEffectLabel), which editors need; the consumer reveal only needs the name.
+  const selectedTraitLine = (selectedChoice.personalityEffects ?? []).map(getEffectDisplayLabel).join(' · ');
   const baselineProfile = useMemo(() => getDemoPersonalityProfile(43), []);
   const selectedProfile = useMemo(() => {
-    if (!answered || !selectedChoice.personalityEffects) {
+    if (!isCommitted || !selectedChoice.personalityEffects) {
       return baselineProfile;
     }
 
@@ -48,7 +61,7 @@ export default function HomeScreen() {
         effects: selectedChoice.personalityEffects,
       },
     ]);
-  }, [answered, baselineProfile, question.category, question.prompt, selectedChoice.label, selectedChoice.personalityEffects]);
+  }, [isCommitted, baselineProfile, question.category, question.prompt, selectedChoice.label, selectedChoice.personalityEffects]);
   const selectedSignal = useMemo(() => {
     const effects = selectedChoice.personalityEffects ?? [];
     const effect = effects[0];
@@ -56,44 +69,46 @@ export default function HomeScreen() {
       ? selectedProfile.dimensions.find((dimension) => dimension.dimension === effect.dimension) ?? null
       : null;
   }, [selectedChoice.personalityEffects, selectedProfile]);
-  const consensus = answered
-    ? getConsensusLanguage(question.options, selectedOption ?? 0)
-    : null;
-  const signalCopy = selectedSignal
-    ? getPersonalitySignalCopy(selectedSignal.displayName, selectedSignal.evidenceCount)
-    : 'Apparently is taking notes.';
+  const consensus = isCommitted ? getConsensusLanguage(question.options, displayedOption ?? 0) : null;
+  const signalCopy = selectedSignal ? getPersonalitySignalCopy(selectedSignal.evidenceCount) : 'Still taking notes.';
   const remainingToReveal = Math.max(0, 50 - answeredCount);
 
   useEffect(() => {
     void hydrateDailyAnswers();
   }, []);
 
-  // committedAnswer is already scoped to THIS question's id (useCommittedDailyAnswer
-  // looks it up by key), so a non-null value here restores the original selection
-  // (reopening the Daily preserves it) and a null value starts fresh — it can never leak
-  // in a stale answer that actually belongs to a different, previously-answered question.
-  // This is also what makes a Daily answer immutable: once committedAnswer is non-null,
-  // selectedOption is always non-null for this question, so selectOption below never gets
-  // a chance to accept a second choice.
+  // Resets local draft state whenever the active Daily changes — a fresh Daily always starts
+  // with nothing selected. If this question already has a committed answer (from a prior
+  // session, resolved once hydration completes), draftOption is simply never consulted:
+  // isCommitted/displayedOption above read from committedAnswer instead.
   useEffect(() => {
-    setSelectedOption(committedAnswer);
+    setDraftOption(null);
     setAnsweredCount(43);
     setWorldExpanded(false);
-  }, [liveQuestion?.id, question.id, committedAnswer]);
+  }, [liveQuestion?.id, question.id]);
 
-  const selectOption = (index: number) => {
-    // A submitted Daily answer is final — the reveal it produces (world percentages,
-    // personality signal, rarity language) must reflect the user's instinctive first
-    // choice, not something they changed after seeing the reveal. commitDailyAnswer
-    // itself also refuses a second commit for the same question, so this holds even if
-    // some future screen calls selectOption without going through this guard.
-    if (selectedOption !== null) {
+  // Pre-commit only: freely changes which option is highlighted. Never touches persistence
+  // and never reveals anything — the user may tap a different option as many times as they
+  // like before confirming. See confirmAnswer for the one place a Daily actually commits.
+  const selectDraftOption = (index: number) => {
+    if (isCommitted) {
       return;
     }
-    if (!commitDailyAnswer(question.id, index)) {
+    setDraftOption(index);
+  };
+
+  // The ONLY place a Daily answer is written to history — triggered by the explicit "Lock
+  // it in" CTA, never by selecting an option. Once commitDailyAnswer
+  // succeeds, useCommittedDailyAnswer reactively flips isCommitted to true on the next
+  // render and the reveal renders from committedAnswer from then on: there is no path back
+  // to an editable draft for this question, on this device, ever again.
+  const confirmAnswer = () => {
+    if (isCommitted || draftOption === null) {
       return;
     }
-    setSelectedOption(index);
+    if (!commitDailyAnswer(question.id, draftOption)) {
+      return;
+    }
     setAnsweredCount((count) => count + 1);
   };
 
@@ -106,33 +121,32 @@ export default function HomeScreen() {
           <BrandSignature variant="full" />
           <View style={styles.intro}>
             <View style={styles.metaRow}>
-              <ThemedText style={styles.eyebrow}>TODAY'S QUESTION</ThemedText>
+              <ThemedText style={styles.eyebrow}>TODAY'S DROP</ThemedText>
               <View style={styles.streak}>
                 <ThemedText style={styles.fire}>✦</ThemedText>
                 <ThemedText style={styles.streakText}>7</ThemedText>
               </View>
             </View>
-            <ThemedText type="title" style={styles.heading}>
-              Let&apos;s see what that says about you.
-            </ThemedText>
+            <ThemedText style={styles.introSupport}>One question. Choose carefully.</ThemedText>
           </View>
 
           <View style={styles.questionCard}>
             <ThemedText style={styles.prompt}>{question.prompt}</ThemedText>
             <View style={styles.options}>
               {question.options.map((option, index) => {
-                const isSelected = selectedOption === index;
-                // Once answered, a Daily choice is final: unselected options become
+                const isSelected = displayedOption === index;
+                // Once committed, a Daily choice is final: unselected options become
                 // inert (not just visually muted) so the committed answer can never be
-                // swapped out after the reveal has been seen.
-                const isLocked = answered && !isSelected;
+                // swapped out after the reveal has been seen. Before commit, nothing is
+                // locked — any option can be re-tapped to change the draft selection.
+                const isLocked = isCommitted && !isSelected;
                 return (
                   <Pressable
                     key={option.label}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected, disabled: isLocked }}
                     disabled={isLocked}
-                    onPress={() => selectOption(index)}
+                    onPress={() => selectDraftOption(index)}
                     style={({ pressed }) => [
                       styles.option,
                       isSelected && styles.optionSelected,
@@ -152,27 +166,35 @@ export default function HomeScreen() {
                 );
               })}
             </View>
-            {!answered && (
+            {!isCommitted && draftOption === null && (
               <ThemedText style={styles.microcopy} themeColor="textSecondary">
-                Answer to unlock the world.
+                Pick first. Then we&apos;ll show you the room.
               </ThemedText>
+            )}
+            {!isCommitted && (
+              <Pressable
+                disabled={draftOption === null}
+                onPress={confirmAnswer}
+                style={[styles.confirmButton, draftOption === null && styles.confirmButtonDisabled]}>
+                <ThemedText style={styles.confirmButtonText}>Lock it in →</ThemedText>
+              </Pressable>
             )}
           </View>
 
-          {answered && (
+          {isCommitted && (
             <View style={styles.revealCard}>
-              <ThemedText style={styles.revealEyebrow}>APPARENTLY...</ThemedText>
+              <ThemedText style={styles.revealEyebrow}>THE READ</ThemedText>
               <ThemedText style={styles.observation}>
-                {selectedChoice.apparentlyFeedback ?? 'Apparently, you gave us something to think about.'}
+                {stripApparentlyPrefix(selectedChoice.apparentlyFeedback ?? 'You gave us something to think about.')}
               </ThemedText>
 
               <ThemedText style={styles.revealPercentLine}>
-                {selectedChoice.percent}% agreed with you.
-                {consensus ? ` ${consensus.label.charAt(0).toUpperCase()}${consensus.label.slice(1)}.` : ''}
+                {consensus ? getPercentLanguage(selectedChoice.percent, consensus.label) : ''}
               </ThemedText>
 
               {selectedTraitLine.length > 0 && (
                 <View style={styles.signalLine}>
+                  <ThemedText style={styles.signalEyebrow}>WE&apos;RE NOTICING</ThemedText>
                   <ThemedText style={styles.signalChips}>{selectedTraitLine}</ThemedText>
                   <ThemedText style={styles.signalCopy}>{signalCopy}</ThemedText>
                 </View>
@@ -180,14 +202,14 @@ export default function HomeScreen() {
 
               <Pressable style={styles.worldToggle} onPress={() => setWorldExpanded((value) => !value)}>
                 <ThemedText style={styles.worldToggleText}>
-                  {worldExpanded ? 'Hide how everyone voted ↑' : 'See how everyone voted ↓'}
+                  {worldExpanded ? 'Close the room ↑' : 'See the room ↓'}
                 </ThemedText>
               </Pressable>
 
               {worldExpanded && (
                 <View style={styles.worldDistribution}>
                   {question.options.map((option, index) => {
-                    const isSelected = index === selectedOption;
+                    const isSelected = index === displayedOption;
                     return (
                       <View
                         key={option.id}
@@ -207,9 +229,21 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              <Pressable style={styles.worldButton} onPress={() => {}}>
-                <ThemedText style={styles.worldButtonText}>One more? 👀</ThemedText>
+              <Pressable style={styles.worldButton} onPress={() => router.push('/explore')}>
+                <ThemedText style={styles.worldButtonText}>Keep going →</ThemedText>
               </Pressable>
+            </View>
+          )}
+
+          {isCommitted && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>PRIVATE DROP</ThemedText>
+              <ThemedText style={styles.privateDropTitle}>Your second drop is locked.</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>You know you want to know.</ThemedText>
+              {/* Deliberately plain text, no arrow, no button chrome — this is a status
+                  label, not a CTA, and must not look tappable. No purchase/paywall code
+                  exists behind it. */}
+              <ThemedText style={styles.privateDropStatus}>PRIVATE · COMING SOON</ThemedText>
             </View>
           )}
 
@@ -231,7 +265,7 @@ export default function HomeScreen() {
           <View style={styles.progressCard}>
             <View style={styles.progressHeader}>
               <View>
-                <ThemedText style={styles.eyebrow}>YOUR 7, APPARENTLY</ThemedText>
+                <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
                 <ThemedText style={styles.progressTitle}>
                   {remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
                 </ThemedText>
@@ -310,13 +344,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.3,
   },
-  heading: {
-    color: Brand.ink,
-    fontSize: 37,
-    lineHeight: 41,
-    fontWeight: '800',
-    letterSpacing: -1.2,
-    maxWidth: 460,
+  introSupport: {
+    color: Brand.inkSecondary,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '600',
   },
   questionCard: {
     backgroundColor: Brand.violet,
@@ -391,12 +423,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  // The one and only path to commitDailyAnswer — pink like every other primary CTA in the
+  // app (onboarding's ctaText included), so it reads as the deliberate confirmation step it
+  // is rather than a secondary action.
+  confirmButton: {
+    backgroundColor: Brand.pink,
+    borderRadius: 16,
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    marginTop: Spacing.one,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.35,
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
   pressed: {
     opacity: 0.82,
   },
-  // The reveal is one card, hero-first: the Apparently response is the payoff, everything
-  // else (percentage, personality nudge, full breakdown) is deliberately smaller/secondary
-  // so it doesn't compete with it — see Part 2 of the visual QA correction.
+  // The reveal is one card, hero-first: the Read is the payoff, everything else (percentage,
+  // personality nudge, full breakdown) is deliberately smaller/secondary so it doesn't
+  // compete with it — see Part 2 of the visual QA correction.
   revealCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -427,6 +477,12 @@ const styles = StyleSheet.create({
   signalLine: {
     marginTop: Spacing.one,
     gap: 2,
+  },
+  signalEyebrow: {
+    color: Brand.violet,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.1,
   },
   signalChips: {
     color: Brand.violet,
@@ -494,6 +550,42 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  // The premium/private surface treatment: deep plum, cream text, a restrained coral
+  // eyebrow — visibly a different room from the pink free-content chrome around it, with no
+  // purchase functionality behind it yet (see privateDropStatus below, deliberately not a
+  // Pressable so it never implies a real, tappable purchase action exists).
+  privateDropCard: {
+    backgroundColor: Brand.plum,
+    borderRadius: 24,
+    padding: Spacing.four,
+    gap: Spacing.one,
+  },
+  privateDropEyebrow: {
+    color: Brand.coral,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+  },
+  privateDropTitle: {
+    color: Brand.cream,
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  privateDropCopy: {
+    color: 'rgba(255,249,245,0.7)',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  privateDropStatus: {
+    color: Brand.coral,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginTop: Spacing.one,
   },
   statsRow: {
     flexDirection: 'row',
