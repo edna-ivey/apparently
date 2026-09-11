@@ -1,0 +1,17 @@
+{
+  "framework": null,
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.apparentlyyou.com" }],
+      "destination": "https://apparentlyyou.com/$1",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/quiz/:quizId", "destination": "/quiz/%5BquizId%5D" }
+  ]
+}
