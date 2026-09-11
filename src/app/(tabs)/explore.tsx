@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,13 +9,16 @@ import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
 const categories = ['Love', 'Friendship', 'Food', 'Money', 'Nostalgia', 'Ridiculous'];
+// Only the petty quiz is wired to a real route in this pass — the other two stay
+// placeholders (no `quizId`), same no-op onPress as before.
 const quizzes = [
-  { title: 'How petty are you actually?', meta: '8 questions · Be honest', color: '#FFE5EF', accent: Brand.pink, badge: 'Free' },
-  { title: 'Build your perfect Sunday', meta: '10 questions · Personality', color: '#E8E3FF', accent: Brand.violet, badge: 'Daily pick' },
-  { title: 'What kind of friend are you?', meta: '7 questions · Friendship', color: '#DDF5EE', accent: '#318F7D', badge: 'Free' },
+  { title: 'How petty are you actually?', meta: '8 questions · Be honest', color: '#FFE5EF', accent: Brand.pink, badge: 'Free', quizId: 'petty' },
+  { title: 'Build your perfect Sunday', meta: '10 questions · Personality', color: '#E8E3FF', accent: Brand.violet, badge: 'Daily pick', quizId: null },
+  { title: 'What kind of friend are you?', meta: '7 questions · Friendship', color: '#DDF5EE', accent: '#318F7D', badge: 'Free', quizId: null },
 ];
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
 
@@ -55,7 +59,10 @@ export default function ExploreScreen() {
           </View>
           <View style={styles.quizList}>
             {quizzes.map((quiz) => (
-              <Pressable key={quiz.title} style={[styles.quizCard, { backgroundColor: quiz.color }]} onPress={() => {}}>
+              <Pressable
+                key={quiz.title}
+                style={[styles.quizCard, { backgroundColor: quiz.color }]}
+                onPress={() => (quiz.quizId ? router.push(`/quiz/${quiz.quizId}`) : undefined)}>
                 <View style={styles.quizHeader}>
                   <View style={[styles.quizDot, { backgroundColor: quiz.accent }]} />
                   <View style={styles.quizBadge}>

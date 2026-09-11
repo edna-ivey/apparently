@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
-import { Image, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
@@ -8,15 +9,30 @@ import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { getDemoPersonalityProfile, getSignatureStrengthLabel } from '@/data/personality';
+import { getQuizDefinition } from '@/data/quizzes';
+import { hydrateQuizResults, useLatestQuizResult } from '@/data/quizzes/results';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
+const toTitleCase = (value: string) => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
+
 export default function YouScreen() {
+  const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
   const personalityProfile = useMemo(() => getDemoPersonalityProfile(), []);
   const topPatterns = personalityProfile.topTraits;
   const answersCount = personalityProfile.answeredCount;
   const remainingToReveal = Math.max(0, 50 - answersCount);
+
+  // Additive only — reads the same persisted quiz-results store the quiz runner writes to
+  // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
+  // for the same reason useUserProfile is: completing a quiz and landing straight on You in
+  // the same session must not require a restart to show up.
+  const pettyQuizDefinition = getQuizDefinition('petty');
+  const latestPettyResult = useLatestQuizResult('petty');
+  useEffect(() => {
+    void hydrateQuizResults();
+  }, []);
 
   // Reactive, not a one-shot read: if this screen mounted (or was kept mounted by the tab
   // navigator) around the same time onboarding completed, a one-shot effect could capture a
@@ -69,6 +85,19 @@ export default function YouScreen() {
               </View>
             ))}
           </ScrollView>
+          {pettyQuizDefinition && latestPettyResult && latestPettyResult !== 'loading' && (
+            <Pressable
+              onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'petty', view: 'result' } })}
+              style={styles.recentReadCard}>
+              <ThemedText style={styles.eyebrow}>RECENT READ</ThemedText>
+              <ThemedText style={styles.recentReadQuizTitle}>{pettyQuizDefinition.title}</ThemedText>
+              <ThemedText style={styles.recentReadResultTitle}>{toTitleCase(latestPettyResult.resultTitle)}</ThemedText>
+              <ThemedText style={styles.recentReadMeter}>
+                {latestPettyResult.percent}% {pettyQuizDefinition.scoreLabel} meter
+              </ThemedText>
+              <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
+            </Pressable>
+          )}
           <View style={styles.progressCard}>
             <View style={styles.progressTop}><ThemedText style={styles.eyebrow}>YOUR 7</ThemedText><ThemedText style={styles.progressCount}>{answersCount} / 50</ThemedText></View>
             <ThemedText style={styles.progressTitle}>{remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}</ThemedText>
@@ -139,6 +168,13 @@ const styles = StyleSheet.create({
   patternNumber: { color: 'rgba(23,21,29,0.55)', fontSize: 12, fontWeight: '800' },
   patternName: { color: Brand.ink, fontSize: 17, lineHeight: 21, fontWeight: '800' },
   patternStrength: { fontSize: 12, fontWeight: '800', color: 'rgba(23,21,29,0.65)', letterSpacing: 0.2 },
+  // Additive quiz-completion card — same violet family as the pattern cards, distinct enough
+  // from the pink Commonality/progress cards to read as "a different kind of result."
+  recentReadCard: { backgroundColor: '#F7F3FF', borderRadius: 24, padding: Spacing.four, gap: Spacing.half, borderWidth: 1, borderColor: '#EAE2FF' },
+  recentReadQuizTitle: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
+  recentReadResultTitle: { color: Brand.ink, fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
+  recentReadMeter: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
+  recentReadCta: { color: Brand.pink, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
   progressCard: { backgroundColor: '#FFE5EF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two },
   progressTop: { flexDirection: 'row', justifyContent: 'space-between' },
   progressCount: { color: Brand.pink, fontSize: 13, fontWeight: '800' },
