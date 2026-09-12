@@ -10,7 +10,7 @@ import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
 import { hydrateQuizResults, saveQuizResult, useLatestQuizResult } from '@/data/quizzes/results';
-import { scoreQuiz } from '@/data/quizzes/scoring';
+import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 
 const toTitleCase = (value: string) => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
@@ -40,16 +40,17 @@ export default function QuizScreen() {
   }
 
   const wantsSavedResult = view === 'result';
-  // The persisted record deliberately doesn't carry heroRead/body/kicker (avoids duplicated
-  // copy — see results.ts) — re-deriving the full band from resultId is the intended path.
-  const savedBand =
+  // The persisted record deliberately doesn't carry heroRead/body/kicker/mix titles (avoids
+  // duplicated copy — see results.ts) — reconstructResultDisplay re-derives the full result
+  // from resultId, for either scoring type. This is the "See result →" path from You.
+  const savedResultDisplay: ResultDisplay | null =
     wantsSavedResult && latestResult && latestResult !== 'loading'
-      ? definition.resultBands.find((band) => band.id === latestResult.resultId) ?? null
+      ? reconstructResultDisplay(definition, latestResult)
       : null;
 
   const stepOrder: string[] = ['intro', ...definition.questions.map((question) => question.id), 'result'];
-  const step = savedBand ? 'result' : stepOrder[stepIndex] ?? 'intro';
-  const questionIndex = savedBand ? -1 : definition.questions.findIndex((question) => question.id === step);
+  const step = savedResultDisplay ? 'result' : stepOrder[stepIndex] ?? 'intro';
+  const questionIndex = savedResultDisplay ? -1 : definition.questions.findIndex((question) => question.id === step);
   const currentQuestion: QuizQuestion | null = questionIndex >= 0 ? definition.questions[questionIndex] : null;
   const isLastQuestion = questionIndex === definition.questions.length - 1;
 
@@ -60,17 +61,16 @@ export default function QuizScreen() {
     setAnswers((previous) => ({ ...previous, [questionId]: choiceId }));
   };
 
-  const liveResult = !savedBand && step === 'result' ? scoreQuiz(definition, answers) : null;
-  const result =
-    savedBand && latestResult && latestResult !== 'loading'
-      ? { score: latestResult.score, percent: latestResult.percent, band: savedBand }
-      : liveResult;
+  // computeQuizResult is the ONE place scoringType branching happens for a fresh completion —
+  // this screen never special-cases numericBand vs archetype itself.
+  const liveResult: ResultDisplay | null = !savedResultDisplay && step === 'result' ? computeQuizResult(definition, answers) : null;
+  const result: ResultDisplay | null = savedResultDisplay ?? liveResult;
 
   // Persists exactly once per freshly-completed run — stepping into 'result' via the normal
   // quiz flow is the single moment a quiz is "done." Viewing an already-saved result
-  // (savedBand) never re-saves, so re-opening "See result →" can't duplicate history.
+  // (savedResultDisplay) never re-saves, so re-opening "See result →" can't duplicate history.
   useEffect(() => {
-    if (savedBand) {
+    if (savedResultDisplay) {
       savedResult.current = true;
       return;
     }
@@ -83,12 +83,13 @@ export default function QuizScreen() {
       completedAt: new Date().toISOString(),
       score: liveResult.score,
       percent: liveResult.percent,
-      resultId: liveResult.band.id,
-      resultTitle: liveResult.band.title,
-      traits: liveResult.band.traits,
+      resultId: liveResult.resultId,
+      resultTitle: liveResult.resultTitle,
+      traits: liveResult.traits,
+      mix: liveResult.mix ? Object.fromEntries(liveResult.mix.map((entry) => [entry.id, entry.percent])) : undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, savedBand]);
+  }, [step, savedResultDisplay]);
 
   const handleShare = async () => {
     if (!result) {
@@ -96,7 +97,7 @@ export default function QuizScreen() {
     }
     try {
       await Share.share({
-        message: `I got ${toTitleCase(result.band.title)} on ${toTitleCase(definition.title.replace(/\?$/, ''))} — Apparently You 😂\n${APP_URL}`,
+        message: `I got ${toTitleCase(result.resultTitle)} on Apparently You 😂\n${definition.title}\n${APP_URL}/quiz/${definition.id}`,
       });
     } catch {
       // Share can reject/cancel (user dismissed the sheet, or no share target available on
@@ -149,9 +150,7 @@ export default function QuizScreen() {
 
           {step === 'result' && result && (
             <ResultScreen
-              meterLabel={definition.meterLabel}
-              band={result.band}
-              percent={result.percent}
+              result={result}
               onShare={handleShare}
               onSeeYou={() => router.push('/you')}
               onTakeAnother={() => router.push('/explore')}
@@ -180,7 +179,7 @@ function QuizIntro({ definition, onStart }: { definition: NonNullable<ReturnType
         <ThemedText style={styles.meta}>{definition.meta}</ThemedText>
       </View>
       <Pressable onPress={onStart} style={styles.cta}>
-        <ThemedText style={styles.ctaText}>Let&apos;s find out →</ThemedText>
+        <ThemedText style={styles.ctaText}>{definition.introCta}</ThemedText>
       </Pressable>
       {definition.introNote ? <ThemedText style={styles.introNote}>{definition.introNote}</ThemedText> : null}
     </View>
@@ -235,16 +234,12 @@ function QuestionStep({
 }
 
 function ResultScreen({
-  meterLabel,
-  band,
-  percent,
+  result,
   onShare,
   onSeeYou,
   onTakeAnother,
 }: {
-  meterLabel: string;
-  band: NonNullable<ReturnType<typeof scoreQuiz>>['band'];
-  percent: number;
+  result: ResultDisplay;
   onShare: () => void;
   onSeeYou: () => void;
   onTakeAnother: () => void;
@@ -253,29 +248,49 @@ function ResultScreen({
     <View style={styles.stepGap}>
       <View style={styles.verdictCard}>
         <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
-        <ThemedText style={styles.verdictTitle}>{band.title}</ThemedText>
-        {band.heroRead.map((line) => (
+        <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
+        {result.heroRead.map((line) => (
           <ThemedText key={line} style={styles.verdictHero}>
             {line}
           </ThemedText>
         ))}
-        <View style={styles.meterBlock}>
-          <ThemedText style={styles.meterPercent}>{percent}%</ThemedText>
-          <ThemedText style={styles.meterLabel}>{meterLabel}</ThemedText>
-        </View>
+        {result.mix ? (
+          <View style={styles.mixBlock}>
+            <ThemedText style={styles.mixLabel}>{result.mixLabel}</ThemedText>
+            {result.mix.map((entry) => {
+              const isPrimary = entry.id === result.resultId;
+              return (
+                <View key={entry.id} style={styles.mixRow}>
+                  <ThemedText style={[styles.mixRowTitle, isPrimary && styles.mixRowTitlePrimary]}>
+                    {toTitleCase(entry.title)}
+                  </ThemedText>
+                  <View style={styles.mixBarTrack}>
+                    <View style={[styles.mixBarFill, { width: `${entry.percent}%` }, isPrimary && styles.mixBarFillPrimary]} />
+                  </View>
+                  <ThemedText style={[styles.mixRowPercent, isPrimary && styles.mixRowPercentPrimary]}>{entry.percent}%</ThemedText>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={styles.meterBlock}>
+            <ThemedText style={styles.meterPercent}>{result.percent}%</ThemedText>
+            <ThemedText style={styles.meterLabel}>{result.meterLabel}</ThemedText>
+          </View>
+        )}
       </View>
 
       <View style={styles.whyCard}>
         <ThemedText style={styles.eyebrow}>WHY WE&apos;RE SAYING THAT</ThemedText>
-        <ThemedText style={styles.whyBody}>{band.body}</ThemedText>
+        <ThemedText style={styles.whyBody}>{result.body}</ThemedText>
         <View style={styles.traitRow}>
-          {band.traits.map((trait) => (
+          {result.traits.map((trait) => (
             <View key={trait} style={styles.traitPill}>
               <ThemedText style={styles.traitPillText}>{trait}</ThemedText>
             </View>
           ))}
         </View>
-        <ThemedText style={styles.kicker}>{band.kicker}</ThemedText>
+        <ThemedText style={styles.kicker}>{result.kicker}</ThemedText>
       </View>
 
       <Pressable onPress={onShare} style={styles.cta}>
@@ -541,6 +556,66 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
+  },
+  // Archetype quizzes' counterpart to meterBlock above — a labeled breakdown instead of one
+  // number, sorted so the primary (highlighted) result naturally leads.
+  mixBlock: {
+    marginTop: Spacing.three,
+    gap: Spacing.two,
+  },
+  mixLabel: {
+    color: '#DCD6FF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+    marginBottom: Spacing.half,
+  },
+  mixRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  // Wide enough for the longest archetype names ("The Improviser", "The Commander") to
+  // render on one line without truncating — the bar column (flex: 1) absorbs the difference,
+  // so it's modestly narrower than before rather than the row needing to grow overall.
+  // numberOfLines is deliberately not set here: if a future, longer archetype name ever
+  // doesn't fit even at this width, it wraps cleanly instead of ellipsis-truncating.
+  mixRowTitle: {
+    width: 118,
+    color: '#DCD6FF',
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '700',
+  },
+  mixRowTitlePrimary: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  mixBarTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    overflow: 'hidden',
+  },
+  mixBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  mixBarFillPrimary: {
+    backgroundColor: '#FFFFFF',
+  },
+  mixRowPercent: {
+    width: 36,
+    textAlign: 'right',
+    color: '#DCD6FF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mixRowPercentPrimary: {
+    color: '#FFFFFF',
+    fontWeight: '900',
   },
   whyCard: {
     backgroundColor: '#FFFFFF',

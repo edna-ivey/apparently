@@ -49,7 +49,7 @@ export default function ExploreScreen() {
             </View>
             <ThemedText style={styles.featuredTitle}>Which version of you shows up in a crisis?</ThemedText>
             <ThemedText style={styles.featuredMeta}>12 questions · 3 min · Personality · Free</ThemedText>
-            <Pressable style={styles.startButton} onPress={() => {}}>
+            <Pressable style={styles.startButton} onPress={() => router.push('/quiz/crisis')}>
               <ThemedText style={styles.startText}>Take the quiz →</ThemedText>
             </Pressable>
           </View>

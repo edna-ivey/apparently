@@ -6,10 +6,12 @@ import type { QuizDefinition } from './types';
 // integration — see types.ts and the implementation report for why it isn't live yet.
 export const PETTY_QUIZ: QuizDefinition = {
   id: 'petty',
+  scoringType: 'numericBand',
   title: 'How petty are you actually?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Eight questions. No judgment.', 'Okay, maybe a little.'],
   meta: '8 questions · About 2 min',
+  introCta: 'Let’s find out →',
   introNote: 'Answer like nobody’s watching.',
   maxScore: 24,
   meterLabel: 'YOUR PETTY METER',

@@ -10,7 +10,8 @@ import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { getDemoPersonalityProfile, getSignatureStrengthLabel } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
-import { hydrateQuizResults, useLatestQuizResult } from '@/data/quizzes/results';
+import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
+import { formatResultMetric } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
 const toTitleCase = (value: string) => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
@@ -28,11 +29,16 @@ export default function YouScreen() {
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
   // for the same reason useUserProfile is: completing a quiz and landing straight on You in
   // the same session must not require a restart to show up.
-  const pettyQuizDefinition = getQuizDefinition('petty');
-  const latestPettyResult = useLatestQuizResult('petty');
+  //
+  // Generic across every quiz, not hardcoded to Petty: Recent Read is whichever quiz was
+  // completed most recently (results are appended in completion order, so the last entry in
+  // the full history is always the newest — across all quizzes, not just one).
+  const quizResults = useQuizResults();
   useEffect(() => {
     void hydrateQuizResults();
   }, []);
+  const latestResult = quizResults !== 'loading' && quizResults.length > 0 ? quizResults[quizResults.length - 1] : null;
+  const latestQuizDefinition = latestResult ? getQuizDefinition(latestResult.quizId) : null;
 
   // Reactive, not a one-shot read: if this screen mounted (or was kept mounted by the tab
   // navigator) around the same time onboarding completed, a one-shot effect could capture a
@@ -85,16 +91,16 @@ export default function YouScreen() {
               </View>
             ))}
           </ScrollView>
-          {pettyQuizDefinition && latestPettyResult && latestPettyResult !== 'loading' && (
+          {latestQuizDefinition && latestResult && (
             <Pressable
-              onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'petty', view: 'result' } })}
+              onPress={() =>
+                router.push({ pathname: '/quiz/[quizId]', params: { quizId: latestResult.quizId, view: 'result' } })
+              }
               style={styles.recentReadCard}>
               <ThemedText style={styles.eyebrow}>RECENT READ</ThemedText>
-              <ThemedText style={styles.recentReadQuizTitle}>{pettyQuizDefinition.title}</ThemedText>
-              <ThemedText style={styles.recentReadResultTitle}>{toTitleCase(latestPettyResult.resultTitle)}</ThemedText>
-              <ThemedText style={styles.recentReadMeter}>
-                {latestPettyResult.percent}% {pettyQuizDefinition.scoreLabel} meter
-              </ThemedText>
+              <ThemedText style={styles.recentReadQuizTitle}>{latestQuizDefinition.title}</ThemedText>
+              <ThemedText style={styles.recentReadResultTitle}>{toTitleCase(latestResult.resultTitle)}</ThemedText>
+              <ThemedText style={styles.recentReadMeter}>{formatResultMetric(latestQuizDefinition, latestResult)}</ThemedText>
               <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
             </Pressable>
           )}

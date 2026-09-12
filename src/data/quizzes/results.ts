@@ -13,6 +13,11 @@ export type QuizResultRecord = {
   resultId: string;
   resultTitle: string;
   traits: string[];
+  // Optional — only archetype-scoring quizzes (e.g. Crisis) populate this, as
+  // { archetypeId: percent }, so a saved record can fully recreate "YOUR CRISIS MIX" without
+  // re-scoring. Undefined/absent for numericBand quizzes like Petty — existing saved Petty
+  // records (written before this field existed) remain fully valid with no migration.
+  mix?: Record<string, number>;
 };
 
 const STORAGE_KEY = 'apparently:quiz-results';
@@ -43,6 +48,16 @@ const storage = {
   },
 };
 
+const isValidMix = (value: unknown): value is Record<string, number> | undefined => {
+  if (value === undefined) {
+    return true;
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value as Record<string, unknown>).every((entry) => typeof entry === 'number');
+};
+
 const isValidQuizResultRecord = (value: unknown): value is QuizResultRecord => {
   if (!value || typeof value !== 'object') {
     return false;
@@ -56,7 +71,8 @@ const isValidQuizResultRecord = (value: unknown): value is QuizResultRecord => {
     typeof candidate.resultId === 'string' &&
     typeof candidate.resultTitle === 'string' &&
     Array.isArray(candidate.traits) &&
-    candidate.traits.every((trait) => typeof trait === 'string')
+    candidate.traits.every((trait) => typeof trait === 'string') &&
+    isValidMix(candidate.mix)
   );
 };
 
