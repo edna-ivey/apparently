@@ -11,10 +11,8 @@ import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { getDemoPersonalityProfile, getSignatureStrengthLabel } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
-import { formatResultMetric } from '@/data/quizzes/scoring';
+import { formatResultMetric, resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
-
-const toTitleCase = (value: string) => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
 
 export default function YouScreen() {
   const router = useRouter();
@@ -99,7 +97,9 @@ export default function YouScreen() {
               style={styles.recentReadCard}>
               <ThemedText style={styles.eyebrow}>RECENT READ</ThemedText>
               <ThemedText style={styles.recentReadQuizTitle}>{latestQuizDefinition.title}</ThemedText>
-              <ThemedText style={styles.recentReadResultTitle}>{toTitleCase(latestResult.resultTitle)}</ThemedText>
+              <ThemedText style={styles.recentReadResultTitle}>
+                {resolveResultDisplayTitle(latestQuizDefinition, latestResult.resultId) ?? latestResult.resultTitle}
+              </ThemedText>
               <ThemedText style={styles.recentReadMeter}>{formatResultMetric(latestQuizDefinition, latestResult)}</ThemedText>
               <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
             </Pressable>

@@ -1,12 +1,17 @@
 import type { QuizDefinition } from './types';
 
-// Copy is exact and approved — do not reword casually. Choice scores (0/1/2/3) are the
-// literal "petty points" per the approved spec; traitSignals map each choice to an EXISTING
-// personality.ts dimension (no new dimensions invented) as a dormant hook for future
-// integration — see types.ts and the implementation report for why it isn't live yet.
+// Copy is exact and approved (Content + Explore Revamp). Result bands/copy are KEPT EXACTLY
+// per instruction — the user loves the Petty results. Questions were fully replaced with the
+// new short/playful/entertainment-first style. traitSignals were re-attached where a new
+// answer's sentiment still cleanly maps to an EXISTING personality.ts dimension (no new
+// dimensions invented, never wired into live scoring) — omitted where no existing dimension
+// fit without mislabeling. The given answer order for every question already lands each score
+// (0/1/2/3) on each letter exactly twice across the 8 questions — verified programmatically —
+// so no reordering was needed here (unlike Dating, which required one).
 export const PETTY_QUIZ: QuizDefinition = {
   id: 'petty',
   scoringType: 'numericBand',
+  category: 'Ridiculous',
   title: 'How petty are you actually?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Eight questions. No judgment.', 'Okay, maybe a little.'],
@@ -17,63 +22,56 @@ export const PETTY_QUIZ: QuizDefinition = {
   meterLabel: 'YOUR PETTY METER',
   scoreLabel: 'petty',
   questions: [
-    // Choice order within each question is intentionally permuted (see scoring.ts/report) so
-    // the score doesn't map predictably to letter position across the quiz — A/B/C/D no
-    // longer equal 0/1/2/3 anywhere. Each choice's own score/label/traitSignals stayed
-    // bundled together through the reorder; only its position (and, for internal bookkeeping
-    // clarity only, its `id`) changed. `id` is never persisted or shown to the user — it's
-    // purely an in-memory answer-tracking key — so renumbering it to match the new position
-    // has no effect on scoring, persistence, or display.
     {
       id: 'q1',
-      prompt: 'Someone sends you a text with a tone you definitely noticed.',
+      prompt: 'They reply “k” after you sent a whole paragraph.',
       choices: [
-        { id: 'a', label: 'I assume they didn’t mean it like that.', score: 0, traitSignals: [{ dimension: 'trust_verify', value: 1 }] },
-        { id: 'b', label: 'Match energy is a love language.', score: 3, traitSignals: [{ dimension: 'conflict_peacekeeping', value: 1 }] },
+        { id: 'a', label: 'They’re probably busy.', score: 0, traitSignals: [{ dimension: 'trust_verify', value: 1 }] },
+        { id: 'b', label: 'Oh, we’re doing tone? Bet.', score: 3, traitSignals: [{ dimension: 'conflict_peacekeeping', value: 1 }] },
         {
           id: 'c',
-          label: 'Oh, I noticed. I’m just deciding what version of me is replying.',
+          label: 'I’m sending “??” because what was THAT?',
           score: 2,
-          traitSignals: [{ dimension: 'control_allowing', value: 1 }, { dimension: 'social_attunement', value: 1 }],
+          traitSignals: [{ dimension: 'social_attunement', value: 1 }],
         },
-        { id: 'd', label: 'I reread it once and move on.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
+        { id: 'd', label: 'I notice. One eyebrow definitely goes up.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
       ],
     },
     {
       id: 'q2',
-      prompt: 'A friend says, “Be honest. Does this look good on me?”',
+      prompt: 'Someone who’s been annoying you asks, “Does this outfit look good?”',
       choices: [
-        { id: 'a', label: 'Depends. Have they been getting on my nerves?', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
-        { id: 'b', label: 'You asked for honesty. Don’t get mad at the delivery.', score: 3, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
-        { id: 'c', label: 'I’ll find something nice to say first.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
-        { id: 'd', label: 'I’m telling the truth gently.', score: 0, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
+        { id: 'a', label: 'I pause long enough to be suspicious.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
+        { id: 'b', label: 'I tell the truth with unnecessary detail.', score: 3, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
+        { id: 'c', label: 'I find one nice thing to say.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
+        { id: 'd', label: 'Their outfit is unrelated to their crimes.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
       ],
     },
     {
       id: 'q3',
-      prompt: 'Someone who owes you money posts a picture from brunch.',
+      prompt: 'Someone who owes you money posts brunch.',
       choices: [
-        { id: 'a', label: 'I notice, but I’m not saying anything.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
-        { id: 'b', label: 'Interesting place to spend MY money.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
+        { id: 'a', label: 'I clock it. Quietly.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
+        { id: 'b', label: 'Brunch with my money is wild.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
         {
           id: 'c',
-          label: '“That mimosa looks good. So does my $60.”',
+          label: '“Cute. Now Cash App me.”',
           score: 3,
-          traitSignals: [{ dimension: 'conflict_peacekeeping', value: 1 }, { dimension: 'direct_indirect', value: 1 }],
+          traitSignals: [{ dimension: 'direct_indirect', value: 1 }, { dimension: 'conflict_peacekeeping', value: 1 }],
         },
-        { id: 'd', label: 'None of my business.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
+        { id: 'd', label: 'I keep scrolling.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
       ],
     },
     {
       id: 'q4',
-      prompt: 'Someone cuts in front of you like you are completely invisible.',
+      prompt: 'Someone cuts the line like you don’t exist.',
       choices: [
-        { id: 'a', label: 'Let it go. I have places to be.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
-        { id: 'b', label: '“Excuse me, the line starts back there.”', score: 2, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
-        { id: 'c', label: 'Deep sigh. Very visible facial expression.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
+        { id: 'a', label: 'Let it go. I have somewhere to be.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
+        { id: 'b', label: '“Excuse me. The line starts back there.”', score: 2, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
+        { id: 'c', label: 'My face says everything.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
         {
           id: 'd',
-          label: 'Now everybody in this line is about to know what happened.',
+          label: 'Congratulations. The entire line now knows what you did.',
           score: 3,
           traitSignals: [{ dimension: 'conflict_peacekeeping', value: 1 }, { dimension: 'control_allowing', value: 1 }],
         },
@@ -83,42 +81,42 @@ export const PETTY_QUIZ: QuizDefinition = {
       id: 'q5',
       prompt: 'Your ex’s new person watches your story.',
       choices: [
-        { id: 'a', label: 'Huh. Interesting.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
-        { id: 'b', label: 'I probably wouldn’t even notice.', score: 0, traitSignals: [{ dimension: 'social_attunement', value: -1 }] },
+        { id: 'a', label: 'Noted.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
+        { id: 'b', label: 'I probably wouldn’t notice.', score: 0, traitSignals: [{ dimension: 'social_attunement', value: -1 }] },
         {
           id: 'c',
-          label: 'Oh, you came to LOOK? Let me give you something to see.',
+          label: 'Oh, you came to LOOK? Hold on.',
           score: 3,
           traitSignals: [{ dimension: 'control_allowing', value: 1 }, { dimension: 'conflict_peacekeeping', value: 1 }],
         },
-        { id: 'd', label: 'Suddenly I’m considering posting something extremely cute.', score: 2, traitSignals: [{ dimension: 'control_allowing', value: 1 }] },
+        { id: 'd', label: 'Suddenly my next story needs better lighting.', score: 2, traitSignals: [{ dimension: 'control_allowing', value: 1 }] },
       ],
     },
     {
       id: 'q6',
-      prompt: 'The group chat ignored your message and then started a whole new conversation.',
+      prompt: 'The group chat ignored your message, then started talking about something else.',
       choices: [
         {
           id: 'a',
-          label: 'Great. Now I’m ignoring the next three messages on principle.',
+          label: 'Cool. I’m unavailable for the next 24 business hours.',
           score: 3,
           traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }, { dimension: 'control_allowing', value: 1 }],
         },
-        { id: 'b', label: 'Slightly rude, but whatever.', score: 1, traitSignals: [{ dimension: 'emotional_intensity', value: -1 }] },
-        { id: 'c', label: 'I truly do not care.', score: 0, traitSignals: [{ dimension: 'emotional_intensity', value: -1 }] },
-        { id: 'd', label: 'I’m not repeating myself. They can scroll.', score: 2, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
+        { id: 'b', label: 'Rude. Anyway.', score: 1, traitSignals: [{ dimension: 'emotional_intensity', value: -1 }] },
+        { id: 'c', label: 'I genuinely do not care.', score: 0, traitSignals: [{ dimension: 'emotional_intensity', value: -1 }] },
+        { id: 'd', label: 'I’m not repeating myself. Scroll up.', score: 2, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
       ],
     },
     {
       id: 'q7',
-      prompt: 'Someone borrows something and returns it in worse condition.',
+      prompt: 'They return something they borrowed... damaged.',
       choices: [
-        { id: 'a', label: 'You are never borrowing anything from me again.', score: 2, traitSignals: [{ dimension: 'control_allowing', value: 1 }] },
-        { id: 'b', label: 'I’ll mention it politely.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
-        { id: 'c', label: 'Accidents happen.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
+        { id: 'a', label: 'Congrats. Borrowing privileges revoked.', score: 2, traitSignals: [{ dimension: 'control_allowing', value: 1 }] },
+        { id: 'b', label: 'I mention it.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
+        { id: 'c', label: 'Stuff happens.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
         {
           id: 'd',
-          label: 'Oh, we have entered the itemized-damage portion of our friendship.',
+          label: 'I’m sending photos and replacement links.',
           score: 3,
           traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }, { dimension: 'trust_verify', value: 1 }],
         },
@@ -126,12 +124,12 @@ export const PETTY_QUIZ: QuizDefinition = {
     },
     {
       id: 'q8',
-      prompt: '“I forgive…”',
+      prompt: 'Finish the sentence: “I forgive...”',
       choices: [
-        { id: 'a', label: 'Who said I forgave?', score: 3, traitSignals: [{ dimension: 'forgiving_receipts', value: -2 }] },
-        { id: 'b', label: 'Pretty easily, actually.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
-        { id: 'c', label: 'But I absolutely remember.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
-        { id: 'd', label: 'Eventually.', score: 1, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
+        { id: 'a', label: '...who? Be specific.', score: 3, traitSignals: [{ dimension: 'forgiving_receipts', value: -2 }] },
+        { id: 'b', label: '...pretty easily.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
+        { id: 'c', label: '...but the screenshot lives forever.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
+        { id: 'd', label: '...eventually.', score: 1, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
       ],
     },
   ],

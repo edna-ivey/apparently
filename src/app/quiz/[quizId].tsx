@@ -13,8 +13,6 @@ import { hydrateQuizResults, saveQuizResult, useLatestQuizResult } from '@/data/
 import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 
-const toTitleCase = (value: string) => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
-
 export default function QuizScreen() {
   const { quizId, view } = useLocalSearchParams<{ quizId: string; view?: string }>();
   const router = useRouter();
@@ -97,7 +95,7 @@ export default function QuizScreen() {
     }
     try {
       await Share.share({
-        message: `I got ${toTitleCase(result.resultTitle)} on Apparently You 😂\n${definition.title}\n${APP_URL}/quiz/${definition.id}`,
+        message: `I got ${result.resultDisplayTitle} on Apparently You 😂\n${definition.title}\n${APP_URL}/quiz/${definition.id}`,
       });
     } catch {
       // Share can reject/cancel (user dismissed the sheet, or no share target available on
@@ -249,6 +247,7 @@ function ResultScreen({
       <View style={styles.verdictCard}>
         <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
         <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
+        {result.resultSubtitle ? <ThemedText style={styles.verdictSubtitle}>{result.resultSubtitle}</ThemedText> : null}
         {result.heroRead.map((line) => (
           <ThemedText key={line} style={styles.verdictHero}>
             {line}
@@ -262,7 +261,7 @@ function ResultScreen({
               return (
                 <View key={entry.id} style={styles.mixRow}>
                   <ThemedText style={[styles.mixRowTitle, isPrimary && styles.mixRowTitlePrimary]}>
-                    {toTitleCase(entry.title)}
+                    {entry.title}
                   </ThemedText>
                   <View style={styles.mixBarTrack}>
                     <View style={[styles.mixBarFill, { width: `${entry.percent}%` }, isPrimary && styles.mixBarFillPrimary]} />
@@ -530,6 +529,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.6,
     marginTop: Spacing.one,
+  },
+  verdictSubtitle: {
+    color: '#DCD6FF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    marginTop: -Spacing.half,
   },
   verdictHero: {
     color: '#F1EEFF',

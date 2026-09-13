@@ -48,15 +48,33 @@ export type QuizResultBand = {
 export type QuizArchetype = {
   id: string;
   title: string;
+  // Optional small supporting context shown under the result title (e.g. Era's "1950s" under
+  // "THE GOLDEN AGE") — generic across any archetype quiz, not an Era-only special case.
+  // Undefined for archetypes that don't need one (Crisis, Friendship, Food, Spending).
+  resultSubtitle?: string;
+  // Optional override for how this result's name renders in sentence-case contexts (mix rows,
+  // Recent Read, native share text — anywhere the ALL-CAPS `title` isn't used verbatim). The
+  // generic fallback naively lowercases `title` then capitalizes the first letter after each
+  // space, which mangles acronyms ("Y2K" → "Y2k"), hyphenated words ("Always-On" → "Always-on"),
+  // and titles opening with punctuation (a curly quote swallows the capital that should follow
+  // it). Set this only when that fallback produces something wrong — most archetypes across
+  // every quiz don't need it. Never derived by special-casing any particular quiz in a
+  // component; see scoring.ts's resolveArchetypeDisplayTitle.
+  displayTitle?: string;
   heroRead: string[];
   body: string;
   kicker: string;
   traits: string[];
 };
 
+// Explore's category filter chips — a fixed, known set (not user-authored strings), so a
+// future "filter by category" pass has a real enum to switch on instead of loose strings.
+export type QuizCategory = 'Love' | 'Friendship' | 'Food' | 'Money' | 'Nostalgia' | 'Ridiculous';
+
 type QuizBase = {
   id: string;
   title: string;
+  category: QuizCategory;
   eyebrow: string;
   // Intro support copy, one paragraph per line (same "separate lines" rationale as heroRead).
   introSupport: string[];
@@ -76,6 +94,11 @@ export type NumericBandQuizDefinition = QuizBase & {
   resultBands: QuizResultBand[];
   meterLabel: string;
   scoreLabel: string;
+  // Optional full override for You's Recent Read line — when set, formatResultMetric uses
+  // `${percent}% ${recentReadMetricLabel}` verbatim instead of the default
+  // `${percent}% ${scoreLabel} meter` phrasing. Petty leaves this unset and keeps its exact
+  // existing wording; Dating sets it to "dating difficulty" (no "meter" suffix wanted).
+  recentReadMetricLabel?: string;
 };
 
 // Four (or more) competing archetypes scored independently; the highest total wins (see

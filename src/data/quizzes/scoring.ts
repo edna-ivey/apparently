@@ -7,6 +7,19 @@ export type QuizScore = {
   band: QuizResultBand;
 };
 
+// The generic sentence-case fallback for any result title used outside the all-caps verdict
+// heading (mix rows, Recent Read, native share text). Naive on purpose — lowercase, then
+// capitalize the first letter after each space or the string start — which is correct for the
+// vast majority of plain-English titles. It breaks on acronyms, hyphenated compounds, and
+// titles that open with punctuation; QuizArchetype.displayTitle is the escape hatch for those
+// specific cases, set once in the content file, never special-cased here or in a component.
+const defaultTitleCase = (value: string): string => value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
+
+// Single place every consumer (mix rows, ResultDisplay.resultDisplayTitle, You's Recent Read)
+// resolves an archetype's display name from — so a fix here (or a new displayTitle override
+// in a content file) is never duplicated across components.
+const resolveArchetypeDisplayTitle = (archetype: QuizArchetype): string => archetype.displayTitle ?? defaultTitleCase(archetype.title);
+
 // Pure and generic over any NumericBandQuizDefinition — sums the chosen choice's `score` per
 // question, then finds the result band whose [minScore, maxScore] contains the total. Falls
 // back to the last band if a quiz's bands don't fully cover its own maxScore (defensive only;
@@ -128,6 +141,13 @@ export type ResultDisplay = {
   // archetype only, sorted descending by percent so the primary naturally leads:
   mix?: QuizMixEntry[];
   mixLabel?: string;
+  // archetype only, optional — small supporting context under the result title (e.g. Era's
+  // "1950s"). Undefined for archetype quizzes/archetypes that don't set one.
+  resultSubtitle?: string;
+  // Always populated (both scoring types) — the sentence-case display name for use anywhere
+  // BESIDES the all-caps verdict heading (share text, and mix rows for archetype quizzes,
+  // which now populate their own `title` with this same resolution — see below).
+  resultDisplayTitle: string;
 };
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
@@ -136,7 +156,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
   if (definition.scoringType === 'archetype') {
     const { primary, totals, percentages } = scoreArchetypeQuiz(definition, answers);
     const mix = [...definition.archetypes]
-      .map((archetype) => ({ id: archetype.id, title: archetype.title, percent: percentages[archetype.id] ?? 0 }))
+      .map((archetype) => ({ id: archetype.id, title: resolveArchetypeDisplayTitle(archetype), percent: percentages[archetype.id] ?? 0 }))
       .sort((a, b) => b.percent - a.percent);
 
     return {
@@ -151,6 +171,8 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       percent: percentages[primary.id] ?? 0,
       mix,
       mixLabel: definition.mixLabel,
+      resultSubtitle: primary.resultSubtitle,
+      resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
     };
   }
 
@@ -166,6 +188,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     score,
     percent,
     meterLabel: definition.meterLabel,
+    resultDisplayTitle: defaultTitleCase(band.title),
   };
 };
 
@@ -182,7 +205,7 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
     }
     const mix = record.mix
       ? [...definition.archetypes]
-          .map((archetype) => ({ id: archetype.id, title: archetype.title, percent: record.mix?.[archetype.id] ?? 0 }))
+          .map((archetype) => ({ id: archetype.id, title: resolveArchetypeDisplayTitle(archetype), percent: record.mix?.[archetype.id] ?? 0 }))
           .sort((a, b) => b.percent - a.percent)
       : undefined;
 
@@ -198,6 +221,8 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
       percent: record.percent,
       mix,
       mixLabel: definition.mixLabel,
+      resultSubtitle: primary.resultSubtitle,
+      resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
     };
   }
 
@@ -216,15 +241,36 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
     score: record.score,
     percent: record.percent,
     meterLabel: definition.meterLabel,
+    resultDisplayTitle: defaultTitleCase(band.title),
   };
+};
+
+// Generic lookup for a display-ready title from just a definition + resultId, without needing
+// a full ResultDisplay/QuizResultRecord — what You's Recent Read card needs (it only has the
+// lightweight persisted record, not a reconstructed result). Returns null if the id no longer
+// exists on the current definition (same "quiz content changed after the record was saved"
+// case reconstructResultDisplay guards against).
+export const resolveResultDisplayTitle = (definition: QuizDefinition, resultId: string): string | null => {
+  if (definition.scoringType === 'archetype') {
+    const archetype = definition.archetypes.find((candidate) => candidate.id === resultId);
+    return archetype ? resolveArchetypeDisplayTitle(archetype) : null;
+  }
+  const band = definition.resultBands.find((candidate) => candidate.id === resultId);
+  return band ? defaultTitleCase(band.title) : null;
 };
 
 // Recent Read's metric line on You — quiz-type-aware so a future scoringType isn't stuck with
 // Petty's "X% <label> meter" phrasing. For archetype quizzes the suffix is content-owned
 // (definition.recentReadMetricLabel — e.g. Crisis's "of your crisis picks"), the same way
 // numericBand quizzes already own their scoreLabel, so no quiz-specific wording is
-// hardcoded into this generic formatter.
-export const formatResultMetric = (definition: QuizDefinition, record: QuizResultRecord): string =>
-  definition.scoringType === 'archetype'
+// hardcoded into this generic formatter. A numericBand quiz can also fully override the
+// suffix via its own optional recentReadMetricLabel (e.g. Dating's "dating difficulty", no
+// "meter" wanted) — Petty leaves that field unset and keeps its exact existing phrasing.
+export const formatResultMetric = (definition: QuizDefinition, record: QuizResultRecord): string => {
+  if (definition.scoringType === 'archetype') {
+    return `${record.percent}% ${definition.recentReadMetricLabel}`;
+  }
+  return definition.recentReadMetricLabel
     ? `${record.percent}% ${definition.recentReadMetricLabel}`
     : `${record.percent}% ${definition.scoreLabel} meter`;
+};
