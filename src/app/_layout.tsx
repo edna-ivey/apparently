@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
@@ -29,6 +29,7 @@ SplashScreen.preventAutoHideAsync();
 // <Redirect/> rendered as part of ITS OWN output has no such mounting race.
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const segments = useSegments();
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -44,10 +45,20 @@ export default function RootLayout() {
     // (src/data/consumer-daily.ts) also calls ensureAnonymousSession() itself when remote
     // Daily is enabled — that's intentionally redundant with this call and safe, since
     // ensureAnonymousSession() is idempotent/concurrent-safe (see auth-service.ts).
-    if (isRemoteDailyEnabled) {
+    //
+    // Sprint 1C-A: also skip this entirely on /admin/* routes. Admin has its own completely
+    // separate auth client/session (src/lib/admin-supabase.ts) and never needs a consumer
+    // anonymous identity — someone visiting /admin/login directly should never cause a
+    // throwaway consumer signup just from loading that page. This is a plain read of the
+    // current segments inside an effect (a side-effecting decision, not a render/redirect),
+    // so it has none of the native-navigator-mounting race a conditional <Redirect/> at this
+    // root level would — see the comment above this component for why THAT kind of gating
+    // was deliberately moved out of the root layout.
+    const isAdminRoute = segments[0] === 'admin';
+    if (isRemoteDailyEnabled && !isAdminRoute) {
       void ensureAnonymousSession();
     }
-  }, []);
+  }, [segments]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
