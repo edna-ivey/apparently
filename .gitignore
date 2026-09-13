@@ -43,3 +43,7 @@ example
 /android
 .vercel
 .env*
+!.env.example
+
+# Supabase CLI local cache (created even by read-only CLI calls; never contains project data)
+supabase/.temp/

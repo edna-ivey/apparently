@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { hydrateOnboardingState } from '@/data/onboarding';
+import { ensureAnonymousSession } from '@/services/auth-service';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +31,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     void hydrateOnboardingState();
+    // Backend-foundation bootstrap (additive only): begins establishing an anonymous
+    // Supabase identity once, in the background. A complete no-op when Supabase isn't
+    // configured (see isSupabaseConfigured/ensureAnonymousSession) — never blocks
+    // rendering, never shows a splash for it, never redirects. Onboarding's own hydration
+    // above is completely unaffected either way.
+    void ensureAnonymousSession();
   }, []);
 
   return (
