@@ -212,6 +212,55 @@ before the first genuine Daily goes Live.
 
 ---
 
+## Daily lifecycle: no catch-up (permanent product rule)
+
+This is a permanent product decision, not a temporary V1 limitation: **a Daily may only ever
+be answered while it is the current Live Daily.** There is no catch-up voting, ever.
+
+**Live**
+- Answerable — exactly one immutable answer per user (`UNIQUE(user_id, question_id)`, no
+  update/delete policy for consumers).
+- The Room (world distribution) unlocks for a user only after that same user has answered.
+
+**Archived**
+- Never accepts new answers, from anyone, for any reason — including a user who simply never
+  got to it while it was Live. There is no late/catch-up vote.
+- A user who DID participate while it was Live may still retrieve their own answer and the
+  frozen final Room distribution.
+- A user who did NOT participate may eventually be shown that they missed it, but may not
+  answer it and may not unlock its distribution after the fact. (That "you missed this one"
+  history UI is not built in this sprint.)
+- Once Archived, a row is never reactivated back to Live.
+
+**Reusing a great old Daily ("Encore" / "From the Vault")**
+- Never reopen an Archived row. Create a brand-new `daily_questions` row with a new UUID and
+  its own fresh voting window/population.
+- The original Archived row's percentages stay exactly as they were — permanently frozen —
+  regardless of how many times its content is reused later.
+
+**Closing a Drop (V1)**
+- For V1, a Drop closes only when the next Daily is explicitly published and the previously
+  Live Daily is moved to Archived, as one controlled operation. There is no timezone-aware
+  scheduler or cron job — publishing is a deliberate editorial action.
+- There must never intentionally be more than one Live Daily at a time.
+
+This rule is already enforced end-to-end by existing schema, not by client discipline:
+
+- `daily_answers_insert_own` only allows an insert while the referenced question's
+  `status = 'Live'` — an Archived question rejects every new insert unconditionally, including
+  from a user who never voted.
+- `UNIQUE(user_id, question_id)` blocks a second vote from a participant, on either a Live or
+  since-Archived question.
+- Consumers have no `UPDATE`/`DELETE` policy on `daily_answers` — an existing answer can never
+  be changed or removed by its owner.
+- `get_daily_distribution` requires the caller to already have a `daily_answers` row for that
+  exact question — this gate applies identically whether the question is Live or Archived, so
+  a non-participant can never unlock a since-Archived Daily's numbers either.
+
+None of these rules change for this sprint or are expected to change for the "Encore" concept
+described above — a reused Daily is always a new row with its own new UUID, never a reopened
+old one.
+
 ## NEXT SPRINT (Sprint 1B)
 
 This sprint built the foundation only. Sprint 1B is expected to:
