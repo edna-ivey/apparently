@@ -33,10 +33,14 @@ export type ConsumerDailyQuestion = {
 // loading or has failed, and that must never be hidden behind fabricated numbers. 'idle'
 // means "not committed yet, nothing requested" (matches the answer-first rule — see below).
 // 'ready' is the only status that ever carries real percentages; 'loading'/'error' never do.
+// `totalAnswers` is the real server-derived population size behind `percentages` (see
+// DailyDistributionRow.total_answers) — null for local prototype data, which has no real
+// population count and must never invent one. Only ever non-null via a successful remote
+// get_daily_distribution response.
 export type DistributionState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ready'; percentages: number[] }
+  | { status: 'ready'; percentages: number[]; totalAnswers: number | null }
   | { status: 'error'; message: string };
 
 export type ConsumerDailyExperience =
@@ -71,6 +75,12 @@ const toConsumerQuestion = (
 // here, so this can never manufacture a 0% row out of a failed request.
 const toPercentages = (optionIds: string[], rows: DailyDistributionRow[]): number[] =>
   optionIds.map((id) => rows.find((row) => row.option_id === id)?.percent ?? 0);
+
+// Every row from a successful get_daily_distribution call carries the same real
+// total_answers value — read it from the first row. A successful call that unexpectedly
+// returns zero rows has no real population count to report, so this is null rather than a
+// fabricated 0.
+const toTotalAnswers = (rows: DailyDistributionRow[]): number | null => rows[0]?.total_answers ?? null;
 
 // Internal remote state machine — a strict subset of ConsumerDailyExperience's remote
 // variants, plus the bookkeeping (questionId/optionIds) the hook needs internally but the
@@ -135,7 +145,13 @@ export const useConsumerDailyExperience = (): UseConsumerDailyExperience => {
       committedIndex: committedLocalIndex,
       // Local prototype percentages are real, static product data (not a remote fetch), so
       // they're always immediately 'ready' — there is no loading/error state for local.
-      distribution: { status: 'ready', percentages: localQuestion.options.map((option) => option.percent) },
+      // totalAnswers is null: the prototype has no real population count behind these
+      // numbers, and must never invent one.
+      distribution: {
+        status: 'ready',
+        percentages: localQuestion.options.map((option) => option.percent),
+        totalAnswers: null,
+      },
     }),
     [localQuestion, committedLocalIndex],
   );
@@ -179,7 +195,11 @@ export const useConsumerDailyExperience = (): UseConsumerDailyExperience => {
       return {
         ...previous,
         distribution: distributionResult.ok
-          ? { status: 'ready', percentages: toPercentages(optionIds, distributionResult.data) }
+          ? {
+              status: 'ready',
+              percentages: toPercentages(optionIds, distributionResult.data),
+              totalAnswers: toTotalAnswers(distributionResult.data),
+            }
           : { status: 'error', message: distributionResult.message },
       };
     });

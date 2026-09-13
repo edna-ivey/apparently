@@ -50,6 +50,10 @@ export default function HomeScreen() {
   const distribution = ready?.distribution ?? null;
   const selectedPercent =
     distribution?.status === 'ready' && displayedOption !== null ? distribution.percentages[displayedOption] ?? null : null;
+  // null for local prototype data (no real population count) and whenever distribution
+  // hasn't successfully loaded — getPercentLanguage only applies the first-voter copy when
+  // this is the real server-reported value 1, never a guess.
+  const totalAnswers = distribution?.status === 'ready' ? distribution.totalAnswers : null;
 
   // Demo personality/consensus flourishes stay LOCAL-only, exactly as before this sprint —
   // Sprint 1B-A does not replace or extend the existing profile scoring system, and a remote
@@ -134,10 +138,15 @@ export default function HomeScreen() {
           <View style={styles.intro}>
             <View style={styles.metaRow}>
               <ThemedText style={styles.eyebrow}>TODAY'S DROP</ThemedText>
-              <View style={styles.streak}>
-                <ThemedText style={styles.fire}>✦</ThemedText>
-                <ThemedText style={styles.streakText}>7</ThemedText>
-              </View>
+              {/* Prototype streak — real remote users have no real streak yet (see the
+                  upcoming "Make You Real" work), so this must never render as if it were
+                  real user data. Local prototype mode is completely unaffected. */}
+              {experience.source === 'local' && (
+                <View style={styles.streak}>
+                  <ThemedText style={styles.fire}>✦</ThemedText>
+                  <ThemedText style={styles.streakText}>7</ThemedText>
+                </View>
+              )}
             </View>
             <ThemedText style={styles.introSupport}>One question. Choose carefully.</ThemedText>
           </View>
@@ -235,7 +244,7 @@ export default function HomeScreen() {
               </ThemedText>
 
               <ThemedText style={styles.revealPercentLine}>
-                {consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label) : ''}
+                {consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label, totalAnswers) : ''}
               </ThemedText>
 
               {selectedTraitLine.length > 0 && (
@@ -315,36 +324,44 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBlock}>
-              <ThemedText style={styles.statValue}>37%</ThemedText>
-              <ThemedText style={styles.statLabel}>commonality</ThemedText>
-            </View>
-            <View style={styles.statBlock}>
-              <ThemedText style={styles.statValue}>{answeredCount}</ThemedText>
-              <ThemedText style={styles.statLabel}>your answers</ThemedText>
-            </View>
-            <View style={styles.statBlock}>
-              <ThemedText style={styles.statValue}>06</ThemedText>
-              <ThemedText style={styles.statLabel}>rare picks</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <View>
-                <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
-                <ThemedText style={styles.progressTitle}>
-                  {remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
-                </ThemedText>
+          {/* Prototype personal stats (commonality, answer count, rare picks, Your 7
+              progress) — real remote users have no real versions of these yet (see the
+              upcoming "Make You Real" work), so none of this may render as if it were real
+              user data. Local prototype mode is completely unaffected. */}
+          {experience.source === 'local' && (
+            <>
+              <View style={styles.statsRow}>
+                <View style={styles.statBlock}>
+                  <ThemedText style={styles.statValue}>37%</ThemedText>
+                  <ThemedText style={styles.statLabel}>commonality</ThemedText>
+                </View>
+                <View style={styles.statBlock}>
+                  <ThemedText style={styles.statValue}>{answeredCount}</ThemedText>
+                  <ThemedText style={styles.statLabel}>your answers</ThemedText>
+                </View>
+                <View style={styles.statBlock}>
+                  <ThemedText style={styles.statValue}>06</ThemedText>
+                  <ThemedText style={styles.statLabel}>rare picks</ThemedText>
+                </View>
               </View>
-              <ThemedText style={styles.progressCount}>{answeredCount} / 50</ThemedText>
-            </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(100, (answeredCount / 50) * 100)}%` }]} />
-            </View>
-            <ThemedText style={styles.progressCopy}>Your answers are becoming a pattern.</ThemedText>
-          </View>
+
+              <View style={styles.progressCard}>
+                <View style={styles.progressHeader}>
+                  <View>
+                    <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
+                    <ThemedText style={styles.progressTitle}>
+                      {remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={styles.progressCount}>{answeredCount} / 50</ThemedText>
+                </View>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${Math.min(100, (answeredCount / 50) * 100)}%` }]} />
+                </View>
+                <ThemedText style={styles.progressCopy}>Your answers are becoming a pattern.</ThemedText>
+              </View>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

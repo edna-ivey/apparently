@@ -687,7 +687,22 @@ export const getConsensusLanguage = (options: Array<{ percent: number }>, select
 // rarity is computed. Rare picks get called out ("you found the X%"), common ones get framed
 // as company kept, and the broad middle stays a plain, low-key statement rather than
 // generic "X% agreed with you" phrasing repeated every day.
-export const getPercentLanguage = (percent: number, label: ConsensusLanguage['label']): string => {
+// `totalAnswers` is the real server-derived population size behind `percent` (see
+// DailyDistributionRow.total_answers, threaded through consumer-daily.ts's DistributionState).
+// Local prototype percentages have no real population count, so callers pass null/undefined
+// there — this never changes local's existing wording. Remote's sole participant naturally
+// has percent = 100 on their own answer, but "You had company" is simply false when nobody
+// else has answered yet, so that specific population size gets its own honest copy
+// regardless of which rarity bucket the (real) percent would otherwise fall into.
+export const getPercentLanguage = (
+  percent: number,
+  label: ConsensusLanguage['label'],
+  totalAnswers?: number | null,
+): string => {
+  if (totalAnswers === 1) {
+    return `You're the first one in the room. ${percent}% so far.`;
+  }
+
   if (label === 'very rare' || label === 'one of the rarer picks') {
     return `Only ${percent}% went there. You found the ${percent}%.`;
   }
