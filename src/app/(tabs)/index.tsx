@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,8 +7,7 @@ import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
-import { commitDailyAnswer, hydrateDailyAnswers, useCommittedDailyAnswer } from '@/data/daily-answer';
-import { initialQuestions, useDailyQuestions, type DailyQuestion } from '@/data/daily-questions';
+import { useConsumerDailyExperience } from '@/data/consumer-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import {
   getDemoPersonalityAnswers,
@@ -21,96 +20,109 @@ import {
   stripApparentlyPrefix,
 } from '@/data/personality';
 
-const fallbackQuestion: DailyQuestion = initialQuestions.find((item) => item.id === 5) ?? initialQuestions[0];
-
 export default function HomeScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
-  const questions = useDailyQuestions();
-  const liveQuestion = questions.find((question) => question.status === 'Live') ?? null;
-  const question = liveQuestion ?? fallbackQuestion;
-  const committedAnswer = useCommittedDailyAnswer(question.id);
-  // committedAnswer (Daily answer history) is the single source of truth for whether this
-  // Daily is final. draftOption is purely a local, pre-commit UI selection — it is never
-  // itself written to storage, and it's irrelevant once isCommitted is true (displayedOption
-  // reads from committedAnswer instead). This is what makes a Daily answer immutable: the
-  // only path to persistence is confirmAnswer below, and commitDailyAnswer itself also
-  // refuses a second commit for the same question.
-  const [draftOption, setDraftOption] = useState<number | null>(null);
+
+  // The ONE place that decides local vs remote Daily — see src/data/consumer-daily.ts. This
+  // screen works entirely off the resulting shape (and option INDEX, never a raw id of
+  // either type), so it never has to know or care which source is active.
+  const { experience, draftIndex, selectDraftOption, confirmAnswer, isCommitting, commitError, retry, retryDistribution } =
+    useConsumerDailyExperience();
+
   const [answeredCount, setAnsweredCount] = useState(43);
   const [worldExpanded, setWorldExpanded] = useState(false);
-  const isCommitted = committedAnswer !== null;
-  const displayedOption = isCommitted ? committedAnswer : draftOption;
-  const selectedChoice = question.options[displayedOption ?? 0] ?? question.options[0];
-  // Trait names only, no "+2" weight — that mechanical detail stays in Review Studio
-  // (getEffectLabel), which editors need; the consumer reveal only needs the name.
-  const selectedTraitLine = (selectedChoice.personalityEffects ?? []).map(getEffectDisplayLabel).join(' · ');
+
+  // Narrows the 5-variant experience union down to "there is a question to show" — true for
+  // 'local' always, and for 'remote' only once phase is 'ready'. Every render below that
+  // needs a question/committedIndex/distribution goes through this instead of re-deriving it.
+  const ready =
+    experience.source === 'local' ? experience : experience.phase === 'ready' ? experience : null;
+
+  const isCommitted = ready !== null && ready.committedIndex !== null;
+  const displayedOption = ready ? ready.committedIndex ?? draftIndex : null;
+  const selectedChoice = ready ? ready.question.options[displayedOption ?? 0] ?? ready.question.options[0] : null;
+  const selectedTraitLine = selectedChoice ? selectedChoice.personalityEffects.map(getEffectDisplayLabel).join(' · ') : '';
+  // A vote can be locked in while its distribution is still loading or has failed — that must
+  // never be presented as a real percentage. `selectedPercent` (and `consensus` below) stay
+  // null unless distribution has ACTUALLY loaded; nothing here ever falls back to 0.
+  const distribution = ready?.distribution ?? null;
+  const selectedPercent =
+    distribution?.status === 'ready' && displayedOption !== null ? distribution.percentages[displayedOption] ?? null : null;
+
+  // Demo personality/consensus flourishes stay LOCAL-only, exactly as before this sprint —
+  // Sprint 1B-A does not replace or extend the existing profile scoring system, and a remote
+  // (possibly TEST-ONLY) answer must never feed the local demo profile.
+  const localReady = experience.source === 'local' ? experience : null;
   const baselineProfile = useMemo(() => getDemoPersonalityProfile(43), []);
   const selectedProfile = useMemo(() => {
-    if (!isCommitted || !selectedChoice.personalityEffects) {
+    if (!localReady || localReady.committedIndex === null) {
       return baselineProfile;
     }
-
+    const choice = localReady.question.options[localReady.committedIndex];
+    if (!choice || choice.personalityEffects.length === 0) {
+      return baselineProfile;
+    }
     return scorePersonalityProfile([
       ...getDemoPersonalityAnswers(43),
       {
-        question: question.prompt,
-        category: question.category,
-        chosenAnswer: selectedChoice.label,
-        effects: selectedChoice.personalityEffects,
+        question: localReady.question.prompt,
+        category: localReady.question.category,
+        chosenAnswer: choice.label,
+        effects: choice.personalityEffects,
       },
     ]);
-  }, [isCommitted, baselineProfile, question.category, question.prompt, selectedChoice.label, selectedChoice.personalityEffects]);
+  }, [localReady, baselineProfile]);
   const selectedSignal = useMemo(() => {
-    const effects = selectedChoice.personalityEffects ?? [];
-    const effect = effects[0];
-    return effect
-      ? selectedProfile.dimensions.find((dimension) => dimension.dimension === effect.dimension) ?? null
-      : null;
-  }, [selectedChoice.personalityEffects, selectedProfile]);
-  const consensus = isCommitted ? getConsensusLanguage(question.options, displayedOption ?? 0) : null;
-  const signalCopy = selectedSignal ? getPersonalitySignalCopy(selectedSignal.evidenceCount) : 'Still taking notes.';
+    if (!localReady || !selectedChoice) {
+      return null;
+    }
+    const effect = selectedChoice.personalityEffects[0];
+    return effect ? selectedProfile.dimensions.find((dimension) => dimension.dimension === effect.dimension) ?? null : null;
+  }, [localReady, selectedChoice, selectedProfile]);
+  const signalCopy = localReady
+    ? selectedSignal
+      ? getPersonalitySignalCopy(selectedSignal.evidenceCount)
+      : 'Still taking notes.'
+    : null;
+
+  const consensus = useMemo(() => {
+    if (!ready || displayedOption === null || ready.distribution.status !== 'ready') {
+      return null;
+    }
+    return getConsensusLanguage(
+      ready.distribution.percentages.map((percent) => ({ percent })),
+      displayedOption,
+    );
+  }, [ready, displayedOption]);
+
   const remainingToReveal = Math.max(0, 50 - answeredCount);
 
+  // Local-only: mirrors the exact prior behavior of bumping this demo counter once per
+  // successful LOCAL commit. Remote (including Sprint 1B-A's TEST-ONLY integration content)
+  // deliberately never touches this — it's a local prototype flourish, not real progress.
+  const previousLocalCommittedIndexRef = useRef<number | null>(null);
   useEffect(() => {
-    void hydrateDailyAnswers();
-  }, []);
+    if (experience.source !== 'local') {
+      return;
+    }
+    if (experience.committedIndex !== null && previousLocalCommittedIndexRef.current === null) {
+      setAnsweredCount((count) => count + 1);
+    }
+    previousLocalCommittedIndexRef.current = experience.committedIndex;
+  }, [experience]);
 
-  // Resets local draft state whenever the active Daily changes — a fresh Daily always starts
-  // with nothing selected. If this question already has a committed answer (from a prior
-  // session, resolved once hydration completes), draftOption is simply never consulted:
-  // isCommitted/displayedOption above read from committedAnswer instead.
+  // A fresh local Daily always starts with these page-level flourishes reset — draft
+  // selection itself is reset inside the hook. `prompt` stands in for "which local question
+  // is active" without this screen needing a raw local question id.
+  const localQuestionKey = experience.source === 'local' ? experience.question.prompt : null;
   useEffect(() => {
-    setDraftOption(null);
-    setAnsweredCount(43);
-    setWorldExpanded(false);
-  }, [liveQuestion?.id, question.id]);
-
-  // Pre-commit only: freely changes which option is highlighted. Never touches persistence
-  // and never reveals anything — the user may tap a different option as many times as they
-  // like before confirming. See confirmAnswer for the one place a Daily actually commits.
-  const selectDraftOption = (index: number) => {
-    if (isCommitted) {
-      return;
+    if (experience.source === 'local') {
+      setAnsweredCount(43);
+      setWorldExpanded(false);
     }
-    setDraftOption(index);
-  };
-
-  // The ONLY place a Daily answer is written to history — triggered by the explicit "Lock
-  // it in" CTA, never by selecting an option. Once commitDailyAnswer
-  // succeeds, useCommittedDailyAnswer reactively flips isCommitted to true on the next
-  // render and the reveal renders from committedAnswer from then on: there is no path back
-  // to an editable draft for this question, on this device, ever again.
-  const confirmAnswer = () => {
-    if (isCommitted || draftOption === null) {
-      return;
-    }
-    if (!commitDailyAnswer(question.id, draftOption)) {
-      return;
-    }
-    setAnsweredCount((count) => count + 1);
-  };
+  }, [localQuestionKey]);
 
   return (
     <ThemedView style={styles.container}>
@@ -130,58 +142,92 @@ export default function HomeScreen() {
             <ThemedText style={styles.introSupport}>One question. Choose carefully.</ThemedText>
           </View>
 
-          <View style={styles.questionCard}>
-            <ThemedText style={styles.prompt}>{question.prompt}</ThemedText>
-            <View style={styles.options}>
-              {question.options.map((option, index) => {
-                const isSelected = displayedOption === index;
-                // Once committed, a Daily choice is final: unselected options become
-                // inert (not just visually muted) so the committed answer can never be
-                // swapped out after the reveal has been seen. Before commit, nothing is
-                // locked — any option can be re-tapped to change the draft selection.
-                const isLocked = isCommitted && !isSelected;
-                return (
-                  <Pressable
-                    key={option.label}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: isSelected, disabled: isLocked }}
-                    disabled={isLocked}
-                    onPress={() => selectDraftOption(index)}
-                    style={({ pressed }) => [
-                      styles.option,
-                      isSelected && styles.optionSelected,
-                      isLocked && styles.optionLocked,
-                      pressed && styles.pressed,
-                    ]}>
-                    <View style={[styles.optionNumber, isSelected && styles.optionNumberSelected]}>
-                      <ThemedText style={[styles.numberText, isSelected && styles.selectedText]}>
-                        {String.fromCharCode(65 + index)}
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={[styles.optionText, isSelected && styles.selectedText]}>
-                      {option.label}
-                    </ThemedText>
-                    {isSelected && <ThemedText style={styles.check}>✓</ThemedText>}
-                  </Pressable>
-                );
-              })}
+          {experience.source === 'remote' && experience.phase === 'loading' && (
+            <View style={styles.questionCard}>
+              <ThemedText style={styles.prompt}>Loading today's drop…</ThemedText>
             </View>
-            {!isCommitted && draftOption === null && (
-              <ThemedText style={styles.microcopy} themeColor="textSecondary">
-                Pick first. Then we&apos;ll show you the room.
-              </ThemedText>
-            )}
-            {!isCommitted && (
-              <Pressable
-                disabled={draftOption === null}
-                onPress={confirmAnswer}
-                style={[styles.confirmButton, draftOption === null && styles.confirmButtonDisabled]}>
-                <ThemedText style={styles.confirmButtonText}>Lock it in →</ThemedText>
-              </Pressable>
-            )}
-          </View>
+          )}
 
-          {isCommitted && (
+          {experience.source === 'remote' && experience.phase === 'no-live-daily' && (
+            <View style={styles.revealCard}>
+              <ThemedText style={styles.revealEyebrow}>TODAY'S DROP</ThemedText>
+              <ThemedText style={styles.observation}>No live Daily right now.</ThemedText>
+            </View>
+          )}
+
+          {experience.source === 'remote' && experience.phase === 'error' && (
+            <View style={styles.revealCard}>
+              <ThemedText style={styles.revealEyebrow}>TODAY'S DROP</ThemedText>
+              <ThemedText style={styles.observation}>Today's Drop is having a moment.</ThemedText>
+              <Pressable style={styles.worldButton} onPress={retry}>
+                <ThemedText style={styles.worldButtonText}>Try again →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {ready && (
+            <View style={styles.questionCard}>
+              <ThemedText style={styles.prompt}>{ready.question.prompt}</ThemedText>
+              <View style={styles.options}>
+                {ready.question.options.map((option, index) => {
+                  const isSelected = displayedOption === index;
+                  // Once committed, a Daily choice is final: unselected options become
+                  // inert (not just visually muted) so the committed answer can never be
+                  // swapped out after the reveal has been seen. Before commit, nothing is
+                  // locked — any option can be re-tapped to change the draft selection.
+                  const isLocked = isCommitted && !isSelected;
+                  return (
+                    <Pressable
+                      key={`option-${index}`}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: isSelected, disabled: isLocked }}
+                      disabled={isLocked}
+                      onPress={() => selectDraftOption(index)}
+                      style={({ pressed }) => [
+                        styles.option,
+                        isSelected && styles.optionSelected,
+                        isLocked && styles.optionLocked,
+                        pressed && styles.pressed,
+                      ]}>
+                      <View style={[styles.optionNumber, isSelected && styles.optionNumberSelected]}>
+                        <ThemedText style={[styles.numberText, isSelected && styles.selectedText]}>
+                          {String.fromCharCode(65 + index)}
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={[styles.optionText, isSelected && styles.selectedText]}>
+                        {option.label}
+                      </ThemedText>
+                      {isSelected && <ThemedText style={styles.check}>✓</ThemedText>}
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {!isCommitted && draftIndex === null && (
+                <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                  Pick first. Then we&apos;ll show you the room.
+                </ThemedText>
+              )}
+              {!isCommitted && (
+                <>
+                  <Pressable
+                    disabled={draftIndex === null || isCommitting}
+                    onPress={confirmAnswer}
+                    style={[styles.confirmButton, (draftIndex === null || isCommitting) && styles.confirmButtonDisabled]}>
+                    <ThemedText style={styles.confirmButtonText}>
+                      {isCommitting ? 'Locking it in…' : 'Lock it in →'}
+                    </ThemedText>
+                  </Pressable>
+                  {commitError && (
+                    <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                      {commitError}
+                    </ThemedText>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+
+          {isCommitted && ready && selectedChoice && (
             <View style={styles.revealCard}>
               <ThemedText style={styles.revealEyebrow}>THE READ</ThemedText>
               <ThemedText style={styles.observation}>
@@ -189,14 +235,14 @@ export default function HomeScreen() {
               </ThemedText>
 
               <ThemedText style={styles.revealPercentLine}>
-                {consensus ? getPercentLanguage(selectedChoice.percent, consensus.label) : ''}
+                {consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label) : ''}
               </ThemedText>
 
               {selectedTraitLine.length > 0 && (
                 <View style={styles.signalLine}>
                   <ThemedText style={styles.signalEyebrow}>WE&apos;RE NOTICING</ThemedText>
                   <ThemedText style={styles.signalChips}>{selectedTraitLine}</ThemedText>
-                  <ThemedText style={styles.signalCopy}>{signalCopy}</ThemedText>
+                  {signalCopy && <ThemedText style={styles.signalCopy}>{signalCopy}</ThemedText>}
                 </View>
               )}
 
@@ -206,13 +252,16 @@ export default function HomeScreen() {
                 </ThemedText>
               </Pressable>
 
-              {worldExpanded && (
+              {worldExpanded && ready.distribution.status === 'ready' && (
                 <View style={styles.worldDistribution}>
-                  {question.options.map((option, index) => {
+                  {ready.question.options.map((option, index) => {
                     const isSelected = index === displayedOption;
+                    // ready.distribution.status is narrowed to 'ready' by the guard above —
+                    // percentages is always real, server-derived data here, never a fallback.
+                    const percent = ready.distribution.status === 'ready' ? ready.distribution.percentages[index] : null;
                     return (
                       <View
-                        key={option.id}
+                        key={`option-${index}`}
                         style={[styles.distributionRow, isSelected && styles.distributionRowSelected]}>
                         <ThemedText
                           style={[styles.distributionLabel, isSelected && styles.distributionLabelSelected]}
@@ -221,11 +270,30 @@ export default function HomeScreen() {
                         </ThemedText>
                         <ThemedText
                           style={[styles.distributionPercent, isSelected && styles.distributionPercentSelected]}>
-                          {option.percent}%
+                          {percent}%
                         </ThemedText>
                       </View>
                     );
                   })}
+                </View>
+              )}
+
+              {/* The vote itself may already be locked in while The Room's tally is still
+                  loading or failed to load — that must never be shown as invented percentages.
+                  A network/RPC failure is a small, retryable state, never a fabricated
+                  0/0/0/0 result. */}
+              {worldExpanded && (ready.distribution.status === 'loading' || ready.distribution.status === 'idle') && (
+                <View style={styles.worldDistribution}>
+                  <ThemedText style={styles.distributionLabel}>Tallying the room…</ThemedText>
+                </View>
+              )}
+
+              {worldExpanded && ready.distribution.status === 'error' && (
+                <View style={styles.worldDistribution}>
+                  <ThemedText style={styles.distributionLabel}>The Room is having a moment.</ThemedText>
+                  <Pressable style={styles.worldToggle} onPress={retryDistribution}>
+                    <ThemedText style={styles.worldToggleText}>Try again →</ThemedText>
+                  </Pressable>
                 </View>
               )}
 

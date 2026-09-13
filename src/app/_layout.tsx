@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { hydrateOnboardingState } from '@/data/onboarding';
+import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,11 +33,20 @@ export default function RootLayout() {
   useEffect(() => {
     void hydrateOnboardingState();
     // Backend-foundation bootstrap (additive only): begins establishing an anonymous
-    // Supabase identity once, in the background. A complete no-op when Supabase isn't
-    // configured (see isSupabaseConfigured/ensureAnonymousSession) — never blocks
+    // Supabase identity once, in the background — but ONLY when a feature that actually
+    // needs it is turned on (today: remote Daily). Gating on isRemoteDailyEnabled rather
+    // than the broader isSupabaseConfigured matters: Supabase can be fully configured in an
+    // environment (e.g. apparentlyyou.com, once real credentials land there) while remote
+    // Daily itself stays deliberately off — in that state, no ordinary visitor should get a
+    // real anonymous auth.users row created just from loading the app. Never blocks
     // rendering, never shows a splash for it, never redirects. Onboarding's own hydration
-    // above is completely unaffected either way.
-    void ensureAnonymousSession();
+    // above is completely unaffected either way. The remote Daily adapter
+    // (src/data/consumer-daily.ts) also calls ensureAnonymousSession() itself when remote
+    // Daily is enabled — that's intentionally redundant with this call and safe, since
+    // ensureAnonymousSession() is idempotent/concurrent-safe (see auth-service.ts).
+    if (isRemoteDailyEnabled) {
+      void ensureAnonymousSession();
+    }
   }, []);
 
   return (

@@ -36,6 +36,14 @@ const isRealConfiguredValue = (value: string | undefined): boolean => {
 
 export const isSupabaseConfigured = isRealConfiguredValue(supabaseUrl) && isRealConfiguredValue(supabasePublishableKey);
 
+// Today stays on local prototype Daily data (current production behavior) unless BOTH:
+// Supabase is actually configured, AND this flag is the literal string "true". Never a
+// hidden hard-coded boolean — always read live from the environment, same as
+// isSupabaseConfigured above. Sprint 1B-A: set to "true" only in an ignored .env.local for
+// local testing; apparentlyyou.com stays on local Daily until this is deliberately turned on
+// there (see docs/backend-setup.md).
+export const isRemoteDailyEnabled = isSupabaseConfigured && process.env.EXPO_PUBLIC_REMOTE_DAILY_ENABLED === 'true';
+
 if (__DEV__ && !isSupabaseConfigured) {
   // Loud, but never fatal — see the module-level comment on `supabase` below for why a
   // missing config must never crash the app or a static export.
