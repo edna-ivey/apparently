@@ -49,8 +49,22 @@ export default function AdminReviewScreen() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [revisionNote, setRevisionNote] = useState('');
+
+  // ADD SIGNAL flow: step 1 picks a dimension, step 2 picks a human pole + strength — both
+  // selectable before anything is saved, so a brand-new signal never needs a follow-up edit
+  // just to reach +2. optionId identifies which answer's picker is open.
   const [effectPickerOpenFor, setEffectPickerOpenFor] = useState<string | null>(null);
   const [pickerDimension, setPickerDimension] = useState<PersonalityDimensionId | null>(null);
+  const [pickerDirection, setPickerDirection] = useState<1 | -1 | null>(null);
+  const [pickerStrength, setPickerStrength] = useState<1 | 2>(1);
+
+  // EDIT EXISTING SIGNAL flow: tapping a chip opens an explicit direction+strength editor
+  // pre-filled with its current value — replaces the old silent tap-to-cycle behavior, which
+  // gave no visible indication of what a tap actually did.
+  const [editingEffect, setEditingEffect] = useState<{ optionId: string; index: number } | null>(null);
+  const [editDirection, setEditDirection] = useState<1 | -1>(1);
+  const [editStrength, setEditStrength] = useState<1 | 2>(1);
+
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Local drafts for text fields — committed on blur, matching the dashboard's own
@@ -87,8 +101,20 @@ export default function AdminReviewScreen() {
   }, [reload]);
 
   const openEffectPicker = (optionId: string) => {
+    setEditingEffect(null);
     setEffectPickerOpenFor((current) => (current === optionId ? null : optionId));
     setPickerDimension(null);
+    setPickerDirection(null);
+    setPickerStrength(1);
+  };
+
+  const openEditEffect = (option: DailyOptionRow, index: number) => {
+    const effect = (option.personality_effects ?? [])[index];
+    if (!effect) return;
+    setEffectPickerOpenFor(null);
+    setEditingEffect((current) => (current?.optionId === option.id && current.index === index ? null : { optionId: option.id, index }));
+    setEditDirection(effect.value > 0 ? 1 : -1);
+    setEditStrength((Math.abs(effect.value) as 1 | 2));
   };
 
   if (loading) {
@@ -159,8 +185,10 @@ export default function AdminReviewScreen() {
   };
 
   const commitPrompt = () => {
-    if (promptDraft === question.prompt && categoryDraft === question.category) return;
-    void runAction(() => updateDailyContent(question.id, promptDraft, categoryDraft)).then((ok) => {
+    const trimmedPrompt = promptDraft.trim();
+    const trimmedCategory = categoryDraft.trim();
+    if (trimmedPrompt === question.prompt && trimmedCategory === question.category) return;
+    void runAction(() => updateDailyContent(question.id, trimmedPrompt, trimmedCategory)).then((ok) => {
       if (ok) void reload();
     });
   };
@@ -175,25 +203,31 @@ export default function AdminReviewScreen() {
     });
   };
 
-  const handleAddEffect = (option: DailyOptionRow, dimensionId: PersonalityDimensionId, sign: 1 | -1) => {
+  // Saves the exact pole + strength Michelle chose, in one shot — no follow-up tap is ever
+  // needed to reach +2. `direction` is the human pole she picked (1 = positive pole button,
+  // -1 = negative pole button); the signed raw value stored is direction * strength, which is
+  // the ONLY place a negative number gets produced — Michelle herself never chooses "-2".
+  const handleAddEffect = (option: DailyOptionRow, dimensionId: PersonalityDimensionId, direction: 1 | -1, strength: 1 | 2) => {
     const current = option.personality_effects ?? [];
     if (current.length >= MAX_PERSONALITY_EFFECTS_PER_OPTION || current.some((effect) => effect.dimension === dimensionId)) {
       return;
     }
-    const next = [...current, { dimension: dimensionId, value: sign }];
+    const next = [...current, { dimension: dimensionId, value: (direction * strength) as -2 | -1 | 1 | 2 }];
     commitOption(option, { personalityEffects: next as PersonalityEffect[] });
     setEffectPickerOpenFor(null);
     setPickerDimension(null);
+    setPickerDirection(null);
+    setPickerStrength(1);
   };
 
-  const handleCycleEffectWeight = (option: DailyOptionRow, index: number) => {
+  const handleSaveEditedEffect = (option: DailyOptionRow) => {
+    if (!editingEffect || editingEffect.optionId !== option.id) return;
     const current = option.personality_effects ?? [];
-    const effect = current[index];
-    if (!effect) return;
-    const nextMagnitude = Math.abs(effect.value) === 1 ? 2 : 1;
-    const nextValue = (effect.value > 0 ? nextMagnitude : -nextMagnitude) as -2 | -1 | 1 | 2;
-    const next = current.map((item, i) => (i === index ? { ...item, value: nextValue } : item));
+    const next = current.map((item, i) =>
+      i === editingEffect.index ? { ...item, value: (editDirection * editStrength) as -2 | -1 | 1 | 2 } : item,
+    );
     commitOption(option, { personalityEffects: next as PersonalityEffect[] });
+    setEditingEffect(null);
   };
 
   const handleRemoveEffect = (option: DailyOptionRow, index: number) => {
@@ -231,20 +265,25 @@ export default function AdminReviewScreen() {
 
         <View style={styles.traitRow}>
           {effects.length === 0 && <ThemedText style={styles.suggestionNeededText}>Suggestion needed</ThemedText>}
-          {effects.map((effect, effectIndex) => (
-            <Pressable
-              key={`${effect.dimension}-${effectIndex}`}
-              style={styles.traitChip}
-              disabled={!canEditContent}
-              onPress={() => handleCycleEffectWeight(option, effectIndex)}>
-              <ThemedText style={styles.traitChipText}>{getEffectLabel(effect as PersonalityEffect)}</ThemedText>
-              {canEditContent && (
-                <Pressable hitSlop={8} onPress={() => handleRemoveEffect(option, effectIndex)}>
-                  <ThemedText style={styles.traitChipRemove}>✕</ThemedText>
-                </Pressable>
-              )}
-            </Pressable>
-          ))}
+          {effects.map((effect, effectIndex) => {
+            const isEditingThis = editingEffect?.optionId === option.id && editingEffect.index === effectIndex;
+            return (
+              <Pressable
+                key={`${effect.dimension}-${effectIndex}`}
+                style={[styles.traitChip, isEditingThis && styles.traitChipActive]}
+                disabled={!canEditContent}
+                onPress={() => openEditEffect(option, effectIndex)}>
+                <ThemedText style={[styles.traitChipText, isEditingThis && styles.traitChipTextActive]}>
+                  {getEffectLabel(effect as PersonalityEffect)}
+                </ThemedText>
+                {canEditContent && (
+                  <Pressable hitSlop={8} onPress={() => handleRemoveEffect(option, effectIndex)}>
+                    <ThemedText style={[styles.traitChipRemove, isEditingThis && styles.traitChipTextActive]}>✕</ThemedText>
+                  </Pressable>
+                )}
+              </Pressable>
+            );
+          })}
           {canEditContent && effects.length < MAX_PERSONALITY_EFFECTS_PER_OPTION && (
             <Pressable style={styles.addTraitChip} onPress={() => openEffectPicker(option.id)}>
               <ThemedText style={styles.addTraitChipText}>{pickerOpen ? 'Close' : '+ Add signal'}</ThemedText>
@@ -252,26 +291,116 @@ export default function AdminReviewScreen() {
           )}
         </View>
 
+        {editingEffect?.optionId === option.id &&
+          (() => {
+            const effect = effects[editingEffect.index];
+            const dimension = effect ? PERSONALITY_DIMENSIONS.find((d) => d.id === effect.dimension) : null;
+            if (!effect || !dimension) return null;
+            return (
+              <View style={styles.effectPicker}>
+                <ThemedText style={styles.effectPickerHint}>
+                  {dimension.positiveLabel} / {dimension.negativeLabel}
+                </ThemedText>
+                <ThemedText style={styles.effectPickerCurrent}>
+                  Current: {getEffectLabel(effect as PersonalityEffect)}
+                </ThemedText>
+
+                <ThemedText style={styles.effectPickerSectionLabel}>DIRECTION</ThemedText>
+                <View style={styles.effectPickerPoleRow}>
+                  <Pressable
+                    style={[styles.effectPickerPoleButton, editDirection === 1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setEditDirection(1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, editDirection === 1 && styles.effectPickerTextSelected]}>
+                      {dimension.positiveLabel}
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.effectPickerPoleButton, editDirection === -1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setEditDirection(-1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, editDirection === -1 && styles.effectPickerTextSelected]}>
+                      {dimension.negativeLabel}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+
+                <ThemedText style={styles.effectPickerSectionLabel}>STRENGTH</ThemedText>
+                <View style={styles.effectPickerPoleRow}>
+                  <Pressable
+                    style={[styles.effectPickerStrengthButton, editStrength === 1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setEditStrength(1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, editStrength === 1 && styles.effectPickerTextSelected]}>+1</ThemedText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.effectPickerStrengthButton, editStrength === 2 && styles.effectPickerButtonSelected]}
+                    onPress={() => setEditStrength(2)}>
+                    <ThemedText style={[styles.effectPickerPoleText, editStrength === 2 && styles.effectPickerTextSelected]}>+2</ThemedText>
+                  </Pressable>
+                </View>
+
+                <Pressable style={styles.effectPickerSaveButton} onPress={() => handleSaveEditedEffect(option)}>
+                  <ThemedText style={styles.effectPickerSaveText}>Save</ThemedText>
+                </Pressable>
+              </View>
+            );
+          })()}
+
         {pickerOpen && (
           <View style={styles.effectPicker}>
             {activeDimension ? (
               <>
-                <Pressable onPress={() => setPickerDimension(null)} style={styles.effectPickerBack}>
+                <Pressable
+                  onPress={() => {
+                    setPickerDimension(null);
+                    setPickerDirection(null);
+                    setPickerStrength(1);
+                  }}
+                  style={styles.effectPickerBack}>
                   <ThemedText style={styles.effectPickerBackText}>← Choose a different trait</ThemedText>
                 </Pressable>
+
+                <ThemedText style={styles.effectPickerSectionLabel}>DIRECTION</ThemedText>
                 <View style={styles.effectPickerPoleRow}>
-                  <Pressable style={styles.effectPickerPoleButton} onPress={() => handleAddEffect(option, activeDimension.id, 1)}>
-                    <ThemedText style={styles.effectPickerPoleText}>{activeDimension.positiveLabel}</ThemedText>
+                  <Pressable
+                    style={[styles.effectPickerPoleButton, pickerDirection === 1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setPickerDirection(1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, pickerDirection === 1 && styles.effectPickerTextSelected]}>
+                      {activeDimension.positiveLabel}
+                    </ThemedText>
                   </Pressable>
-                  <Pressable style={styles.effectPickerPoleButton} onPress={() => handleAddEffect(option, activeDimension.id, -1)}>
-                    <ThemedText style={styles.effectPickerPoleText}>{activeDimension.negativeLabel}</ThemedText>
+                  <Pressable
+                    style={[styles.effectPickerPoleButton, pickerDirection === -1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setPickerDirection(-1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, pickerDirection === -1 && styles.effectPickerTextSelected]}>
+                      {activeDimension.negativeLabel}
+                    </ThemedText>
                   </Pressable>
                 </View>
+
+                <ThemedText style={styles.effectPickerSectionLabel}>STRENGTH</ThemedText>
+                <View style={styles.effectPickerPoleRow}>
+                  <Pressable
+                    style={[styles.effectPickerStrengthButton, pickerStrength === 1 && styles.effectPickerButtonSelected]}
+                    onPress={() => setPickerStrength(1)}>
+                    <ThemedText style={[styles.effectPickerPoleText, pickerStrength === 1 && styles.effectPickerTextSelected]}>+1</ThemedText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.effectPickerStrengthButton, pickerStrength === 2 && styles.effectPickerButtonSelected]}
+                    onPress={() => setPickerStrength(2)}>
+                    <ThemedText style={[styles.effectPickerPoleText, pickerStrength === 2 && styles.effectPickerTextSelected]}>+2</ThemedText>
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  style={[styles.effectPickerSaveButton, pickerDirection === null && styles.disabledButton]}
+                  disabled={pickerDirection === null}
+                  onPress={() => handleAddEffect(option, activeDimension.id, pickerDirection as 1 | -1, pickerStrength)}>
+                  <ThemedText style={styles.effectPickerSaveText}>Save</ThemedText>
+                </Pressable>
               </>
             ) : (
               <>
                 <ThemedText style={styles.effectPickerHint}>
-                  Choose a trait, then a direction (up to {MAX_PERSONALITY_EFFECTS_PER_OPTION} per answer).
+                  Choose a trait, then a direction and strength (up to {MAX_PERSONALITY_EFFECTS_PER_OPTION} per answer).
                 </ThemedText>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.effectPickerScrollRow}>
                   {PERSONALITY_DIMENSIONS.map((dimension) => (
@@ -324,18 +453,39 @@ export default function AdminReviewScreen() {
             <ThemedText style={styles.headerMeta}>
               {question.category} · {DAILY_STATUS_LABELS[question.status]}
             </ThemedText>
-            {canEditContent ? (
-              <TextInput
-                value={promptDraft}
-                onChangeText={setPromptDraft}
-                onBlur={commitPrompt}
-                multiline
-                style={styles.questionInput}
-              />
-            ) : (
-              <ThemedText style={styles.questionText}>{question.prompt}</ThemedText>
-            )}
+            {/* Always plain text, never a TextInput here — a large multiline TextInput
+                inside this purple card was the source of a real mobile Safari/RN Web bug
+                where the full question failed to show on initial render (internal scroll
+                offset landing mid-string). This preview always reflects the last-saved
+                prompt; the actual editable field lives in the card below. */}
+            <ThemedText style={styles.questionText}>{question.prompt}</ThemedText>
           </View>
+
+          {canEditContent && (
+            <View style={styles.editFieldsCard}>
+              <View style={styles.editField}>
+                <ThemedText style={styles.editFieldLabel}>QUESTION</ThemedText>
+                <TextInput
+                  value={promptDraft}
+                  onChangeText={setPromptDraft}
+                  onBlur={commitPrompt}
+                  multiline
+                  style={styles.editFieldInput}
+                />
+              </View>
+              <View style={styles.editField}>
+                <ThemedText style={styles.editFieldLabel}>CATEGORY</ThemedText>
+                <TextInput
+                  value={categoryDraft}
+                  onChangeText={setCategoryDraft}
+                  onBlur={commitPrompt}
+                  style={styles.editFieldInputSingle}
+                  placeholder="e.g. Everyday"
+                  placeholderTextColor={Brand.inkSecondary}
+                />
+              </View>
+            </View>
+          )}
 
           {actionError && (
             <View style={styles.issuesCard}>
@@ -429,7 +579,11 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   headerMeta: { color: '#DCD6FF', fontSize: 13, fontWeight: '700' },
   questionText: { color: '#FFFFFF', fontSize: 24, lineHeight: 30, fontWeight: '800', letterSpacing: -0.5, marginTop: Spacing.one },
-  questionInput: { color: '#FFFFFF', fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.4, marginTop: Spacing.one, padding: 0 },
+  editFieldsCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F0E6E8', padding: Spacing.three, gap: Spacing.three },
+  editField: { gap: Spacing.one },
+  editFieldLabel: { color: Brand.violet, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+  editFieldInput: { color: Brand.ink, backgroundColor: '#F6F2FF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', padding: Spacing.two, fontSize: 17, lineHeight: 23, fontWeight: '700', minHeight: 68 },
+  editFieldInputSingle: { color: Brand.ink, backgroundColor: '#F6F2FF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', paddingHorizontal: Spacing.two, paddingVertical: Spacing.two, fontSize: 15, fontWeight: '600' },
   noteCallout: { backgroundColor: '#FCE9ED', borderRadius: 16, padding: Spacing.three, gap: 2 },
   noteCalloutEyebrow: { color: '#9E2E4F', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   noteCalloutText: { color: '#9E2E4F', fontSize: 14, fontWeight: '600', lineHeight: 20 },
@@ -441,7 +595,9 @@ const styles = StyleSheet.create({
   answerTextInput: { flex: 1, color: Brand.ink, fontSize: 20, lineHeight: 26, fontWeight: '800', marginTop: 2, padding: 0 },
   traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one, alignItems: 'center' },
   traitChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F1ECF8', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: 6 },
+  traitChipActive: { backgroundColor: Brand.violet },
   traitChipText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
+  traitChipTextActive: { color: '#FFFFFF' },
   traitChipRemove: { color: Brand.violet, fontSize: 12, fontWeight: '800', opacity: 0.7 },
   addTraitChip: { backgroundColor: '#FFFFFF', borderRadius: 99, borderWidth: 1, borderColor: Brand.violet, paddingHorizontal: Spacing.two, paddingVertical: 6 },
   addTraitChipText: { color: Brand.violet, fontSize: 12, fontWeight: '800' },
@@ -454,9 +610,16 @@ const styles = StyleSheet.create({
   effectPickerDimensionText: { color: Brand.ink, fontSize: 12, fontWeight: '700' },
   effectPickerBack: { alignSelf: 'flex-start' },
   effectPickerBackText: { color: Brand.violet, fontSize: 12, fontWeight: '800' },
+  effectPickerCurrent: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
+  effectPickerSectionLabel: { color: Brand.inkSecondary, fontSize: 10, fontWeight: '800', letterSpacing: 0.8, marginTop: 2 },
   effectPickerPoleRow: { flexDirection: 'row', gap: Spacing.two },
   effectPickerPoleButton: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', paddingVertical: Spacing.two, alignItems: 'center' },
+  effectPickerStrengthButton: { width: 64, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', paddingVertical: Spacing.two, alignItems: 'center' },
+  effectPickerButtonSelected: { backgroundColor: Brand.violet, borderColor: Brand.violet },
   effectPickerPoleText: { color: Brand.ink, fontSize: 13, fontWeight: '800' },
+  effectPickerTextSelected: { color: '#FFFFFF' },
+  effectPickerSaveButton: { backgroundColor: Brand.pink, borderRadius: 12, paddingVertical: Spacing.two, alignItems: 'center', marginTop: Spacing.one },
+  effectPickerSaveText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   revealBlock: { backgroundColor: '#FFE9E0', borderRadius: 18, padding: Spacing.three, gap: 6 },
   revealLabel: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   revealText: { color: Brand.ink, fontSize: 16, lineHeight: 23, fontWeight: '700' },
