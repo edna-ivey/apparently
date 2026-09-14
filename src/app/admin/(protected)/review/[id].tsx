@@ -22,6 +22,7 @@ import {
   updateDailyOption,
 } from '@/services/admin-daily-service';
 import type { DailyOptionRow, DailyQuestionRow } from '@/services/types';
+import { DAILY_CATEGORIES } from '@/utils/admin-categories';
 import { getAdminCompletenessIssues } from '@/utils/admin-completeness';
 import { canTransitionAdminStatus, DAILY_STATUS_LABELS } from '@/utils/admin-transitions';
 import { confirmAction } from '@/utils/confirm-action';
@@ -67,10 +68,26 @@ export default function AdminReviewScreen() {
 
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // CATEGORY picker: a tap-to-open chip list, not free-text-as-primary-UX — selecting a
+  // category saves immediately (no separate Save button), matching how the personality
+  // signal pickers already work. "Other" reveals a small custom-text fallback.
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryDraft, setCustomCategoryDraft] = useState('');
+
+  // QUESTION editing is collapsed behind an explicit "Edit question" toggle rather than
+  // always-visible — this was the single biggest fix for the real production bug: an
+  // always-rendered multiline TextInput with a fixed minHeight clipped the prompt's last
+  // line on mobile Safari because the box never grew to fit 3 wrapped lines. Collapsing it
+  // behind a toggle (so it only mounts, and only needs to size itself, once Michelle asks
+  // for it) plus auto-growing height via onContentSizeChange (see questionInputHeight
+  // below) fixes the clipping outright, not just the discoverability.
+  const [questionEditorOpen, setQuestionEditorOpen] = useState(false);
+  const [questionInputHeight, setQuestionInputHeight] = useState(68);
+
   // Local drafts for text fields — committed on blur, matching the dashboard's own
   // schedule-field pattern, so an admin_update_* RPC isn't fired on every keystroke.
   const [promptDraft, setPromptDraft] = useState('');
-  const [categoryDraft, setCategoryDraft] = useState('');
   const [optionDrafts, setOptionDrafts] = useState<Record<string, { label: string; feedback: string }>>({});
 
   const reload = useCallback(async () => {
@@ -84,7 +101,6 @@ export default function AdminReviewScreen() {
     const optionsResult = await listDailyOptions(id);
     setQuestion(questionResult.data);
     setPromptDraft(questionResult.data.prompt);
-    setCategoryDraft(questionResult.data.category);
     if (optionsResult.ok) {
       setOptions(optionsResult.data);
       setOptionDrafts(
@@ -186,9 +202,36 @@ export default function AdminReviewScreen() {
 
   const commitPrompt = () => {
     const trimmedPrompt = promptDraft.trim();
-    const trimmedCategory = categoryDraft.trim();
-    if (trimmedPrompt === question.prompt && trimmedCategory === question.category) return;
-    void runAction(() => updateDailyContent(question.id, trimmedPrompt, trimmedCategory)).then((ok) => {
+    if (trimmedPrompt === question.prompt) return;
+    void runAction(() => updateDailyContent(question.id, trimmedPrompt, question.category)).then((ok) => {
+      if (ok) void reload();
+    });
+  };
+
+  // Selecting a category saves immediately — no separate Save button, matching the task
+  // spec. Always sends question.prompt (the last-saved value), never promptDraft, so
+  // picking a category can never accidentally commit an in-progress, unsaved prompt edit.
+  const handleSelectCategory = (category: string) => {
+    if (category === 'Other') {
+      setShowCustomCategory(true);
+      setCustomCategoryDraft(DAILY_CATEGORIES.includes(question.category as (typeof DAILY_CATEGORIES)[number]) ? '' : question.category);
+      return;
+    }
+    setCategoryPickerOpen(false);
+    setShowCustomCategory(false);
+    if (category === question.category) return;
+    void runAction(() => updateDailyContent(question.id, question.prompt, category)).then((ok) => {
+      if (ok) void reload();
+    });
+  };
+
+  const handleSaveCustomCategory = () => {
+    const trimmed = customCategoryDraft.trim();
+    if (!trimmed) return; // never allow an empty category
+    setCategoryPickerOpen(false);
+    setShowCustomCategory(false);
+    if (trimmed === question.category) return;
+    void runAction(() => updateDailyContent(question.id, question.prompt, trimmed)).then((ok) => {
       if (ok) void reload();
     });
   };
@@ -457,34 +500,86 @@ export default function AdminReviewScreen() {
                 inside this purple card was the source of a real mobile Safari/RN Web bug
                 where the full question failed to show on initial render (internal scroll
                 offset landing mid-string). This preview always reflects the last-saved
-                prompt; the actual editable field lives in the card below. */}
+                prompt; the actual editable field is reached via "Edit question" below. */}
             <ThemedText style={styles.questionText}>{question.prompt}</ThemedText>
           </View>
 
           {canEditContent && (
-            <View style={styles.editFieldsCard}>
-              <View style={styles.editField}>
-                <ThemedText style={styles.editFieldLabel}>QUESTION</ThemedText>
-                <TextInput
-                  value={promptDraft}
-                  onChangeText={setPromptDraft}
-                  onBlur={commitPrompt}
-                  multiline
-                  style={styles.editFieldInput}
-                />
-              </View>
-              <View style={styles.editField}>
-                <ThemedText style={styles.editFieldLabel}>CATEGORY</ThemedText>
-                <TextInput
-                  value={categoryDraft}
-                  onChangeText={setCategoryDraft}
-                  onBlur={commitPrompt}
-                  style={styles.editFieldInputSingle}
-                  placeholder="e.g. Everyday"
-                  placeholderTextColor={Brand.inkSecondary}
-                />
-              </View>
-            </View>
+            <>
+              {/* An unmistakably tappable control, not plain text that merely happens to
+                  respond to touch — the ▾ chevron and pill/button styling are the whole
+                  point: the previous version looked identical to a read-only label and
+                  Michelle genuinely could not tell it was interactive. */}
+              <Pressable
+                style={styles.categoryPill}
+                onPress={() => {
+                  setCategoryPickerOpen((open) => !open);
+                  setShowCustomCategory(false);
+                }}>
+                <ThemedText style={styles.categoryPillLabel}>CATEGORY</ThemedText>
+                <View style={styles.categoryPillValueRow}>
+                  <ThemedText style={styles.categoryPillValue}>{question.category}</ThemedText>
+                  <ThemedText style={styles.categoryPillChevron}>{categoryPickerOpen ? '▴' : '▾'}</ThemedText>
+                </View>
+              </Pressable>
+
+              {categoryPickerOpen && (
+                <View style={styles.categoryPicker}>
+                  <View style={styles.categoryPickerGrid}>
+                    {DAILY_CATEGORIES.map((cat) => {
+                      const isSelected = cat === question.category || (cat === 'Other' && showCustomCategory);
+                      return (
+                        <Pressable
+                          key={cat}
+                          style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+                          onPress={() => handleSelectCategory(cat)}>
+                          <ThemedText style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>{cat}</ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {showCustomCategory && (
+                    <View style={styles.categoryCustomRow}>
+                      <TextInput
+                        value={customCategoryDraft}
+                        onChangeText={setCustomCategoryDraft}
+                        placeholder="Custom category"
+                        placeholderTextColor={Brand.inkSecondary}
+                        style={styles.categoryCustomInput}
+                      />
+                      <Pressable
+                        style={[styles.categoryCustomSaveButton, !customCategoryDraft.trim() && styles.disabledButton]}
+                        disabled={!customCategoryDraft.trim()}
+                        onPress={handleSaveCustomCategory}>
+                        <ThemedText style={styles.categoryCustomSaveText}>Save</ThemedText>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <Pressable
+                style={styles.editQuestionButton}
+                onPress={() => setQuestionEditorOpen((open) => !open)}>
+                <ThemedText style={styles.editQuestionButtonText}>{questionEditorOpen ? 'Close question editor ↑' : 'Edit question ✎'}</ThemedText>
+              </Pressable>
+
+              {questionEditorOpen && (
+                <View style={styles.editFieldsCard}>
+                  <View style={styles.editField}>
+                    <ThemedText style={styles.editFieldLabel}>QUESTION</ThemedText>
+                    <TextInput
+                      value={promptDraft}
+                      onChangeText={setPromptDraft}
+                      onBlur={commitPrompt}
+                      onContentSizeChange={(e) => setQuestionInputHeight(Math.max(68, e.nativeEvent.contentSize.height))}
+                      multiline
+                      style={[styles.editFieldInput, { height: questionInputHeight }]}
+                    />
+                  </View>
+                </View>
+              )}
+            </>
           )}
 
           {actionError && (
@@ -583,7 +678,26 @@ const styles = StyleSheet.create({
   editField: { gap: Spacing.one },
   editFieldLabel: { color: Brand.violet, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
   editFieldInput: { color: Brand.ink, backgroundColor: '#F6F2FF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', padding: Spacing.two, fontSize: 17, lineHeight: 23, fontWeight: '700', minHeight: 68 },
-  editFieldInputSingle: { color: Brand.ink, backgroundColor: '#F6F2FF', borderRadius: 12, borderWidth: 1, borderColor: '#E8E2FF', paddingHorizontal: Spacing.two, paddingVertical: Spacing.two, fontSize: 15, fontWeight: '600' },
+  // Deliberately styled to look like a real, tappable control (solid card, visible border,
+  // a chevron) rather than plain text — this is the fix for the actual reported bug: the
+  // previous category field was technically a TextInput but read as inert static text.
+  categoryPill: { backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1.5, borderColor: Brand.violet, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: 2 },
+  categoryPillLabel: { color: Brand.violet, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  categoryPillValueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  categoryPillValue: { color: Brand.ink, fontSize: 17, fontWeight: '800' },
+  categoryPillChevron: { color: Brand.violet, fontSize: 16, fontWeight: '800' },
+  categoryPicker: { backgroundColor: '#F8F5FF', borderRadius: 16, padding: Spacing.two, gap: Spacing.two },
+  categoryPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
+  categoryChip: { backgroundColor: '#FFFFFF', borderRadius: 99, borderWidth: 1, borderColor: '#E8E2FF', paddingHorizontal: Spacing.two, paddingVertical: Spacing.one + 2 },
+  categoryChipSelected: { backgroundColor: Brand.violet, borderColor: Brand.violet },
+  categoryChipText: { color: Brand.ink, fontSize: 13, fontWeight: '700' },
+  categoryChipTextSelected: { color: '#FFFFFF' },
+  categoryCustomRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
+  categoryCustomInput: { flex: 1, color: Brand.ink, backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: '#E8E2FF', paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, fontSize: 14, fontWeight: '600' },
+  categoryCustomSaveButton: { backgroundColor: Brand.pink, borderRadius: 10, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  categoryCustomSaveText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  editQuestionButton: { alignSelf: 'flex-start', backgroundColor: '#F5F0FF', borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  editQuestionButtonText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
   noteCallout: { backgroundColor: '#FCE9ED', borderRadius: 16, padding: Spacing.three, gap: 2 },
   noteCalloutEyebrow: { color: '#9E2E4F', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   noteCalloutText: { color: '#9E2E4F', fontSize: 14, fontWeight: '600', lineHeight: 20 },
