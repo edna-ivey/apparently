@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScheduleDateField } from '@/components/admin/schedule-date-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminMaxContentWidth, Brand, BottomTabInset, Spacing } from '@/constants/theme';
@@ -141,9 +142,12 @@ export default function AdminDashboardScreen() {
 
   const getScheduleDraft = (q: DailyQuestionRow) => scheduleDrafts[q.id] ?? q.scheduled_for ?? '';
   const setScheduleDraft = (q: DailyQuestionRow, value: string) => setScheduleDrafts((c) => ({ ...c, [q.id]: value }));
-  const handleScheduleCommit = (q: DailyQuestionRow) => {
-    const draft = getScheduleDraft(q).trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft)) {
+  // Fires on native TextInput blur, and immediately on web's real date-input onChange (a
+  // deliberate calendar selection, unlike free-text entry, needs no separate blur/Save step)
+  // — see src/components/admin/schedule-date-field(.web).tsx for the platform split.
+  const handleScheduleCommit = (q: DailyQuestionRow, value: string) => {
+    const draft = value.trim();
+    if (draft === '' || !/^\d{4}-\d{2}-\d{2}$/.test(draft) || draft === (q.scheduled_for ?? '')) {
       return;
     }
     void runAction('Schedule', () => scheduleDaily(q.id, draft));
@@ -303,11 +307,10 @@ export default function AdminDashboardScreen() {
             {(question.status === 'Approved' || question.status === 'Scheduled') && (
               <View style={styles.scheduleField}>
                 <ThemedText style={styles.scheduleLabel}>Release date</ThemedText>
-                <TextInput
+                <ScheduleDateField
                   value={getScheduleDraft(question)}
                   onChangeText={(value) => setScheduleDraft(question, value)}
-                  onBlur={() => handleScheduleCommit(question)}
-                  placeholder="YYYY-MM-DD"
+                  onCommit={(value) => handleScheduleCommit(question, value)}
                   style={styles.scheduleInput}
                 />
               </View>
