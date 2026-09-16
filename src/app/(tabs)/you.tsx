@@ -114,15 +114,22 @@ export default function YouScreen() {
     // still can't go through just stays queued for the next opportunity.
     await flushPendingQuizSubmissions();
 
-    const [evidenceResult, quizResults] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
+    const [evidenceResult, quizResultsResult] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
+    // Both reads must succeed — a quiz-history fetch failure is NEVER treated as "zero
+    // quizzes completed" (that would silently under-report profileAnswerCount/Your 7 even
+    // though real quiz personality evidence already exists). Never falls back to demo data
+    // on either error — the same small retryable state either way.
     if (!evidenceResult.ok) {
-      // Never fall back to demo data on error — a small retryable state instead.
       setRemoteState({ status: 'error', message: evidenceResult.message });
+      return;
+    }
+    if (!quizResultsResult.ok) {
+      setRemoteState({ status: 'error', message: quizResultsResult.message });
       return;
     }
     const answers = groupEvidenceIntoAnswers(evidenceResult.data);
     const profile = scorePersonalityProfile(answers);
-    const counts = computeProfileActivityCounts(evidenceResult.data, quizResults);
+    const counts = computeProfileActivityCounts(evidenceResult.data, quizResultsResult.data);
     setRemoteState({ status: 'ready', profile, counts });
   }, []);
 

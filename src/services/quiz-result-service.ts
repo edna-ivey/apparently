@@ -77,16 +77,26 @@ export const submitQuizResultRemote = async (payload: SubmitQuizResultPayload): 
   };
 };
 
+export type GetQuizResultsResult = { ok: true; data: QuizResultRow[] } | { ok: false; message: string };
+
 // Full history, oldest first (matching the local store's own append order) — retakes are
 // separate rows, never overwritten. Used by personality-service.ts to compute
 // quizCompletionCount/profileAnswerCount from the user's own real completions.
-export const getQuizResultsRemote = async (): Promise<QuizResultRow[]> => {
+//
+// Returns an explicit ok:false on a genuine fetch failure — NEVER collapses that into
+// ok:true, data:[]. A network/DB failure here is indistinguishable from "zero quizzes
+// completed" if it's silently swallowed into an empty array, which would make You briefly
+// (and wrongly) show a lower quizCompletionCount/profileAnswerCount/Your-7 progress than the
+// user's real, already-earned personality evidence reflects. The caller (personality-service.ts)
+// requires this AND the personality-evidence read to both succeed before treating a remote
+// You profile as loaded.
+export const getQuizResultsRemote = async (): Promise<GetQuizResultsResult> => {
   if (!supabase) {
-    return [];
+    return { ok: false, message: 'Supabase is not configured.' };
   }
   const userId = await getCurrentUserId();
   if (!userId) {
-    return [];
+    return { ok: false, message: 'No active session.' };
   }
 
   const { data, error } = await supabase
@@ -97,7 +107,7 @@ export const getQuizResultsRemote = async (): Promise<QuizResultRow[]> => {
 
   if (error) {
     console.warn('[quiz-result-service] getQuizResultsRemote failed:', error.message);
-    return [];
+    return { ok: false, message: error.message };
   }
-  return data ?? [];
+  return { ok: true, data: data ?? [] };
 };

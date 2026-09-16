@@ -1,5 +1,5 @@
 import { getCurrentUserId } from './auth-service';
-import { getQuizResultsRemote } from './quiz-result-service';
+import { getQuizResultsRemote, type GetQuizResultsResult } from './quiz-result-service';
 import type { PersonalityAnswerEvidence, PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
 import { supabase } from '@/lib/supabase';
 import type { PersonalityEvidenceRow, QuizResultRow } from '@/services/types';
@@ -73,8 +73,12 @@ export const countRealDailyAnswers = (rows: PersonalityEvidenceRow[]): number =>
 
 // The current user's own quiz_results, oldest first — RLS-scoped, never another user's rows.
 // A thin re-export of quiz-result-service.ts's reader kept here too so every You-profile
-// input (Daily evidence AND quiz history) is reachable from this one service module.
+// input (Daily evidence AND quiz history) is reachable from this one service module. Returns
+// ok:false on a genuine fetch failure — the caller (You) must treat that the same as a
+// personality-evidence load failure (the existing retryable error state), never as "zero
+// quizzes completed."
 export const getMyQuizResults = getQuizResultsRemote;
+export type { GetQuizResultsResult };
 
 export type ProfileActivityCounts = {
   // Real Daily answers — same definition countRealDailyAnswers already uses.
