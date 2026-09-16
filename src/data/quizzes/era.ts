@@ -32,6 +32,10 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       body: 'You like intention. Face-to-face conversations, actual plans, good manners, privacy, and fewer moving parts. Constant access does not automatically feel like progress to you. Sometimes simple really is better.',
       kicker: 'We already made the plan. Why are we still discussing the plan?',
       traits: ['Intentional', 'Classic', 'Grounded'],
+      profileSignals: [
+        { dimension: 'private_open', value: 2 },
+        { dimension: 'planner_spontaneous', value: 1 },
+      ],
     },
     {
       id: 'retro-era',
@@ -41,6 +45,11 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       body: 'You like bold energy, independence, spontaneity, and enough technology to be useful without requiring constant coordination. You do not need fourteen messages to leave the house.',
       kicker: 'You do not need a group chat to go somewhere.',
       traits: ['Bold', 'Independent', 'Spontaneous'],
+      profileSignals: [
+        { dimension: 'independent_collaborative', value: 2 },
+        { dimension: 'planner_spontaneous', value: -1 },
+        { dimension: 'adventure_comfort', value: 1 },
+      ],
     },
     {
       id: 'y2k-era',
@@ -52,6 +61,10 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       body: 'You want things expressive, personal, dramatic, funny, and unmistakably yours. Long texts, inside jokes, pop culture rabbit holes, custom everything, and just enough digital chaos to make life interesting.',
       kicker: 'Your away message would have required emotional interpretation.',
       traits: ['Expressive', 'Playful', 'Obsessive'],
+      profileSignals: [
+        { dimension: 'private_open', value: -2 },
+        { dimension: 'playful_serious', value: 1 },
+      ],
     },
     {
       id: 'always-on-era',
@@ -64,6 +77,10 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       body: 'You like instant access, efficient coordination, streaming, delivery, live updates, and knowing the answer while the question is still happening. If technology can remove three steps, you see no reason to keep the three steps.',
       kicker: 'If the answer exists, why are we waiting?',
       traits: ['Connected', 'Efficient', 'Current'],
+      profileSignals: [
+        { dimension: 'patient_urgent', value: -2 },
+        { dimension: 'practical_idealistic', value: 1 },
+      ],
     },
   ],
   questions: [

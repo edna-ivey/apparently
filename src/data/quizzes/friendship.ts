@@ -29,6 +29,10 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You show up. Not just emotionally, but physically, practically, inconveniently. Rides, pickups, food, backup plans, emergency cash, you are the friend who starts moving while everybody else is still saying “oh my God.”',
       kicker: 'You did not volunteer as emergency contact. Somehow you are emergency contact.',
       traits: ['Loyal', 'Dependable', 'Protective'],
+      profileSignals: [
+        { dimension: 'protective_hands_off', value: 2 },
+        { dimension: 'control_allowing', value: 1 },
+      ],
     },
     {
       id: 'reality-check',
@@ -37,6 +41,10 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'People come to you when they want the truth, then sometimes regret how efficiently you provide it. You notice patterns, remember history, and rarely confuse being supportive with pretending a terrible idea is secretly brilliant.',
       kicker: 'You’re not a hater. You brought evidence.',
       traits: ['Honest', 'Observant', 'Direct'],
+      profileSignals: [
+        { dimension: 'direct_indirect', value: 2 },
+        { dimension: 'trust_verify', value: -1 },
+      ],
     },
     {
       id: 'soft-place',
@@ -45,6 +53,10 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You make people feel safe enough to stop performing. You listen before fixing, ask the question underneath the question, and somehow make messy feelings feel less embarrassing just by letting them exist.',
       kicker: 'You’ve heard things. You’re taking them to the grave.',
       traits: ['Empathetic', 'Patient', 'Steady'],
+      profileSignals: [
+        { dimension: 'social_attunement', value: 2 },
+        { dimension: 'patient_urgent', value: 1 },
+      ],
     },
     {
       id: 'instigator',
@@ -53,6 +65,11 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You bring energy, nerve, and just enough questionable encouragement to make ordinary life more interesting. Sometimes your friends need comfort. Sometimes they need someone to say, “Okay, but hear me out...”',
       kicker: 'Somebody had to suggest the bad idea.',
       traits: ['Playful', 'Spontaneous', 'Bold'],
+      profileSignals: [
+        { dimension: 'playful_serious', value: 2 },
+        { dimension: 'planner_spontaneous', value: -1 },
+        { dimension: 'adventure_comfort', value: 1 },
+      ],
     },
   ],
   questions: [

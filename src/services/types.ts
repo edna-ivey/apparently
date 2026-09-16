@@ -82,6 +82,7 @@ export type QuizResultRow = {
   user_id: string;
   quiz_id: string;
   completed_at: string;
+  question_count: number | null;
   score: number;
   percent: number;
   result_id: string;

@@ -133,6 +133,10 @@ export const DATING_QUIZ: NumericBandQuizDefinition = {
       body: 'You say what you mean, recover from small disappointments, and don’t turn every quiet afternoon into a relationship referendum. You still care deeply. You just don’t require someone to solve a riddle before they can love you correctly.',
       kicker: 'No scavenger hunt required.',
       traits: ['Steady', 'Direct', 'Easygoing'],
+      profileSignals: [
+        { dimension: 'direct_indirect', value: 2 },
+        { dimension: 'emotional_intensity', value: -1 },
+      ],
     },
     {
       id: 'a-little-work-worth-it',
@@ -143,6 +147,10 @@ export const DATING_QUIZ: NumericBandQuizDefinition = {
       body: 'You like attention, consistency, and proof that someone is actually paying attention. You’re not asking for psychic powers, but there are definitely moments when “you should know me by now” enters the chat. Once someone learns your rhythm, though, you’re pretty easy to keep happy.',
       kicker: 'There is a manual. You hand it out one page at a time.',
       traits: ['Warm', 'Attentive', 'Particular'],
+      profileSignals: [
+        { dimension: 'emotional_intensity', value: 1 },
+        { dimension: 'sentimental_thick_skinned', value: 1 },
+      ],
     },
     {
       id: 'handle-with-context',
@@ -153,6 +161,11 @@ export const DATING_QUIZ: NumericBandQuizDefinition = {
       body: 'You notice tone, timing, patterns, promises, and the tiny detail someone else thought did not count. Dating you works best with someone who listens the first time and remembers there was a first time. You are not asking for perfection. You are asking for evidence.',
       kicker: 'Please review previous conversations before your next attempt.',
       traits: ['Perceptive', 'Intense', 'Exacting'],
+      profileSignals: [
+        { dimension: 'social_attunement', value: 2 },
+        { dimension: 'emotional_intensity', value: 1 },
+        { dimension: 'trust_verify', value: -1 },
+      ],
     },
     {
       id: 'advanced-placement-dating',
@@ -163,6 +176,11 @@ export const DATING_QUIZ: NumericBandQuizDefinition = {
       body: 'You love hard, expect effort to mean something, and keep a surprisingly detailed internal record of what has and has not been handled correctly. Some expectations are spoken. Some are apparently available through context clues. The right person may love the challenge. Everyone else should study.',
       kicker: 'The syllabus was apparently implied.',
       traits: ['Passionate', 'Devoted', 'Exacting'],
+      profileSignals: [
+        { dimension: 'emotional_intensity', value: 2 },
+        { dimension: 'forgiving_receipts', value: -1 },
+        { dimension: 'direct_indirect', value: -1 },
+      ],
     },
   ],
 };

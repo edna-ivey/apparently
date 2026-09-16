@@ -1,4 +1,4 @@
-import type { PersonalityDimensionId } from '@/data/personality';
+import type { PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
 
 // The shared shape every Explore quiz conforms to. New quizzes should be almost entirely
 // data — one file like petty.ts plus a registry entry — not new UI. The runner screen
@@ -40,6 +40,13 @@ export type QuizResultBand = {
   body: string;
   kicker: string;
   traits: string[];
+  // Result-level (not per-choice) personality signals this result contributes to the living
+  // You profile, ONLY on a quiz's first completion — see src/services/quiz-service.ts and the
+  // submit_quiz_result RPC. Max 3, conservative, authored explicitly from this result's own
+  // title/heroRead/body/kicker/traits — never mechanically derived from `traits` at runtime,
+  // and never a second personality engine: these are exactly the same PersonalityEffect shape
+  // and PersonalityDimensionId values scorePersonalityProfile already consumes.
+  profileSignals?: PersonalityEffect[];
 };
 
 // One possible outcome of an archetype quiz (e.g. "THE COMMANDER"). Structurally identical
@@ -65,6 +72,9 @@ export type QuizArchetype = {
   body: string;
   kicker: string;
   traits: string[];
+  // Same contract as QuizResultBand.profileSignals above — result-level, max 3, first-
+  // completion-only. See that field's comment for the full rationale.
+  profileSignals?: PersonalityEffect[];
 };
 
 // Explore's category filter chips — a fixed, known set (not user-authored strings), so a

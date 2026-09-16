@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { hydrateOnboardingState } from '@/data/onboarding';
+import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 
@@ -56,7 +57,14 @@ export default function RootLayout() {
     // was deliberately moved out of the root layout.
     const isAdminRoute = segments[0] === 'admin';
     if (isRemoteDailyEnabled && !isAdminRoute) {
-      void ensureAnonymousSession();
+      void ensureAnonymousSession().then(() => {
+        // Opportunistic retry for any quiz completion that failed to reach the server
+        // earlier (see pending-quiz-submissions.ts) — "app/session initializes again" is
+        // exactly the moment the spec calls for, alongside You opening (you.tsx's own
+        // loadRemote). A no-op fast path when the queue is empty, same idempotent-safe
+        // shape as ensureAnonymousSession itself.
+        void flushPendingQuizSubmissions();
+      });
     }
   }, [segments]);
 

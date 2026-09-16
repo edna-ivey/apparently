@@ -143,6 +143,10 @@ export const PETTY_QUIZ: QuizDefinition = {
       body: 'You tend to choose peace over proving a point. You notice more than people probably realize, but most things simply are not worth your energy.',
       kicker: 'Your group chat may have questions.',
       traits: ['Easygoing', 'Measured', 'Low-drama'],
+      profileSignals: [
+        { dimension: 'conflict_peacekeeping', value: -2 },
+        { dimension: 'forgiving_receipts', value: 1 },
+      ],
     },
     {
       id: 'selectively-petty',
@@ -153,6 +157,10 @@ export const PETTY_QUIZ: QuizDefinition = {
       body: 'Most things get a pass. But when something hits the right nerve, suddenly you have principles, a memory, and excellent documentation.',
       kicker: 'Honestly, this feels reasonable.',
       traits: ['Observant', 'Boundary-aware', 'Selective'],
+      profileSignals: [
+        { dimension: 'forgiving_receipts', value: -1 },
+        { dimension: 'social_attunement', value: 1 },
+      ],
     },
     {
       id: 'quietly-calculated',
@@ -163,6 +171,11 @@ export const PETTY_QUIZ: QuizDefinition = {
       body: 'You usually know exactly what happened, exactly who did it, and exactly how much energy the situation deserves. You may not make a scene, but please believe the information has been retained.',
       kicker: 'Silence should not be confused with amnesia.',
       traits: ['Strategic', 'Observant', 'Controlled'],
+      profileSignals: [
+        { dimension: 'forgiving_receipts', value: -2 },
+        { dimension: 'control_allowing', value: 1 },
+        { dimension: 'direct_indirect', value: -1 },
+      ],
     },
     {
       id: 'petty-with-purpose',
@@ -173,6 +186,10 @@ export const PETTY_QUIZ: QuizDefinition = {
       body: 'You are not looking for drama everywhere. But when the occasion presents itself, you are willing to participate with organization, creativity, and a very strong sense of fairness.',
       kicker: 'Some lessons require visual aids.',
       traits: ['Direct', 'Bold', 'Justice-minded'],
+      profileSignals: [
+        { dimension: 'direct_indirect', value: 2 },
+        { dimension: 'conflict_peacekeeping', value: 1 },
+      ],
     },
   ],
 };

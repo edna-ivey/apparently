@@ -28,6 +28,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: 'You care about quality, presentation, design, and yes, sometimes the name on the label. If something is going to be yours, you want the version that feels special every time you use it. Function matters. The experience matters too.',
       kicker: 'The logo is not the point. It is, however, invited.',
       traits: ['Elevated', 'Brand-aware', 'Indulgent'],
+      profileSignals: [
+        { dimension: 'practical_idealistic', value: -1 },
+        { dimension: 'sentimental_thick_skinned', value: 1 },
+      ],
     },
     {
       id: 'bargain-hunter',
@@ -36,6 +40,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: 'You take real satisfaction in paying less for something that does the same job. Labels do not impress you nearly as much as value, function, and knowing you did not get played by the price tag.',
       kicker: 'You don’t need the best one. You need the one that works and minds its price.',
       traits: ['Practical', 'Value-driven', 'Resourceful'],
+      profileSignals: [
+        { dimension: 'practical_idealistic', value: 2 },
+        { dimension: 'trust_verify', value: -1 },
+      ],
     },
     {
       id: 'planner',
@@ -44,6 +52,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: 'You research, compare, budget, wait, and buy on purpose. You are fully capable of spending serious money when the purchase makes sense. You just prefer the decision to happen before the card swipe.',
       kicker: 'Your money would like a calendar invite.',
       traits: ['Deliberate', 'Organized', 'Measured'],
+      profileSignals: [
+        { dimension: 'planner_spontaneous', value: 2 },
+        { dimension: 'patient_urgent', value: 1 },
+      ],
     },
     {
       id: 'impulse-spender',
@@ -52,6 +64,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: 'Your purchases tend to begin with a feeling. Excitement, mood, a random little reward, the sudden conviction that this specific thing would improve your life immediately. Sometimes you’re right. The committee rarely gets enough time to investigate.',
       kicker: 'The purchase happened before the committee could meet.',
       traits: ['Spontaneous', 'Emotional', 'Fast-moving'],
+      profileSignals: [
+        { dimension: 'planner_spontaneous', value: -2 },
+        { dimension: 'emotional_intensity', value: 1 },
+      ],
     },
   ],
   questions: [

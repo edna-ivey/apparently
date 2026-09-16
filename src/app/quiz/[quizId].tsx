@@ -9,9 +9,12 @@ import { ThemedView } from '@/components/themed-view';
 import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
+import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, saveQuizResult, useLatestQuizResult } from '@/data/quizzes/results';
 import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
+import { isRemoteDailyEnabled } from '@/lib/supabase';
+import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
 
 export default function QuizScreen() {
   const { quizId, view } = useLocalSearchParams<{ quizId: string; view?: string }>();
@@ -66,7 +69,9 @@ export default function QuizScreen() {
 
   // Persists exactly once per freshly-completed run — stepping into 'result' via the normal
   // quiz flow is the single moment a quiz is "done." Viewing an already-saved result
-  // (savedResultDisplay) never re-saves, so re-opening "See result →" can't duplicate history.
+  // (savedResultDisplay) never re-saves, so re-opening "See result →" can't duplicate history
+  // or resubmit remotely — this whole effect is skipped whenever a saved result is being
+  // viewed instead of a live one just computed.
   useEffect(() => {
     if (savedResultDisplay) {
       savedResult.current = true;
@@ -76,16 +81,50 @@ export default function QuizScreen() {
       return;
     }
     savedResult.current = true;
+
+    // One timestamp, generated once, shared identically by the local record and the remote
+    // submission below — never two separate `new Date()` calls, so local history and the
+    // server's idempotency key always agree on what "this completion" means.
+    const completedAt = new Date().toISOString();
+    const mix = liveResult.mix ? Object.fromEntries(liveResult.mix.map((entry) => [entry.id, entry.percent])) : undefined;
+
     void saveQuizResult({
       quizId: definition.id,
-      completedAt: new Date().toISOString(),
+      completedAt,
       score: liveResult.score,
       percent: liveResult.percent,
       resultId: liveResult.resultId,
       resultTitle: liveResult.resultTitle,
       traits: liveResult.traits,
-      mix: liveResult.mix ? Object.fromEntries(liveResult.mix.map((entry) => [entry.id, entry.percent])) : undefined,
+      mix,
     });
+
+    if (isRemoteDailyEnabled) {
+      const payload: SubmitQuizResultPayload = {
+        quizId: definition.id,
+        quizTitle: definition.title,
+        quizCategory: definition.category,
+        completedAt,
+        questionCount: definition.questions.length,
+        score: liveResult.score,
+        percent: liveResult.percent,
+        resultId: liveResult.resultId,
+        resultTitle: liveResult.resultTitle,
+        traits: liveResult.traits,
+        mix,
+        profileSignals: liveResult.profileSignals,
+      };
+      // Never blocks the result screen — it already renders from local `result` state
+      // regardless of this call. A failure queues the payload for a later retry (You
+      // opening, app/session init — see pending-quiz-submissions.ts) instead of silently
+      // dropping this completion's profile contribution.
+      void (async () => {
+        const remoteResult = await submitQuizResultRemote(payload);
+        if (!remoteResult.ok) {
+          await queuePendingQuizSubmission(payload);
+        }
+      })();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, savedResultDisplay]);
 

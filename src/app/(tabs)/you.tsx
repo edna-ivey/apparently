@@ -17,12 +17,19 @@ import {
   type PersonalityProfile,
 } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
+import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { formatResultMetric, resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
-import { countRealDailyAnswers, getMyPersonalityEvidence, groupEvidenceIntoAnswers } from '@/services/personality-service';
+import {
+  computeProfileActivityCounts,
+  getMyPersonalityEvidence,
+  getMyQuizResults,
+  groupEvidenceIntoAnswers,
+  type ProfileActivityCounts,
+} from '@/services/personality-service';
 
 // Real dimensions (evidenceCount >= 1) ranked for the "EARLY READS" fallback — used only
 // when topTraits is empty (i.e. no dimension has yet reached the >=2 evidenceCount
@@ -44,10 +51,41 @@ const getEarlySignals = (dimensions: DimensionResult[]): DimensionResult[] =>
 // Deliberately modest language for 1-2 real data points — never implies a defining trait.
 const getEarlySignalLabel = (evidenceCount: number): string => (evidenceCount <= 1 ? 'First signal' : 'Early read');
 
+// The section eyebrow above the pattern/early-read cards — staged by profileActivityCount
+// (Dailies + distinct completed quizzes, NOT raw answer volume), matching the product's
+// "the more I answer, the more Apparently You starts to know me" thesis: the label itself
+// grows up as activity accumulates, independent of whether the scoring engine has actually
+// matured any dimension yet at that stage. "Your Patterns" is reserved for 5+ activities AND
+// a real scorePersonalityProfile().topTraits entry — the scoring engine's own mature-trait
+// threshold is never bent just because activityCount crossed 5; short of that, this always
+// falls back to the same honest Early Reads presentation used at every earlier stage.
+const getSectionEyebrow = (activityCount: number, hasMatureTraits: boolean): string => {
+  if (activityCount <= 1) {
+    return 'FIRST SIGNALS';
+  }
+  if (activityCount <= 4) {
+    return "WE'RE NOTICING...";
+  }
+  return hasMatureTraits ? 'YOUR PATTERNS' : 'EARLY READS';
+};
+
+// "1 answer shaping your read" / "11 answers shaping your read" — profileAnswerCount, never
+// raw activity count (a 10-question quiz's first completion is 10 answers here, not 1).
+const formatAnswersShapingRead = (profileAnswerCount: number): string =>
+  `${profileAnswerCount} answer${profileAnswerCount === 1 ? '' : 's'} shaping your read`;
+
+// "1 Daily · 0 quizzes" / "2 Dailies · 1 quiz" / "7 Dailies · 3 quizzes" — dailyAnswerCount and
+// quizCompletionCount (distinct quizzes with >=1 completion; retakes don't add another).
+const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount: number): string => {
+  const dailyWord = dailyAnswerCount === 1 ? 'Daily' : 'Dailies';
+  const quizWord = quizCompletionCount === 1 ? 'quiz' : 'quizzes';
+  return `${dailyAnswerCount} ${dailyWord} · ${quizCompletionCount} ${quizWord}`;
+};
+
 type RemoteYouState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; profile: PersonalityProfile; realAnswerCount: number };
+  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
 
 export default function YouScreen() {
   const router = useRouter();
@@ -70,16 +108,22 @@ export default function YouScreen() {
   const loadRemote = useCallback(async () => {
     setRemoteState({ status: 'loading' });
     await ensureAnonymousSession();
-    const result = await getMyPersonalityEvidence();
-    if (!result.ok) {
+    // Opportunistic retry point for any quiz completion that failed to reach the server
+    // earlier (see pending-quiz-submissions.ts) — "You opening" is exactly the moment the
+    // spec calls for. Never blocks the read below even if it itself fails; a submission that
+    // still can't go through just stays queued for the next opportunity.
+    await flushPendingQuizSubmissions();
+
+    const [evidenceResult, quizResults] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
+    if (!evidenceResult.ok) {
       // Never fall back to demo data on error — a small retryable state instead.
-      setRemoteState({ status: 'error', message: result.message });
+      setRemoteState({ status: 'error', message: evidenceResult.message });
       return;
     }
-    const answers = groupEvidenceIntoAnswers(result.data);
+    const answers = groupEvidenceIntoAnswers(evidenceResult.data);
     const profile = scorePersonalityProfile(answers);
-    const realAnswerCount = countRealDailyAnswers(result.data);
-    setRemoteState({ status: 'ready', profile, realAnswerCount });
+    const counts = computeProfileActivityCounts(evidenceResult.data, quizResults);
+    setRemoteState({ status: 'ready', profile, counts });
   }, []);
 
   useEffect(() => {
@@ -151,9 +195,12 @@ export default function YouScreen() {
             <ThemedText style={styles.name}>{displayName}, apparently.</ThemedText>
             {isRemoteDailyEnabled ? (
               remoteState.status === 'ready' && (
-                <ThemedText style={styles.subline}>
-                  {remoteState.realAnswerCount} Daily answer{remoteState.realAnswerCount === 1 ? '' : 's'}
-                </ThemedText>
+                <>
+                  <ThemedText style={styles.subline}>{formatAnswersShapingRead(remoteState.counts.profileAnswerCount)}</ThemedText>
+                  <ThemedText style={styles.sublineSecondary}>
+                    {formatDailyQuizBreakdown(remoteState.counts.dailyAnswerCount, remoteState.counts.quizCompletionCount)}
+                  </ThemedText>
+                </>
               )
             ) : (
               <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
@@ -214,21 +261,23 @@ export default function YouScreen() {
             </View>
           )}
 
-          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.realAnswerCount === 0 && (
+          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.counts.profileActivityCount === 0 && (
             <View style={styles.emptyStateCard}>
               <ThemedText style={styles.eyebrow}>YOUR STORY STARTS HERE</ThemedText>
-              <ThemedText style={styles.emptyStateCopy}>Answer today&apos;s Daily and take a quiz. We&apos;ll start noticing the patterns.</ThemedText>
+              <ThemedText style={styles.emptyStateCopy}>Answer today&apos;s Daily or take a quiz. We&apos;ll start noticing the patterns.</ThemedText>
               <Pressable style={styles.retryButton} onPress={() => router.push('/')}>
                 <ThemedText style={styles.retryButtonText}>Answer today&apos;s drop →</ThemedText>
               </Pressable>
             </View>
           )}
 
-          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.realAnswerCount > 0 && (
+          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.counts.profileActivityCount > 0 && (
             <>
               {remoteState.profile.topTraits.length > 0 ? (
                 <>
-                  <ThemedText style={styles.sectionTitle}>Your patterns</ThemedText>
+                  <ThemedText style={styles.sectionTitle}>
+                    {getSectionEyebrow(remoteState.counts.profileActivityCount, true)}
+                  </ThemedText>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
                     {remoteState.profile.topTraits.map((pattern, index) => (
                       <View key={pattern.id} style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
@@ -242,7 +291,9 @@ export default function YouScreen() {
               ) : (
                 remoteEarlySignals.length > 0 && (
                   <>
-                    <ThemedText style={styles.sectionTitle}>Early reads</ThemedText>
+                    <ThemedText style={styles.sectionTitle}>
+                      {getSectionEyebrow(remoteState.counts.profileActivityCount, false)}
+                    </ThemedText>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
                       {remoteEarlySignals.map((dimension, index) => (
                         <View
@@ -263,15 +314,15 @@ export default function YouScreen() {
               <View style={styles.progressCard}>
                 <View style={styles.progressTop}>
                   <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
-                  <ThemedText style={styles.progressCount}>{remoteState.realAnswerCount} / 50</ThemedText>
+                  <ThemedText style={styles.progressCount}>{remoteState.counts.profileAnswerCount} / 50</ThemedText>
                 </View>
                 <ThemedText style={styles.progressTitle}>
-                  {remoteState.realAnswerCount < 50
-                    ? `${50 - remoteState.realAnswerCount} more answers until Your 7.`
-                    : 'Your 7 is live.'}
+                  {remoteState.counts.profileAnswerCount < 50
+                    ? `${50 - remoteState.counts.profileAnswerCount} more answers until Your 7.`
+                    : 'Your 7 is ready.'}
                 </ThemedText>
                 <View style={styles.track}>
-                  <View style={[styles.fill, { width: `${Math.min(100, (remoteState.realAnswerCount / 50) * 100)}%` }]} />
+                  <View style={[styles.fill, { width: `${Math.min(100, (remoteState.counts.profileAnswerCount / 50) * 100)}%` }]} />
                 </View>
               </View>
             </>
@@ -328,6 +379,7 @@ const styles = StyleSheet.create({
   avatarImage: { width: 92, height: 92 },
   name: { color: Brand.ink, fontSize: 22, fontWeight: '800' },
   subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
+  sublineSecondary: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', opacity: 0.75, marginTop: 1 },
   scoreCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#F0E6E8' },
   eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   score: { color: Brand.ink, fontSize: 54, lineHeight: 58, fontWeight: '900' },

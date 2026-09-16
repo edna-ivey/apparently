@@ -1,3 +1,5 @@
+import type { PersonalityEffect } from '@/data/personality';
+
 import type { ArchetypeQuizDefinition, NumericBandQuizDefinition, QuizArchetype, QuizDefinition, QuizResultBand } from './types';
 import type { QuizResultRecord } from './results';
 
@@ -148,6 +150,11 @@ export type ResultDisplay = {
   // BESIDES the all-caps verdict heading (share text, and mix rows for archetype quizzes,
   // which now populate their own `title` with this same resolution — see below).
   resultDisplayTitle: string;
+  // Only ever populated by computeQuizResult (a FRESH completion) — reconstructResultDisplay
+  // (the ?view=result / "See result →" read-only path) deliberately leaves this undefined, so
+  // it is structurally impossible for viewing an old saved result to carry signals a caller
+  // could mistakenly submit as new profile evidence. See quiz/[quizId].tsx.
+  profileSignals?: PersonalityEffect[];
 };
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
@@ -173,6 +180,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       mixLabel: definition.mixLabel,
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
+      profileSignals: primary.profileSignals,
     };
   }
 
@@ -189,6 +197,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     percent,
     meterLabel: definition.meterLabel,
     resultDisplayTitle: defaultTitleCase(band.title),
+    profileSignals: band.profileSignals,
   };
 };
 

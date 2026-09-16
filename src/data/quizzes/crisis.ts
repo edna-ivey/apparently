@@ -27,6 +27,11 @@ export const CRISIS_QUIZ: ArchetypeQuizDefinition = {
       body: 'When things go sideways, you tend to get decisive fast. You organize the chaos, make the call, and start assigning jobs before anyone has officially agreed you’re in charge.',
       kicker: 'Nobody voted. Somehow you’re leading.',
       traits: ['Decisive', 'Direct', 'Protective'],
+      profileSignals: [
+        { dimension: 'control_allowing', value: 2 },
+        { dimension: 'curious_decisive', value: -2 },
+        { dimension: 'direct_indirect', value: 1 },
+      ],
     },
     {
       id: 'fixer',
@@ -35,6 +40,10 @@ export const CRISIS_QUIZ: ArchetypeQuizDefinition = {
       body: 'Your brain goes straight to the problem. What broke? What do we need? What can we do right now? You feel better when something useful is happening, preferably immediately.',
       kicker: 'Feelings are welcome after we solve the problem.',
       traits: ['Resourceful', 'Practical', 'Focused'],
+      profileSignals: [
+        { dimension: 'practical_idealistic', value: 2 },
+        { dimension: 'patient_urgent', value: -1 },
+      ],
     },
     {
       id: 'anchor',
@@ -43,6 +52,11 @@ export const CRISIS_QUIZ: ArchetypeQuizDefinition = {
       body: 'When everyone else gets louder, you tend to get steadier. You notice who is overwhelmed, lower the temperature, and somehow make people feel like this might actually be okay.',
       kicker: 'Every chaotic group has one emotional support human.',
       traits: ['Steady', 'Supportive', 'Observant'],
+      profileSignals: [
+        { dimension: 'emotional_intensity', value: -2 },
+        { dimension: 'conflict_peacekeeping', value: -1 },
+        { dimension: 'social_attunement', value: 1 },
+      ],
     },
     {
       id: 'improviser',
@@ -51,6 +65,10 @@ export const CRISIS_QUIZ: ArchetypeQuizDefinition = {
       body: 'You adapt quickly when reality refuses to cooperate. You trust your instincts, work with what you have, and are surprisingly good at turning “well, this is bad” into “okay, here’s what we’re doing.”',
       kicker: 'Plan B is more of a lifestyle.',
       traits: ['Adaptable', 'Instinctive', 'Creative'],
+      profileSignals: [
+        { dimension: 'planner_spontaneous', value: -2 },
+        { dimension: 'adventure_comfort', value: 1 },
+      ],
     },
   ],
   questions: [

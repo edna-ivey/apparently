@@ -31,6 +31,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       body: 'You know what you like and see no reason to turn dinner into a risk assessment. Familiar is not boring when familiar keeps being delicious. Other people call it predictable. You call it repeatedly correct.',
       kicker: 'Your favorite restaurant already knows why you’re calling.',
       traits: ['Loyal', 'Comfort-driven', 'Decisive'],
+      profileSignals: [
+        { dimension: 'adventure_comfort', value: -2 },
+        { dimension: 'curious_decisive', value: -1 },
+      ],
     },
     {
       id: 'menu-critic',
@@ -39,6 +43,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       body: 'You read the menu like it contains evidence. Preparation matters. Reviews matter. Temperature matters. If you’re paying restaurant prices, you would like the restaurant portion of the experience to actually perform.',
       kicker: 'The fries had one job.',
       traits: ['Particular', 'Observant', 'Discerning'],
+      profileSignals: [
+        { dimension: 'trust_verify', value: -2 },
+        { dimension: 'social_attunement', value: 1 },
+      ],
     },
     {
       id: 'table-ceo',
@@ -50,6 +58,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       body: 'You know who’s sharing, who has allergies, whether the table ordered enough, and which person is pretending they don’t want fries. You did not ask to run dinner. You simply noticed no one else was doing it correctly.',
       kicker: 'You came to eat. You accidentally became management.',
       traits: ['Considerate', 'Social', 'Organized'],
+      profileSignals: [
+        { dimension: 'independent_collaborative', value: -2 },
+        { dimension: 'control_allowing', value: 1 },
+      ],
     },
     {
       id: 'wildcard',
@@ -58,6 +70,11 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       body: 'You would rather risk a strange meal than order something boring on purpose. Specials, tiny restaurants, mystery ingredients, suspicious sauces, you are here for the possibility that dinner becomes a story.',
       kicker: 'Best case, incredible. Worst case, still content.',
       traits: ['Curious', 'Adventurous', 'Impulsive'],
+      profileSignals: [
+        { dimension: 'adventure_comfort', value: 2 },
+        { dimension: 'planner_spontaneous', value: -1 },
+        { dimension: 'curious_decisive', value: 1 },
+      ],
     },
   ],
   questions: [
