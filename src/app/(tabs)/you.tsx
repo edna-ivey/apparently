@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,25 +8,98 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
-import { getDemoPersonalityProfile, getSignatureStrengthLabel } from '@/data/personality';
+import {
+  getDemoPersonalityProfile,
+  getSignatureStrengthLabel,
+  PERSONALITY_DIMENSIONS,
+  scorePersonalityProfile,
+  type DimensionResult,
+  type PersonalityProfile,
+} from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { formatResultMetric, resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
+import { isRemoteDailyEnabled } from '@/lib/supabase';
+import { ensureAnonymousSession } from '@/services/auth-service';
+import { countRealDailyAnswers, getMyPersonalityEvidence, groupEvidenceIntoAnswers } from '@/services/personality-service';
+
+// Real dimensions (evidenceCount >= 1) ranked for the "EARLY READS" fallback — used only
+// when topTraits is empty (i.e. no dimension has yet reached the >=2 evidenceCount
+// scorePersonalityProfile requires for a real signature trait). Rank: evidenceCount, then
+// signatureStrength, then a fixed deterministic dimension order as the final tie-break, so
+// two dimensions with identical real evidence never flicker order between renders.
+const DIMENSION_ORDER = new Map(PERSONALITY_DIMENSIONS.map((dimension, index) => [dimension.id, index]));
+
+const getEarlySignals = (dimensions: DimensionResult[]): DimensionResult[] =>
+  dimensions
+    .filter((dimension) => dimension.evidenceCount >= 1)
+    .sort((a, b) => {
+      if (b.evidenceCount !== a.evidenceCount) return b.evidenceCount - a.evidenceCount;
+      if (b.signatureStrength !== a.signatureStrength) return b.signatureStrength - a.signatureStrength;
+      return (DIMENSION_ORDER.get(a.dimension) ?? 0) - (DIMENSION_ORDER.get(b.dimension) ?? 0);
+    })
+    .slice(0, 5);
+
+// Deliberately modest language for 1-2 real data points — never implies a defining trait.
+const getEarlySignalLabel = (evidenceCount: number): string => (evidenceCount <= 1 ? 'First signal' : 'Early read');
+
+type RemoteYouState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; profile: PersonalityProfile; realAnswerCount: number };
 
 export default function YouScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
-  const personalityProfile = useMemo(() => getDemoPersonalityProfile(), []);
-  const topPatterns = personalityProfile.topTraits;
-  const answersCount = personalityProfile.answeredCount;
-  const remainingToReveal = Math.max(0, 50 - answersCount);
+
+  // Local prototype path — completely unchanged, still built from the same demo data. Only
+  // ever rendered when isRemoteDailyEnabled is false (see the branch in the JSX below).
+  const localPersonalityProfile = useMemo(() => getDemoPersonalityProfile(), []);
+  const localTopPatterns = localPersonalityProfile.topTraits;
+  const localAnswersCount = localPersonalityProfile.answeredCount;
+  const localRemainingToReveal = Math.max(0, 50 - localAnswersCount);
+
+  // Real remote path — Michelle's/a real tester's own personality_evidence, never demo data.
+  // Uses the SAME consumer anonymous identity Today already established (ensureAnonymousSession
+  // is idempotent/concurrent-safe — see auth-service.ts); never creates a second identity,
+  // never touches Admin auth.
+  const [remoteState, setRemoteState] = useState<RemoteYouState>({ status: 'loading' });
+
+  const loadRemote = useCallback(async () => {
+    setRemoteState({ status: 'loading' });
+    await ensureAnonymousSession();
+    const result = await getMyPersonalityEvidence();
+    if (!result.ok) {
+      // Never fall back to demo data on error — a small retryable state instead.
+      setRemoteState({ status: 'error', message: result.message });
+      return;
+    }
+    const answers = groupEvidenceIntoAnswers(result.data);
+    const profile = scorePersonalityProfile(answers);
+    const realAnswerCount = countRealDailyAnswers(result.data);
+    setRemoteState({ status: 'ready', profile, realAnswerCount });
+  }, []);
+
+  useEffect(() => {
+    if (isRemoteDailyEnabled) {
+      void loadRemote();
+    }
+  }, [loadRemote]);
+
+  const remoteEarlySignals = useMemo(() => {
+    if (remoteState.status !== 'ready' || remoteState.profile.topTraits.length > 0) {
+      return [];
+    }
+    return getEarlySignals(remoteState.profile.dimensions);
+  }, [remoteState]);
 
   // Additive only — reads the same persisted quiz-results store the quiz runner writes to
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
   // for the same reason useUserProfile is: completing a quiz and landing straight on You in
-  // the same session must not require a restart to show up.
+  // the same session must not require a restart to show up. Real local data, used identically
+  // in both local and remote mode — untouched by this sprint's remote-truth cleanup.
   //
   // Generic across every quiz, not hardcoded to Petty: Recent Read is whichever quiz was
   // completed most recently (results are appended in completion order, so the last entry in
@@ -50,6 +123,20 @@ export default function YouScreen() {
   const firstName = userProfile === 'loading' ? null : userProfile?.firstName ?? null;
   const displayName = firstName && firstName.trim().length > 0 ? firstName : 'You';
 
+  const recentReadCard = latestQuizDefinition && latestResult && (
+    <Pressable
+      onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: latestResult.quizId, view: 'result' } })}
+      style={styles.recentReadCard}>
+      <ThemedText style={styles.eyebrow}>RECENT READ</ThemedText>
+      <ThemedText style={styles.recentReadQuizTitle}>{latestQuizDefinition.title}</ThemedText>
+      <ThemedText style={styles.recentReadResultTitle}>
+        {resolveResultDisplayTitle(latestQuizDefinition, latestResult.resultId) ?? latestResult.resultTitle}
+      </ThemedText>
+      <ThemedText style={styles.recentReadMeter}>{formatResultMetric(latestQuizDefinition, latestResult)}</ThemedText>
+      <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
+    </Pressable>
+  );
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
@@ -62,53 +149,135 @@ export default function YouScreen() {
               <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={styles.avatarImage} />
             </View>
             <ThemedText style={styles.name}>{displayName}, apparently.</ThemedText>
-            <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
-          </View>
-          <View style={styles.scoreCard}>
-            <ThemedText style={styles.eyebrow}>YOUR COMMONALITY</ThemedText>
-            <ThemedText style={styles.score}>37%</ThemedText>
-            <ThemedText style={styles.scoreLabel}>Uncommon</ThemedText>
-            <ThemedText style={styles.copy}>You tend to zig when the room zags. Respectfully.</ThemedText>
-          </View>
-          <ThemedText style={styles.sectionTitle}>Your patterns</ThemedText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.patternList}>
-            {topPatterns.map((pattern, index) => (
-              <View key={pattern.id} style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
-                <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
-                <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
-                {/* Not pattern.percent: that number clamps to 88 for nearly every top trait
-                    at this evidence scale, which is what made five cards show identical,
-                    fake-looking values — signatureStrength is the real, already-computed
-                    ranking signal, just read qualitatively instead of as a raw percent. */}
-                <ThemedText style={styles.patternStrength}>
-                  {getSignatureStrengthLabel(pattern.signatureStrength)}
+            {isRemoteDailyEnabled ? (
+              remoteState.status === 'ready' && (
+                <ThemedText style={styles.subline}>
+                  {remoteState.realAnswerCount} Daily answer{remoteState.realAnswerCount === 1 ? '' : 's'}
                 </ThemedText>
-              </View>
-            ))}
-          </ScrollView>
-          {latestQuizDefinition && latestResult && (
-            <Pressable
-              onPress={() =>
-                router.push({ pathname: '/quiz/[quizId]', params: { quizId: latestResult.quizId, view: 'result' } })
-              }
-              style={styles.recentReadCard}>
-              <ThemedText style={styles.eyebrow}>RECENT READ</ThemedText>
-              <ThemedText style={styles.recentReadQuizTitle}>{latestQuizDefinition.title}</ThemedText>
-              <ThemedText style={styles.recentReadResultTitle}>
-                {resolveResultDisplayTitle(latestQuizDefinition, latestResult.resultId) ?? latestResult.resultTitle}
-              </ThemedText>
-              <ThemedText style={styles.recentReadMeter}>{formatResultMetric(latestQuizDefinition, latestResult)}</ThemedText>
-              <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
-            </Pressable>
-          )}
-          <View style={styles.progressCard}>
-            <View style={styles.progressTop}><ThemedText style={styles.eyebrow}>YOUR 7</ThemedText><ThemedText style={styles.progressCount}>{answersCount} / 50</ThemedText></View>
-            <ThemedText style={styles.progressTitle}>{remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}</ThemedText>
-            <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, (answersCount / 50) * 100)}%` }]} /></View>
+              )
+            ) : (
+              <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
+            )}
           </View>
+
+          {!isRemoteDailyEnabled && (
+            <>
+              <View style={styles.scoreCard}>
+                <ThemedText style={styles.eyebrow}>YOUR COMMONALITY</ThemedText>
+                <ThemedText style={styles.score}>37%</ThemedText>
+                <ThemedText style={styles.scoreLabel}>Uncommon</ThemedText>
+                <ThemedText style={styles.copy}>You tend to zig when the room zags. Respectfully.</ThemedText>
+              </View>
+              <ThemedText style={styles.sectionTitle}>Your patterns</ThemedText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+                {localTopPatterns.map((pattern, index) => (
+                  <View key={pattern.id} style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
+                    <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
+                    <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
+                    {/* Not pattern.percent: that number clamps to 88 for nearly every top
+                        trait at this evidence scale, which is what made five cards show
+                        identical, fake-looking values — signatureStrength is the real,
+                        already-computed ranking signal, just read qualitatively instead of
+                        as a raw percent. */}
+                    <ThemedText style={styles.patternStrength}>{getSignatureStrengthLabel(pattern.signatureStrength)}</ThemedText>
+                  </View>
+                ))}
+              </ScrollView>
+              {recentReadCard}
+              <View style={styles.progressCard}>
+                <View style={styles.progressTop}>
+                  <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
+                  <ThemedText style={styles.progressCount}>{localAnswersCount} / 50</ThemedText>
+                </View>
+                <ThemedText style={styles.progressTitle}>
+                  {localRemainingToReveal > 0 ? `${localRemainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
+                </ThemedText>
+                <View style={styles.track}>
+                  <View style={[styles.fill, { width: `${Math.min(100, (localAnswersCount / 50) * 100)}%` }]} />
+                </View>
+              </View>
+            </>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status === 'loading' && (
+            <View style={styles.stateCard}>
+              <ThemedText style={styles.stateText}>Loading your read…</ThemedText>
+            </View>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status === 'error' && (
+            <View style={styles.stateCard}>
+              <ThemedText style={styles.stateText}>We couldn&apos;t load your read right now.</ThemedText>
+              <Pressable style={styles.retryButton} onPress={() => void loadRemote()}>
+                <ThemedText style={styles.retryButtonText}>Retry →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.realAnswerCount === 0 && (
+            <View style={styles.emptyStateCard}>
+              <ThemedText style={styles.eyebrow}>YOUR STORY STARTS HERE</ThemedText>
+              <ThemedText style={styles.emptyStateCopy}>Answer today&apos;s Daily and take a quiz. We&apos;ll start noticing the patterns.</ThemedText>
+              <Pressable style={styles.retryButton} onPress={() => router.push('/')}>
+                <ThemedText style={styles.retryButtonText}>Answer today&apos;s drop →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.realAnswerCount > 0 && (
+            <>
+              {remoteState.profile.topTraits.length > 0 ? (
+                <>
+                  <ThemedText style={styles.sectionTitle}>Your patterns</ThemedText>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+                    {remoteState.profile.topTraits.map((pattern, index) => (
+                      <View key={pattern.id} style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
+                        <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
+                        <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
+                        <ThemedText style={styles.patternStrength}>{getSignatureStrengthLabel(pattern.signatureStrength)}</ThemedText>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </>
+              ) : (
+                remoteEarlySignals.length > 0 && (
+                  <>
+                    <ThemedText style={styles.sectionTitle}>Early reads</ThemedText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+                      {remoteEarlySignals.map((dimension, index) => (
+                        <View
+                          key={dimension.dimension}
+                          style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
+                          <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
+                          <ThemedText style={styles.patternName}>{dimension.displayName}</ThemedText>
+                          <ThemedText style={styles.patternStrength}>{getEarlySignalLabel(dimension.evidenceCount)}</ThemedText>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </>
+                )
+              )}
+
+              {recentReadCard}
+
+              <View style={styles.progressCard}>
+                <View style={styles.progressTop}>
+                  <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
+                  <ThemedText style={styles.progressCount}>{remoteState.realAnswerCount} / 50</ThemedText>
+                </View>
+                <ThemedText style={styles.progressTitle}>
+                  {remoteState.realAnswerCount < 50
+                    ? `${50 - remoteState.realAnswerCount} more answers until Your 7.`
+                    : 'Your 7 is live.'}
+                </ThemedText>
+                <View style={styles.track}>
+                  <View style={[styles.fill, { width: `${Math.min(100, (remoteState.realAnswerCount / 50) * 100)}%` }]} />
+                </View>
+              </View>
+            </>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status !== 'ready' && recentReadCard}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -187,4 +356,11 @@ const styles = StyleSheet.create({
   progressTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
   track: { height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: '#FFFFFF' },
   fill: { width: '86%', height: '100%', backgroundColor: Brand.pink },
+  // Remote-only loading/error/empty states — never demo data behind any of these.
+  stateCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8', alignItems: 'center' },
+  stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  retryButton: { backgroundColor: Brand.pink, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  emptyStateCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8', alignItems: 'center' },
+  emptyStateCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
 });
