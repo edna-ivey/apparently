@@ -12,6 +12,7 @@ export const PETTY_QUIZ: QuizDefinition = {
   id: 'petty',
   scoringType: 'numericBand',
   category: 'Ridiculous',
+  access: 'free',
   title: 'How petty are you actually?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Eight questions. No judgment.', 'Okay, maybe a little.'],

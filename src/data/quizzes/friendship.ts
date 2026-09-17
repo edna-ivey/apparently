@@ -13,6 +13,7 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
   id: 'friendship',
   scoringType: 'archetype',
   category: 'Friendship',
+  access: 'free',
   title: 'What kind of friend are you, actually?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Your friends already know.', 'Let’s see if you do.'],

@@ -77,14 +77,38 @@ export type QuizArchetype = {
   profileSignals?: PersonalityEffect[];
 };
 
-// Explore's category filter chips — a fixed, known set (not user-authored strings), so a
-// future "filter by category" pass has a real enum to switch on instead of loose strings.
-export type QuizCategory = 'Love' | 'Friendship' | 'Food' | 'Money' | 'Nostalgia' | 'Ridiculous';
+// Free Explore's category filter chips — a fixed, known set (not user-authored strings), so
+// the free filter row has a real enum to switch on instead of loose strings. Kept separate
+// from PrivateQuizCategory below so the free pill row can never accidentally render a Private
+// category — see explore.tsx, which imports FreeQuizCategory specifically, not QuizCategory.
+export type FreeQuizCategory = 'Love' | 'Friendship' | 'Food' | 'Money' | 'Nostalgia' | 'Ridiculous';
+
+// Apparently Private's own category set — a different "room," never mixed into the free pill
+// row. Only src/app/private.tsx and the locked catalog (private-catalog.ts) reference this.
+export type PrivateQuizCategory =
+  | 'Love & Soulmates'
+  | 'Career & Ambition'
+  | 'Hidden You'
+  | 'Shadow Side'
+  | 'The Good Stuff'
+  | 'Life Match'
+  | 'Style & Vibe';
+
+export type QuizCategory = FreeQuizCategory | PrivateQuizCategory;
+
+// Merchandising/access metadata, deliberately separate from scoring — a quiz's scoringType
+// never changes based on who can reach it. 'free': the 12 free Explore quizzes. 'private-
+// preview': the one real playable Apparently Private quiz (secretly-love) — fully playable,
+// contributes to You exactly like any other quiz, just surfaced inside the Private room.
+// 'private': a future paid playable quiz (none exist yet this sprint — locked teasers in
+// private-catalog.ts are NOT QuizDefinitions and never appear in QUIZ_REGISTRY).
+export type QuizAccess = 'free' | 'private-preview' | 'private';
 
 type QuizBase = {
   id: string;
   title: string;
   category: QuizCategory;
+  access: QuizAccess;
   eyebrow: string;
   // Intro support copy, one paragraph per line (same "separate lines" rationale as heroRead).
   introSupport: string[];

@@ -11,6 +11,7 @@ export const CRISIS_QUIZ: ArchetypeQuizDefinition = {
   id: 'crisis',
   scoringType: 'archetype',
   category: 'Ridiculous',
+  access: 'free',
   title: 'Which version of you shows up in a crisis?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Plans fall apart.', 'People start panicking.', 'Who shows up?'],

@@ -11,6 +11,7 @@ export const DATING_QUIZ: NumericBandQuizDefinition = {
   id: 'dating',
   scoringType: 'numericBand',
   category: 'Love',
+  access: 'free',
   title: 'How hard are you to date?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['You are absolutely dateable.', 'The maintenance level is the question.'],

@@ -7,30 +7,39 @@ import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
-import { getQuizDefinition, type QuizCategory } from '@/data/quizzes';
+import { getQuizDefinition, type FreeQuizCategory } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
-type CategoryFilter = 'All' | QuizCategory;
+// FreeQuizCategory specifically — NOT the general QuizCategory union — so an Apparently
+// Private category (e.g. "Love & Soulmates") can never accidentally leak into this pill row.
+type CategoryFilter = 'All' | FreeQuizCategory;
 
 // "All" first and selected by default, per spec.
 const CATEGORY_PILLS: CategoryFilter[] = ['All', 'Love', 'Friendship', 'Food', 'Money', 'Nostalgia', 'Ridiculous'];
 
-// One card style per real, registered quiz — title/category/question count are read from the
-// quiz's own definition below (single source of truth, no duplicated copy); this array only
-// supplies the visual, card-only bits the definitions don't carry.
+// One card style per real, registered FREE quiz — title/category/question count are read from
+// the quiz's own definition below (single source of truth, no duplicated copy); this array
+// only supplies the visual, card-only bits the definitions don't carry. secretly-love is
+// deliberately excluded — it lives in Apparently Private (see private.tsx), never here.
 const QUIZ_CARD_STYLE: { id: string; color: string; accent: string }[] = [
   { id: 'petty', color: '#FFE5EF', accent: Brand.pink },
   { id: 'dating', color: '#FFE3E8', accent: '#E0527A' },
+  { id: 'ick', color: '#FFE9E3', accent: '#D9603C' },
   { id: 'friendship', color: '#DDF5EE', accent: '#318F7D' },
+  { id: 'group-chat', color: '#E1F7EF', accent: '#1F9E82' },
   { id: 'food-order', color: '#FFF0D2', accent: '#C97A2E' },
+  { id: 'one-bite', color: '#FFF6DE', accent: '#B8860B' },
   { id: 'spending', color: '#E8F1FF', accent: '#3B6FB6' },
+  { id: 'unexpected-money', color: '#E3ECFF', accent: '#2F53A6' },
   { id: 'era', color: '#F3E8FF', accent: '#7C4DBE' },
+  { id: 'kid-you', color: '#F7EAFF', accent: '#9256C9' },
   { id: 'crisis', color: '#E8E3FF', accent: Brand.violet },
 ];
 
-// The one Featured quiz per category pill, per the approved mapping.
+// The one Featured quiz per category pill, per the approved mapping — still one quiz each,
+// the second quiz in every category surfaces in the library below instead.
 const FEATURED_QUIZ_ID: Record<CategoryFilter, string> = {
   All: 'crisis',
   Love: 'dating',
@@ -44,7 +53,7 @@ const FEATURED_QUIZ_ID: Record<CategoryFilter, string> = {
 type QuizCard = {
   id: string;
   title: string;
-  category: QuizCategory;
+  category: FreeQuizCategory;
   meta: string;
   color: string;
   accent: string;
@@ -87,7 +96,9 @@ export default function ExploreScreen() {
         return {
           id: style.id,
           title: definition.title,
-          category: definition.category,
+          // Safe: QUIZ_CARD_STYLE only ever lists free-access quiz ids (asserted, not
+          // user input) — Apparently Private's secretly-love is deliberately excluded above.
+          category: definition.category as FreeQuizCategory,
           meta: `${definition.questions.length} questions · ${definition.category}`,
           color: style.color,
           accent: style.accent,
@@ -181,6 +192,14 @@ export default function ExploreScreen() {
               <ThemedText style={styles.startText}>{featuredQuiz.completed ? 'Retake quiz →' : 'Take the quiz →'}</ThemedText>
             </Pressable>
           </View>
+          <Pressable style={styles.privatePortal} onPress={() => router.push('/private')}>
+            <ThemedText style={styles.privatePortalEyebrow}>APPARENTLY PRIVATE</ThemedText>
+            <ThemedText style={styles.privatePortalTitle}>The questions get a little more personal in here.</ThemedText>
+            <ThemedText style={styles.privatePortalSupport}>One preview unlocked.</ThemedText>
+            <View style={styles.privatePortalCta}>
+              <ThemedText style={styles.privatePortalCtaText}>Enter Private →</ThemedText>
+            </View>
+          </Pressable>
           <View style={styles.quizList}>
             {incompleteQuizzes.length > 0 && (
               <>
@@ -198,17 +217,6 @@ export default function ExploreScreen() {
                 {completedQuizzes.map(renderQuizCard)}
               </>
             )}
-            {/* A clearly-labeled teaser, not a real purchasable quiz — stays visible regardless
-                of category, same as before. No-op onPress; "Locked" + the plum treatment signals
-                a preview of a more exclusive layer, not that anything unlocks. */}
-            <Pressable style={styles.privateQuizCard} onPress={() => {}}>
-              <View style={styles.quizHeader}>
-                <ThemedText style={styles.privateQuizBadge}>PRIVATE</ThemedText>
-                <ThemedText style={styles.privateQuizLocked}>Locked</ThemedText>
-              </View>
-              <ThemedText style={styles.privateQuizTitle}>How emotionally expensive are you?</ThemedText>
-              <ThemedText style={styles.privateQuizMeta}>9 questions · Private</ThemedText>
-            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -271,10 +279,12 @@ const styles = StyleSheet.create({
   quizTitle: { color: Brand.ink, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
   quizMeta: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600' },
   quizLastResult: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700' },
-  // The plum premium surface — visibly a different room from the pastel free cards above it.
-  privateQuizCard: { minHeight: 116, borderRadius: 20, padding: Spacing.three, justifyContent: 'space-between', backgroundColor: Brand.plum },
-  privateQuizBadge: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
-  privateQuizLocked: { color: 'rgba(255,249,245,0.6)', fontSize: 11, fontWeight: '800' },
-  privateQuizTitle: { color: Brand.cream, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
-  privateQuizMeta: { color: 'rgba(255,249,245,0.7)', fontSize: 12, fontWeight: '600' },
+  // The plum premium surface — visibly a different room from the pastel free cards around it.
+  // Placed between Featured and the free library, per spec — a portal, not a card in the list.
+  privatePortal: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
+  privatePortalEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  privatePortalTitle: { color: Brand.cream, fontSize: 19, lineHeight: 24, fontWeight: '800', marginTop: Spacing.one },
+  privatePortalSupport: { color: 'rgba(255,249,245,0.65)', fontSize: 13, fontWeight: '600' },
+  privatePortalCta: { alignSelf: 'flex-start', backgroundColor: Brand.coral, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  privatePortalCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
 });

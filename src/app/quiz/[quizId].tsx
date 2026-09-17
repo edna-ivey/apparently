@@ -10,6 +10,7 @@ import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
 import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
+import { PRIVATE_LOCKED_CATALOG } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, saveQuizResult, useLatestQuizResult } from '@/data/quizzes/results';
 import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
@@ -188,9 +189,11 @@ export default function QuizScreen() {
           {step === 'result' && result && (
             <ResultScreen
               result={result}
+              isPrivatePreview={definition.access === 'private-preview'}
               onShare={handleShare}
               onSeeYou={() => router.push('/you')}
               onTakeAnother={() => router.push('/explore')}
+              onBackToPrivate={() => router.push('/private')}
             />
           )}
         </ScrollView>
@@ -272,14 +275,18 @@ function QuestionStep({
 
 function ResultScreen({
   result,
+  isPrivatePreview,
   onShare,
   onSeeYou,
   onTakeAnother,
+  onBackToPrivate,
 }: {
   result: ResultDisplay;
+  isPrivatePreview: boolean;
   onShare: () => void;
   onSeeYou: () => void;
   onTakeAnother: () => void;
+  onBackToPrivate: () => void;
 }) {
   return (
     <View style={styles.stepGap}>
@@ -339,6 +346,34 @@ function ResultScreen({
       </Pressable>
       <Pressable onPress={onTakeAnother} style={styles.tertiaryCta}>
         <ThemedText style={styles.tertiaryCtaText}>Take another quiz</ThemedText>
+      </Pressable>
+
+      {isPrivatePreview && <PrivateCuriosityCard onBackToPrivate={onBackToPrivate} />}
+    </View>
+  );
+}
+
+// Purely a curiosity nudge after the ONE free Private preview — never blocks "See what else we
+// know →" above (You always stays reachable), never shows a price, never claims payment
+// exists. A fixed, small curated sample from the locked catalog rather than the whole thing —
+// this is a taste, not a menu.
+const PRIVATE_CURIOSITY_IDS = ['shadow-side-blind-spot', 'love-soulmates-destined', 'career-ambition-made-for', 'life-match-city'];
+
+function PrivateCuriosityCard({ onBackToPrivate }: { onBackToPrivate: () => void }) {
+  const sample = PRIVATE_LOCKED_CATALOG.filter((entry) => PRIVATE_CURIOSITY_IDS.includes(entry.id));
+  return (
+    <View style={styles.curiosityCard}>
+      <ThemedText style={styles.curiosityEyebrow}>THAT WAS THE FREE ONE. 👀</ThemedText>
+      <ThemedText style={styles.curiosityBody}>Apparently Private gets a little more personal.</ThemedText>
+      <View style={styles.curiosityList}>
+        {sample.map((entry) => (
+          <ThemedText key={entry.id} style={styles.curiosityItem}>
+            {entry.title}
+          </ThemedText>
+        ))}
+      </View>
+      <Pressable onPress={onBackToPrivate} style={styles.curiosityCta}>
+        <ThemedText style={styles.curiosityCtaText}>Back to Private →</ThemedText>
       </Pressable>
     </View>
   );
@@ -483,6 +518,49 @@ const styles = StyleSheet.create({
     color: Brand.inkSecondary,
     fontSize: 14,
     fontWeight: '700',
+  },
+  // The post-preview curiosity nudge — plum, distinct from the cream result cards above it,
+  // so it visibly reads as "a different room" the same way the Private portal card does.
+  curiosityCard: {
+    backgroundColor: Brand.plum,
+    borderRadius: 24,
+    padding: Spacing.four,
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  curiosityEyebrow: {
+    color: Brand.coral,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  curiosityBody: {
+    color: Brand.cream,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  curiosityList: {
+    gap: Spacing.one,
+  },
+  curiosityItem: {
+    color: 'rgba(255,249,245,0.75)',
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
+  curiosityCta: {
+    alignSelf: 'flex-start',
+    backgroundColor: Brand.coral,
+    borderRadius: 14,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  curiosityCtaText: {
+    color: Brand.plum,
+    fontSize: 14,
+    fontWeight: '800',
   },
   questionPrompt: {
     color: Brand.ink,

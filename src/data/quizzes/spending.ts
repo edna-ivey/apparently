@@ -12,6 +12,7 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
   id: 'spending',
   scoringType: 'archetype',
   category: 'Money',
+  access: 'free',
   title: 'What does your spending say about you?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Same money.', 'Very different decisions.'],

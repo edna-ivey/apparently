@@ -12,6 +12,7 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
   id: 'food-order',
   scoringType: 'archetype',
   category: 'Food',
+  access: 'free',
   title: 'What does your food order say about you?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Dinner is revealing.', 'Unfortunately.'],

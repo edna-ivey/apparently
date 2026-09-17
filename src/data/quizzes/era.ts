@@ -15,6 +15,7 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
   id: 'era',
   scoringType: 'archetype',
   category: 'Nostalgia',
+  access: 'free',
   title: 'What era are you emotionally stuck in?',
   eyebrow: 'PERSONALITY QUIZ',
   introSupport: ['Not your birth year.', 'Your natural operating system.'],
