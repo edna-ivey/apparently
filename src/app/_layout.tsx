@@ -8,6 +8,7 @@ import { hydrateOnboardingState } from '@/data/onboarding';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
+import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -64,6 +65,11 @@ export default function RootLayout() {
         // loadRemote). A no-op fast path when the queue is empty, same idempotent-safe
         // shape as ensureAnonymousSession itself.
         void flushPendingQuizSubmissions();
+        // One-time (per consumer user id, via its own local marker) resync of any quiz
+        // history from an older TestFlight build that predates remote quiz submission — see
+        // legacy-quiz-backfill-service.ts. Session-established + local-history-hydrated is
+        // exactly this moment; it also safely retries when You opens (you.tsx's loadRemote).
+        void syncLegacyQuizResultsToRemote();
       });
     }
   }, [segments]);

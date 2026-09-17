@@ -24,6 +24,7 @@ import { formatResultMetric, resolveResultDisplayTitle } from '@/data/quizzes/sc
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
+import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
 import {
   computeProfileActivityCounts,
   getMyPersonalityEvidence,
@@ -161,6 +162,10 @@ export default function YouScreen() {
     // spec calls for. Never blocks the read below even if it itself fails; a submission that
     // still can't go through just stays queued for the next opportunity.
     await flushPendingQuizSubmissions();
+    // Same idea for any local quiz history from an older TestFlight build that hasn't made it
+    // to Supabase yet (see legacy-quiz-backfill-service.ts) — a no-op once its own per-user
+    // marker is set.
+    await syncLegacyQuizResultsToRemote();
 
     const [evidenceResult, quizResultsResult] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
     // Both reads must succeed — a quiz-history fetch failure is NEVER treated as "zero

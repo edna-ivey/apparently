@@ -162,3 +162,12 @@ export const saveQuizResult = async (record: QuizResultRecord): Promise<void> =>
   notify();
   await storage.setItem(STORAGE_KEY, JSON.stringify(results));
 };
+
+// Plain (non-hook) accessor for the full local history — for code that isn't a React
+// component, e.g. legacy-quiz-backfill-service.ts, which needs to read every locally-stored
+// result once at startup rather than subscribe to it. Ensures hydration first, same as every
+// other reader here.
+export const getAllQuizResults = async (): Promise<QuizResultRecord[]> => {
+  await hydrateQuizResults();
+  return snapshot.results;
+};

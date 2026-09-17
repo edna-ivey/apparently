@@ -268,6 +268,23 @@ export const resolveResultDisplayTitle = (definition: QuizDefinition, resultId: 
   return band ? defaultTitleCase(band.title) : null;
 };
 
+// LEGACY BACKFILL ONLY — see src/services/legacy-quiz-backfill-service.ts. Deliberately
+// separate from reconstructResultDisplay above, which intentionally does NOT return
+// profileSignals: merely viewing a saved result (?view=result) must never be able to create
+// new personality evidence, and reconstructResultDisplay is exactly the function that path
+// uses. This helper exists only for the one legitimate case where recovering a result's
+// authored signals is correct — resyncing a real historical completion from an older
+// TestFlight build that predates remote quiz submission. Returns undefined (not an error) if
+// the resultId no longer exists on the current definition (content changed since) or the
+// result never had any signals authored — the backfill still submits the quiz_results history
+// row either way, just without profile_effects.
+export const resolveStoredQuizProfileSignals = (definition: QuizDefinition, resultId: string): PersonalityEffect[] | undefined => {
+  if (definition.scoringType === 'archetype') {
+    return definition.archetypes.find((candidate) => candidate.id === resultId)?.profileSignals;
+  }
+  return definition.resultBands.find((candidate) => candidate.id === resultId)?.profileSignals;
+};
+
 // Recent Read's metric line on You — quiz-type-aware so a future scoringType isn't stuck with
 // Petty's "X% <label> meter" phrasing. For archetype quizzes the suffix is content-owned
 // (definition.recentReadMetricLabel — e.g. Crisis's "of your crisis picks"), the same way
