@@ -1,9 +1,9 @@
 import type { ArchetypeQuizDefinition } from './types';
 
-// New for the Explore expansion sprint — Food's second free quiz (Food Order was the only one
-// before this). Archetype scoring, same rigor as the rest of the library: 8 questions, one
-// archetype per choice, a rotating position schedule (each archetype lands on each letter
-// exactly twice across the 8 questions — verified programmatically).
+// Content-polish pass (post-launch content review). Results/archetypes unchanged — approved
+// copy, do not rewrite. Questions replaced with the new authored set; display positions
+// rebalanced (perfect 2-per-letter-per-archetype across the 8 questions — verified
+// programmatically), preserving each choice's exact text and its archetype mapping.
 export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
   id: 'one-bite',
   scoringType: 'archetype',
@@ -71,82 +71,82 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
   questions: [
     {
       id: 'q1',
-      prompt: 'Someone at the table says, “can I get a bite?”',
+      prompt: 'Your partner said they weren’t hungry. Your food arrives. Now they’re staring at your plate.',
       choices: [
-        { id: 'a', label: 'Take as much as you want.', resultWeights: { sharer: 1 } },
-        { id: 'b', label: 'One bite. I’m counting.', resultWeights: { negotiator: 1 } },
-        { id: 'c', label: 'I physically angle my plate away.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'd', label: 'There’s a whole menu. Order your own.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'a', label: 'I knew this was coming. Take some.', resultWeights: { sharer: 1 } },
+        { id: 'b', label: 'Tell me exactly what you want before you start freelancing.', resultWeights: { negotiator: 1 } },
+        { id: 'c', label: 'We specifically discussed whether you were hungry.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'd', label: 'I’m ordering you your own food.', resultWeights: { 'order-your-own': 1 } },
       ],
     },
     {
       id: 'q2',
-      prompt: 'You ordered fries to share. They’re almost gone and you’ve had two.',
+      prompt: 'Someone reaches for your fries without asking.',
       choices: [
-        { id: 'a', label: 'I’m doing quiet math on who owes who.', resultWeights: { negotiator: 1 } },
-        { id: 'b', label: 'I did not sign up for this. I’m ordering more, for me.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'c', label: 'Next time we’re ordering two baskets. Lesson learned.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'd', label: 'That’s how sharing works. No notes.', resultWeights: { sharer: 1 } },
+        { id: 'a', label: '“Ask first.” I’m still probably giving you some.', resultWeights: { negotiator: 1 } },
+        { id: 'b', label: 'I move the fries. Instinctively.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'c', label: 'Absolutely not. Those are assigned fries.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'd', label: 'Go ahead. Fries are communal.', resultWeights: { sharer: 1 } },
       ],
     },
     {
       id: 'q3',
-      prompt: 'Your dessert arrives. Six spoons appear out of nowhere.',
+      prompt: 'The table wants to order everything family-style.',
       choices: [
-        { id: 'a', label: 'Absolutely not. This one’s mine.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'b', label: 'Y’all should’ve ordered your own dessert.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'c', label: 'The more spoons, the better, honestly.', resultWeights: { sharer: 1 } },
-        { id: 'd', label: 'Everyone gets exactly one bite. I’m supervising.', resultWeights: { negotiator: 1 } },
+        { id: 'a', label: 'Fine, but I’m also ordering something that belongs to me.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'b', label: 'I respect the concept from over here with my entrée.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'c', label: 'Perfect. I want to try everything.', resultWeights: { sharer: 1 } },
+        { id: 'd', label: 'I’m in, but we need enough food and a real plan.', resultWeights: { negotiator: 1 } },
       ],
     },
     {
       id: 'q4',
-      prompt: 'Someone says, “just try mine, it’s so good.”',
+      prompt: 'There is exactly one perfect bite left on your plate.',
       choices: [
-        { id: 'a', label: 'I’m good, I know what I ordered.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'b', label: 'Yes, always, put it right here.', resultWeights: { sharer: 1 } },
-        { id: 'c', label: 'Fine, one bite, but I’m judging the portion.', resultWeights: { negotiator: 1 } },
-        { id: 'd', label: 'I’ll look at it. I will not be eating it.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'a', label: 'Why are we even discussing MY final bite?', resultWeights: { 'order-your-own': 1 } },
+        { id: 'b', label: 'If somebody wants it, they can have it.', resultWeights: { sharer: 1 } },
+        { id: 'c', label: 'Depends what I’m getting in return.', resultWeights: { negotiator: 1 } },
+        { id: 'd', label: 'There are several other bites available to you.', resultWeights: { 'plate-protector': 1 } },
       ],
     },
     {
       id: 'q5',
-      prompt: 'The table decides to order a bunch of stuff “for the middle.”',
+      prompt: 'You open the fridge and the leftovers you were thinking about all day are gone.',
       choices: [
-        { id: 'a', label: 'I’m still getting my own entree too, just in case.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'b', label: 'Can we not. I want my own plate.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'c', label: 'Love this. Order everything.', resultWeights: { sharer: 1 } },
-        { id: 'd', label: 'I want to know exactly what’s coming before I commit.', resultWeights: { negotiator: 1 } },
+        { id: 'a', label: 'I am way more upset than leftovers should legally make a person.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'b', label: 'This household will now be implementing labels.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'c', label: 'Honestly, I hope they enjoyed them.', resultWeights: { sharer: 1 } },
+        { id: 'd', label: 'I need to know who ate them and whether they knew they were mine.', resultWeights: { negotiator: 1 } },
       ],
     },
     {
       id: 'q6',
-      prompt: 'Somebody’s fork is creeping toward your plate.',
+      prompt: 'You bring snacks for a road trip. Two hours in...',
       choices: [
-        { id: 'a', label: 'I’ll allow one, but I’m watching the fork.', resultWeights: { negotiator: 1 } },
-        { id: 'b', label: 'The fork does not make it. I intercept.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'c', label: 'This was never up for discussion.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'd', label: 'Go ahead, I wasn’t going to finish it anyway.', resultWeights: { sharer: 1 } },
+        { id: 'a', label: 'I’m making sure nobody kills one snack before everyone gets some.', resultWeights: { negotiator: 1 } },
+        { id: 'b', label: 'Certain snacks were clearly for me, and we all knew that.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'c', label: 'Next trip everybody gets their own bag.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'd', label: 'Everybody is eating everything. That’s why I brought it.', resultWeights: { sharer: 1 } },
       ],
     },
     {
       id: 'q7',
-      prompt: 'You finish your food first. Someone else is still eating.',
+      prompt: 'Your date says, “let’s just split an entrée.”',
       choices: [
-        { id: 'a', label: 'I ordered exactly what I wanted. I’m satisfied.', resultWeights: { 'order-your-own': 1 } },
-        { id: 'b', label: 'I offer them the rest of my drink, my fries, whatever’s left.', resultWeights: { sharer: 1 } },
-        { id: 'c', label: 'I ask if they’re going to finish that.', resultWeights: { negotiator: 1 } },
-        { id: 'd', label: 'I quietly finish everything on my own plate. On purpose.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'a', label: 'That sounds romantic for somebody else.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'b', label: 'Sure. We can get appetizers too.', resultWeights: { sharer: 1 } },
+        { id: 'c', label: 'Fine, but we need to agree on what we’re ordering.', resultWeights: { negotiator: 1 } },
+        { id: 'd', label: 'We can taste each other’s food. I still want my own.', resultWeights: { 'plate-protector': 1 } },
       ],
     },
     {
       id: 'q8',
-      prompt: 'Someone asks the table, “wanna split a few things instead of getting entrees?”',
+      prompt: 'Dinner is over. Which thing would irritate you MOST?',
       choices: [
-        { id: 'a', label: 'Yes. Always yes. Bring it all.', resultWeights: { sharer: 1 } },
-        { id: 'b', label: 'Sure, but let’s actually agree on what first.', resultWeights: { negotiator: 1 } },
-        { id: 'c', label: 'I’ll split appetizers. My entree stays mine.', resultWeights: { 'plate-protector': 1 } },
-        { id: 'd', label: 'I would prefer my own entree, but I respect the idea.', resultWeights: { 'order-your-own': 1 } },
+        { id: 'a', label: 'Everybody ordered separately and nobody let me taste anything.', resultWeights: { sharer: 1 } },
+        { id: 'b', label: 'The bill got split evenly when some people ordered way more.', resultWeights: { negotiator: 1 } },
+        { id: 'c', label: 'Somebody boxed up MY leftovers without asking.', resultWeights: { 'plate-protector': 1 } },
+        { id: 'd', label: 'We spent half the meal passing plates around.', resultWeights: { 'order-your-own': 1 } },
       ],
     },
   ],

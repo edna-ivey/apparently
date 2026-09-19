@@ -1,11 +1,11 @@
 import type { ArchetypeQuizDefinition } from './types';
 
-// New for the Explore expansion sprint — Money's second free quiz. Deliberately NOT a
-// duplicate of Spending: Spending is about everyday purchase habits, this is specifically
-// about sudden/unplanned money and what it reveals. Archetype scoring, same rigor as the rest
-// of the library: 8 questions, one archetype per choice, a rotating position schedule (each
-// archetype lands on each letter exactly twice across the 8 questions — verified
-// programmatically).
+// Content-polish pass (post-launch content review). Deliberately distinct from Spending:
+// Spending is everyday purchase habits, this is specifically what a sudden windfall reveals.
+// Questions replaced with the new authored set; THE LEVEL-UP result rewritten to be about
+// leverage/capability (course, equipment, seed money), NOT "a nicer version of a product" —
+// that phrasing belongs to Spending, not here. Display positions rebalanced (perfect
+// 2-per-letter-per-archetype across the 8 questions — verified programmatically).
 export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
   id: 'unexpected-money',
   scoringType: 'archetype',
@@ -47,13 +47,14 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'level-up',
       title: 'THE LEVEL-UP',
-      heroRead: ['You didn’t want more stuff.', 'You wanted better stuff.'],
-      body: 'Random money reveals exactly where your life has a small, specific gap — and you know precisely what fills it. Not impulsive, not overly cautious. Just quietly upgrading, one deliberate purchase at a time.',
-      kicker: 'Curated, not compulsive.',
-      traits: ['Intentional', 'Discerning', 'Practical'],
+      heroRead: ['You don’t just spend money.', 'You look for leverage.'],
+      body: 'A course. Better equipment. A certification. Seed money for an idea. Something that makes you more capable, more valuable, or more able to earn. When extra money appears, your brain naturally asks how it could turn into more options later.',
+      kicker: 'Some people buy the bag. You’re wondering who owns the bag company.',
+      traits: ['Ambitious', 'Resourceful', 'Growth-minded'],
       profileSignals: [
+        { dimension: 'ambitious_content', value: 2 },
         { dimension: 'practical_idealistic', value: 1 },
-        { dimension: 'ambitious_content', value: 1 },
+        { dimension: 'planner_spontaneous', value: 1 },
       ],
     },
     {
@@ -72,82 +73,82 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
   questions: [
     {
       id: 'q1',
-      prompt: '$500 just landed in your account. No explanation. First thought?',
+      prompt: 'A surprise $1,500 hits your account. What thought comes first?',
       choices: [
-        { id: 'a', label: 'Into savings. Immediately.', resultWeights: { 'safety-net': 1 } },
-        { id: 'b', label: 'Ooh. I know exactly what I’m buying.', resultWeights: { 'little-treat': 1 } },
-        { id: 'c', label: 'This could go toward the thing I’ve been wanting to upgrade.', resultWeights: { 'level-up': 1 } },
-        { id: 'd', label: 'Okay, where does this actually move the needle.', resultWeights: { 'master-plan': 1 } },
+        { id: 'a', label: 'That just made me feel a lot safer.', resultWeights: { 'safety-net': 1 } },
+        { id: 'b', label: 'Oh, I can finally do something fun without feeling guilty.', resultWeights: { 'little-treat': 1 } },
+        { id: 'c', label: 'What could I use this for that improves my life or income?', resultWeights: { 'level-up': 1 } },
+        { id: 'd', label: 'Where does this fit into the bigger plan?', resultWeights: { 'master-plan': 1 } },
       ],
     },
     {
       id: 'q2',
-      prompt: 'Your friend asks what you’d do with it.',
+      prompt: 'A week passes and you haven’t touched the money yet.',
       choices: [
-        { id: 'a', label: 'Something small and completely unnecessary.', resultWeights: { 'little-treat': 1 } },
-        { id: 'b', label: 'Something that makes my life noticeably better.', resultWeights: { 'level-up': 1 } },
-        { id: 'c', label: 'I already have three ideas ranked by ROI.', resultWeights: { 'master-plan': 1 } },
-        { id: 'd', label: 'Nothing exciting. Emergency fund.', resultWeights: { 'safety-net': 1 } },
+        { id: 'a', label: 'A week? I’m clearly overthinking this.', resultWeights: { 'little-treat': 1 } },
+        { id: 'b', label: 'I’ve been researching what would make it most useful.', resultWeights: { 'level-up': 1 } },
+        { id: 'c', label: 'I’ve already decided where every dollar is going.', resultWeights: { 'master-plan': 1 } },
+        { id: 'd', label: 'That actually feels good.', resultWeights: { 'safety-net': 1 } },
       ],
     },
     {
       id: 'q3',
-      prompt: 'You picture the money sitting in your account for a week, untouched.',
+      prompt: 'Nobody knows you got the money. What are you secretly imagining?',
       choices: [
-        { id: 'a', label: 'I’m researching the upgrade in the meantime.', resultWeights: { 'level-up': 1 } },
-        { id: 'b', label: 'I’m still deciding the smartest move.', resultWeights: { 'master-plan': 1 } },
-        { id: 'c', label: 'That’s the plan. It stays.', resultWeights: { 'safety-net': 1 } },
-        { id: 'd', label: 'A week? Absolutely not.', resultWeights: { 'little-treat': 1 } },
+        { id: 'a', label: 'A course, equipment, business idea, or something that could open a door.', resultWeights: { 'level-up': 1 } },
+        { id: 'b', label: 'Knocking out a goal faster than I expected.', resultWeights: { 'master-plan': 1 } },
+        { id: 'c', label: 'Watching my savings number go up.', resultWeights: { 'safety-net': 1 } },
+        { id: 'd', label: 'A trip, dinner, purchase, something I normally talk myself out of.', resultWeights: { 'little-treat': 1 } },
       ],
     },
     {
       id: 'q4',
-      prompt: 'Someone says “you should just treat yourself.”',
+      prompt: 'Someone says, “you work hard. Just enjoy it.”',
       choices: [
-        { id: 'a', label: 'Treating myself IS the plan working.', resultWeights: { 'master-plan': 1 } },
+        { id: 'a', label: 'Fun can absolutely have a percentage.', resultWeights: { 'master-plan': 1 } },
         { id: 'b', label: 'I’d rather feel secure than treated.', resultWeights: { 'safety-net': 1 } },
-        { id: 'c', label: 'Already halfway to treating myself, actually.', resultWeights: { 'little-treat': 1 } },
-        { id: 'd', label: 'One good treat that actually lasts, maybe.', resultWeights: { 'level-up': 1 } },
+        { id: 'c', label: 'Thank you. Finally someone understands me.', resultWeights: { 'little-treat': 1 } },
+        { id: 'd', label: 'I enjoy things that keep paying me back.', resultWeights: { 'level-up': 1 } },
       ],
     },
     {
       id: 'q5',
-      prompt: 'You imagine explaining the purchase to future-you.',
+      prompt: 'One month later, which outcome would bother you the MOST?',
       choices: [
-        { id: 'a', label: 'Future me is living slightly better because of this.', resultWeights: { 'level-up': 1 } },
-        { id: 'b', label: 'Future me is further along because of this.', resultWeights: { 'master-plan': 1 } },
-        { id: 'c', label: 'Future me will thank present me for saving it.', resultWeights: { 'safety-net': 1 } },
-        { id: 'd', label: 'Future me won’t even remember. Present me will enjoy it.', resultWeights: { 'little-treat': 1 } },
+        { id: 'a', label: 'I spent it on something that added nothing to my life.', resultWeights: { 'level-up': 1 } },
+        { id: 'b', label: 'I let the opportunity pass without moving anything forward.', resultWeights: { 'master-plan': 1 } },
+        { id: 'c', label: 'An emergency happens and I wish I had saved it.', resultWeights: { 'safety-net': 1 } },
+        { id: 'd', label: 'I saved every penny and didn’t enjoy any of it.', resultWeights: { 'little-treat': 1 } },
       ],
     },
     {
       id: 'q6',
-      prompt: 'A friend says they’d just blow it all on something fun.',
+      prompt: 'You can use the money for one of these. Which sounds most satisfying?',
       choices: [
-        { id: 'a', label: 'Same, honestly. Life’s short.', resultWeights: { 'little-treat': 1 } },
-        { id: 'b', label: 'Depends what “fun” means. I’m particular.', resultWeights: { 'level-up': 1 } },
-        { id: 'c', label: 'Fun is allowed. After the plan is funded.', resultWeights: { 'master-plan': 1 } },
-        { id: 'd', label: 'Respectfully, no.', resultWeights: { 'safety-net': 1 } },
+        { id: 'a', label: 'Finally doing the thing I keep saying is “too expensive.”', resultWeights: { 'little-treat': 1 } },
+        { id: 'b', label: 'Funding something that could make me better, faster, or more valuable.', resultWeights: { 'level-up': 1 } },
+        { id: 'c', label: 'Making a meaningful dent in one of my bigger goals.', resultWeights: { 'master-plan': 1 } },
+        { id: 'd', label: 'Knowing an unexpected bill wouldn’t scare me anymore.', resultWeights: { 'safety-net': 1 } },
       ],
     },
     {
       id: 'q7',
-      prompt: 'You check your account again a month later.',
+      prompt: 'Six months later, someone asks, “whatever happened to that money?”',
       choices: [
-        { id: 'a', label: 'Already reinvested into the next thing.', resultWeights: { 'master-plan': 1 } },
-        { id: 'b', label: 'Still there. Growing, even.', resultWeights: { 'safety-net': 1 } },
-        { id: 'c', label: 'Gone. No regrets.', resultWeights: { 'little-treat': 1 } },
-        { id: 'd', label: 'Turned into something I use every day now.', resultWeights: { 'level-up': 1 } },
+        { id: 'a', label: '“It helped me get ahead.”', resultWeights: { 'master-plan': 1 } },
+        { id: 'b', label: '“Most of it’s still there.”', resultWeights: { 'safety-net': 1 } },
+        { id: 'c', label: '“Gone. Worth it.”', resultWeights: { 'little-treat': 1 } },
+        { id: 'd', label: '“It turned into something I use to grow.”', resultWeights: { 'level-up': 1 } },
       ],
     },
     {
       id: 'q8',
-      prompt: 'Honestly, what does unexpected money reveal about you?',
+      prompt: 'Which sentence would make you feel BEST about the money?',
       choices: [
-        { id: 'a', label: 'I plan for the version of me that isn’t lucky forever.', resultWeights: { 'safety-net': 1 } },
-        { id: 'b', label: 'I know how to actually enjoy something.', resultWeights: { 'little-treat': 1 } },
-        { id: 'c', label: 'I know exactly what’s worth upgrading.', resultWeights: { 'level-up': 1 } },
-        { id: 'd', label: 'I don’t waste momentum.', resultWeights: { 'master-plan': 1 } },
+        { id: 'a', label: '“I don’t have to worry about that anymore.”', resultWeights: { 'safety-net': 1 } },
+        { id: 'b', label: '“I’m so glad I actually let myself enjoy that.”', resultWeights: { 'little-treat': 1 } },
+        { id: 'c', label: '“That ended up opening a door for me.”', resultWeights: { 'level-up': 1 } },
+        { id: 'd', label: '“That moved me months ahead.”', resultWeights: { 'master-plan': 1 } },
       ],
     },
   ],

@@ -1,17 +1,19 @@
 import type { ArchetypeQuizDefinition } from './types';
 
-// Apparently Private's ONE real playable free preview — the gateway quiz. Fully playable, no
-// special-casing anywhere: it feeds local history, remote quiz_results, and
+// Apparently Private's ONE real playable free preview — the gateway quiz. Content-polish pass
+// (post-launch content review): all four results rewritten to the approved "gold" copy, all
+// eight questions replaced with the new authored set. Q8's wording is LOCKED — its answer
+// text is exactly as authored and must not be reworded (its on-screen letter position is
+// still part of the same balanced rotation every other question uses).
+//
+// Fully playable, no special-casing anywhere: it feeds local history, remote quiz_results, and
 // personality_evidence exactly like every other quiz (see src/app/quiz/[quizId].tsx and
 // submit_quiz_result — neither branches on access at all). `access: 'private-preview'` is
 // merchandising metadata only, read by Explore/private.tsx to decide WHERE this card shows up
 // and how it's badged — it changes nothing about scoring, persistence, or the You profile.
 //
-// Same content rigor as the rest of the library: 8 questions, one archetype per choice, a
-// rotating position schedule (each archetype lands on each letter exactly twice across the 8
-// questions — verified programmatically). The four results carry four distinct emotional
-// jobs (dependable presence / emotional safety / energy·light / honest loyalty) per the
-// sprint's approved result territory.
+// Display positions verified programmatically: each archetype lands on each letter exactly
+// twice across the 8 questions.
 export const SECRETLY_LOVE_QUIZ: ArchetypeQuizDefinition = {
   id: 'secretly-love',
   scoringType: 'archetype',
@@ -29,131 +31,141 @@ export const SECRETLY_LOVE_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'shows-up',
       title: 'THE ONE WHO SHOWS UP',
-      heroRead: ['People know you’ll actually come.', 'Not “thinking of you.” Not “let me know if you need anything.” Come.'],
-      body: 'You may not always be the softest person in the room, but when things get real, people already know exactly who they’re calling. Showing up isn’t a grand gesture to you — it’s just what you do, every single time, without needing to be asked twice.',
-      kicker: 'Reliability, it turns out, is its own kind of love language.',
-      traits: ['Dependable', 'Present', 'Steady'],
+      heroRead: [
+        'People know you’ll actually come.',
+        'That matters more than you think.',
+        'Not “thinking of you.”',
+        'Not “let me know if you need anything.”',
+        'Come.',
+      ],
+      body: 'You remember the appointment. You make the drive. You carry the bag. You follow up after everybody else assumes the crisis is over. You notice the annoying little thing that needs doing and somehow it gets done. You may not always be the softest person in someone’s life. But when life gets real, people know exactly who they want beside them.',
+      kicker: 'Your love has receipts.',
+      traits: ['Dependable', 'Protective', 'Grounded'],
       profileSignals: [
         { dimension: 'protective_hands_off', value: 2 },
-        { dimension: 'patient_urgent', value: -1 },
+        { dimension: 'practical_idealistic', value: 1 },
+        { dimension: 'patient_urgent', value: 1 },
       ],
     },
     {
       id: 'safe-place',
       title: 'THE SAFE PLACE',
       heroRead: ['People accidentally tell you the truth.', 'Then immediately feel lighter for having said it.'],
-      body: 'You don’t rush to fix things. You just make room for them to exist without judgment, and somehow that’s exactly what people needed the whole time. Nobody has to perform being okay around you — they can just not be, for a second.',
-      kicker: 'You’ve heard things. You’re taking them to the grave.',
-      traits: ['Trustworthy', 'Patient', 'Empathetic'],
+      body: 'There is something about you that makes people stop editing themselves. They can be embarrassed. Messy. Confused. Not emotional enough. You don’t rush to fix the feeling or make them package it neatly enough for you to understand. You make room first.',
+      kicker: 'Not everyone feels like somewhere you can put your bags down.',
+      traits: ['Warm', 'Perceptive', 'Patient'],
       profileSignals: [
         { dimension: 'social_attunement', value: 2 },
-        { dimension: 'private_open', value: 1 },
+        { dimension: 'patient_urgent', value: 1 },
+        { dimension: 'sentimental_thick_skinned', value: 1 },
       ],
     },
     {
       id: 'spark',
       title: 'THE SPARK',
       heroRead: ['The room doesn’t feel the same', 'the second you walk out of it.'],
-      body: 'You have a way of making ordinary moments feel like something worth remembering. It’s not about being the loudest person there — it’s that things just feel a little more alive when you’re around, and people notice the difference when you’re not.',
-      kicker: 'Energy like that isn’t something you can fake for long. Yours just is.',
+      body: 'You make regular life feel less regular. A grocery run becomes a story. A boring dinner gets funny. Somebody who was sitting quietly suddenly feels included. People stay an extra hour because leaving while you’re still there somehow feels premature. You don’t necessarily have to be the loudest person in the room. You just make the room feel more alive.',
+      kicker: '“Remember that time...” is apparently part of your brand.',
       traits: ['Magnetic', 'Playful', 'Warm'],
       profileSignals: [
         { dimension: 'playful_serious', value: 2 },
+        { dimension: 'private_open', value: -1 },
         { dimension: 'adventure_comfort', value: 1 },
       ],
     },
     {
       id: 'real-one',
       title: 'THE REAL ONE',
-      heroRead: ['You don’t tell people what they want to hear.', 'You tell them what’s true. That’s rarer than it should be.'],
-      body: 'You’re not interested in being agreeable if it means being dishonest. People trust what they get from you specifically because it isn’t softened for their comfort — and somehow, that honesty is exactly what makes them trust everything else you say too.',
-      kicker: 'Loyalty, to you, means telling the truth. Even the inconvenient kind.',
+      heroRead: ['You don’t tell people what they want to hear.', 'You tell them what’s true.'],
+      body: 'But this isn’t just about being blunt. People trust you because your loyalty doesn’t disappear when honesty becomes inconvenient. You will defend them when they aren’t there, call them out when they need it, and keep the same energy privately that you have publicly. You don’t hand out fake enthusiasm or convenient loyalty. When you say it, people know you mean it.',
+      kicker: 'You are not everybody’s cup of tea. The right people stopped asking for tea.',
       traits: ['Honest', 'Loyal', 'Direct'],
       profileSignals: [
         { dimension: 'direct_indirect', value: 2 },
-        { dimension: 'conflict_peacekeeping', value: 1 },
+        { dimension: 'protective_hands_off', value: 1 },
+        { dimension: 'trust_verify', value: -1 },
       ],
     },
   ],
   questions: [
     {
       id: 'q1',
-      prompt: 'Someone in your life is having the worst week. What do they actually get from you?',
+      prompt: 'Your friend has been stressing about a big appointment all week. What do you do?',
       choices: [
-        { id: 'a', label: 'I show up. Physically. With food, probably.', resultWeights: { 'shows-up': 1 } },
-        { id: 'b', label: 'A place to fall apart without being judged for it.', resultWeights: { 'safe-place': 1 } },
-        { id: 'c', label: 'A reason to laugh even when nothing’s funny yet.', resultWeights: { spark: 1 } },
-        { id: 'd', label: 'The truth, gently, whether they want it or not.', resultWeights: { 'real-one': 1 } },
+        { id: 'a', label: 'Text them before it starts. I remembered.', resultWeights: { 'shows-up': 1 } },
+        { id: 'b', label: 'Check in after and ask how it really went.', resultWeights: { 'safe-place': 1 } },
+        { id: 'c', label: 'Send something funny to break the tension.', resultWeights: { spark: 1 } },
+        { id: 'd', label: 'Give them the pep talk they actually need.', resultWeights: { 'real-one': 1 } },
       ],
     },
     {
       id: 'q2',
-      prompt: 'Your friend’s phone dies at 11pm mid-crisis. What are you doing?',
+      prompt: 'Your friend tells you something embarrassing, then says, “don’t judge me.”',
       choices: [
-        { id: 'a', label: 'Waiting up. Whenever they resurface, I’m here.', resultWeights: { 'safe-place': 1 } },
-        { id: 'b', label: 'Blowing up the group chat trying to make everyone laugh through it.', resultWeights: { spark: 1 } },
-        { id: 'c', label: 'Texting something honest they’ll read when they’re back.', resultWeights: { 'real-one': 1 } },
-        { id: 'd', label: 'Already in the car.', resultWeights: { 'shows-up': 1 } },
+        { id: 'a', label: 'Make it safe enough to tell the rest.', resultWeights: { 'safe-place': 1 } },
+        { id: 'b', label: 'Tell them something ridiculous I’ve done too.', resultWeights: { spark: 1 } },
+        { id: 'c', label: 'Tell them the truth without making it cruel.', resultWeights: { 'real-one': 1 } },
+        { id: 'd', label: 'Help them fix whatever can still be fixed.', resultWeights: { 'shows-up': 1 } },
       ],
     },
     {
       id: 'q3',
-      prompt: 'What do people usually thank you for, after the fact?',
+      prompt: 'Someone you love finally gets the thing they’ve worked for forever.',
       choices: [
-        { id: 'a', label: 'For making a hard time feel lighter.', resultWeights: { spark: 1 } },
-        { id: 'b', label: 'For telling them the truth when no one else would.', resultWeights: { 'real-one': 1 } },
-        { id: 'c', label: 'For actually being there. Not just saying it.', resultWeights: { 'shows-up': 1 } },
-        { id: 'd', label: 'For not making them feel crazy for feeling something.', resultWeights: { 'safe-place': 1 } },
+        { id: 'a', label: 'Turn it into a whole celebration. Obviously.', resultWeights: { spark: 1 } },
+        { id: 'b', label: 'Remind them how far they’ve come.', resultWeights: { 'real-one': 1 } },
+        { id: 'c', label: 'Handle the details so they can enjoy it.', resultWeights: { 'shows-up': 1 } },
+        { id: 'd', label: 'Tell them exactly why I’m proud of them.', resultWeights: { 'safe-place': 1 } },
       ],
     },
     {
       id: 'q4',
-      prompt: 'A friend makes a big decision you privately think is a mistake.',
+      prompt: 'Your friend has cancelled on you twice because life is a mess.',
       choices: [
-        { id: 'a', label: 'I tell them exactly what I think. Once. Then I support them.', resultWeights: { 'real-one': 1 } },
-        { id: 'b', label: 'I don’t argue. I just make sure I’m there either way.', resultWeights: { 'shows-up': 1 } },
-        { id: 'c', label: 'I ask questions instead of giving opinions.', resultWeights: { 'safe-place': 1 } },
-        { id: 'd', label: 'I focus on keeping their spirits up either way.', resultWeights: { spark: 1 } },
+        { id: 'a', label: 'Ask what’s really going on.', resultWeights: { 'real-one': 1 } },
+        { id: 'b', label: 'Find one small thing I can take off their plate.', resultWeights: { 'shows-up': 1 } },
+        { id: 'c', label: 'Give them space without making them feel guilty.', resultWeights: { 'safe-place': 1 } },
+        { id: 'd', label: 'Keep sending little things that make them smile.', resultWeights: { spark: 1 } },
       ],
     },
     {
       id: 'q5',
-      prompt: 'What’s your actual role in your friend group, if you’re honest?',
+      prompt: 'Somebody starts talking badly about your friend when they aren’t there.',
       choices: [
-        { id: 'a', label: 'The one who makes ordinary nights feel like something.', resultWeights: { spark: 1 } },
-        { id: 'b', label: 'The one who says the thing everyone’s thinking.', resultWeights: { 'real-one': 1 } },
-        { id: 'c', label: 'The one who’s never once cancelled last minute.', resultWeights: { 'shows-up': 1 } },
-        { id: 'd', label: 'The one people cry in front of without apologizing for it.', resultWeights: { 'safe-place': 1 } },
+        { id: 'a', label: 'Change the whole energy before it gets ugly.', resultWeights: { spark: 1 } },
+        { id: 'b', label: 'Correct anything that isn’t true.', resultWeights: { 'real-one': 1 } },
+        { id: 'c', label: 'Shut it down. They’re not here to defend themselves.', resultWeights: { 'shows-up': 1 } },
+        { id: 'd', label: 'If there’s a fair point, I’ll admit that. I’m still not letting everybody tear my friend apart.', resultWeights: { 'safe-place': 1 } },
       ],
     },
     {
       id: 'q6',
-      prompt: 'Someone you love is spiraling over something small. Your first move?',
+      prompt: 'You’re spending the day doing boring errands with your favorite person.',
       choices: [
-        { id: 'a', label: 'I let them spiral for a second before fixing anything.', resultWeights: { 'safe-place': 1 } },
-        { id: 'b', label: 'I distract them, gently, until they can breathe again.', resultWeights: { spark: 1 } },
-        { id: 'c', label: 'I tell them plainly it’s going to be okay, because I mean it.', resultWeights: { 'real-one': 1 } },
-        { id: 'd', label: 'I go to them. Talking can happen after.', resultWeights: { 'shows-up': 1 } },
+        { id: 'a', label: 'We barely need to talk. It’s still nice.', resultWeights: { 'safe-place': 1 } },
+        { id: 'b', label: 'Somehow errands turn into an entire adventure.', resultWeights: { spark: 1 } },
+        { id: 'c', label: 'Eventually I ask what’s really been on their mind.', resultWeights: { 'real-one': 1 } },
+        { id: 'd', label: 'I remembered something they completely forgot.', resultWeights: { 'shows-up': 1 } },
       ],
     },
     {
       id: 'q7',
-      prompt: 'What would your closest friend say they trust most about you?',
+      prompt: 'You’re mad at someone you love. What happens?',
       choices: [
-        { id: 'a', label: 'That I’ll never just tell them what they want to hear.', resultWeights: { 'real-one': 1 } },
-        { id: 'b', label: 'That I’ll actually be there. Every time.', resultWeights: { 'shows-up': 1 } },
-        { id: 'c', label: 'That I won’t repeat what they told me.', resultWeights: { 'safe-place': 1 } },
-        { id: 'd', label: 'That I make hard seasons feel survivable.', resultWeights: { spark: 1 } },
+        { id: 'a', label: 'I say what bothered me and deal with it.', resultWeights: { 'real-one': 1 } },
+        { id: 'b', label: 'I’m still doing the little things I always do.', resultWeights: { 'shows-up': 1 } },
+        { id: 'c', label: 'I take space without making them feel abandoned.', resultWeights: { 'safe-place': 1 } },
+        { id: 'd', label: 'Eventually one of us is going to laugh.', resultWeights: { spark: 1 } },
       ],
     },
     {
       id: 'q8',
-      prompt: 'If you disappeared for a week, what would people miss first?',
+      prompt: 'You disappear for a week. Which text are you MOST likely to get?',
       choices: [
-        { id: 'a', label: 'Someone reliably being there.', resultWeights: { 'shows-up': 1 } },
-        { id: 'b', label: 'Someone they could finally exhale around.', resultWeights: { 'safe-place': 1 } },
-        { id: 'c', label: 'The energy shifting when I walk in.', resultWeights: { spark: 1 } },
-        { id: 'd', label: 'Someone who’d tell them the truth.', resultWeights: { 'real-one': 1 } },
+        { id: 'a', label: '“Please come back. Nobody remembers anything around here.”', resultWeights: { 'shows-up': 1 } },
+        { id: 'b', label: '“I have SO much to tell you.”', resultWeights: { 'safe-place': 1 } },
+        { id: 'c', label: '“It has been painfully boring without you.”', resultWeights: { spark: 1 } },
+        { id: 'd', label: '“I need your opinion. Everybody else is sugarcoating it.”', resultWeights: { 'real-one': 1 } },
       ],
     },
   ],
