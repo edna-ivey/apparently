@@ -9,12 +9,14 @@ import { ThemedView } from '@/components/themed-view';
 import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
+import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
 import { PRIVATE_LOCKED_CATALOG } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, saveQuizResult, useLatestQuizResult } from '@/data/quizzes/results';
 import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from '@/data/quizzes/scoring';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
+import { createQuizShare } from '@/services/quiz-share-service';
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
 
 export default function QuizScreen() {
@@ -26,6 +28,21 @@ export default function QuizScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const savedResult = useRef(false);
+  // Tracks whether THIS FRESH completion's remote submission has landed — sharing must pin
+  // the exact completion currently on screen, never an older one. 'synced' also covers the
+  // ?view=result path (a saved result is, by definition, already a past completion whose own
+  // remote submission either already succeeded earlier or never will — either way there is no
+  // "in flight" state to wait for here).
+  const [remoteSubmitState, setRemoteSubmitState] = useState<'synced' | 'pending' | 'failed'>('synced');
+
+  // Local display name only — used to snapshot "who shared this" on a new share record.
+  // Never synced/looked up remotely; the recipient never sees anything beyond this one
+  // self-reported first name (see createQuizShare/get_shared_quiz_result).
+  const userProfile = useUserProfile();
+  useEffect(() => {
+    void hydrateUserProfile();
+  }, []);
+  const sharerDisplayName = userProfile !== 'loading' && userProfile?.firstName?.trim() ? userProfile.firstName.trim() : null;
 
   // Called unconditionally (before the not-found early return below) to keep hook order
   // stable. Powers "See result →" from You: arriving with ?view=result jumps straight to the
@@ -101,6 +118,7 @@ export default function QuizScreen() {
     });
 
     if (isRemoteDailyEnabled) {
+      setRemoteSubmitState('pending');
       const payload: SubmitQuizResultPayload = {
         quizId: definition.id,
         quizTitle: definition.title,
@@ -118,10 +136,16 @@ export default function QuizScreen() {
       // Never blocks the result screen — it already renders from local `result` state
       // regardless of this call. A failure queues the payload for a later retry (You
       // opening, app/session init — see pending-quiz-submissions.ts) instead of silently
-      // dropping this completion's profile contribution.
+      // dropping this completion's profile contribution. remoteSubmitState gates sharing
+      // below: creating a share record before this lands could otherwise pin an OLDER
+      // completion of the same quiz (create_quiz_share pins the caller's latest quiz_results
+      // row) instead of the one currently on screen.
       void (async () => {
         const remoteResult = await submitQuizResultRemote(payload);
-        if (!remoteResult.ok) {
+        if (remoteResult.ok) {
+          setRemoteSubmitState('synced');
+        } else {
+          setRemoteSubmitState('failed');
           await queuePendingQuizSubmission(payload);
         }
       })();
@@ -134,8 +158,20 @@ export default function QuizScreen() {
       return;
     }
     try {
+      // Result-first sharing: point the link at the shared-result landing (/s/[token]) rather
+      // than the raw quiz, so whoever opens it sees this result FIRST instead of an unanswered
+      // quiz. Only attempted once this specific completion's own remote row is confirmed
+      // synced (see remoteSubmitState above) — otherwise falls back to the previous plain quiz
+      // link rather than risk pinning a stale/older completion.
+      let shareUrl = `${APP_URL}/quiz/${definition.id}`;
+      if (isRemoteDailyEnabled && remoteSubmitState === 'synced') {
+        const shareResult = await createQuizShare(definition.id, sharerDisplayName);
+        if (shareResult.ok) {
+          shareUrl = `${APP_URL}/s/${shareResult.shareId}`;
+        }
+      }
       await Share.share({
-        message: `I got ${result.resultDisplayTitle} on Apparently You 😂\n${definition.title}\n${APP_URL}/quiz/${definition.id}`,
+        message: `I got ${result.resultDisplayTitle} on Apparently You 😂\n${definition.title}\n${shareUrl}`,
       });
     } catch {
       // Share can reject/cancel (user dismissed the sheet, or no share target available on

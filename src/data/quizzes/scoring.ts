@@ -254,6 +254,54 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
   };
 };
 
+// Sharing-safe subset of a result's display content, resolved directly from a definition +
+// resultId — no dependency on a persisted QuizResultRecord/score/percent (a shared result's
+// anonymous recipient never receives those, see quiz-share-service.ts/src/app/s/[token].tsx).
+// Deliberately omits percent/mix: a shared link shows the ONE result the sharer chose, never a
+// breakdown of every other possible result's standing (which could reveal more about the
+// sharer than they intended to share). Returns null if the resultId no longer exists on the
+// current definition (content changed since the share was created).
+export type ShareableResultContent = {
+  resultTitle: string;
+  resultDisplayTitle: string;
+  heroRead: string[];
+  body: string;
+  kicker: string;
+  traits: string[];
+  resultSubtitle?: string;
+};
+
+export const resolveShareableResultContent = (definition: QuizDefinition, resultId: string): ShareableResultContent | null => {
+  if (definition.scoringType === 'archetype') {
+    const archetype = definition.archetypes.find((candidate) => candidate.id === resultId);
+    if (!archetype) {
+      return null;
+    }
+    return {
+      resultTitle: archetype.title,
+      resultDisplayTitle: resolveArchetypeDisplayTitle(archetype),
+      heroRead: archetype.heroRead,
+      body: archetype.body,
+      kicker: archetype.kicker,
+      traits: archetype.traits,
+      resultSubtitle: archetype.resultSubtitle,
+    };
+  }
+
+  const band = definition.resultBands.find((candidate) => candidate.id === resultId);
+  if (!band) {
+    return null;
+  }
+  return {
+    resultTitle: band.title,
+    resultDisplayTitle: defaultTitleCase(band.title),
+    heroRead: band.heroRead,
+    body: band.body,
+    kicker: band.kicker,
+    traits: band.traits,
+  };
+};
+
 // Generic lookup for a display-ready title from just a definition + resultId, without needing
 // a full ResultDisplay/QuizResultRecord — what You's Recent Read card needs (it only has the
 // lightweight persisted record, not a reconstructed result). Returns null if the id no longer

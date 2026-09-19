@@ -147,3 +147,17 @@ export type PrivateDailyRow = {
   access_level: PrivateDailyAccessLevel;
   options: PrivateDailyOption[] | null;
 };
+
+// Returned by the create_quiz_share(p_quiz_id, p_sharer_display_name) RPC.
+export type CreateQuizShareRow = {
+  share_id: string;
+};
+
+// Returned by the get_shared_quiz_result(p_share_id) RPC — deliberately never includes the
+// sharer's user id or any column beyond what a shared-result landing needs.
+export type SharedQuizResultRow = {
+  quiz_id: string;
+  result_id: string;
+  sharer_display_name: string | null;
+  created_at: string;
+};
