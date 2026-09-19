@@ -427,14 +427,22 @@ const styles = StyleSheet.create({
   scoreLabel: { color: Brand.violet, fontSize: 16, fontWeight: '800' },
   copy: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, marginTop: Spacing.one },
   sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
-  // Horizontal scroll + a fixed, generous card width — five equal-flex cards crammed into
-  // one row is what made trait names like "Planner"/"Protective" break mid-word on an
-  // iPhone; a wider card gives every name room to sit on one line (or wrap on a real word
-  // boundary) instead.
+  // Horizontal scroll + a card wide enough that even the longest single-word dimension
+  // label (e.g. "Collaborative", "Peacekeeping" — 12-13 characters, no space or hyphen to
+  // wrap on) fits on one line at this font size. 136px (104px of inner text width after
+  // padding) was NOT enough — a bold 17px single unbroken word that long needs roughly
+  // 130-145px, wider than the entire old card, which is what was cutting words off rather
+  // than wrapping them. 192px (160px of inner text width) gives every real dimension label
+  // room to sit on one line, with two-word/hyphenated labels ("Even-Keeled", "Holds the
+  // Receipt") still free to wrap naturally at their real word boundary if they ever need to.
+  // `gap` (not `justifyContent: 'space-between'`) guarantees a fixed minimum gap between the
+  // number/name/strength rows regardless of whether the name renders as one line or two, so
+  // a wrapped two-line name can never visually collide with the strength label beneath it —
+  // space-between only adds room when the column has slack, which a 2-line label removes.
   patternList: { gap: Spacing.two, paddingVertical: Spacing.one, paddingRight: Spacing.two },
-  pattern: { width: 136, minHeight: 112, borderRadius: 18, padding: Spacing.three, justifyContent: 'space-between' },
+  pattern: { width: 192, minHeight: 124, borderRadius: 18, padding: Spacing.three, gap: Spacing.two },
   patternNumber: { color: 'rgba(23,21,29,0.55)', fontSize: 12, fontWeight: '800' },
-  patternName: { color: Brand.ink, fontSize: 17, lineHeight: 21, fontWeight: '800' },
+  patternName: { color: Brand.ink, fontSize: 17, lineHeight: 22, fontWeight: '800' },
   patternStrength: { fontSize: 12, fontWeight: '800', color: 'rgba(23,21,29,0.65)', letterSpacing: 0.2 },
   // Additive quiz-completion card — same violet family as the pattern cards, distinct enough
   // from the pink Commonality/progress cards to read as "a different kind of result."
