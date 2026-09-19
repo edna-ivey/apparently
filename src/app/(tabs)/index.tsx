@@ -41,6 +41,7 @@ export default function HomeScreen() {
 
   const [answeredCount, setAnsweredCount] = useState(43);
   const [worldExpanded, setWorldExpanded] = useState(false);
+  const [privateRoomExpanded, setPrivateRoomExpanded] = useState(false);
 
   // Narrows the 5-variant experience union down to "there is a question to show" — true for
   // 'local' always, and for 'remote' only once phase is 'ready'. Every render below that
@@ -384,9 +385,60 @@ export default function HomeScreen() {
               )}
 
               {privateIsCommitted && privateSelectedChoice && (
-                <ThemedText style={styles.privateDropCopy}>
-                  {stripApparentlyPrefix(privateSelectedChoice.apparentlyFeedback ?? 'Noted.')}
-                </ThemedText>
+                <>
+                  <ThemedText style={styles.privateReadEyebrow}>THE READ</ThemedText>
+                  <ThemedText style={styles.privateDropCopy}>
+                    {stripApparentlyPrefix(privateSelectedChoice.apparentlyFeedback ?? 'Noted.')}
+                  </ThemedText>
+
+                  <Pressable style={styles.worldToggle} onPress={() => setPrivateRoomExpanded((value) => !value)}>
+                    <ThemedText style={styles.privateWorldToggleText}>
+                      {privateRoomExpanded ? 'Close the room ↑' : 'See the room ↓'}
+                    </ThemedText>
+                  </Pressable>
+
+                  {privateRoomExpanded && privateReady && privateReady.distribution.status === 'ready' && (
+                    <View style={styles.worldDistribution}>
+                      {privateReady.question.options.map((option, index) => {
+                        const isSelected = index === privateDisplayedOption;
+                        const percent =
+                          privateReady.distribution.status === 'ready' ? privateReady.distribution.percentages[index] : null;
+                        return (
+                          <View
+                            key={`private-room-option-${index}`}
+                            style={[styles.privateDistributionRow, isSelected && styles.privateDistributionRowSelected]}>
+                            <ThemedText
+                              style={[styles.privateDistributionLabel, isSelected && styles.privateDistributionLabelSelected]}
+                              numberOfLines={1}>
+                              {String.fromCharCode(65 + index)}. {option.label}
+                            </ThemedText>
+                            <ThemedText
+                              style={[styles.privateDistributionPercent, isSelected && styles.privateDistributionPercentSelected]}>
+                              {percent}%
+                            </ThemedText>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  {privateRoomExpanded &&
+                    privateReady &&
+                    (privateReady.distribution.status === 'loading' || privateReady.distribution.status === 'idle') && (
+                      <View style={styles.worldDistribution}>
+                        <ThemedText style={styles.privateDistributionLabel}>Tallying the room…</ThemedText>
+                      </View>
+                    )}
+
+                  {privateRoomExpanded && privateReady && privateReady.distribution.status === 'error' && (
+                    <View style={styles.worldDistribution}>
+                      <ThemedText style={styles.privateDistributionLabel}>The Room is having a moment.</ThemedText>
+                      <Pressable style={styles.worldToggle} onPress={privateDaily.retryDistribution}>
+                        <ThemedText style={styles.privateWorldToggleText}>Try again →</ThemedText>
+                      </Pressable>
+                    </View>
+                  )}
+                </>
               )}
             </View>
           )}
@@ -731,6 +783,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
+  },
+  privateReadEyebrow: {
+    color: Brand.coral,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+    marginTop: Spacing.two,
+  },
+  privateWorldToggleText: {
+    color: Brand.coral,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  // Private's own Room-row palette — cream/coral against the plum card, since the Public
+  // distribution rows above (styles.distribution*) are tuned for a white card background and
+  // would be unreadable here.
+  privateDistributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.two,
+  },
+  privateDistributionRowSelected: {
+    backgroundColor: 'rgba(255,249,245,0.1)',
+  },
+  privateDistributionLabel: {
+    flex: 1,
+    color: 'rgba(255,249,245,0.65)',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  privateDistributionLabelSelected: {
+    color: Brand.cream,
+    fontWeight: '800',
+  },
+  privateDistributionPercent: {
+    color: 'rgba(255,249,245,0.65)',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  privateDistributionPercentSelected: {
+    color: Brand.coral,
+    fontWeight: '800',
   },
   privateDropStatus: {
     color: Brand.coral,

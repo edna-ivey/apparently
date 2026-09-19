@@ -68,6 +68,11 @@ export type UsePrivateDailyExperience = {
   isCommitting: boolean;
   commitError: string | null;
   retry: () => void;
+  // No-op whenever there's nothing to retry. Re-requests ONLY the distribution — never
+  // re-checks the question, never re-fetches the answer, never touches the committed answer —
+  // for when `distribution.status === 'error'` on an already-answered Private Daily. Mirrors
+  // consumer-daily.ts's retryDistribution exactly.
+  retryDistribution: () => void;
 };
 
 export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
@@ -219,6 +224,13 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
     void load();
   }, [load]);
 
+  const retryDistribution = useCallback(() => {
+    if (state.phase !== 'ready' || state.committedIndex === null) {
+      return;
+    }
+    void refreshDistribution(state.questionId, state.optionIds);
+  }, [state, refreshDistribution]);
+
   const experience: PrivateDailyExperience =
     state.phase === 'ready'
       ? { phase: 'ready', access: state.access, question: state.question, committedIndex: state.committedIndex, distribution: state.distribution }
@@ -228,5 +240,14 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
           ? { phase: 'error', message: state.message }
           : { phase: state.phase };
 
-  return { experience, draftIndex, selectDraftOption, confirmAnswer: () => void confirmAnswer(), isCommitting, commitError, retry };
+  return {
+    experience,
+    draftIndex,
+    selectDraftOption,
+    confirmAnswer: () => void confirmAnswer(),
+    isCommitting,
+    commitError,
+    retry,
+    retryDistribution,
+  };
 };
