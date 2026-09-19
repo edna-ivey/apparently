@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
+import { hydrateQuizResults, useLatestQuizResult } from '@/data/quizzes/results';
+import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import type { PrivateQuizCategory } from '@/data/quizzes/types';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 
@@ -29,6 +31,19 @@ export default function PrivateScreen() {
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
 
   const previewDefinition = getQuizDefinition('secretly-love');
+
+  // Same persisted quiz history Explore already reads from — no second completion system.
+  // Reactive, so finishing the preview and landing back on Private in the same session shows
+  // it as completed immediately, no restart needed.
+  const previewLatestResult = useLatestQuizResult('secretly-love');
+  useEffect(() => {
+    void hydrateQuizResults();
+  }, []);
+  const previewCompleted = previewLatestResult !== 'loading' && previewLatestResult !== null;
+  const previewLastResultTitle =
+    previewCompleted && previewDefinition
+      ? resolveResultDisplayTitle(previewDefinition, previewLatestResult.resultId) ?? previewLatestResult.resultTitle
+      : null;
 
   const previewMatchesCategory = selectedCategory === 'All' || selectedCategory === 'The Good Stuff';
 
@@ -70,19 +85,35 @@ export default function PrivateScreen() {
           </ScrollView>
 
           {previewMatchesCategory && previewDefinition && (
-            <Pressable style={styles.previewCard} onPress={() => router.push('/quiz/secretly-love')}>
+            <View style={styles.previewCard}>
               <View style={styles.previewHeader}>
                 <ThemedText style={styles.previewEyebrow}>THE GOOD STUFF</ThemedText>
                 <View style={styles.previewBadge}>
-                  <ThemedText style={styles.previewBadgeText}>FREE PREVIEW</ThemedText>
+                  <ThemedText style={styles.previewBadgeText}>{previewCompleted ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
                 </View>
               </View>
               <ThemedText style={styles.previewTitle}>{previewDefinition.title}</ThemedText>
               <ThemedText style={styles.previewMeta}>{previewDefinition.meta} · Apparently Private</ThemedText>
-              <View style={styles.previewCta}>
-                <ThemedText style={styles.previewCtaText}>Take the preview →</ThemedText>
-              </View>
-            </Pressable>
+              {previewCompleted && previewLastResultTitle ? (
+                <ThemedText style={styles.previewLastResult}>Your result: {previewLastResultTitle}</ThemedText>
+              ) : null}
+              {previewCompleted ? (
+                <View style={styles.previewCtaRow}>
+                  <Pressable
+                    style={[styles.previewCta, styles.previewCtaInRow]}
+                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'secretly-love', view: 'result' } })}>
+                    <ThemedText style={styles.previewCtaText}>See result →</ThemedText>
+                  </Pressable>
+                  <Pressable style={styles.previewCtaSecondary} onPress={() => router.push('/quiz/secretly-love')}>
+                    <ThemedText style={styles.previewCtaSecondaryText}>Retake →</ThemedText>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable style={styles.previewCta} onPress={() => router.push('/quiz/secretly-love')}>
+                  <ThemedText style={styles.previewCtaText}>Take the preview →</ThemedText>
+                </Pressable>
+              )}
+            </View>
           )}
 
           <View style={styles.lockedList}>
@@ -154,8 +185,19 @@ const styles = StyleSheet.create({
   previewBadgeText: { color: Brand.plum, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
   previewTitle: { color: Brand.plum, fontSize: 25, lineHeight: 30, fontWeight: '800' },
   previewMeta: { color: 'rgba(36,1,31,0.65)', fontSize: 13, fontWeight: '600' },
+  previewLastResult: { color: 'rgba(36,1,31,0.75)', fontSize: 13, fontWeight: '700', marginTop: -Spacing.one },
+  previewCtaRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.two },
   previewCta: { alignSelf: 'flex-start', backgroundColor: Brand.plum, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  previewCtaInRow: { marginTop: 0 },
   previewCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
+  previewCtaSecondary: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(36,1,31,0.14)',
+    borderRadius: 14,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  previewCtaSecondaryText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
   lockedList: { gap: Spacing.two },
   // Premium plum/violet variations, never grey — locked should look tempting, not disabled.
   lockedCard: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 20, padding: Spacing.three, gap: Spacing.one, borderWidth: 1, borderColor: 'rgba(255,249,245,0.12)' },
