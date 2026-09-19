@@ -1,5 +1,5 @@
 import { adminSupabase } from '@/lib/admin-supabase';
-import type { DailyOptionRow, DailyQuestionRow } from '@/services/types';
+import type { DailyContentMode, DailyOptionRow, DailyQuestionRow, DailyRoom } from '@/services/types';
 
 // Thin Admin-facing data-access layer over the privileged admin_* RPCs created in
 // supabase/migrations/20260913220000_admin_control_room.sql. Every mutation here is a
@@ -54,10 +54,25 @@ export const getAdminDailyDistribution = (questionId: string): Promise<AdminResu
     result.ok ? { ok: true, data: result.data ?? [] } : result,
   );
 
-export const createDaily = (): Promise<AdminResult<string>> => runRpc<string>('admin_create_daily');
+export const createDaily = (room: DailyRoom = 'public', dailyMode: DailyContentMode = 'profile'): Promise<AdminResult<string>> =>
+  runRpc<string>('admin_create_daily', { p_room: room, p_daily_mode: dailyMode });
 
-export const updateDailyContent = (questionId: string, prompt: string, category: string): Promise<AdminResult> =>
-  runRpc('admin_update_daily_content', { p_question_id: questionId, p_prompt: prompt, p_category: category });
+export const updateDailyContent = (
+  questionId: string,
+  prompt: string,
+  category: string,
+  room?: DailyRoom,
+  dailyMode?: DailyContentMode,
+  isFreePrivateUnlock?: boolean,
+): Promise<AdminResult> =>
+  runRpc('admin_update_daily_content', {
+    p_question_id: questionId,
+    p_prompt: prompt,
+    p_category: category,
+    p_room: room ?? null,
+    p_daily_mode: dailyMode ?? null,
+    p_is_free_private_unlock: isFreePrivateUnlock ?? null,
+  });
 
 export const updateDailyOption = (
   optionId: string,

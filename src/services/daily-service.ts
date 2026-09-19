@@ -1,5 +1,5 @@
 import { getCurrentUserId } from './auth-service';
-import type { DailyAnswerRow, DailyDistributionRow, DailyOptionRow, DailyQuestionRow } from './types';
+import type { DailyAnswerRow, DailyDistributionRow, DailyOptionRow, DailyQuestionRow, PrivateDailyRow } from './types';
 import { supabase } from '@/lib/supabase';
 
 // Thin Supabase-facing layer over daily_questions/daily_options/daily_answers and the
@@ -29,6 +29,10 @@ export const getLiveDailyQuestion = async (): Promise<GetLiveDailyQuestionResult
     .from('daily_questions')
     .select('*')
     .eq('status', 'Live')
+    // Two rooms can each have their own Live row now (see the Public/Private Daily rooms
+    // migration) — Today's Public experience must only ever see the PUBLIC one. Private has
+    // its own dedicated read path (getPrivateDaily below), never this function.
+    .eq('room', 'public')
     .order('sort_order', { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -133,4 +137,62 @@ export const getDailyDistribution = async (questionId: string): Promise<GetDaily
     return { ok: false, message: error.message };
   }
   return { ok: true, data: data ?? [] };
+};
+
+// --- Apparently Private ------------------------------------------------------------------
+//
+// Both functions below are the ONLY way the client reaches Private Daily data/votes — never a
+// raw `.from('daily_options')`/`.from('daily_answers')` call for Private (RLS itself refuses
+// to hand back locked option data that way — see the Public/Private Daily rooms migration).
+// `testerAccess` is this build's EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS flag (see
+// lib/supabase.ts) — client-asserted, re-validated server-side on every write, never trusted
+// blindly for anything beyond "show me this one already-scoped Private question."
+
+export type GetPrivateDailyResult = { ok: true; data: PrivateDailyRow | null } | { ok: false; message: string };
+
+export const getPrivateDaily = async (testerAccess: boolean): Promise<GetPrivateDailyResult> => {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' };
+  }
+
+  const { data, error } = await supabase.rpc('get_private_daily', { p_tester_access: testerAccess });
+  if (error) {
+    console.warn('[daily-service] getPrivateDaily failed:', error.message);
+    return { ok: false, message: error.message };
+  }
+  const rows = (data ?? []) as PrivateDailyRow[];
+  return { ok: true, data: rows[0] ?? null };
+};
+
+export type SubmitPrivateDailyAnswerResult =
+  | { ok: true; optionId: string }
+  | { ok: false; reason: 'not_configured' | 'no_session' | 'insert_failed'; message?: string; code?: string };
+
+export const submitPrivateDailyAnswer = async (
+  questionId: string,
+  optionId: string,
+  testerAccess: boolean,
+): Promise<SubmitPrivateDailyAnswerResult> => {
+  if (!supabase) {
+    return { ok: false, reason: 'not_configured' };
+  }
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return { ok: false, reason: 'no_session' };
+  }
+
+  const { data, error } = await supabase.rpc('submit_private_daily_answer', {
+    p_question_id: questionId,
+    p_option_id: optionId,
+    p_tester_access: testerAccess,
+  });
+  if (error) {
+    console.warn('[daily-service] submitPrivateDailyAnswer failed:', error.message);
+    return { ok: false, reason: 'insert_failed', message: error.message, code: error.code };
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as { answer_id: string; option_id: string } | undefined;
+  if (!row) {
+    return { ok: false, reason: 'insert_failed', message: 'submit_private_daily_answer returned no row.' };
+  }
+  return { ok: true, optionId: row.option_id };
 };

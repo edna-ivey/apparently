@@ -1,4 +1,4 @@
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature } from '@/components/brand-signature';
@@ -25,18 +25,12 @@ export default function CompareScreen() {
             <ThemedText style={styles.heroCopy}>
               Send a link. They answer a few questions. We&apos;ll reveal the chemistry and the chaos.
             </ThemedText>
-            <Pressable style={styles.button} onPress={() => {}}>
-              <ThemedText style={styles.buttonText}>Start a comparison</ThemedText>
-            </Pressable>
-          </View>
-          <View style={styles.recent}>
-            <ThemedText style={styles.sectionTitle}>Recent comparisons</ThemedText>
-            <View style={styles.emptyRow}>
-              <ThemedText style={styles.emptyIcon}>?</ThemedText>
-              <View style={styles.emptyCopy}>
-                <ThemedText style={styles.emptyTitle}>Your first one is waiting.</ThemedText>
-                <ThemedText style={styles.emptyText}>Compare answers, not relationship futures.</ThemedText>
-              </View>
+            {/* Deliberately plain text, not a Pressable — no dead CTA, no fake comparison
+                flow, no fake history. Compare stays a real, opt-in feature for a later
+                sprint: only answers someone deliberately chooses to share, never a silent
+                read of someone's full You profile. */}
+            <View style={styles.comingSoonBadge}>
+              <ThemedText style={styles.comingSoonBadgeText}>COMING SOON</ThemedText>
             </View>
           </View>
         </ScrollView>
@@ -74,13 +68,13 @@ const styles = StyleSheet.create({
   heroEmoji: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
   heroTitle: { color: '#FFFFFF', fontSize: 24, lineHeight: 29, fontWeight: '800' },
   heroCopy: { color: 'rgba(255,255,255,0.84)', fontSize: 15, lineHeight: 22 },
-  button: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: Spacing.two, alignItems: 'center', marginTop: Spacing.two },
-  buttonText: { color: Brand.coral, fontSize: 14, fontWeight: '800' },
-  recent: { gap: Spacing.two, marginTop: Spacing.three },
-  sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
-  emptyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, backgroundColor: '#FFFFFF', borderRadius: 20, padding: Spacing.three },
-  emptyIcon: { width: 40, height: 40, borderRadius: 20, textAlign: 'center', paddingTop: 8, color: Brand.violet, backgroundColor: '#EEEAFE', fontSize: 20, fontWeight: '800' },
-  emptyCopy: { flex: 1, gap: Spacing.one },
-  emptyTitle: { color: Brand.ink, fontSize: 15, fontWeight: '800' },
-  emptyText: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18 },
+  comingSoonBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 99,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    marginTop: Spacing.two,
+  },
+  comingSoonBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
 });

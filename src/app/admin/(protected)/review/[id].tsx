@@ -496,6 +496,25 @@ export default function AdminReviewScreen() {
             <ThemedText style={styles.headerMeta}>
               {question.category} · {DAILY_STATUS_LABELS[question.status]}
             </ThemedText>
+            {/* Room/mode/free-unlock at a glance — read-only here (set via admin_create_daily/
+                admin_update_daily_content, exercised directly for this sprint's bulk content
+                authoring); the point is Michelle can never be in ambiguous state about which
+                room or mode she's reviewing. */}
+            <View style={styles.roomModeBadgeRow}>
+              <View style={[styles.roomModeBadge, question.room === 'private' && styles.roomModeBadgePrivate]}>
+                <ThemedText style={styles.roomModeBadgeText}>{question.room === 'private' ? 'PRIVATE' : 'PUBLIC'}</ThemedText>
+              </View>
+              <View style={styles.roomModeBadge}>
+                <ThemedText style={styles.roomModeBadgeText}>{question.daily_mode === 'room_only' ? 'ROOM-ONLY' : 'PROFILE'}</ThemedText>
+              </View>
+              {question.room === 'private' && (
+                <View style={[styles.roomModeBadge, question.is_free_private_unlock && styles.roomModeBadgeUnlocked]}>
+                  <ThemedText style={styles.roomModeBadgeText}>
+                    {question.is_free_private_unlock ? 'FREE UNLOCK' : 'LOCKED (TESTER ONLY)'}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
             {/* Always plain text, never a TextInput here — a large multiline TextInput
                 inside this purple card was the source of a real mobile Safari/RN Web bug
                 where the full question failed to show on initial render (internal scroll
@@ -673,6 +692,11 @@ const styles = StyleSheet.create({
   header: { gap: 4, backgroundColor: Brand.violet, borderRadius: 24, padding: Spacing.four },
   eyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   headerMeta: { color: '#DCD6FF', fontSize: 13, fontWeight: '700' },
+  roomModeBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  roomModeBadge: { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  roomModeBadgePrivate: { backgroundColor: Brand.coral },
+  roomModeBadgeUnlocked: { backgroundColor: '#2E9E6D' },
+  roomModeBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
   questionText: { color: '#FFFFFF', fontSize: 24, lineHeight: 30, fontWeight: '800', letterSpacing: -0.5, marginTop: Spacing.one },
   editFieldsCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F0E6E8', padding: Spacing.three, gap: Spacing.three },
   editField: { gap: Spacing.one },

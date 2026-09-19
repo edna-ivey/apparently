@@ -44,6 +44,16 @@ export const isSupabaseConfigured = isRealConfiguredValue(supabaseUrl) && isReal
 // there (see docs/backend-setup.md).
 export const isRemoteDailyEnabled = isSupabaseConfigured && process.env.EXPO_PUBLIC_REMOTE_DAILY_ENABLED === 'true';
 
+// TestFlight-beta-only override: unlocks every Private Daily for this build regardless of
+// each question's own is_free_private_unlock flag, so beta testers can answer Private every
+// day while the product concept is being evaluated. Set ONLY in the dedicated EAS
+// "testflight" build profile's env — never in "production" (App Store) or in Vercel/web, so
+// an ordinary consumer or web visitor never inherits it. This is a client-asserted signal:
+// every read/write it affects is re-validated server-side in get_private_daily/
+// submit_private_daily_answer (see that migration's security note) — this flag alone can
+// never bypass RLS or read another user's data.
+export const isPrivateDailyTesterAccessEnabled = process.env.EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS === 'true';
+
 if (__DEV__ && !isSupabaseConfigured) {
   // Loud, but never fatal — see the module-level comment on `supabase` below for why a
   // missing config must never crash the app or a static export.

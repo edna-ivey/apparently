@@ -42,6 +42,9 @@ export type ProfileRow = {
   updated_at: string;
 };
 
+export type DailyRoom = 'public' | 'private';
+export type DailyContentMode = 'profile' | 'room_only';
+
 export type DailyQuestionRow = {
   id: string;
   prompt: string;
@@ -54,6 +57,9 @@ export type DailyQuestionRow = {
   approved_at: string | null;
   approved_content_version: string | null;
   review_note: string | null;
+  room: DailyRoom;
+  daily_mode: DailyContentMode;
+  is_free_private_unlock: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -115,4 +121,29 @@ export type DailyDistributionRow = {
   answer_count: number;
   percent: number;
   total_answers: number;
+};
+
+// Single-row shape returned by the get_private_daily(p_tester_access) RPC. `options` is null
+// whenever access_level='locked' — the server never sends usable choice data for a locked,
+// non-unlocked caller, so there is nothing for the client to accidentally leak by rendering
+// eagerly.
+export type PrivateDailyAccessLevel = 'locked' | 'unlocked';
+
+export type PrivateDailyOption = {
+  id: string;
+  position: number;
+  label: string;
+  personalityEffects: PersonalityEffectRemote[];
+  apparentlyFeedback: string | null;
+};
+
+export type PrivateDailyRow = {
+  question_id: string;
+  prompt: string;
+  category: string;
+  daily_mode: DailyContentMode;
+  is_free_private_unlock: boolean;
+  published_for: string | null;
+  access_level: PrivateDailyAccessLevel;
+  options: PrivateDailyOption[] | null;
 };

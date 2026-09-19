@@ -8,7 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { useConsumerDailyExperience } from '@/data/consumer-daily';
+import { usePrivateDailyExperience } from '@/data/consumer-private-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
+import { isRemoteDailyEnabled, isPrivateDailyTesterAccessEnabled } from '@/lib/supabase';
 import {
   getDemoPersonalityAnswers,
   getDemoPersonalityProfile,
@@ -30,6 +32,12 @@ export default function HomeScreen() {
   // either type), so it never has to know or care which source is active.
   const { experience, draftIndex, selectDraftOption, confirmAnswer, isCommitting, commitError, retry, retryDistribution } =
     useConsumerDailyExperience();
+
+  const privateDaily = usePrivateDailyExperience();
+  const privateReady = privateDaily.experience.phase === 'ready' ? privateDaily.experience : null;
+  const privateIsCommitted = privateReady !== null && privateReady.committedIndex !== null;
+  const privateDisplayedOption = privateReady ? privateReady.committedIndex ?? privateDaily.draftIndex : null;
+  const privateSelectedChoice = privateReady ? privateReady.question.options[privateDisplayedOption ?? 0] ?? null : null;
 
   const [answeredCount, setAnsweredCount] = useState(43);
   const [worldExpanded, setWorldExpanded] = useState(false);
@@ -312,15 +320,74 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {isCommitted && (
+          {/* Apparently Private's Daily card — remote-only, shown once the Public Daily is
+              committed (mirroring the "answer-first" reveal rhythm the rest of Today already
+              uses). Three real states: locked teaser (prompt only, no choices/Room/response —
+              never fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
+              TestFlight tester access — real choices, answer-before-Room), and answered
+              (real reaction + real Room, same shape as Public). */}
+          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'locked' && (
             <View style={styles.privateDropCard}>
-              <ThemedText style={styles.privateDropEyebrow}>PRIVATE DROP</ThemedText>
-              <ThemedText style={styles.privateDropTitle}>Your second drop is locked.</ThemedText>
-              <ThemedText style={styles.privateDropCopy}>You know you want to know.</ThemedText>
-              {/* Deliberately plain text, no arrow, no button chrome — this is a status
-                  label, not a CTA, and must not look tappable. No purchase/paywall code
-                  exists behind it. */}
-              <ThemedText style={styles.privateDropStatus}>PRIVATE · COMING SOON</ThemedText>
+              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
+              <ThemedText style={styles.privateDropTitle}>{privateDaily.experience.prompt}</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>Today’s question lives in Private.</ThemedText>
+              <Pressable style={styles.privateDropUnlockButton} onPress={() => router.push('/private')}>
+                <ThemedText style={styles.privateDropUnlockButtonText}>Enter Private →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {isCommitted && isRemoteDailyEnabled && privateReady && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>
+                {isPrivateDailyTesterAccessEnabled ? 'TESTER ACCESS · PRIVATE UNLOCKED' : 'PRIVATE DOOR OPEN 👀'}
+              </ThemedText>
+              {!privateIsCommitted && (
+                <ThemedText style={styles.privateDropCopy}>Today’s Private Drop is unlocked.</ThemedText>
+              )}
+              <ThemedText style={styles.privateDropTitle}>{privateReady.question.prompt}</ThemedText>
+
+              {!privateIsCommitted && (
+                <View style={styles.privateOptions}>
+                  {privateReady.question.options.map((option, index) => {
+                    const isSelected = privateDisplayedOption === index;
+                    return (
+                      <Pressable
+                        key={`private-option-${index}`}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isSelected }}
+                        onPress={() => privateDaily.selectDraftOption(index)}
+                        style={[styles.privateOption, isSelected && styles.privateOptionSelected]}>
+                        <ThemedText style={[styles.privateOptionText, isSelected && styles.privateOptionTextSelected]}>
+                          {String.fromCharCode(65 + index)}. {option.label}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                  <Pressable
+                    disabled={privateDaily.draftIndex === null || privateDaily.isCommitting}
+                    onPress={privateDaily.confirmAnswer}
+                    style={[
+                      styles.privateDropUnlockButton,
+                      (privateDaily.draftIndex === null || privateDaily.isCommitting) && styles.confirmButtonDisabled,
+                    ]}>
+                    <ThemedText style={styles.privateDropUnlockButtonText}>
+                      {privateDaily.isCommitting ? 'Locking it in…' : 'Lock it in →'}
+                    </ThemedText>
+                  </Pressable>
+                  {privateDaily.commitError && (
+                    <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                      {privateDaily.commitError}
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+
+              {privateIsCommitted && privateSelectedChoice && (
+                <ThemedText style={styles.privateDropCopy}>
+                  {stripApparentlyPrefix(privateSelectedChoice.apparentlyFeedback ?? 'Noted.')}
+                </ThemedText>
+              )}
             </View>
           )}
 
@@ -671,6 +738,45 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     marginTop: Spacing.one,
+  },
+  privateDropUnlockButton: {
+    backgroundColor: Brand.coral,
+    borderRadius: 14,
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.two,
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.three,
+  },
+  privateDropUnlockButtonText: {
+    color: Brand.plum,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  privateOptions: {
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  privateOption: {
+    minHeight: 50,
+    borderRadius: 14,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: 'rgba(255,249,245,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,249,245,0.14)',
+  },
+  privateOptionSelected: {
+    backgroundColor: Brand.coral,
+    borderColor: Brand.coral,
+  },
+  privateOptionText: {
+    color: Brand.cream,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  privateOptionTextSelected: {
+    color: Brand.plum,
   },
   statsRow: {
     flexDirection: 'row',
