@@ -19,23 +19,30 @@ type CategoryFilter = 'All' | PrivateQuizCategory;
 const CATEGORY_PILLS: CategoryFilter[] = ['All', ...PRIVATE_CATEGORIES];
 
 // Apparently Private — a deliberately different room from free Explore. The ONE playable
-// quiz here (secretly-love, access: 'private-preview') is a real QuizDefinition and runs
+// quiz here (keep-you-around, access: 'private-preview') is a real QuizDefinition and runs
 // through the exact same generic quiz/[quizId].tsx runner as every free quiz — no special
 // casing. Everything else on this page is locked teaser metadata (private-catalog.ts) with no
 // questions/scoring behind it yet; tapping one never navigates into the quiz runner, never
 // pretends a purchase happened, and never shows a price — see the locked-info modal below.
+//
+// secretly-love was the previous active preview; it's no longer linked from this screen but
+// stays fully registered (see quizzes/index.ts) so its own historical completions, "See
+// result", and old shared-result links keep working exactly as before. Switching the id
+// below is the ONLY change needed here — an old secretly-love completion was never, and still
+// isn't, treated as a keep-you-around completion (they're different quiz_ids in the same
+// existing per-quiz-id history store).
 export default function PrivateScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
 
-  const previewDefinition = getQuizDefinition('secretly-love');
+  const previewDefinition = getQuizDefinition('keep-you-around');
 
   // Same persisted quiz history Explore already reads from — no second completion system.
   // Reactive, so finishing the preview and landing back on Private in the same session shows
   // it as completed immediately, no restart needed.
-  const previewLatestResult = useLatestQuizResult('secretly-love');
+  const previewLatestResult = useLatestQuizResult('keep-you-around');
   useEffect(() => {
     void hydrateQuizResults();
   }, []);
@@ -101,15 +108,15 @@ export default function PrivateScreen() {
                 <View style={styles.previewCtaRow}>
                   <Pressable
                     style={[styles.previewCta, styles.previewCtaInRow]}
-                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'secretly-love', view: 'result' } })}>
+                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'keep-you-around', view: 'result' } })}>
                     <ThemedText style={styles.previewCtaText}>See result →</ThemedText>
                   </Pressable>
-                  <Pressable style={styles.previewCtaSecondary} onPress={() => router.push('/quiz/secretly-love')}>
+                  <Pressable style={styles.previewCtaSecondary} onPress={() => router.push('/quiz/keep-you-around')}>
                     <ThemedText style={styles.previewCtaSecondaryText}>Retake →</ThemedText>
                   </Pressable>
                 </View>
               ) : (
-                <Pressable style={styles.previewCta} onPress={() => router.push('/quiz/secretly-love')}>
+                <Pressable style={styles.previewCta} onPress={() => router.push('/quiz/keep-you-around')}>
                   <ThemedText style={styles.previewCtaText}>Take the preview →</ThemedText>
                 </Pressable>
               )}
