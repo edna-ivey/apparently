@@ -100,31 +100,73 @@ export default function SharedResultScreen() {
                 <ThemedText style={styles.quizTitle}>{state.quizTitle}</ThemedText>
               </View>
 
-              <View style={styles.verdictCard}>
-                <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
-                <ThemedText style={styles.verdictTitle}>{state.content.resultTitle}</ThemedText>
-                {state.content.resultSubtitle ? (
-                  <ThemedText style={styles.verdictSubtitle}>{state.content.resultSubtitle}</ThemedText>
-                ) : null}
-                {state.content.heroRead.map((line) => (
-                  <ThemedText key={line} style={styles.verdictHero}>
-                    {line}
-                  </ThemedText>
-                ))}
-              </View>
+              {state.content.structuredRead ? (
+                <View style={styles.verdictCard}>
+                  <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
+                  <ThemedText style={styles.verdictTitle}>{state.content.resultTitle}</ThemedText>
 
-              <View style={styles.whyCard}>
-                <ThemedText style={styles.eyebrow}>WHY {state.sharerName.toUpperCase()} GOT THAT</ThemedText>
-                <ThemedText style={styles.whyBody}>{state.content.body}</ThemedText>
-                <View style={styles.traitRow}>
-                  {state.content.traits.map((trait) => (
-                    <View key={trait} style={styles.traitPill}>
-                      <ThemedText style={styles.traitPillText}>{trait}</ThemedText>
-                    </View>
-                  ))}
+                  <View style={styles.privateSection}>
+                    <ThemedText style={styles.privateSectionHeading}>THE READ</ThemedText>
+                    {state.content.structuredRead.theRead.map((line, index) => (
+                      <ThemedText key={`the-read-${index}`} style={styles.privateSectionBody}>
+                        {line}
+                      </ThemedText>
+                    ))}
+                  </View>
+                  <View style={styles.privateSection}>
+                    <ThemedText style={styles.privateSectionHeading}>THE CALL-OUT</ThemedText>
+                    {state.content.structuredRead.theCallOut.map((line, index) => (
+                      <ThemedText key={`the-call-out-${index}`} style={styles.privateSectionBody}>
+                        {line}
+                      </ThemedText>
+                    ))}
+                  </View>
+                  <View style={styles.privateSection}>
+                    <ThemedText style={styles.privateSectionHeading}>THE COST</ThemedText>
+                    {state.content.structuredRead.theCost.map((line, index) => (
+                      <ThemedText key={`the-cost-${index}`} style={styles.privateSectionBody}>
+                        {line}
+                      </ThemedText>
+                    ))}
+                  </View>
+                  <View style={styles.privateSection}>
+                    <ThemedText style={styles.privateSectionHeading}>TRY THIS</ThemedText>
+                    {state.content.structuredRead.tryThis.map((line, index) => (
+                      <ThemedText key={`try-this-${index}`} style={styles.privateSectionBody}>
+                        {line}
+                      </ThemedText>
+                    ))}
+                  </View>
                 </View>
-                <ThemedText style={styles.kicker}>{state.content.kicker}</ThemedText>
-              </View>
+              ) : (
+                <>
+                  <View style={styles.verdictCard}>
+                    <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
+                    <ThemedText style={styles.verdictTitle}>{state.content.resultTitle}</ThemedText>
+                    {state.content.resultSubtitle ? (
+                      <ThemedText style={styles.verdictSubtitle}>{state.content.resultSubtitle}</ThemedText>
+                    ) : null}
+                    {state.content.heroRead.map((line) => (
+                      <ThemedText key={line} style={styles.verdictHero}>
+                        {line}
+                      </ThemedText>
+                    ))}
+                  </View>
+
+                  <View style={styles.whyCard}>
+                    <ThemedText style={styles.eyebrow}>WHY {state.sharerName.toUpperCase()} GOT THAT</ThemedText>
+                    <ThemedText style={styles.whyBody}>{state.content.body}</ThemedText>
+                    <View style={styles.traitRow}>
+                      {state.content.traits.map((trait) => (
+                        <View key={trait} style={styles.traitPill}>
+                          <ThemedText style={styles.traitPillText}>{trait}</ThemedText>
+                        </View>
+                      ))}
+                    </View>
+                    <ThemedText style={styles.kicker}>{state.content.kicker}</ThemedText>
+                  </View>
+                </>
+              )}
 
               <Pressable style={styles.cta} onPress={() => router.push(`/quiz/${state.quizId}`)}>
                 <ThemedText style={styles.ctaText}>Take it myself →</ThemedText>
@@ -212,6 +254,12 @@ const styles = StyleSheet.create({
   verdictTitle: { color: '#FFFFFF', fontSize: 30, lineHeight: 34, fontWeight: '900', letterSpacing: -0.6, marginTop: Spacing.one },
   verdictSubtitle: { color: '#DCD6FF', fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: -Spacing.half },
   verdictHero: { color: '#F1EEFF', fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
+  // TRY THIS) — mirrors quiz/[quizId].tsx's PrivateStructuredResult styling exactly, so a
+  // shared structuredRead result reads identically here as it does in the quiz runner itself.
+  privateSection: { marginTop: Spacing.three, gap: Spacing.one },
+  privateSectionHeading: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  privateSectionBody: { color: '#F1EEFF', fontSize: 16, lineHeight: 22, fontWeight: '700' },
   whyCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
   whyBody: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600' },
   traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
