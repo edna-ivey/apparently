@@ -9,50 +9,72 @@ import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
-import { hydrateQuizResults, useLatestQuizResult } from '@/data/quizzes/results';
+import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
-import type { PrivateQuizCategory } from '@/data/quizzes/types';
+import type { PrivateQuizCategory, QuizDefinition } from '@/data/quizzes/types';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 
 type CategoryFilter = 'All' | PrivateQuizCategory;
 
 const CATEGORY_PILLS: CategoryFilter[] = ['All', ...PRIVATE_CATEGORIES];
 
-// Apparently Private — a deliberately different room from free Explore. The ONE playable
-// quiz here (keep-you-around, access: 'private-preview') is a real QuizDefinition and runs
-// through the exact same generic quiz/[quizId].tsx runner as every free quiz — no special
-// casing. Everything else on this page is locked teaser metadata (private-catalog.ts) with no
-// questions/scoring behind it yet; tapping one never navigates into the quiz runner, never
-// pretends a purchase happened, and never shows a price — see the locked-info modal below.
+// The current OPEN/FREE PREVIEW quizzes on Apparently Private's landing — data-driven and
+// ordered, so adding a future one is a one-line change here, never a new hardcoded card block.
+// Each is a real QuizDefinition and runs through the exact same generic quiz/[quizId].tsx
+// runner as every free quiz — no special casing. Everything else on this page is locked
+// teaser metadata (private-catalog.ts) with no questions/scoring behind it yet; tapping one
+// never navigates into the quiz runner, never pretends a purchase happened, and never shows a
+// price — see the locked-info modal below.
 //
-// secretly-love was the previous active preview; it's no longer linked from this screen but
-// stays fully registered (see quizzes/index.ts) so its own historical completions, "See
-// result", and old shared-result links keep working exactly as before. Switching the id
-// below is the ONLY change needed here — an old secretly-love completion was never, and still
-// isn't, treated as a keep-you-around completion (they're different quiz_ids in the same
-// existing per-quiz-id history store).
+// secretly-love was an earlier active preview; it's no longer listed here but stays fully
+// registered (see quizzes/index.ts) so its own historical completions, "See result", and old
+// shared-result links keep working exactly as before — removing an id from this array never
+// touches that quiz's own definition or history.
+const OPEN_PRIVATE_QUIZ_IDS = ['keep-you-around', 'be-so-serious'];
+
+type OpenQuizCard = {
+  id: string;
+  definition: QuizDefinition;
+  completed: boolean;
+  lastResultTitle: string | null;
+};
+
 export default function PrivateScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
 
-  const previewDefinition = getQuizDefinition('keep-you-around');
-
   // Same persisted quiz history Explore already reads from — no second completion system.
-  // Reactive, so finishing the preview and landing back on Private in the same session shows
-  // it as completed immediately, no restart needed.
-  const previewLatestResult = useLatestQuizResult('keep-you-around');
+  // One useQuizResults() call (a hook, so it can't live inside the loop below) feeds every
+  // open quiz card's own independent completion state; reactive, so finishing a preview and
+  // landing back on Private in the same session shows it as completed immediately.
+  const quizResults = useQuizResults();
   useEffect(() => {
     void hydrateQuizResults();
   }, []);
-  const previewCompleted = previewLatestResult !== 'loading' && previewLatestResult !== null;
-  const previewLastResultTitle =
-    previewCompleted && previewDefinition
-      ? resolveResultDisplayTitle(previewDefinition, previewLatestResult.resultId) ?? previewLatestResult.resultTitle
-      : null;
 
-  const previewMatchesCategory = selectedCategory === 'All' || selectedCategory === 'The Good Stuff';
+  const openQuizCards: OpenQuizCard[] = useMemo(() => {
+    return OPEN_PRIVATE_QUIZ_IDS.map((id) => {
+      const definition = getQuizDefinition(id);
+      if (!definition) {
+        return null;
+      }
+      // Mirrors useLatestQuizResult's own logic exactly (results are appended in completion
+      // order, so the last match for this quizId is always the latest) — just computed once
+      // per quiz id from the single quizResults array above instead of one hook call each.
+      const matches = quizResults === 'loading' ? [] : quizResults.filter((record) => record.quizId === id);
+      const latest = matches.length > 0 ? matches[matches.length - 1] : null;
+      const completed = latest !== null;
+      const lastResultTitle = completed ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
+      return { id, definition, completed, lastResultTitle };
+    }).filter((card): card is OpenQuizCard => card !== null);
+  }, [quizResults]);
+
+  const visibleQuizCards = useMemo(
+    () => openQuizCards.filter((card) => selectedCategory === 'All' || card.definition.category === selectedCategory),
+    [openQuizCards, selectedCategory],
+  );
 
   const visibleLockedEntries = useMemo(
     () => PRIVATE_LOCKED_CATALOG.filter((entry) => selectedCategory === 'All' || entry.category === selectedCategory),
@@ -91,37 +113,41 @@ export default function PrivateScreen() {
             })}
           </ScrollView>
 
-          {previewMatchesCategory && previewDefinition && (
-            <View style={styles.previewCard}>
+          {visibleQuizCards.map((card) => (
+            <View key={card.id} style={styles.previewCard}>
               <View style={styles.previewHeader}>
-                <ThemedText style={styles.previewEyebrow}>THE GOOD STUFF</ThemedText>
+                <ThemedText style={styles.previewEyebrow}>{card.definition.category.toUpperCase()}</ThemedText>
                 <View style={styles.previewBadge}>
-                  <ThemedText style={styles.previewBadgeText}>{previewCompleted ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
+                  <ThemedText style={styles.previewBadgeText}>{card.completed ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
                 </View>
               </View>
-              <ThemedText style={styles.previewTitle}>{previewDefinition.title}</ThemedText>
-              <ThemedText style={styles.previewMeta}>{previewDefinition.meta} · Apparently Private</ThemedText>
-              {previewCompleted && previewLastResultTitle ? (
-                <ThemedText style={styles.previewLastResult}>Your result: {previewLastResultTitle}</ThemedText>
+              <ThemedText style={styles.previewTitle}>{card.definition.title}</ThemedText>
+              <ThemedText style={styles.previewMeta}>{card.definition.meta} · Apparently Private</ThemedText>
+              {card.completed && card.lastResultTitle ? (
+                <ThemedText style={styles.previewLastResult}>Your result: {card.lastResultTitle}</ThemedText>
               ) : null}
-              {previewCompleted ? (
+              {card.completed ? (
                 <View style={styles.previewCtaRow}>
                   <Pressable
                     style={[styles.previewCta, styles.previewCtaInRow]}
-                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: 'keep-you-around', view: 'result' } })}>
+                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id, view: 'result' } })}>
                     <ThemedText style={styles.previewCtaText}>See result →</ThemedText>
                   </Pressable>
-                  <Pressable style={styles.previewCtaSecondary} onPress={() => router.push('/quiz/keep-you-around')}>
+                  <Pressable
+                    style={styles.previewCtaSecondary}
+                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
                     <ThemedText style={styles.previewCtaSecondaryText}>Retake →</ThemedText>
                   </Pressable>
                 </View>
               ) : (
-                <Pressable style={styles.previewCta} onPress={() => router.push('/quiz/keep-you-around')}>
+                <Pressable
+                  style={styles.previewCta}
+                  onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
                   <ThemedText style={styles.previewCtaText}>Take the preview →</ThemedText>
                 </Pressable>
               )}
             </View>
-          )}
+          ))}
 
           <View style={styles.lockedList}>
             {visibleLockedEntries.map((entry) => (
