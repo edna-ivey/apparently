@@ -7,12 +7,15 @@ import { ScheduleDateField } from '@/components/admin/schedule-date-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AdminMaxContentWidth, Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { QUIZ_REGISTRY } from '@/data/quizzes';
+import type { QuizDefinition } from '@/data/quizzes/types';
 import {
   approveDaily,
   archiveLiveDaily,
   createDaily,
   deleteDaily,
   getAdminDailyDistribution,
+  getAdminQuizResultDistribution,
   listDailyOptions,
   listDailyQuestions,
   moveToDraft,
@@ -23,11 +26,14 @@ import {
   submitForReview,
   unscheduleDaily,
   type AdminDistributionRow,
+  type AdminQuizResultDistributionRow,
 } from '@/services/admin-daily-service';
 import { type AdminRole, getAdminRole, signOutAdmin } from '@/services/admin-auth-service';
 import type { DailyQuestionRow } from '@/services/types';
+import { getDailyAccessBadge, getQuizAccessBadge } from '@/utils/admin-access-badges';
 import { canDeleteAdminDaily, DAILY_STATUS_LABELS } from '@/utils/admin-transitions';
 import { confirmAction } from '@/utils/confirm-action';
+import { fetchAllById, type ByIdState } from '@/utils/fetch-by-id';
 
 // Production Admin dashboard — Sprint 1C-A. Loads REAL Supabase content via the admin_*
 // RPCs (src/services/admin-daily-service.ts); the local prototype store
@@ -48,6 +54,21 @@ const SECTION_ORDER: { title: string; status: Status; emptyLabel: string }[] = [
   { title: 'Archived', status: 'Archived', emptyLabel: 'nothing archived yet' },
 ];
 
+// Every Live question's own distribution, keyed by its immutable question id via
+// fetchAllById — NEVER a single shared "the current live distribution" variable. That
+// single-shared-variable shape is exactly what caused the duplicated-results bug: with the
+// Public/Private Daily rooms model, TWO questions can legitimately be Live at once (one per
+// room), and a shared variable fetched for only the first one `Array.find()` happened to
+// return was then rendered identically on every "Live" card regardless of which question it
+// actually belonged to. 'loading' and 'error' are distinct, explicit states — a card never
+// falls back to another question's rows, and never silently shows nothing when a fetch
+// genuinely fails. See fetch-by-id.ts and scripts/validate-admin-distribution-scoping.ts.
+
+// Current (non-historicalOnly) quizzes, resolved once — QUIZ_REGISTRY already contains every
+// registered quiz; this list grows automatically as new quizzes are added, with zero admin
+// code changes, and secretly-love is excluded purely by its own historicalOnly: true flag.
+const CURRENT_QUIZZES: QuizDefinition[] = Object.values(QUIZ_REGISTRY).filter((quiz) => !quiz.historicalOnly);
+
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const [role, setRole] = useState<AdminRole>('unauthorized');
@@ -56,28 +77,39 @@ export default function AdminDashboardScreen() {
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [scheduleDrafts, setScheduleDrafts] = useState<Record<string, string>>({});
   const [revisionDrafts, setRevisionDrafts] = useState<Record<string, string>>({});
-  const [liveDistribution, setLiveDistribution] = useState<AdminDistributionRow[] | null>(null);
+  const [dailyDistributions, setDailyDistributions] = useState<Record<string, ByIdState<AdminDistributionRow[]>>>({});
+  const [quizDistributions, setQuizDistributions] = useState<Record<string, ByIdState<AdminQuizResultDistributionRow[]>>>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const result = await listDailyQuestions();
     if (result.ok) {
       setQuestions(result.data);
-      const live = result.data.find((q) => q.status === 'Live');
-      if (live) {
-        const distribution = await getAdminDailyDistribution(live.id);
-        setLiveDistribution(distribution.ok ? distribution.data : null);
-      } else {
-        setLiveDistribution(null);
-      }
+      // Every currently-Live question (one per room, or more if that ever changes) gets its
+      // own independent fetch, stored under its OWN id — never just the first one found.
+      const liveQuestions = result.data.filter((q) => q.status === 'Live');
+      await fetchAllById(
+        liveQuestions.map((q) => q.id),
+        getAdminDailyDistribution,
+        (id, state) => setDailyDistributions((previous) => ({ ...previous, [id]: state })),
+      );
     }
     setLoading(false);
+  }, []);
+
+  const reloadQuizAnalytics = useCallback(async () => {
+    await fetchAllById(
+      CURRENT_QUIZZES.map((quiz) => quiz.id),
+      getAdminQuizResultDistribution,
+      (id, state) => setQuizDistributions((previous) => ({ ...previous, [id]: state })),
+    );
   }, []);
 
   useEffect(() => {
     void getAdminRole().then(setRole);
     void reload();
-  }, [reload]);
+    void reloadQuizAnalytics();
+  }, [reload, reloadQuizAnalytics]);
 
   const byStatus = useMemo(() => {
     const groups: Record<Status, DailyQuestionRow[]> = {
@@ -255,10 +287,19 @@ export default function AdminDashboardScreen() {
 
   const renderQuestionCard = (question: DailyQuestionRow) => {
     const expanded = expandedIds.includes(question.id);
-    const metaParts = [DAILY_STATUS_LABELS[question.status].toUpperCase(), question.category.toUpperCase()];
+    const metaParts = [
+      DAILY_STATUS_LABELS[question.status].toUpperCase(),
+      getDailyAccessBadge(question),
+      question.category.toUpperCase(),
+    ];
     if (question.status === 'Scheduled' && question.scheduled_for) {
       metaParts.push(question.scheduled_for);
     }
+
+    // Bound to THIS question's own id, and only this id — a card for one question must never
+    // read, or fall back to, another question's distribution.
+    const distribution = dailyDistributions[question.id];
+    const totalVotes = distribution?.status === 'ready' ? distribution.data.reduce((sum, r) => sum + r.answer_count, 0) : null;
 
     return (
       <View key={question.id} style={styles.card}>
@@ -271,15 +312,29 @@ export default function AdminDashboardScreen() {
 
         {question.status === 'Live' && (
           <View style={styles.liveSummary}>
-            <ThemedText style={styles.liveSummaryText}>
-              Published {question.published_for ?? 'unknown date'} ·{' '}
-              {liveDistribution ? `${liveDistribution.reduce((sum, r) => sum + r.answer_count, 0)} real vote${liveDistribution.reduce((sum, r) => sum + r.answer_count, 0) === 1 ? '' : 's'}` : 'loading votes…'}
-            </ThemedText>
-            {liveDistribution?.map((row) => (
-              <ThemedText key={row.option_id} style={styles.liveDistributionRow}>
-                {row.label}: {row.percent}% ({row.answer_count})
-              </ThemedText>
-            ))}
+            {(!distribution || distribution.status === 'loading') && (
+              <ThemedText style={styles.liveSummaryText}>Published {question.published_for ?? 'unknown date'} · loading votes…</ThemedText>
+            )}
+            {distribution?.status === 'error' && (
+              <>
+                <ThemedText style={styles.liveSummaryTextError}>
+                  Published {question.published_for ?? 'unknown date'} · votes unavailable
+                </ThemedText>
+                <ThemedText style={styles.liveSummaryTextError}>{distribution.message}</ThemedText>
+              </>
+            )}
+            {distribution?.status === 'ready' && (
+              <>
+                <ThemedText style={styles.liveSummaryText}>
+                  Published {question.published_for ?? 'unknown date'} · {totalVotes} real vote{totalVotes === 1 ? '' : 's'}
+                </ThemedText>
+                {distribution.data.map((row) => (
+                  <ThemedText key={row.option_id} style={styles.liveDistributionRow}>
+                    {row.label}: {row.percent}% ({row.answer_count})
+                  </ThemedText>
+                ))}
+              </>
+            )}
           </View>
         )}
 
@@ -358,6 +413,60 @@ export default function AdminDashboardScreen() {
     );
   };
 
+  // One card per CURRENT (non-historicalOnly) playable quiz — dynamic over QUIZ_REGISTRY, so
+  // a newly added quiz automatically appears here with no admin-side change. Each quiz's own
+  // distribution is bound to its own quiz.id (mirroring the same per-id scoping fix Daily
+  // distributions got above) — never another quiz's rows.
+  const renderQuizAnalyticsSection = () => (
+    <View style={styles.section}>
+      <ThemedText style={styles.sectionTitle}>Quiz analytics</ThemedText>
+      {CURRENT_QUIZZES.map((quiz) => {
+        const distribution = quizDistributions[quiz.id];
+        const totalCompletions = distribution?.status === 'ready' ? distribution.data.reduce((sum, r) => sum + r.completion_count, 0) : null;
+        return (
+          <View key={quiz.id} style={styles.card}>
+            <View style={styles.metaRow}>
+              <ThemedText style={styles.metaText}>{getQuizAccessBadge(quiz.access)}</ThemedText>
+            </View>
+            <ThemedText style={styles.questionText}>{quiz.title}</ThemedText>
+
+            {(!distribution || distribution.status === 'loading') && (
+              <ThemedText style={styles.liveSummaryText}>loading completions…</ThemedText>
+            )}
+            {distribution?.status === 'error' && (
+              <>
+                <ThemedText style={styles.liveSummaryTextError}>completions unavailable</ThemedText>
+                <ThemedText style={styles.liveSummaryTextError}>{distribution.message}</ThemedText>
+              </>
+            )}
+            {distribution?.status === 'ready' && (
+              <View style={styles.liveSummary}>
+                <ThemedText style={styles.liveSummaryText}>
+                  {totalCompletions} real completion{totalCompletions === 1 ? '' : 's'}
+                </ThemedText>
+                {distribution.data.length === 0 ? (
+                  <ThemedText style={styles.liveDistributionRow}>No completions yet.</ThemedText>
+                ) : (
+                  distribution.data.map((row) => {
+                    const percent = totalCompletions && totalCompletions > 0 ? Math.round((row.completion_count / totalCompletions) * 100) : 0;
+                    return (
+                      <View key={row.result_id} style={styles.quizResultRow}>
+                        <ThemedText style={styles.quizResultLabel}>{row.result_title}</ThemedText>
+                        <ThemedText style={styles.quizResultCount}>
+                          {row.completion_count} · {percent}%
+                        </ThemedText>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+
   if (loading) {
     return <ThemedView style={styles.container} />;
   }
@@ -407,6 +516,8 @@ export default function AdminDashboardScreen() {
           </View>
 
           {SECTION_ORDER.map(renderSection)}
+
+          {renderQuizAnalyticsSection()}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -447,14 +558,21 @@ const styles = StyleSheet.create({
   sectionTitle: { color: Brand.ink, fontSize: 16, fontWeight: '800' },
   emptySectionRow: { paddingVertical: Spacing.one },
   emptySectionText: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: Spacing.three, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: Spacing.three, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8', width: '100%' },
+  // flexWrap + flexShrink on the text itself: the meta line (status · access · category ·
+  // date) can get long on a narrow phone — it must wrap onto a second line rather than force
+  // the card wider than the viewport (mobile Safari horizontal-overflow requirement).
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  metaText: { color: Brand.inkSecondary, fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
-  questionText: { color: Brand.ink, fontSize: 18, lineHeight: 25, fontWeight: '700' },
+  metaText: { flexShrink: 1, color: Brand.inkSecondary, fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
+  questionText: { color: Brand.ink, fontSize: 18, lineHeight: 25, fontWeight: '700', flexShrink: 1 },
   liveSummary: { backgroundColor: '#F0FBF4', borderRadius: 12, padding: Spacing.two, gap: 2 },
   liveSummaryText: { color: '#1B6A54', fontSize: 12, fontWeight: '800' },
+  liveSummaryTextError: { color: '#9E2E4F', fontSize: 12, fontWeight: '800' },
   liveDistributionRow: { color: '#1B6A54', fontSize: 12, fontWeight: '600' },
+  quizResultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: Spacing.two },
+  quizResultLabel: { flex: 1, flexShrink: 1, color: '#1B6A54', fontSize: 12, fontWeight: '700' },
+  quizResultCount: { color: '#1B6A54', fontSize: 12, fontWeight: '800' },
   reviewNotePreview: { color: '#9E2E4F', fontSize: 12, fontWeight: '700', fontStyle: 'italic' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   reviewLink: { alignSelf: 'flex-start' },
