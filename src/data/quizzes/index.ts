@@ -1,3 +1,4 @@
+import { BE_SO_SERIOUS_QUIZ } from './be-so-serious';
 import { CRISIS_QUIZ } from './crisis';
 import { DATING_QUIZ } from './dating';
 import { ERA_QUIZ } from './era';
@@ -53,6 +54,7 @@ export const QUIZ_REGISTRY: Record<string, QuizDefinition> = {
   // preview. Never destructively removed or overwritten.
   'secretly-love': SECRETLY_LOVE_QUIZ,
   'keep-you-around': KEEP_YOU_AROUND_QUIZ,
+  'be-so-serious': BE_SO_SERIOUS_QUIZ,
 };
 
 export const getQuizDefinition = (quizId: string | undefined): QuizDefinition | null =>
