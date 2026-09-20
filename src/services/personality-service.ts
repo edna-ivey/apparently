@@ -1,5 +1,6 @@
 import { getCurrentUserId } from './auth-service';
 import { getQuizResultsRemote, type GetQuizResultsResult } from './quiz-result-service';
+import { getQuizDefinition } from '@/data/quizzes';
 import type { PersonalityAnswerEvidence, PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
 import { supabase } from '@/lib/supabase';
 import type { PersonalityEvidenceRow, QuizResultRow } from '@/services/types';
@@ -114,10 +115,19 @@ export const computeProfileActivityCounts = (
   }
 
   const quizCompletionCount = firstCompletionByQuizId.size;
-  const quizAnswerCount = Array.from(firstCompletionByQuizId.values()).reduce(
-    (sum, row) => sum + (row.question_count ?? 0),
-    0,
-  );
+  // A quiz whose result→profile mapping isn't approved yet (QuizDefinition.contributesToProfile
+  // === false, e.g. keep-you-around) still counts toward quizCompletionCount above — it WAS
+  // completed — but its question_count is excluded here so it can never inflate
+  // profileAnswerCount/Your7 ("answers shaping your read") before that mapping is approved.
+  // Reads the CURRENT quiz definition (not anything snapshotted at completion time), so the
+  // moment a mapping is approved and this flag is removed, past completions start counting
+  // immediately with no backfill needed. A quiz_id with no current definition (e.g. removed
+  // content) is treated as contributing, matching this function's existing behavior before
+  // this flag existed.
+  const quizAnswerCount = Array.from(firstCompletionByQuizId.values()).reduce((sum, row) => {
+    const contributes = getQuizDefinition(row.quiz_id)?.contributesToProfile !== false;
+    return contributes ? sum + (row.question_count ?? 0) : sum;
+  }, 0);
 
   return {
     dailyAnswerCount,

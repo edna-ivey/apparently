@@ -119,6 +119,12 @@ export default function QuizScreen() {
 
     if (isRemoteDailyEnabled) {
       setRemoteSubmitState('pending');
+      // Explicit code-level gate, independent of whether this result happens to author any
+      // profileSignals: a quiz marked contributesToProfile: false (its You-profile mapping
+      // isn't approved yet — see keep-you-around.ts) must never send profile_effects at all,
+      // so submit_quiz_result can never write personality_evidence for it regardless of
+      // future content changes to this quiz's results.
+      const contributesToProfile = definition.contributesToProfile !== false;
       const payload: SubmitQuizResultPayload = {
         quizId: definition.id,
         quizTitle: definition.title,
@@ -131,7 +137,7 @@ export default function QuizScreen() {
         resultTitle: liveResult.resultTitle,
         traits: liveResult.traits,
         mix,
-        profileSignals: liveResult.profileSignals,
+        profileSignals: contributesToProfile ? liveResult.profileSignals : undefined,
       };
       // Never blocks the result screen — it already renders from local `result` state
       // regardless of this call. A failure queues the payload for a later retry (You
@@ -326,6 +332,29 @@ function ResultScreen({
 }) {
   return (
     <View style={styles.stepGap}>
+      {result.structuredRead ? <PrivateStructuredResult result={result} /> : <StandardResultCard result={result} />}
+
+      <Pressable onPress={onShare} style={styles.cta}>
+        <ThemedText style={styles.ctaText}>Share this →</ThemedText>
+      </Pressable>
+      <Pressable onPress={onSeeYou} style={styles.secondaryCta}>
+        <ThemedText style={styles.secondaryCtaText}>See what else we know →</ThemedText>
+      </Pressable>
+      <Pressable onPress={onTakeAnother} style={styles.tertiaryCta}>
+        <ThemedText style={styles.tertiaryCtaText}>Take another quiz</ThemedText>
+      </Pressable>
+
+      {isPrivatePreview && <PrivateCuriosityCard onBackToPrivate={onBackToPrivate} />}
+    </View>
+  );
+}
+
+// The standard, generic result presentation — every quiz except one using structuredRead
+// (see PrivateStructuredResult below). Byte-for-byte the same markup that lived inline in
+// ResultScreen before this quiz needed a second layout; unchanged for every existing quiz.
+function StandardResultCard({ result }: { result: ResultDisplay }) {
+  return (
+    <>
       <View style={styles.verdictCard}>
         <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
         <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
@@ -373,18 +402,64 @@ function ResultScreen({
         </View>
         <ThemedText style={styles.kicker}>{result.kicker}</ThemedText>
       </View>
+    </>
+  );
+}
 
-      <Pressable onPress={onShare} style={styles.cta}>
-        <ThemedText style={styles.ctaText}>Share this →</ThemedText>
-      </Pressable>
-      <Pressable onPress={onSeeYou} style={styles.secondaryCta}>
-        <ThemedText style={styles.secondaryCtaText}>See what else we know →</ThemedText>
-      </Pressable>
-      <Pressable onPress={onTakeAnother} style={styles.tertiaryCta}>
-        <ThemedText style={styles.tertiaryCtaText}>Take another quiz</ThemedText>
-      </Pressable>
+// Apparently Private's own structured result layout (THE READ / THE CALL-OUT / THE COST /
+// TRY THIS) — used ONLY when result.structuredRead is set (currently keep-you-around).
+// Deliberately does not render result.mix/result.percent/any five-way breakdown — Apparently
+// Private shows exactly one primary result, plus an optional qualifying close second's TITLE
+// only (never invented prose for it — see scoring.ts's pickCloseSecond).
+function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
+  const read = result.structuredRead!;
+  return (
+    <View style={styles.verdictCard}>
+      <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
+      <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
 
-      {isPrivatePreview && <PrivateCuriosityCard onBackToPrivate={onBackToPrivate} />}
+      <View style={styles.privateSection}>
+        <ThemedText style={styles.privateSectionHeading}>THE READ</ThemedText>
+        {read.theRead.map((line, index) => (
+          <ThemedText key={`the-read-${index}`} style={styles.privateSectionBody}>
+            {line}
+          </ThemedText>
+        ))}
+      </View>
+
+      <View style={styles.privateSection}>
+        <ThemedText style={styles.privateSectionHeading}>THE CALL-OUT</ThemedText>
+        {read.theCallOut.map((line, index) => (
+          <ThemedText key={`the-call-out-${index}`} style={styles.privateSectionBody}>
+            {line}
+          </ThemedText>
+        ))}
+      </View>
+
+      <View style={styles.privateSection}>
+        <ThemedText style={styles.privateSectionHeading}>THE COST</ThemedText>
+        {read.theCost.map((line, index) => (
+          <ThemedText key={`the-cost-${index}`} style={styles.privateSectionBody}>
+            {line}
+          </ThemedText>
+        ))}
+      </View>
+
+      <View style={styles.privateSection}>
+        <ThemedText style={styles.privateSectionHeading}>TRY THIS</ThemedText>
+        {read.tryThis.map((line, index) => (
+          <ThemedText key={`try-this-${index}`} style={styles.privateSectionBody}>
+            {line}
+          </ThemedText>
+        ))}
+      </View>
+
+      {result.secondaryResult && (
+        <View style={styles.closeSecondBlock}>
+          <ThemedText style={styles.closeSecondEyebrow}>BUT THERE&apos;S ALSO THIS...</ThemedText>
+          <ThemedText style={styles.closeSecondTitle}>{result.secondaryResult.resultDisplayTitle.toUpperCase()}</ThemedText>
+        </View>
+      )}
     </View>
   );
 }
@@ -775,6 +850,45 @@ const styles = StyleSheet.create({
   mixRowPercentPrimary: {
     color: '#FFFFFF',
     fontWeight: '900',
+  },
+  // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
+  // TRY THIS) — same violet verdict card as every other quiz's hero read, just with an
+  // explicit heading per beat instead of one continuous hero/body/kicker flow.
+  privateSection: {
+    marginTop: Spacing.three,
+    gap: Spacing.one,
+  },
+  privateSectionHeading: {
+    color: '#DCD6FF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+  },
+  privateSectionBody: {
+    color: '#F1EEFF',
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  closeSecondBlock: {
+    marginTop: Spacing.four,
+    paddingTop: Spacing.three,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.16)',
+    gap: 2,
+  },
+  closeSecondEyebrow: {
+    color: '#DCD6FF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+  },
+  closeSecondTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
   whyCard: {
     backgroundColor: '#FFFFFF',

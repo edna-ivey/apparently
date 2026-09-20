@@ -1,6 +1,13 @@
 import type { PersonalityEffect } from '@/data/personality';
 
-import type { ArchetypeQuizDefinition, NumericBandQuizDefinition, QuizArchetype, QuizDefinition, QuizResultBand } from './types';
+import type {
+  ArchetypeQuizDefinition,
+  NumericBandQuizDefinition,
+  QuizArchetype,
+  QuizDefinition,
+  QuizResultBand,
+  QuizStructuredRead,
+} from './types';
 import type { QuizResultRecord } from './results';
 
 export type QuizScore = {
@@ -46,25 +53,122 @@ export type ArchetypeScore = {
   primary: QuizArchetype;
   totals: Record<string, number>;
   percentages: Record<string, number>;
+  // Opt-in "close second" (see pickCloseSecond) — null unless definition.enableCloseSecond is
+  // true AND a qualifying secondary result exists. Every existing archetype quiz always gets
+  // null here (enableCloseSecond is unset), so nothing about their behavior changes.
+  secondary: QuizArchetype | null;
 };
 
-// How many of the FINAL questions count as "high-signal" for tie-breaking (see
-// pickPrimaryArchetype below). 3 covers Q10–Q12 for a 12-question quiz; a shorter future
-// archetype quiz would naturally use its own last 3, or fewer if it has under 3 questions.
+// How many of the FINAL questions count as "high-signal" for the GENERIC (unconfigured)
+// tie-break below. 3 covers Q10–Q12 for a 12-question quiz; a shorter future archetype quiz
+// would naturally use its own last 3, or fewer if it has under 3 questions. Only used when a
+// quiz does NOT set its own highSignalQuestionIds (see pickPrimaryArchetypeByHighSignal for
+// the opt-in alternative) — every existing quiz keeps using this exact path, unchanged.
 const TIE_BREAK_QUESTION_COUNT = 3;
 
-// Deterministic, never random. Preferred rule: if multiple archetypes are tied for the top
-// score, look at the LAST TIE_BREAK_QUESTION_COUNT questions' winning archetype (the choice
-// with the single highest weight in that question — ties within a question are not expected
-// given this quiz's content, but resolved by object key iteration order as a defensive
-// fallback), most recent first, and award the tie to the first one that's in the tied set.
-// If that still doesn't resolve it (e.g. none of those answers went to a tied archetype), the
-// final fallback is the tied archetype that appears earliest in the quiz definition's own
-// `archetypes` array — a fixed, documented order, never randomized.
+// One answered question's full weight map, plus which question it was — the raw material
+// every tie-break/close-second computation below is derived from. Built once per scoring
+// pass; nothing here is quiz-specific.
+type PerQuestionWeights = { questionId: string; weights: Record<string, number> };
+
+// The single highest-weight entry in one choice's resultWeights — "primary" in the sense the
+// approved scoring spec uses it (e.g. "Q1D: KNOWS +2, BD +1" — KNOWS is primary, BD is
+// secondary). Ties within one choice are not expected in any registered quiz's content;
+// Object.entries' encounter order is the defensive fallback, matching this engine's existing
+// tie-within-a-question convention. Threshold is > 0 (a zero-or-absent entry is never a
+// winner), matching the original single-entry-only engine's implicit behavior exactly.
+const primaryWeightEntry = (weights: Record<string, number>): { archetypeId: string; value: number } | null => {
+  let best: { archetypeId: string; value: number } | null = null;
+  for (const [archetypeId, value] of Object.entries(weights)) {
+    if (value > (best?.value ?? 0)) {
+      best = { archetypeId, value };
+    }
+  }
+  return best;
+};
+
+// Deterministic, never random. GENERIC path (no highSignalQuestionIds configured — every
+// existing archetype quiz): look at the LAST TIE_BREAK_QUESTION_COUNT questions' primary
+// winner, most recent first, and award the tie to the first one that's in the tied set. If
+// that still doesn't resolve it, the final fallback is the tied archetype that appears
+// earliest in the quiz definition's own `archetypes` array — a fixed, documented order, never
+// randomized. Byte-for-byte the same outcome as before this function was generalized: every
+// registered quiz's choices carry exactly one resultWeights entry per choice, so
+// primaryWeightEntry always resolves to that single entry.
+const pickPrimaryArchetypeGeneric = (
+  definition: ArchetypeQuizDefinition,
+  tied: string[],
+  perQuestionWeights: PerQuestionWeights[],
+): string => {
+  const perQuestionWinner = perQuestionWeights.map((entry) => primaryWeightEntry(entry.weights)?.archetypeId ?? null);
+  const recentWinners = perQuestionWinner.slice(-TIE_BREAK_QUESTION_COUNT).reverse();
+  for (const winner of recentWinners) {
+    if (winner && tied.includes(winner)) {
+      return winner;
+    }
+  }
+  return definition.archetypes.find((archetype) => tied.includes(archetype.id))!.id;
+};
+
+// Opt-in tie-break (definition.highSignalQuestionIds set — currently only keep-you-around).
+// Step 1: compare tied identities using ONLY points (every weight entry, primary or
+// secondary) from the designated high-signal questions. Step 2: if still tied, compare each
+// candidate's count of full +2 PRIMARY selections across the WHOLE quiz (a weak +1-only
+// primary, or a +1 secondary contribution, never counts here). Step 3: a fixed
+// archetypes-array-order fallback. A question NOT in highSignalQuestionIds (e.g. Q10 in
+// keep-you-around, whose answers are all deliberately weak +1s) can never win step 1 by
+// construction (it's excluded from the sum) and can never win step 2 either, since none of
+// its weights are ever +2 — so it can never independently break a tie either way.
+const pickPrimaryArchetypeByHighSignal = (
+  definition: ArchetypeQuizDefinition,
+  tied: string[],
+  perQuestionWeights: PerQuestionWeights[],
+): string => {
+  const highSignalIds = new Set(definition.highSignalQuestionIds);
+
+  const highSignalTotals: Record<string, number> = {};
+  tied.forEach((id) => {
+    highSignalTotals[id] = 0;
+  });
+  for (const { questionId, weights } of perQuestionWeights) {
+    if (!highSignalIds.has(questionId)) {
+      continue;
+    }
+    for (const [archetypeId, value] of Object.entries(weights)) {
+      if (tied.includes(archetypeId)) {
+        highSignalTotals[archetypeId] += value;
+      }
+    }
+  }
+  const bestHighSignal = Math.max(...tied.map((id) => highSignalTotals[id]));
+  const afterHighSignal = tied.filter((id) => highSignalTotals[id] === bestHighSignal);
+  if (afterHighSignal.length === 1) {
+    return afterHighSignal[0];
+  }
+
+  const fullPrimaryTwoCount: Record<string, number> = {};
+  afterHighSignal.forEach((id) => {
+    fullPrimaryTwoCount[id] = 0;
+  });
+  for (const { weights } of perQuestionWeights) {
+    const winner = primaryWeightEntry(weights);
+    if (winner && winner.value === 2 && afterHighSignal.includes(winner.archetypeId)) {
+      fullPrimaryTwoCount[winner.archetypeId] += 1;
+    }
+  }
+  const bestPrimaryCount = Math.max(...afterHighSignal.map((id) => fullPrimaryTwoCount[id]));
+  const afterPrimaryCount = afterHighSignal.filter((id) => fullPrimaryTwoCount[id] === bestPrimaryCount);
+  if (afterPrimaryCount.length === 1) {
+    return afterPrimaryCount[0];
+  }
+
+  return definition.archetypes.find((archetype) => afterPrimaryCount.includes(archetype.id))!.id;
+};
+
 const pickPrimaryArchetype = (
   definition: ArchetypeQuizDefinition,
   totals: Record<string, number>,
-  perQuestionWinner: (string | null)[],
+  perQuestionWeights: PerQuestionWeights[],
 ): string => {
   const maxScore = Math.max(...definition.archetypes.map((archetype) => totals[archetype.id] ?? 0));
   const tied = definition.archetypes.filter((archetype) => (totals[archetype.id] ?? 0) === maxScore).map((a) => a.id);
@@ -73,14 +177,65 @@ const pickPrimaryArchetype = (
     return tied[0];
   }
 
-  const highSignalWinners = perQuestionWinner.slice(-TIE_BREAK_QUESTION_COUNT).reverse();
-  for (const winner of highSignalWinners) {
-    if (winner && tied.includes(winner)) {
-      return winner;
-    }
+  if (definition.highSignalQuestionIds && definition.highSignalQuestionIds.length > 0) {
+    return pickPrimaryArchetypeByHighSignal(definition, tied, perQuestionWeights);
+  }
+  return pickPrimaryArchetypeGeneric(definition, tied, perQuestionWeights);
+};
+
+// Opt-in "close second" (definition.enableCloseSecond — currently only keep-you-around).
+// Every existing archetype quiz leaves this unset and always gets `secondary: null` — a
+// single-result presentation, completely unchanged. Qualifies only when ALL of:
+//   1. the best non-primary archetype's normalized percentage is within 10 points of primary.
+//   2. that archetype received some nonzero weight (primary or secondary role) from at least
+//      2 DISTINCT questions — a secondary-only (+1) accumulation across just one question is
+//      not enough on its own.
+//   3. at least one of those contributions was a full +2 PRIMARY selection for it specifically
+//      (not a +1 secondary, and not a weak +1-only primary).
+const pickCloseSecond = (
+  definition: ArchetypeQuizDefinition,
+  primary: QuizArchetype,
+  percentages: Record<string, number>,
+  perQuestionWeights: PerQuestionWeights[],
+): QuizArchetype | null => {
+  if (!definition.enableCloseSecond) {
+    return null;
   }
 
-  return definition.archetypes.find((archetype) => tied.includes(archetype.id))!.id;
+  const candidates = definition.archetypes.filter((archetype) => archetype.id !== primary.id);
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const primaryPercent = percentages[primary.id] ?? 0;
+  const bestCandidatePercent = Math.max(...candidates.map((archetype) => percentages[archetype.id] ?? 0));
+  const topCandidates = candidates.filter((archetype) => (percentages[archetype.id] ?? 0) === bestCandidatePercent);
+
+  for (const candidate of topCandidates) {
+    const candidatePercent = percentages[candidate.id] ?? 0;
+    if (primaryPercent - candidatePercent > 10) {
+      continue;
+    }
+
+    const supportingQuestionIds = new Set(
+      perQuestionWeights.filter((entry) => (entry.weights[candidate.id] ?? 0) > 0).map((entry) => entry.questionId),
+    );
+    if (supportingQuestionIds.size < 2) {
+      continue;
+    }
+
+    const hasFullPrimaryTwo = perQuestionWeights.some((entry) => {
+      const winner = primaryWeightEntry(entry.weights);
+      return winner?.archetypeId === candidate.id && winner.value === 2;
+    });
+    if (!hasFullPrimaryTwo) {
+      continue;
+    }
+
+    return candidate;
+  }
+
+  return null;
 };
 
 // Pure and generic over any ArchetypeQuizDefinition. Each answered question awards its
@@ -93,21 +248,14 @@ export const scoreArchetypeQuiz = (definition: ArchetypeQuizDefinition, answers:
     totals[archetype.id] = 0;
   });
 
-  const perQuestionWinner: (string | null)[] = definition.questions.map((question) => {
+  const perQuestionWeights: PerQuestionWeights[] = definition.questions.map((question) => {
     const chosenId = answers[question.id];
     const choice = question.choices.find((candidate) => candidate.id === chosenId);
     const weights = choice?.resultWeights ?? {};
-
-    let questionWinner: string | null = null;
-    let questionWinnerWeight = 0;
     for (const [archetypeId, weight] of Object.entries(weights)) {
       totals[archetypeId] = (totals[archetypeId] ?? 0) + weight;
-      if (weight > questionWinnerWeight) {
-        questionWinner = archetypeId;
-        questionWinnerWeight = weight;
-      }
     }
-    return questionWinner;
+    return { questionId: question.id, weights };
   });
 
   const totalPoints = Object.values(totals).reduce((sum, value) => sum + value, 0);
@@ -116,10 +264,11 @@ export const scoreArchetypeQuiz = (definition: ArchetypeQuizDefinition, answers:
     percentages[archetype.id] = totalPoints > 0 ? Math.round(((totals[archetype.id] ?? 0) / totalPoints) * 100) : 0;
   });
 
-  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWinner);
+  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWeights);
   const primary = definition.archetypes.find((archetype) => archetype.id === primaryId)!;
+  const secondary = pickCloseSecond(definition, primary, percentages, perQuestionWeights);
 
-  return { primary, totals, percentages };
+  return { primary, totals, percentages, secondary };
 };
 
 // --- Unified display/save model, so the screen and You page don't need to special-case
@@ -155,13 +304,26 @@ export type ResultDisplay = {
   // it is structurally impossible for viewing an old saved result to carry signals a caller
   // could mistakenly submit as new profile evidence. See quiz/[quizId].tsx.
   profileSignals?: PersonalityEffect[];
+  // Apparently Private's own structured presentation (THE READ / THE CALL-OUT / THE COST /
+  // TRY THIS) — passed through unchanged from QuizArchetype.structuredRead wherever that's
+  // set, on EVERY path (fresh completion, "See result", and shared-result content) since it's
+  // static authored content, not scoring-sensitive like profileSignals. Undefined for every
+  // quiz that doesn't set it — the standard hero/body/kicker/traits rendering is untouched.
+  structuredRead?: QuizStructuredRead;
+  // Opt-in "close second" (see pickCloseSecond) — ONLY ever populated by computeQuizResult on
+  // a FRESH completion, same fresh-only convention as profileSignals above. Re-deriving it
+  // requires the original raw answers, which are never persisted (only score/percent/mix/
+  // resultId are) — reconstructResultDisplay and resolveShareableResultContent both leave this
+  // undefined rather than guess. null means "computed, no qualifying secondary this time";
+  // undefined means "not computed on this path at all."
+  secondaryResult?: { resultId: string; resultDisplayTitle: string } | null;
 };
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
 // happens for computing a NEW result. Called once, right when a quiz reaches its result step.
 export const computeQuizResult = (definition: QuizDefinition, answers: Record<string, string>): ResultDisplay => {
   if (definition.scoringType === 'archetype') {
-    const { primary, totals, percentages } = scoreArchetypeQuiz(definition, answers);
+    const { primary, totals, percentages, secondary } = scoreArchetypeQuiz(definition, answers);
     const mix = [...definition.archetypes]
       .map((archetype) => ({ id: archetype.id, title: resolveArchetypeDisplayTitle(archetype), percent: percentages[archetype.id] ?? 0 }))
       .sort((a, b) => b.percent - a.percent);
@@ -170,10 +332,10 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       scoringType: 'archetype',
       resultId: primary.id,
       resultTitle: primary.title,
-      heroRead: primary.heroRead,
-      body: primary.body,
-      kicker: primary.kicker,
-      traits: primary.traits,
+      heroRead: primary.heroRead ?? [],
+      body: primary.body ?? '',
+      kicker: primary.kicker ?? '',
+      traits: primary.traits ?? [],
       score: totals[primary.id] ?? 0,
       percent: percentages[primary.id] ?? 0,
       mix,
@@ -181,6 +343,8 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
       profileSignals: primary.profileSignals,
+      structuredRead: primary.structuredRead,
+      secondaryResult: secondary ? { resultId: secondary.id, resultDisplayTitle: resolveArchetypeDisplayTitle(secondary) } : null,
     };
   }
 
@@ -222,16 +386,17 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
       scoringType: 'archetype',
       resultId: primary.id,
       resultTitle: primary.title,
-      heroRead: primary.heroRead,
-      body: primary.body,
-      kicker: primary.kicker,
-      traits: primary.traits,
+      heroRead: primary.heroRead ?? [],
+      body: primary.body ?? '',
+      kicker: primary.kicker ?? '',
+      traits: primary.traits ?? [],
       score: record.score,
       percent: record.percent,
       mix,
       mixLabel: definition.mixLabel,
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
+      structuredRead: primary.structuredRead,
     };
   }
 
@@ -269,6 +434,10 @@ export type ShareableResultContent = {
   kicker: string;
   traits: string[];
   resultSubtitle?: string;
+  // See ResultDisplay.structuredRead — passed through unchanged, since it's static approved
+  // content (never scoring-sensitive), so a shared link for a structuredRead result has
+  // something to show at all (its heroRead/body/kicker/traits are intentionally empty).
+  structuredRead?: QuizStructuredRead;
 };
 
 export const resolveShareableResultContent = (definition: QuizDefinition, resultId: string): ShareableResultContent | null => {
@@ -280,11 +449,12 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
     return {
       resultTitle: archetype.title,
       resultDisplayTitle: resolveArchetypeDisplayTitle(archetype),
-      heroRead: archetype.heroRead,
-      body: archetype.body,
-      kicker: archetype.kicker,
-      traits: archetype.traits,
+      heroRead: archetype.heroRead ?? [],
+      body: archetype.body ?? '',
+      kicker: archetype.kicker ?? '',
+      traits: archetype.traits ?? [],
       resultSubtitle: archetype.resultSubtitle,
+      structuredRead: archetype.structuredRead,
     };
   }
 

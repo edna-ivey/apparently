@@ -68,13 +68,33 @@ export type QuizArchetype = {
   // every quiz don't need it. Never derived by special-casing any particular quiz in a
   // component; see scoring.ts's resolveArchetypeDisplayTitle.
   displayTitle?: string;
-  heroRead: string[];
-  body: string;
-  kicker: string;
-  traits: string[];
+  // Standard generic result presentation — required for every EXISTING archetype quiz.
+  // Optional here ONLY so a result using structuredRead below never needs invented filler
+  // content in fields its own UI never renders (see structuredRead's own comment).
+  heroRead?: string[];
+  body?: string;
+  kicker?: string;
+  traits?: string[];
   // Same contract as QuizResultBand.profileSignals above — result-level, max 3, first-
   // completion-only. See that field's comment for the full rationale.
   profileSignals?: PersonalityEffect[];
+  // Apparently Private's own structured result presentation (THE READ / THE CALL-OUT /
+  // THE COST / TRY THIS — see keep-you-around.ts and quiz/[quizId].tsx's
+  // PrivateStructuredResult). When present, this ENTIRELY REPLACES the standard
+  // hero/body/kicker/traits rendering for this specific result — the two are never combined,
+  // and heroRead/body/kicker/traits are left unset on any archetype that sets this.
+  structuredRead?: QuizStructuredRead;
+};
+
+// One section per beat of Apparently Private's own result structure — each array entry is a
+// separate paragraph (same "one paragraph per line" convention heroRead/introSupport already
+// use). Exists so a quiz can carry its OWN authored Read structure distinct from the generic
+// hero/body/kicker/traits shape without inventing anything to fill unused fields.
+export type QuizStructuredRead = {
+  theRead: string[];
+  theCallOut: string[];
+  theCost: string[];
+  tryThis: string[];
 };
 
 // Free Explore's category filter chips — a fixed, known set (not user-authored strings), so
@@ -118,6 +138,15 @@ type QuizBase = {
   introCta: string;
   introNote?: string;
   questions: QuizQuestion[];
+  // Whether a first completion of this quiz may contribute to the living You profile
+  // (personality_evidence + profileAnswerCount/Your7). Defaults to true (existing behavior,
+  // unchanged) when absent. Set to false ONLY for a quiz whose result→profile mapping hasn't
+  // been approved yet — see computeProfileActivityCounts in personality-service.ts, which
+  // reads this to exclude such a quiz's question_count from profileAnswerCount even though
+  // its quiz_results row is real and its completion still counts toward
+  // quizCompletionCount/profileActivityCount. Independent of, and enforced in ADDITION to,
+  // simply not authoring profileSignals on the quiz's own results.
+  contributesToProfile?: boolean;
 };
 
 // A single numeric spectrum with named bands (Petty: 0–24 → four bands). Unchanged shape
@@ -146,6 +175,17 @@ export type ArchetypeQuizDefinition = QuizBase & {
   archetypes: QuizArchetype[];
   mixLabel: string;
   recentReadMetricLabel: string;
+  // Opt-in tie-break override (see scoring.ts's pickPrimaryArchetype). When absent, ties use
+  // the existing generic "last 3 questions" behavior — EVERY existing archetype quiz keeps
+  // that exact behavior unchanged. When present, ties are resolved using ONLY these question
+  // ids' points first, then (if still tied) each candidate's count of full +2 PRIMARY
+  // selections across the whole quiz, then a fixed archetypes-array-order fallback.
+  highSignalQuestionIds?: string[];
+  // Opt-in "close second" reveal (see scoring.ts's pickCloseSecond) — a secondary result shown
+  // alongside the primary only when it meets ALL of: within 10 percentage points, support
+  // from >=2 distinct questions, and at least one of those was a full +2 PRIMARY selection for
+  // it. Absent/false for every existing archetype quiz (unchanged: always exactly one result).
+  enableCloseSecond?: boolean;
 };
 
 export type QuizDefinition = NumericBandQuizDefinition | ArchetypeQuizDefinition;
