@@ -19,6 +19,11 @@ export const SECRETLY_LOVE_QUIZ: ArchetypeQuizDefinition = {
   scoringType: 'archetype',
   category: 'The Good Stuff',
   access: 'private-preview',
+  // Superseded by keep-you-around as Apparently Private's active OPEN preview (see
+  // private.tsx) — retained here, fully registered and playable via direct/shared links, so
+  // historical completions/shares keep resolving. Excludes it from "current playable quizzes"
+  // surfaces (e.g. admin Quiz Analytics) without deleting or altering anything about it.
+  historicalOnly: true,
   title: 'What do people secretly love about you?',
   eyebrow: 'APPARENTLY PRIVATE · FREE PREVIEW',
   introSupport: ['This one’s a little more personal.', 'Worth the eight questions.'],

@@ -54,6 +54,20 @@ export const getAdminDailyDistribution = (questionId: string): Promise<AdminResu
     result.ok ? { ok: true, data: result.data ?? [] } : result,
   );
 
+// One row per result identity that has at least one real quiz_results completion for this
+// quiz_id — never another quiz's rows (see admin_get_quiz_result_distribution's own WHERE
+// clause). Empty array means zero real completions for this quiz, not an error.
+export type AdminQuizResultDistributionRow = {
+  result_id: string;
+  result_title: string;
+  completion_count: number;
+};
+
+export const getAdminQuizResultDistribution = (quizId: string): Promise<AdminResult<AdminQuizResultDistributionRow[]>> =>
+  runRpc<AdminQuizResultDistributionRow[]>('admin_get_quiz_result_distribution', { p_quiz_id: quizId }).then((result) =>
+    result.ok ? { ok: true, data: result.data ?? [] } : result,
+  );
+
 export const createDaily = (room: DailyRoom = 'public', dailyMode: DailyContentMode = 'profile'): Promise<AdminResult<string>> =>
   runRpc<string>('admin_create_daily', { p_room: room, p_daily_mode: dailyMode });
 

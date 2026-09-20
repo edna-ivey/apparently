@@ -147,6 +147,14 @@ type QuizBase = {
   // quizCompletionCount/profileActivityCount. Independent of, and enforced in ADDITION to,
   // simply not authoring profileSignals on the quiz's own results.
   contributesToProfile?: boolean;
+  // True ONLY for a quiz retired from the current playable surface (Explore/Private landing)
+  // but kept registered so its own historical completions, "See result", and old
+  // shared-result links keep resolving exactly as before (e.g. secretly-love, superseded by
+  // keep-you-around). Defaults to false/undefined for every current quiz — admin surfaces
+  // (e.g. the Quiz Analytics section on the admin dashboard) filter this out of "current
+  // playable quizzes" without needing to hardcode which ids are current; a newly added quiz
+  // automatically participates with no admin-side change required.
+  historicalOnly?: boolean;
 };
 
 // A single numeric spectrum with named bands (Petty: 0–24 → four bands). Unchanged shape
