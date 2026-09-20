@@ -5,6 +5,7 @@ import { FOOD_ORDER_QUIZ } from './food-order';
 import { FRIENDSHIP_QUIZ } from './friendship';
 import { GROUP_CHAT_QUIZ } from './group-chat';
 import { ICK_QUIZ } from './ick';
+import { KEEP_YOU_AROUND_QUIZ } from './keep-you-around';
 import { KID_YOU_QUIZ } from './kid-you';
 import { ONE_BITE_QUIZ } from './one-bite';
 import { PETTY_QUIZ } from './petty';
@@ -25,6 +26,7 @@ export type {
   QuizDefinition,
   QuizQuestion,
   QuizResultBand,
+  QuizStructuredRead,
 } from './types';
 
 // Adding a future quiz is: write src/data/quizzes/<id>.ts conforming to QuizDefinition
@@ -45,7 +47,12 @@ export const QUIZ_REGISTRY: Record<string, QuizDefinition> = {
   'one-bite': ONE_BITE_QUIZ,
   'unexpected-money': UNEXPECTED_MONEY_QUIZ,
   'kid-you': KID_YOU_QUIZ,
+  // secretly-love: retained, unregistered from the active Private preview surface (see
+  // private.tsx), but kept fully registered so historical completions, "See result", and old
+  // shared-result links keep resolving exactly as before this quiz replaced it as the OPEN
+  // preview. Never destructively removed or overwritten.
   'secretly-love': SECRETLY_LOVE_QUIZ,
+  'keep-you-around': KEEP_YOU_AROUND_QUIZ,
 };
 
 export const getQuizDefinition = (quizId: string | undefined): QuizDefinition | null =>
