@@ -18,7 +18,23 @@ export type PersonalityDimensionId =
   | 'curious_decisive'
   | 'private_open'
   | 'patient_urgent'
-  | 'ambitious_content';
+  | 'ambitious_content'
+  // The 12 dimensions approved to extend the original 20 to a bounded 32 total. Same
+  // bipolar shape/validation as the original set (see PERSONALITY_DIMENSIONS below) --
+  // this is a closed architecture decision, not an open-ended list; do not add a 33rd
+  // without the same explicit approval this set required.
+  | 'accountability_defensiveness'
+  | 'reflective_reactive'
+  | 'self_secure_reassurance'
+  | 'boundary_holding_approval_seeking'
+  | 'vulnerable_armored'
+  | 'repair_punishing'
+  | 'tactful_blunt'
+  | 'duty_first_self_preserving'
+  | 'supportive_challenging'
+  | 'gives_freely_keeps_score'
+  | 'perspective_taking_self_referencing'
+  | 'initiating_responsive';
 
 export type PersonalityEffectValue = -2 | -1 | 1 | 2;
 
@@ -297,6 +313,129 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
     negativeLabel: 'Content',
     explanation: 'Drive toward growth, achievement, and the next big thing versus satisfaction with stability and current circumstances.',
     flavor: 'Not everyone needs a new mountain. Some just need a good couch and a calm night.',
+  },
+  // The 12 dimensions approved to bring the canonical set to a bounded 32 total (see the
+  // PersonalityDimensionId union above). Copy transcribed exactly as approved -- do not
+  // reword/rename/re-pole these, and do not add a 33rd.
+  {
+    id: 'accountability_defensiveness',
+    name: 'Accountability ↔ Defensiveness',
+    positivePole: 'OWNS IT',
+    positiveLabel: 'Accountability',
+    negativePole: 'BUILDING MY CASE',
+    negativeLabel: 'Defensiveness',
+    explanation: 'How readily someone can own their part when confronted versus explaining, countering, or defending before taking responsibility.',
+    flavor: 'Being wrong is uncomfortable. What happens next says a lot.',
+  },
+  {
+    id: 'reflective_reactive',
+    name: 'Reflective ↔ Reactive',
+    positivePole: 'LET ME THINK',
+    positiveLabel: 'Reflective',
+    negativePole: 'I FELT IT, I DID IT',
+    negativeLabel: 'Reactive',
+    explanation: 'Tendency to examine an emotional reaction before acting versus responding directly from the feeling in the moment.',
+    flavor: 'The first feeling is information. It does not always need the microphone.',
+  },
+  {
+    id: 'self_secure_reassurance',
+    name: 'Self-Secure ↔ Reassurance-Seeking',
+    positivePole: 'I KNOW WE’RE GOOD',
+    positiveLabel: 'Self-secure',
+    negativePole: 'SHOW ME WE’RE GOOD',
+    negativeLabel: 'Reassurance-seeking',
+    explanation: 'How much security comes from within versus needing external signs of attention, affection, approval, or desire.',
+    flavor: 'Sometimes you know. Sometimes you need a receipt.',
+  },
+  {
+    id: 'boundary_holding_approval_seeking',
+    name: 'Boundary-Holding ↔ Approval-Seeking',
+    positivePole: 'THEY CAN BE MAD',
+    positiveLabel: 'Boundary-holding',
+    negativePole: 'KEEP EVERYBODY HAPPY',
+    negativeLabel: 'Approval-seeking',
+    explanation: 'Willingness to maintain a limit even when someone dislikes it versus changing course to avoid disappointment or disapproval.',
+    flavor: 'A boundary gets interesting when somebody does not like it.',
+  },
+  {
+    id: 'vulnerable_armored',
+    name: 'Vulnerable ↔ Armored',
+    positivePole: 'SAY THE SOFT THING',
+    positiveLabel: 'Vulnerable',
+    negativePole: 'PROTECT THE SOFT SPOT',
+    negativeLabel: 'Armored',
+    explanation: 'Willingness to reveal hurt, fear, need, embarrassment, or insecurity versus protecting those feelings behind distance, strength, humor, or control.',
+    flavor: 'Some feelings come out. Others arrive wearing armor.',
+  },
+  {
+    id: 'repair_punishing',
+    name: 'Repair-Oriented ↔ Punishing',
+    positivePole: 'LET’S FIX IT',
+    positiveLabel: 'Repair-oriented',
+    negativePole: 'YOU’RE GOING TO FEEL THIS',
+    negativeLabel: 'Punishing',
+    explanation: 'Whether hurt tends to move toward direct repair versus distance, retaliation, withdrawal, or behavior meant to make the other person feel the rupture.',
+    flavor: 'Being hurt and making sure they feel it are not always the same thing.',
+  },
+  {
+    id: 'tactful_blunt',
+    name: 'Tactful ↔ Blunt',
+    positivePole: 'PROTECT THE LANDING',
+    positiveLabel: 'Tactful',
+    negativePole: 'SAY THE SHARP THING',
+    negativeLabel: 'Blunt',
+    explanation: 'How much someone adjusts timing, tone, and wording to protect the delivery of a truth versus prioritizing saying it plainly and sharply.',
+    flavor: 'The truth can arrive with a cushion or a folding chair. 😂',
+  },
+  {
+    id: 'duty_first_self_preserving',
+    name: 'Duty-First ↔ Self-Preserving',
+    positivePole: 'I’LL SHOW UP',
+    positiveLabel: 'Duty-first',
+    negativePole: 'I CAN’T CARRY EVERYBODY',
+    negativeLabel: 'Self-preserving',
+    explanation: 'How strongly someone feels responsible for showing up, helping, and carrying their part versus protecting their own energy and limits.',
+    flavor: 'Caring can become a responsibility faster than anybody notices.',
+  },
+  {
+    id: 'supportive_challenging',
+    name: 'Supportive ↔ Challenging',
+    positivePole: 'I’M IN YOUR CORNER',
+    positiveLabel: 'Supportive',
+    negativePole: 'I’M GOING TO PUSH YOU',
+    negativeLabel: 'Challenging',
+    explanation: "Whether someone's instinct is to encourage and reinforce people versus challenge them, question them, or push them toward a harder truth.",
+    flavor: 'Sometimes love says “You’ve got this.” Sometimes it says “Be serious.”',
+  },
+  {
+    id: 'gives_freely_keeps_score',
+    name: 'Gives Freely ↔ Keeps Score',
+    positivePole: 'NO LEDGER',
+    positiveLabel: 'Gives freely',
+    negativePole: 'I REMEMBER WHAT I GAVE',
+    negativeLabel: 'Keeps score',
+    explanation: 'Whether favors, sacrifices, and support are given without much tracking versus becoming part of an internal record of reciprocity.',
+    flavor: 'Some people forget the favor. Some people remember the invoice.',
+  },
+  {
+    id: 'perspective_taking_self_referencing',
+    name: 'Perspective-Taking ↔ Self-Referencing',
+    positivePole: 'I CAN SEE YOUR SIDE',
+    positiveLabel: 'Perspective-taking',
+    negativePole: 'BUT HERE’S WHY I DID IT',
+    negativeLabel: 'Self-referencing',
+    explanation: "Ability to stay with another person's experience versus quickly returning to one's own intent, reasoning, or version of what happened.",
+    flavor: "Understanding somebody's side does not require surrendering your own.",
+  },
+  {
+    id: 'initiating_responsive',
+    name: 'Initiating ↔ Responsive',
+    positivePole: 'I START THE ENERGY',
+    positiveLabel: 'Initiating',
+    negativePole: 'I MEET THE ENERGY',
+    negativeLabel: 'Responsive',
+    explanation: 'Tendency to initiate plans, affection, conversations, romance, or intimacy versus engaging once another person opens the door.',
+    flavor: 'Some people strike the match. Some people catch the flame.',
   },
 ];
 
