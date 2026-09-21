@@ -104,10 +104,13 @@ if (quiz && quiz.scoringType === 'archetype') {
   );
   assert(!definition.highSignalQuestionIds?.includes('q10'), 'Q10 is NOT in the high-signal set (cannot independently break a tie)');
   assert(definition.enableCloseSecond === true, 'enableCloseSecond is true for this quiz');
-  assert(definition.contributesToProfile === false, 'contributesToProfile is false pending approved profile mapping');
+  // Michelle/Forge approved this quiz's result-level You-profile mapping in the personality-
+  // dimension-expansion pass -- see scripts/validate-personality-dimensions.ts for the exact
+  // approved profileSignals per result; this script stays scoped to structure/scoring.
+  assert(definition.contributesToProfile === true, 'contributesToProfile is true (approved profile mapping)');
   assert(
-    definition.archetypes.every((a) => a.profileSignals === undefined),
-    'no archetype authors profileSignals (must not contaminate personality_evidence)',
+    definition.archetypes.every((a) => (a.profileSignals?.length ?? 0) >= 1 && (a.profileSignals?.length ?? 0) <= 3),
+    'every archetype authors 1-3 profileSignals (exact values verified in validate-personality-dimensions.ts)',
   );
   assert(
     definition.archetypes.every(

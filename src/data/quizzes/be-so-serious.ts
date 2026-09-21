@@ -5,12 +5,10 @@ import type { ArchetypeQuizDefinition } from './types';
 // not rewrite, polish, shorten, or substitute any question/choice/Read text here; do not
 // invent additional Private content.
 //
-// contributesToProfile: false — Michelle and Forge have not yet approved this quiz's five
-// results' mapping to canonical You-profile dimensions. No profileSignals are authored on any
-// archetype below, and quiz/[quizId].tsx additionally withholds profile_effects at the
-// submission layer whenever this flag is false — see that guard's own comment. Completion,
-// See Result, Retake, history, and sharing all work normally; only the profile-evidence
-// contribution is withheld pending approval.
+// contributesToProfile: true — Michelle and Forge approved this quiz's five results' mapping
+// to canonical You-profile dimensions (result-level only, max 3 signals each, see each
+// archetype's own profileSignals below). Only a FIRST completion of this quiz writes
+// personality_evidence — retakes never re-add or stack additional evidence for the same quiz.
 //
 // highSignalQuestionIds / enableCloseSecond: this quiz's own approved tie-break and "close
 // second" rules, using the exact same opt-in generic mechanism keep-you-around introduced
@@ -21,7 +19,7 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
   scoringType: 'archetype',
   category: 'Shadow Side',
   access: 'private-preview',
-  contributesToProfile: false,
+  contributesToProfile: true,
   title: 'Be So Serious Right Now.',
   eyebrow: 'SHADOW SIDE · OPEN',
   introSupport: [
@@ -94,6 +92,13 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
           '😂',
         ],
       },
+      // Approved result-level You-profile mapping (Michelle/Forge, see engineering sprint
+      // report) -- max 3, result-level only, never per-answer.
+      profileSignals: [
+        { dimension: 'accountability_defensiveness', value: 2 },
+        { dimension: 'reflective_reactive', value: 1 },
+        { dimension: 'emotional_intensity', value: -1 },
+      ],
     },
     {
       id: 'standards-control',
@@ -152,6 +157,10 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
           'They just don’t automatically become everybody else’s instructions.',
         ],
       },
+      profileSignals: [
+        { dimension: 'control_allowing', value: 2 },
+        { dimension: 'planner_spontaneous', value: 1 },
+      ],
     },
     {
       id: 'communicate-punish',
@@ -210,6 +219,11 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
           '😂',
         ],
       },
+      profileSignals: [
+        { dimension: 'repair_punishing', value: -2 },
+        { dimension: 'direct_indirect', value: -1 },
+        { dimension: 'vulnerable_armored', value: -1 },
+      ],
     },
     {
       id: 'honest-mad',
@@ -265,6 +279,11 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
           'Anger occasionally steals the microphone.',
         ],
       },
+      profileSignals: [
+        { dimension: 'tactful_blunt', value: -2 },
+        { dimension: 'direct_indirect', value: 1 },
+        { dimension: 'reflective_reactive', value: -1 },
+      ],
     },
     {
       id: 'accountability-turn',
@@ -331,6 +350,11 @@ export const BE_SO_SERIOUS_QUIZ: ArchetypeQuizDefinition = {
           'We would simply like to confirm your subscription includes incoming calls.',
         ],
       },
+      profileSignals: [
+        { dimension: 'accountability_defensiveness', value: -2 },
+        { dimension: 'perspective_taking_self_referencing', value: -1 },
+        { dimension: 'gives_freely_keeps_score', value: -1 },
+      ],
     },
   ],
   questions: [

@@ -11,13 +11,11 @@ import type { ArchetypeQuizDefinition } from './types';
 // and old shared-result links keep resolving exactly as before. Only src/app/private.tsx's
 // active preview pointer moves to this quiz; nothing about secretly-love's own file changes.
 //
-// contributesToProfile: false — Michelle and Forge have not yet approved this quiz's five
-// results' mapping to canonical You-profile dimensions. No profileSignals are authored on any
-// archetype below (so submit_quiz_result never receives profile_effects and therefore never
-// writes personality_evidence for this quiz), AND this flag additionally excludes this quiz's
-// question_count from profileAnswerCount/Your7 in computeProfileActivityCounts — see that
-// function's comment. Completion, See Result, Retake, history, and sharing all work normally;
-// only the profile-evidence contribution is withheld pending approval.
+// contributesToProfile: true — Michelle and Forge approved this quiz's five results' mapping
+// to canonical You-profile dimensions (result-level only, max 3 signals each, see each
+// archetype's own profileSignals below). Only a FIRST completion of this quiz writes
+// personality_evidence (see submit_quiz_result's is_first_profile_completion logic) — retakes
+// never re-add or stack additional evidence for the same quiz.
 //
 // highSignalQuestionIds / enableCloseSecond: this quiz's own approved tie-break and "close
 // second" rules (see scoring.ts's pickPrimaryArchetypeByHighSignal/pickCloseSecond) — opt-in,
@@ -27,7 +25,7 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
   scoringType: 'archetype',
   category: 'The Good Stuff',
   access: 'private-preview',
-  contributesToProfile: false,
+  contributesToProfile: true,
   title: 'So why do people keep you around?',
   eyebrow: 'APPARENTLY PRIVATE · FREE PREVIEW',
   introSupport: [
@@ -74,6 +72,14 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
           'That is a bigger compliment than it sounds.',
         ],
       },
+      // Approved result-level You-profile mapping (Michelle/Forge, see engineering sprint
+      // report) -- max 3, result-level only, never per-answer. Sign convention: positive pole
+      // of each dimension gets the positive value.
+      profileSignals: [
+        { dimension: 'duty_first_self_preserving', value: 2 },
+        { dimension: 'protective_hands_off', value: 1 },
+        { dimension: 'practical_idealistic', value: 1 },
+      ],
     },
     {
       id: 'reason-theres-a-story',
@@ -109,6 +115,11 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
           'Apparently, you’re a core memory with questionable influence.',
         ],
       },
+      profileSignals: [
+        { dimension: 'adventure_comfort', value: 2 },
+        { dimension: 'planner_spontaneous', value: -1 },
+        { dimension: 'playful_serious', value: 1 },
+      ],
     },
     {
       id: 'human-bullshit-detector',
@@ -148,6 +159,11 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
           'Apparently, when you say, "Do you want me to be honest?" everybody braces a little.',
         ],
       },
+      profileSignals: [
+        { dimension: 'direct_indirect', value: 2 },
+        { dimension: 'social_attunement', value: 1 },
+        { dimension: 'supportive_challenging', value: -1 },
+      ],
     },
     {
       id: 'hype-department',
@@ -190,6 +206,8 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
           '😂',
         ],
       },
+      // Approved with exactly ONE signal -- do not add filler signals to reach 3.
+      profileSignals: [{ dimension: 'supportive_challenging', value: 2 }],
     },
     {
       id: 'one-who-knows-too-much',
@@ -234,6 +252,10 @@ export const KEEP_YOU_AROUND_QUIZ: ArchetypeQuizDefinition = {
           'Apparently, you noticed the vibe change before the vibe knew it changed.',
         ],
       },
+      profileSignals: [
+        { dimension: 'social_attunement', value: 2 },
+        { dimension: 'curious_decisive', value: 1 },
+      ],
     },
   ],
   questions: [
