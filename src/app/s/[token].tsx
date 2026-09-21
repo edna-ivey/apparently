@@ -101,6 +101,12 @@ export default function SharedResultScreen() {
               </View>
 
               {state.content.structuredRead ? (
+                // Share-safe presentation for a Private structuredRead result: quiz title
+                // (above), result title, THE READ, and the approved closing kicker ONLY.
+                // THE CALL-OUT / THE COST / TRY THIS stay Private — never shown to a public
+                // recipient. The owner's own in-app result (quiz/[quizId].tsx) is NOT this
+                // component and still renders all four sections in full — see this file's
+                // header comment and ShareableResultContent's own comment in scoring.ts.
                 <View style={styles.verdictCard}>
                   <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
                   <ThemedText style={styles.verdictTitle}>{state.content.resultTitle}</ThemedText>
@@ -113,30 +119,15 @@ export default function SharedResultScreen() {
                       </ThemedText>
                     ))}
                   </View>
-                  <View style={styles.privateSection}>
-                    <ThemedText style={styles.privateSectionHeading}>THE CALL-OUT</ThemedText>
-                    {state.content.structuredRead.theCallOut.map((line, index) => (
-                      <ThemedText key={`the-call-out-${index}`} style={styles.privateSectionBody}>
-                        {line}
-                      </ThemedText>
-                    ))}
-                  </View>
-                  <View style={styles.privateSection}>
-                    <ThemedText style={styles.privateSectionHeading}>THE COST</ThemedText>
-                    {state.content.structuredRead.theCost.map((line, index) => (
-                      <ThemedText key={`the-cost-${index}`} style={styles.privateSectionBody}>
-                        {line}
-                      </ThemedText>
-                    ))}
-                  </View>
-                  <View style={styles.privateSection}>
-                    <ThemedText style={styles.privateSectionHeading}>TRY THIS</ThemedText>
-                    {state.content.structuredRead.tryThis.map((line, index) => (
-                      <ThemedText key={`try-this-${index}`} style={styles.privateSectionBody}>
-                        {line}
-                      </ThemedText>
-                    ))}
-                  </View>
+                  {state.content.shareKicker && state.content.shareKicker.length > 0 && (
+                    <View style={styles.privateSection}>
+                      {state.content.shareKicker.map((line, index) => (
+                        <ThemedText key={`share-kicker-${index}`} style={styles.privateSectionBody}>
+                          {line}
+                        </ThemedText>
+                      ))}
+                    </View>
+                  )}
                 </View>
               ) : (
                 <>

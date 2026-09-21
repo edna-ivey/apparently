@@ -419,6 +419,22 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
   };
 };
 
+// The approved share-safe "kicker" for a structuredRead result is its own already-approved
+// closing thought — every structuredRead's tryThis array ends with one or more lines starting
+// "Apparently, ..." that form that closing beat (verified across all 10 registered
+// structuredRead results at the time this was written). Derived, never duplicated: finds that
+// line and returns everything from there to the end of tryThis, so it can never drift out of
+// sync with tryThis and nothing is rewritten/summarized/generated. Returns [] (never invented
+// filler) if no such line exists — callers must treat that as "no share-safe kicker available"
+// rather than fabricate one.
+export const deriveShareKicker = (tryThis: string[]): string[] => {
+  const startIndex = tryThis.findIndex((line) => /^Apparently,/i.test(line.trim()));
+  if (startIndex === -1) {
+    return [];
+  }
+  return tryThis.slice(startIndex);
+};
+
 // Sharing-safe subset of a result's display content, resolved directly from a definition +
 // resultId — no dependency on a persisted QuizResultRecord/score/percent (a shared result's
 // anonymous recipient never receives those, see quiz-share-service.ts/src/app/s/[token].tsx).
@@ -437,7 +453,19 @@ export type ShareableResultContent = {
   // See ResultDisplay.structuredRead — passed through unchanged, since it's static approved
   // content (never scoring-sensitive), so a shared link for a structuredRead result has
   // something to show at all (its heroRead/body/kicker/traits are intentionally empty).
+  //
+  // IMPORTANT: this field is ONLY safe to hand to fully-public/anonymous callers (the shared-
+  // result landing) as its OWN approved share-safe subset — see ShareableResultContent's own
+  // consumer (src/app/s/[token].tsx), which shows ONLY structuredRead.theRead + shareKicker,
+  // never theCallOut/theCost/tryThis in full. The in-app quiz runner (quiz/[quizId].tsx) does
+  // NOT use this function at all — it reads the full structuredRead directly off the
+  // definition/ResultDisplay, so the owner's own in-app result is never shortened.
   structuredRead?: QuizStructuredRead;
+  // The approved share-safe closing line(s) for a structuredRead result — see
+  // deriveShareKicker. Undefined for a non-structuredRead result (those already have their
+  // own plain `kicker` string above). Empty array only if a structuredRead result somehow has
+  // no identifiable "Apparently, ..." closing line — never a fabricated substitute.
+  shareKicker?: string[];
 };
 
 export const resolveShareableResultContent = (definition: QuizDefinition, resultId: string): ShareableResultContent | null => {
@@ -455,6 +483,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
       traits: archetype.traits ?? [],
       resultSubtitle: archetype.resultSubtitle,
       structuredRead: archetype.structuredRead,
+      shareKicker: archetype.structuredRead ? deriveShareKicker(archetype.structuredRead.tryThis) : undefined,
     };
   }
 
