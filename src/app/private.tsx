@@ -161,6 +161,7 @@ export default function PrivateScreen() {
                   </View>
                 </View>
                 <ThemedText style={styles.lockedTitle}>{entry.title}</ThemedText>
+                <ThemedText style={styles.lockedSubtitle}>{entry.subtitle}</ThemedText>
               </Pressable>
             ))}
           </View>
@@ -240,6 +241,7 @@ const styles = StyleSheet.create({
   lockedBadge: { color: 'rgba(255,249,245,0.55)', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   lockedBadgeDot: { color: 'rgba(255,249,245,0.35)', fontSize: 10, fontWeight: '800' },
   lockedTitle: { color: Brand.cream, fontSize: 17, lineHeight: 22, fontWeight: '800' },
+  lockedSubtitle: { color: 'rgba(255,249,245,0.6)', fontSize: 13, lineHeight: 18, fontWeight: '600' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(23,21,29,0.6)', alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   modalCard: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.five, gap: Spacing.one, maxWidth: 360, width: '100%', borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)' },
   modalEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },

@@ -105,6 +105,9 @@ export type FreeQuizCategory = 'Love' | 'Friendship' | 'Food' | 'Money' | 'Nosta
 
 // Apparently Private's own category set — a different "room," never mixed into the free pill
 // row. Only src/app/private.tsx and the locked catalog (private-catalog.ts) reference this.
+// 'Private Private. 😈' is the approved user-facing category label for the future
+// sex/intimacy category — never renamed to "Sex & Intimacy" in the consumer UI. Its stable
+// internal catalog-entry ids use the 'private-private-' prefix (see private-catalog.ts).
 export type PrivateQuizCategory =
   | 'Love & Soulmates'
   | 'Career & Ambition'
@@ -112,7 +115,8 @@ export type PrivateQuizCategory =
   | 'Shadow Side'
   | 'The Good Stuff'
   | 'Life Match'
-  | 'Style & Vibe';
+  | 'Style & Vibe'
+  | 'Private Private. 😈';
 
 export type QuizCategory = FreeQuizCategory | PrivateQuizCategory;
 
