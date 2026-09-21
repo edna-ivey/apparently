@@ -77,7 +77,10 @@ type PerQuestionWeights = { questionId: string; weights: Record<string, number> 
 // Object.entries' encounter order is the defensive fallback, matching this engine's existing
 // tie-within-a-question convention. Threshold is > 0 (a zero-or-absent entry is never a
 // winner), matching the original single-entry-only engine's implicit behavior exactly.
-const primaryWeightEntry = (weights: Record<string, number>): { archetypeId: string; value: number } | null => {
+// Exported for reuse by findPartYouMissed below (Compare's deterministic "THE PART YOU
+// MISSED" selection) — same "primary role" definition the tie-break/close-second engine
+// already uses, never a second interpretation of what "primary" means for a choice.
+export const primaryWeightEntry = (weights: Record<string, number>): { archetypeId: string; value: number } | null => {
   let best: { archetypeId: string; value: number } | null = null;
   for (const [archetypeId, value] of Object.entries(weights)) {
     if (value > (best?.value ?? 0)) {
@@ -547,3 +550,81 @@ export const formatResultMetric = (definition: QuizDefinition, record: QuizResul
     ? `${record.percent}% ${definition.recentReadMetricLabel}`
     : `${record.percent}% ${definition.scoreLabel} meter`;
 };
+
+// --- THEY HAVE NOTES. Compare — deterministic "THE PART YOU MISSED" selection -------------
+//
+// Chooses AT MOST one question where the owner and a friend disagreed, using the exact
+// approved priority chain (never AI-generated, never custom prose — the answer difference
+// itself is the entire point). This mirrors the SAME "prefer X, then Y, then Z, then a fixed
+// deterministic fallback" shape pickCloseSecond/pickPrimaryArchetypeByHighSignal already use
+// elsewhere in this file — criteria 2-5 are priority tiebreakers among eligible candidates,
+// not a hard AND-filter; criterion 1 is the only hard eligibility gate, and criterion 6 is
+// the final deterministic tiebreak. "A meaningful qualifying mismatch exists" simply means at
+// least one question has a genuine self/friend disagreement — any such disagreement is a
+// valid candidate; the chain below picks the single BEST one among them.
+export type PartYouMissed = { questionId: string; ownerChoiceId: string; friendChoiceId: string };
+
+export const findPartYouMissed = (
+  definition: ArchetypeQuizDefinition,
+  ownerAnswers: Record<string, string>,
+  friendAnswers: Record<string, string>,
+  friendPrimaryResultId: string,
+): PartYouMissed | null => {
+  const highSignalIds = new Set(definition.highSignalQuestionIds ?? []);
+
+  type Candidate = {
+    questionId: string;
+    isHighSignal: boolean;
+    friendGivesFullPrimary: boolean;
+    ownerGivesZeroToFriendPrimary: boolean;
+    scoreDiff: number;
+    order: number;
+  };
+
+  const candidates: Candidate[] = [];
+  definition.questions.forEach((question, index) => {
+    const ownerChoiceId = ownerAnswers[question.id];
+    const friendChoiceId = friendAnswers[question.id];
+    // Criterion 1 — the only hard eligibility gate: a genuine disagreement must exist. A
+    // question either party didn't answer is never eligible either.
+    if (!ownerChoiceId || !friendChoiceId || ownerChoiceId === friendChoiceId) {
+      return;
+    }
+
+    const friendWeights = question.choices.find((c) => c.id === friendChoiceId)?.resultWeights ?? {};
+    const ownerWeights = question.choices.find((c) => c.id === ownerChoiceId)?.resultWeights ?? {};
+    const friendPrimaryEntry = primaryWeightEntry(friendWeights);
+
+    candidates.push({
+      questionId: question.id,
+      isHighSignal: highSignalIds.has(question.id),
+      friendGivesFullPrimary: friendPrimaryEntry?.archetypeId === friendPrimaryResultId && friendPrimaryEntry.value === 2,
+      ownerGivesZeroToFriendPrimary: (ownerWeights[friendPrimaryResultId] ?? 0) === 0,
+      scoreDiff: (friendWeights[friendPrimaryResultId] ?? 0) - (ownerWeights[friendPrimaryResultId] ?? 0),
+      order: index,
+    });
+  });
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  candidates.sort((a, b) => {
+    if (a.isHighSignal !== b.isHighSignal) return a.isHighSignal ? -1 : 1; // 2
+    if (a.friendGivesFullPrimary !== b.friendGivesFullPrimary) return a.friendGivesFullPrimary ? -1 : 1; // 3
+    if (a.ownerGivesZeroToFriendPrimary !== b.ownerGivesZeroToFriendPrimary) return a.ownerGivesZeroToFriendPrimary ? -1 : 1; // 4
+    if (a.scoreDiff !== b.scoreDiff) return b.scoreDiff - a.scoreDiff; // 5
+    return a.order - b.order; // 6
+  });
+
+  const best = candidates[0];
+  return { questionId: best.questionId, ownerChoiceId: ownerAnswers[best.questionId], friendChoiceId: friendAnswers[best.questionId] };
+};
+
+// Literal identical-choice count between two answer maps for the same quiz — "You matched on
+// X of 10 answers." Same question id + same choice id only; never weighted similarity.
+export const countExactMatches = (
+  definition: ArchetypeQuizDefinition,
+  answersA: Record<string, string>,
+  answersB: Record<string, string>,
+): number => definition.questions.filter((q) => answersA[q.id] && answersA[q.id] === answersB[q.id]).length;

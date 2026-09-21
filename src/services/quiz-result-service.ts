@@ -29,6 +29,11 @@ export type SubmitQuizResultPayload = {
   // known dimension, value in {-2,-1,1,2}, no duplicate dimension — this layer does not
   // re-validate, the RPC is the actual authority.
   profileSignals?: PersonalityEffect[];
+  // Question-id -> choice-id map for this completion. Used ONLY by Compare's exact-match-
+  // count (see get_compare_result) — never used to re-score anything. Optional so older call
+  // sites/records remain valid; omitted entirely on the ?view=result read-only path (there is
+  // nothing fresh to submit there at all).
+  answers?: Record<string, string>;
 };
 
 export type SubmitQuizResultResult =
@@ -57,6 +62,7 @@ export const submitQuizResultRemote = async (payload: SubmitQuizResultPayload): 
     p_traits: payload.traits,
     p_mix: payload.mix ?? null,
     p_profile_effects: payload.profileSignals ?? null,
+    p_answers: payload.answers ?? null,
   });
 
   if (error) {

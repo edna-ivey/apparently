@@ -138,6 +138,10 @@ export default function QuizScreen() {
         traits: liveResult.traits,
         mix,
         profileSignals: contributesToProfile ? liveResult.profileSignals : undefined,
+        // Compare's exact-match-count needs the owner's raw answer map. `answers` (component
+        // state) is only ever populated on a FRESH completion — never sent on the ?view=result
+        // read-only path, since this whole branch only runs there in the first place.
+        answers,
       };
       // Never blocks the result screen — it already renders from local `result` state
       // regardless of this call. A failure queues the payload for a later retry (You
@@ -159,6 +163,20 @@ export default function QuizScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, savedResultDisplay]);
 
+  // Shared by handleShare and handleAskForNotes below — both need a share link pinned to
+  // THIS exact completion (never an older one), so the "synced" gating and fallback are
+  // identical either way; only the eventual Share.share message text differs.
+  const createShareUrl = async (): Promise<string> => {
+    let shareUrl = `${APP_URL}/quiz/${definition.id}`;
+    if (isRemoteDailyEnabled && remoteSubmitState === 'synced') {
+      const shareResult = await createQuizShare(definition.id, sharerDisplayName);
+      if (shareResult.ok) {
+        shareUrl = `${APP_URL}/s/${shareResult.shareId}`;
+      }
+    }
+    return shareUrl;
+  };
+
   const handleShare = async () => {
     if (!result) {
       return;
@@ -169,13 +187,7 @@ export default function QuizScreen() {
       // quiz. Only attempted once this specific completion's own remote row is confirmed
       // synced (see remoteSubmitState above) — otherwise falls back to the previous plain quiz
       // link rather than risk pinning a stale/older completion.
-      let shareUrl = `${APP_URL}/quiz/${definition.id}`;
-      if (isRemoteDailyEnabled && remoteSubmitState === 'synced') {
-        const shareResult = await createQuizShare(definition.id, sharerDisplayName);
-        if (shareResult.ok) {
-          shareUrl = `${APP_URL}/s/${shareResult.shareId}`;
-        }
-      }
+      const shareUrl = await createShareUrl();
       await Share.share({
         message: `I got ${result.resultDisplayTitle} on Apparently You 😂\n${definition.title}\n${shareUrl}`,
       });
@@ -183,6 +195,25 @@ export default function QuizScreen() {
       // Share can reject/cancel (user dismissed the sheet, or no share target available on
       // this platform/context) — nothing to recover, the result card itself is still on
       // screen and screenshot-able.
+    }
+  };
+
+  // "THEY HAVE NOTES." — same share link AND same message text as handleShare (still pinned
+  // to this exact completion): the recipient landing (/s/[token]) already offers "Give my
+  // version of [Name] →" itself, so this CTA is simply a second, friend-focused entry point
+  // into the identical share link — no separate native-share copy is invented here. Only
+  // offered for structuredRead (Apparently Private) results — see ResultScreen below.
+  const handleAskForNotes = async () => {
+    if (!result) {
+      return;
+    }
+    try {
+      const shareUrl = await createShareUrl();
+      await Share.share({
+        message: `I got ${result.resultDisplayTitle} on Apparently You 😂\n${definition.title}\n${shareUrl}`,
+      });
+    } catch {
+      // Same non-fatal dismiss/no-target handling as handleShare.
     }
   };
 
@@ -233,6 +264,7 @@ export default function QuizScreen() {
               result={result}
               isPrivatePreview={definition.access === 'private-preview'}
               onShare={handleShare}
+              onAskForNotes={handleAskForNotes}
               onSeeYou={() => router.push('/you')}
               onTakeAnother={() => router.push('/explore')}
               onBackToPrivate={() => router.push('/private')}
@@ -319,6 +351,7 @@ function ResultScreen({
   result,
   isPrivatePreview,
   onShare,
+  onAskForNotes,
   onSeeYou,
   onTakeAnother,
   onBackToPrivate,
@@ -326,6 +359,7 @@ function ResultScreen({
   result: ResultDisplay;
   isPrivatePreview: boolean;
   onShare: () => void;
+  onAskForNotes: () => void;
   onSeeYou: () => void;
   onTakeAnother: () => void;
   onBackToPrivate: () => void;
@@ -337,6 +371,21 @@ function ResultScreen({
       <Pressable onPress={onShare} style={styles.cta}>
         <ThemedText style={styles.ctaText}>Share this →</ThemedText>
       </Pressable>
+
+      {/* "THEY HAVE NOTES." invite — only for Apparently Private's structuredRead results
+          (the two quizzes Compare's friend-answering flow supports). A standard quiz result
+          keeps exactly its previous three-button layout, unchanged. */}
+      {result.structuredRead && (
+        <View style={styles.notesCard}>
+          <ThemedText style={styles.notesEyebrow}>THEY HAVE NOTES. {'\u{1F440}'}</ThemedText>
+          <ThemedText style={styles.notesBody}>You&apos;ve told us your version.</ThemedText>
+          <ThemedText style={styles.notesBody}>Now ask somebody who knows too much.</ThemedText>
+          <Pressable onPress={onAskForNotes} style={styles.notesCta}>
+            <ThemedText style={styles.notesCtaText}>Ask somebody who knows too much →</ThemedText>
+          </Pressable>
+        </View>
+      )}
+
       <Pressable onPress={onSeeYou} style={styles.secondaryCta}>
         <ThemedText style={styles.secondaryCtaText}>See what else we know →</ThemedText>
       </Pressable>
@@ -670,6 +719,40 @@ const styles = StyleSheet.create({
   },
   curiosityCtaText: {
     color: Brand.plum,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  // "THEY HAVE NOTES." invite — a distinct violet card (matching the Compare comparison
+  // panel's own palette, see compare-result-panel.tsx) between the standard share CTA and
+  // "See what else we know", so it visibly reads as its own beat rather than a fourth button.
+  notesCard: {
+    backgroundColor: Brand.violet,
+    borderRadius: 24,
+    padding: Spacing.four,
+    gap: Spacing.one,
+  },
+  notesEyebrow: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
+  notesBody: {
+    color: '#F1EEFF',
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '700',
+  },
+  notesCta: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  notesCtaText: {
+    color: Brand.violet,
     fontSize: 14,
     fontWeight: '800',
   },
