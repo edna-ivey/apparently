@@ -150,12 +150,12 @@ export const getDailyDistribution = async (questionId: string): Promise<GetDaily
 
 export type GetPrivateDailyResult = { ok: true; data: PrivateDailyRow | null } | { ok: false; message: string };
 
-export const getPrivateDaily = async (testerAccess: boolean): Promise<GetPrivateDailyResult> => {
+export const getPrivateDaily = async (testerAccess: boolean, premium: boolean): Promise<GetPrivateDailyResult> => {
   if (!supabase) {
     return { ok: false, message: 'Supabase is not configured.' };
   }
 
-  const { data, error } = await supabase.rpc('get_private_daily', { p_tester_access: testerAccess });
+  const { data, error } = await supabase.rpc('get_private_daily', { p_tester_access: testerAccess, p_premium: premium });
   if (error) {
     console.warn('[daily-service] getPrivateDaily failed:', error.message);
     return { ok: false, message: error.message };
@@ -172,6 +172,7 @@ export const submitPrivateDailyAnswer = async (
   questionId: string,
   optionId: string,
   testerAccess: boolean,
+  premium: boolean,
 ): Promise<SubmitPrivateDailyAnswerResult> => {
   if (!supabase) {
     return { ok: false, reason: 'not_configured' };
@@ -185,6 +186,7 @@ export const submitPrivateDailyAnswer = async (
     p_question_id: questionId,
     p_option_id: optionId,
     p_tester_access: testerAccess,
+    p_premium: premium,
   });
   if (error) {
     console.warn('[daily-service] submitPrivateDailyAnswer failed:', error.message);

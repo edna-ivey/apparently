@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
@@ -25,6 +25,7 @@ import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-re
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { getSubscriptionManagementUrl, restorePurchases, usePremiumStatus } from '@/services/purchases-service';
 import {
   computeProfileActivityCounts,
   getMyPersonalityEvidence,
@@ -225,6 +226,25 @@ export default function YouScreen() {
   const firstName = userProfile === 'loading' ? null : userProfile?.firstName ?? null;
   const displayName = firstName && firstName.trim().length > 0 ? firstName : 'You';
 
+  // Subscription status surface — real RevenueCat entitlement truth only (see
+  // purchases-service.ts's usePremiumStatus, deliberately independent of the tester-access
+  // build flag so this card always reflects what a real purchase/restore would show).
+  const premium = usePremiumStatus();
+  const [restoreState, setRestoreState] = useState<{ phase: 'idle' | 'restoring' | 'done'; message?: string }>({ phase: 'idle' });
+  const handleRestore = async () => {
+    setRestoreState({ phase: 'restoring' });
+    const result = await restorePurchases();
+    setRestoreState({
+      phase: 'done',
+      message: result.ok
+        ? result.restored
+          ? 'Apparently Private is active on this account.'
+          : 'No active Apparently Private subscription was found.'
+        : result.message,
+    });
+  };
+  const managementUrl = getSubscriptionManagementUrl();
+
   const recentReadCard = latestQuizDefinition && latestResult && (
     <Pressable
       onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: latestResult.quizId, view: 'result' } })}
@@ -262,6 +282,32 @@ export default function YouScreen() {
               )
             ) : (
               <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
+            )}
+          </View>
+
+          <View style={styles.subscriptionCard}>
+            <View style={styles.subscriptionTextGroup}>
+              <ThemedText style={styles.eyebrow}>APPARENTLY PRIVATE</ThemedText>
+              <ThemedText style={styles.subscriptionStatus}>{premium.status === 'premium' ? 'Active' : 'Free'}</ThemedText>
+            </View>
+            {premium.status === 'premium' ? (
+              managementUrl && Platform.OS !== 'web' ? (
+                <Pressable style={styles.subscriptionCta} onPress={() => void Linking.openURL(managementUrl)}>
+                  <ThemedText style={styles.subscriptionCtaText}>Manage →</ThemedText>
+                </Pressable>
+              ) : null
+            ) : (
+              <Pressable style={styles.subscriptionCta} onPress={() => router.push('/paywall')}>
+                <ThemedText style={styles.subscriptionCtaText}>Subscribe →</ThemedText>
+              </Pressable>
+            )}
+          </View>
+          <View style={styles.restoreRow}>
+            <Pressable disabled={restoreState.phase === 'restoring'} onPress={() => void handleRestore()}>
+              <ThemedText style={styles.restoreText}>{restoreState.phase === 'restoring' ? 'Restoring…' : 'Restore Purchases'}</ThemedText>
+            </Pressable>
+            {restoreState.phase === 'done' && restoreState.message && (
+              <ThemedText style={styles.restoreMessage}>{restoreState.message}</ThemedText>
             )}
           </View>
 
@@ -421,6 +467,24 @@ const styles = StyleSheet.create({
   name: { color: Brand.ink, fontSize: 22, fontWeight: '800' },
   subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   sublineSecondary: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', opacity: 0.75, marginTop: 1 },
+  subscriptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: Spacing.four,
+    borderWidth: 1,
+    borderColor: '#F0E6E8',
+    gap: Spacing.two,
+  },
+  subscriptionTextGroup: { gap: Spacing.half },
+  subscriptionStatus: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
+  subscriptionCta: { backgroundColor: Brand.violet, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  subscriptionCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  restoreRow: { alignItems: 'center', gap: Spacing.half, marginTop: -Spacing.one },
+  restoreText: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
+  restoreMessage: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', textAlign: 'center' },
   scoreCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#F0E6E8' },
   eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   score: { color: Brand.ink, fontSize: 54, lineHeight: 58, fontWeight: '900' },

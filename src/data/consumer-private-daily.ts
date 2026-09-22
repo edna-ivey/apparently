@@ -6,6 +6,7 @@ import { isPrivateDailyTesterAccessEnabled, isRemoteDailyEnabled } from '@/lib/s
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { getDailyAnswer, getDailyDistribution, getPrivateDaily, submitPrivateDailyAnswer } from '@/services/daily-service';
 import type { DailyDistributionRow, PrivateDailyOption } from '@/services/types';
+import { useEffectivePremium } from '@/services/purchases-service';
 
 // Apparently Private's Today experience — deliberately its own hook rather than folded into
 // useConsumerDailyExperience(). Private has no local/prototype fallback (it's a remote-only
@@ -22,7 +23,7 @@ export type PrivateDailyExperience =
   | { phase: 'locked'; prompt: string; category: string }
   | {
       phase: 'ready';
-      access: 'free-unlock' | 'tester';
+      access: 'free-unlock' | 'tester' | 'premium';
       question: ConsumerDailyQuestion;
       committedIndex: number | null;
       distribution: DistributionState;
@@ -54,7 +55,7 @@ type InternalState =
       phase: 'ready';
       questionId: string;
       optionIds: string[];
-      access: 'free-unlock' | 'tester';
+      access: 'free-unlock' | 'tester' | 'premium';
       question: ConsumerDailyQuestion;
       committedIndex: number | null;
       distribution: DistributionState;
@@ -81,6 +82,11 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
   const committingRef = useRef(false);
+  // The real RevenueCat entitlement OR the tester-access build flag -- see
+  // purchases-service.ts's useEffectivePremium. Reactive: an entitlement that becomes active
+  // mid-session (a purchase completed from the paywall) flows straight into `load`'s next
+  // call without requiring a manual refresh wiring here.
+  const isPremium = useEffectivePremium();
 
   const refreshDistribution = useCallback(async (questionId: string, optionIds: string[]) => {
     setState((previous) => (previous.phase === 'ready' ? { ...previous, distribution: { status: 'loading' } } : previous));
@@ -109,7 +115,7 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
       return;
     }
 
-    const result = await getPrivateDaily(isPrivateDailyTesterAccessEnabled);
+    const result = await getPrivateDaily(isPrivateDailyTesterAccessEnabled, isPremium);
     if (!result.ok) {
       setState({ phase: 'error', message: result.message });
       return;
@@ -132,7 +138,11 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
       category: row.category,
       options: toPrivateConsumerOptions(sortedOptions),
     };
-    const access: 'free-unlock' | 'tester' = isPrivateDailyTesterAccessEnabled ? 'tester' : 'free-unlock';
+    const access: 'free-unlock' | 'tester' | 'premium' = isPrivateDailyTesterAccessEnabled
+      ? 'tester'
+      : isPremium
+        ? 'premium'
+        : 'free-unlock';
 
     // "Unlocked" (free-unlock or tester) does NOT mean "already answered" — a free-unlock or
     // tester caller can see options before answering. Distribution must only ever be fetched
@@ -161,7 +171,7 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
       distribution: { status: 'loading' },
     });
     await refreshDistribution(row.question_id, optionIds);
-  }, [refreshDistribution]);
+  }, [refreshDistribution, isPremium]);
 
   useEffect(() => {
     // Private Daily is a remote-only concept — local prototype mode never fetches it, same
@@ -195,7 +205,7 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
 
     const { questionId, optionIds } = state;
     const optionId = optionIds[draftIndex];
-    const result = await submitPrivateDailyAnswer(questionId, optionId, isPrivateDailyTesterAccessEnabled);
+    const result = await submitPrivateDailyAnswer(questionId, optionId, isPrivateDailyTesterAccessEnabled, isPremium);
 
     if (result.ok) {
       setState((previous) =>
@@ -218,7 +228,7 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
 
     committingRef.current = false;
     setIsCommitting(false);
-  }, [state, draftIndex, refreshDistribution]);
+  }, [state, draftIndex, refreshDistribution, isPremium]);
 
   const retry = useCallback(() => {
     void load();

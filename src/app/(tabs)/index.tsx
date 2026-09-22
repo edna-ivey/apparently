@@ -335,13 +335,24 @@ export default function HomeScreen() {
               <Pressable style={styles.privateDropUnlockButton} onPress={() => router.push('/private')}>
                 <ThemedText style={styles.privateDropUnlockButtonText}>Enter Private →</ThemedText>
               </Pressable>
+              {/* Real, testable entitlement path — Apparently Private genuinely unlocks
+                  today's actual Daily content (unlike the still-empty locked catalog cards on
+                  /private itself), so offering it here is truthful, not a promise about
+                  content that doesn't exist yet. */}
+              <Pressable style={styles.privateDropSubscribeButton} onPress={() => router.push('/paywall')}>
+                <ThemedText style={styles.privateDropSubscribeButtonText}>Get Apparently Private →</ThemedText>
+              </Pressable>
             </View>
           )}
 
           {isCommitted && isRemoteDailyEnabled && privateReady && (
             <View style={styles.privateDropCard}>
               <ThemedText style={styles.privateDropEyebrow}>
-                {isPrivateDailyTesterAccessEnabled ? 'TESTER ACCESS · PRIVATE UNLOCKED' : 'PRIVATE DOOR OPEN 👀'}
+                {isPrivateDailyTesterAccessEnabled
+                  ? 'TESTER ACCESS · PRIVATE UNLOCKED'
+                  : privateReady?.access === 'premium'
+                    ? 'APPARENTLY PRIVATE · UNLOCKED'
+                    : 'PRIVATE DOOR OPEN 👀'}
               </ThemedText>
               {!privateIsCommitted && (
                 <ThemedText style={styles.privateDropCopy}>Today’s Private Drop is unlocked.</ThemedText>
@@ -848,6 +859,16 @@ const styles = StyleSheet.create({
   privateDropUnlockButtonText: {
     color: Brand.plum,
     fontSize: 14,
+    fontWeight: '800',
+  },
+  privateDropSubscribeButton: {
+    alignSelf: 'flex-start',
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.one,
+  },
+  privateDropSubscribeButtonText: {
+    color: 'rgba(255,249,245,0.75)',
+    fontSize: 13,
     fontWeight: '800',
   },
   privateOptions: {

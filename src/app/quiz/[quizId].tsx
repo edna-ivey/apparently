@@ -18,6 +18,7 @@ import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width'
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { createQuizShare } from '@/services/quiz-share-service';
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
+import { useEffectivePremium } from '@/services/purchases-service';
 
 export default function QuizScreen() {
   const { quizId, view } = useLocalSearchParams<{ quizId: string; view?: string }>();
@@ -52,10 +53,25 @@ export default function QuizScreen() {
     void hydrateQuizResults();
   }, []);
 
+  // Readiness for a future real premium quiz (QuizAccess 'private') -- called unconditionally
+  // to keep hook order stable, same as the hooks above. No REGISTERED quiz uses 'private'
+  // access yet (only 'free' and 'private-preview' -- see QUIZ_REGISTRY), so this gate is
+  // currently unreachable dead weight for every existing quiz; it exists so the moment a real
+  // paid quiz is registered with access: 'private' in a future content sprint, it is
+  // automatically gated correctly with zero additional wiring here.
+  const isPremium = useEffectivePremium();
+
   // Not thrown/notFound — a quiz route reached with an unknown id (a stale link, a typo)
   // should land somewhere real rather than crash. Explore is the natural home.
   if (!definition) {
     return <Redirect href="/explore" />;
+  }
+
+  // A registered 'private' (premium-gated) quiz that this device doesn't have entitlement
+  // for — send to the paywall rather than rendering any question/result content. Never
+  // reachable today (see the comment above); this is forward-readiness only.
+  if (definition.access === 'private' && !isPremium) {
+    return <Redirect href="/paywall" />;
   }
 
   const wantsSavedResult = view === 'result';
