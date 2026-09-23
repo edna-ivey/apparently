@@ -2,13 +2,23 @@ import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { ensureAnonymousSession, getCurrentUserId } from './auth-service';
-import { isPrivateDailyTesterAccessEnabled } from '@/lib/supabase';
+import { isPrivateDailyTesterAccessEnabled, supabase } from '@/lib/supabase';
 
 // The ONE place react-native-purchases is ever imported or called from. Every screen goes
 // through this module's exported functions/hooks -- never `import Purchases from
-// 'react-native-purchases'` anywhere else in the app. This is what keeps the paywall,
-// subscription status surface, and any future gated screen all agreeing on one real,
-// RevenueCat-derived truth instead of each re-deriving their own.
+// 'react-native-purchases'` anywhere else in the app.
+//
+// CRITICAL: the state this module exposes (usePremiumStatus/useEffectivePremium, built from
+// the RevenueCat SDK's local CustomerInfo) is FOR UI RESPONSIVENESS ONLY -- dismissing the
+// paywall, showing "Active"/"Free" on You, choosing which "why is this unlocked" label to
+// show. It is NEVER the authorization boundary for paid server data. That boundary is
+// server-side (Supabase user_entitlements, kept current by the sync-revenuecat-entitlement/
+// revenuecat-webhook Edge Functions, checked inside get_private_daily/submit_private_daily_
+// answer themselves) -- no RPC anywhere accepts a client-supplied "I'm premium" parameter.
+// This module calls syncServerEntitlement() (below) at the points that actually change
+// entitlement state (after purchase, after restore, on init, on stale foreground) so that
+// server-side mirror stays current, but the client never needs to -- and structurally cannot
+// -- assert premium status directly to a paid-content RPC.
 //
 // Native-only by construction: react-native-purchases requires a native StoreKit build (no
 // Expo Go, no web) -- see isPurchasesPlatformSupported below. Every exported function here is
@@ -190,6 +200,7 @@ export const initializePurchases = async (): Promise<void> => {
     }
 
     await refreshCustomerInfo();
+    void syncServerEntitlement();
   } catch (error) {
     configuredOnce = false;
     setSnapshot({ status: 'error', message: 'Could not connect to Apparently Private right now.' });
@@ -220,6 +231,48 @@ export const refreshCustomerInfo = async (): Promise<void> => {
       console.warn('[purchases-service] refreshCustomerInfo failed:', error);
     }
   }
+};
+
+// ---------------------------------------------------------------------------------------
+// Server entitlement sync -- invokes the sync-revenuecat-entitlement Edge Function, which
+// derives the caller's identity from their own Supabase JWT (never trusts anything this
+// module sends it) and re-queries RevenueCat's server API directly, then upserts the real
+// result into user_entitlements. This is what makes the server-side authorization boundary
+// (see the header comment above) actually stay current -- without this, a purchase would be
+// locally visible via CustomerInfo but never actually unlock server-checked content.
+// Deliberately fire-and-forget/best-effort from every call site below: a transient failure
+// here never blocks the local purchase/restore UI (which already reflects the SDK's own
+// truth), and self-heals on the next foreground/app-open sync.
+// ---------------------------------------------------------------------------------------
+
+const SERVER_SYNC_STALE_MS = 5 * 60 * 1000; // 5 minutes
+let lastServerSyncAt = 0;
+
+export const syncServerEntitlement = async (): Promise<void> => {
+  if (!isPurchasesPlatformSupported || !isRevenueCatConfigured || !supabase) {
+    return;
+  }
+  try {
+    const { error } = await supabase.functions.invoke('sync-revenuecat-entitlement', { method: 'POST' });
+    if (error && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.warn('[purchases-service] syncServerEntitlement failed:', error);
+    }
+  } catch (error) {
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.warn('[purchases-service] syncServerEntitlement threw:', error);
+    }
+  } finally {
+    lastServerSyncAt = Date.now();
+  }
+};
+
+const syncServerEntitlementIfStale = async (): Promise<void> => {
+  if (Date.now() - lastServerSyncAt < SERVER_SYNC_STALE_MS) {
+    return;
+  }
+  await syncServerEntitlement();
 };
 
 // ---------------------------------------------------------------------------------------
@@ -290,6 +343,10 @@ export const subscribeMonthly = async (pkg: PurchasesPackage): Promise<Subscribe
   try {
     const result = await Purchases.purchasePackage(pkg);
     setSnapshot(deriveSnapshotFromCustomerInfo(result.customerInfo));
+    // Best-effort: waits for the server mirror to catch up (usually well under a second) so
+    // paid-content RPCs are already correctly authorized by the time the paywall dismisses,
+    // but a slow/failed sync never turns a real, successful purchase into a reported failure.
+    await syncServerEntitlement();
     return { ok: true, status: 'purchased' };
   } catch (error) {
     const purchasesError = error as PurchasesError;
@@ -319,6 +376,8 @@ export const restorePurchases = async (): Promise<RestoreResult> => {
   try {
     const customerInfo = await Purchases.restorePurchases();
     setSnapshot(deriveSnapshotFromCustomerInfo(customerInfo));
+    // Same best-effort server-sync wait as subscribeMonthly above.
+    await syncServerEntitlement();
     return { ok: true, restored: Boolean(customerInfo.entitlements.active[APPARENTLY_PRIVATE_ENTITLEMENT_ID]?.isActive) };
   } catch (error) {
     if (__DEV__) {
@@ -358,6 +417,7 @@ if (isPurchasesPlatformSupported) {
   globalScope.__apparentlyPurchasesAppStateSubscription = AppState.addEventListener('change', (state) => {
     if (state === 'active' && configuredOnce) {
       void refreshCustomerInfo();
+      void syncServerEntitlementIfStale();
     }
   });
 }
