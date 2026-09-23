@@ -144,18 +144,21 @@ export const getDailyDistribution = async (questionId: string): Promise<GetDaily
 // Both functions below are the ONLY way the client reaches Private Daily data/votes — never a
 // raw `.from('daily_options')`/`.from('daily_answers')` call for Private (RLS itself refuses
 // to hand back locked option data that way — see the Public/Private Daily rooms migration).
-// `testerAccess` is this build's EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS flag (see
-// lib/supabase.ts) — client-asserted, re-validated server-side on every write, never trusted
-// blindly for anything beyond "show me this one already-scoped Private question."
+// Neither function takes a client-supplied "am I unlocked" parameter anymore — a caller
+// cannot self-assert premium or tester status (see the CRITICAL SECURITY CORRECTION in
+// 20260924010000_secure_entitlement_authorization.sql). get_private_daily/
+// submit_private_daily_answer derive unlock state entirely from server-side data
+// (user_entitlements, kept current by the sync-revenuecat-entitlement/revenuecat-webhook Edge
+// Functions, and tester_access_grants, admin-only writable) plus free-unlock/already-answered.
 
 export type GetPrivateDailyResult = { ok: true; data: PrivateDailyRow | null } | { ok: false; message: string };
 
-export const getPrivateDaily = async (testerAccess: boolean, premium: boolean): Promise<GetPrivateDailyResult> => {
+export const getPrivateDaily = async (): Promise<GetPrivateDailyResult> => {
   if (!supabase) {
     return { ok: false, message: 'Supabase is not configured.' };
   }
 
-  const { data, error } = await supabase.rpc('get_private_daily', { p_tester_access: testerAccess, p_premium: premium });
+  const { data, error } = await supabase.rpc('get_private_daily');
   if (error) {
     console.warn('[daily-service] getPrivateDaily failed:', error.message);
     return { ok: false, message: error.message };
@@ -171,8 +174,6 @@ export type SubmitPrivateDailyAnswerResult =
 export const submitPrivateDailyAnswer = async (
   questionId: string,
   optionId: string,
-  testerAccess: boolean,
-  premium: boolean,
 ): Promise<SubmitPrivateDailyAnswerResult> => {
   if (!supabase) {
     return { ok: false, reason: 'not_configured' };
@@ -185,8 +186,6 @@ export const submitPrivateDailyAnswer = async (
   const { data, error } = await supabase.rpc('submit_private_daily_answer', {
     p_question_id: questionId,
     p_option_id: optionId,
-    p_tester_access: testerAccess,
-    p_premium: premium,
   });
   if (error) {
     console.warn('[daily-service] submitPrivateDailyAnswer failed:', error.message);

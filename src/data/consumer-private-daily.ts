@@ -115,7 +115,13 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
       return;
     }
 
-    const result = await getPrivateDaily(isPrivateDailyTesterAccessEnabled, isPremium);
+    // No client-asserted authorization parameter anymore — get_private_daily derives unlock
+    // state entirely from server-side state (see 20260924010000_secure_entitlement_
+    // authorization.sql). isPremium/isPrivateDailyTesterAccessEnabled below are used ONLY to
+    // choose which already-true "why is this unlocked" label to show — never to ask the
+    // server for anything, and never capable of unlocking content that the server itself
+    // didn't already decide to unlock.
+    const result = await getPrivateDaily();
     if (!result.ok) {
       setState({ phase: 'error', message: result.message });
       return;
@@ -205,7 +211,9 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
 
     const { questionId, optionIds } = state;
     const optionId = optionIds[draftIndex];
-    const result = await submitPrivateDailyAnswer(questionId, optionId, isPrivateDailyTesterAccessEnabled, isPremium);
+    // Same removal as get_private_daily above — submit_private_daily_answer re-derives
+    // unlock state server-side; nothing client-asserted is sent.
+    const result = await submitPrivateDailyAnswer(questionId, optionId);
 
     if (result.ok) {
       setState((previous) =>

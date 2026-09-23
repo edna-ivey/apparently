@@ -16,5 +16,11 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  // Supabase Edge Functions run on Deno, not React Native/Node -- different global types
+  // (Deno.*, JSR/https: imports, .ts-suffixed relative imports) that this app's own tsconfig
+  // correctly doesn't understand. Type-checked separately via the Supabase/Deno toolchain
+  // (`npx supabase functions deploy` itself validates them at deploy time), never by this
+  // project's `npx tsc --noEmit`.
+  "exclude": ["supabase/functions/**"]
 }
