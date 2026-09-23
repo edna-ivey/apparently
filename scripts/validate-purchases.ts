@@ -164,17 +164,135 @@ for (const file of walk(join(__dirname, '../src'))) {
 assert(otherPurchaseImports.length === 0, `no screen imports react-native-purchases directly (found: ${otherPurchaseImports.join(', ') || 'none'})`);
 
 // ============================================================================================
-// 6. PRIVATE DAILY PREMIUM UNLOCK LOGIC (mirrors get_private_daily's SQL unlock OR-condition)
+// 6. PRIVATE DAILY UNLOCK LOGIC -- mirrors get_private_daily's SQL unlock OR-condition AS OF
+//    THE CRITICAL SECURITY CORRECTION (20260924010000_secure_entitlement_authorization.sql).
+//    Inputs are now SERVER-DERIVED booleans (hasActiveEntitlement/hasTesterAccess, themselves
+//    computed from user_entitlements/tester_access_grants) -- there is no client-asserted
+//    "premium"/"testerAccess" boolean anywhere in this chain anymore. This mirror exists to
+//    exercise the OR-logic itself; the live security QA in the sprint report exercises the
+//    real RPC end to end (including proving the OLD p_premium/p_tester_access parameters no
+//    longer exist at all).
 // ============================================================================================
 
-const isPrivateDailyUnlocked = (opts: { testerAccess: boolean; premium: boolean; freeUnlock: boolean; hasAnswered: boolean }): boolean =>
-  opts.testerAccess || opts.premium || opts.freeUnlock || opts.hasAnswered;
+const isPrivateDailyUnlocked = (opts: {
+  hasActiveEntitlement: boolean;
+  hasTesterAccess: boolean;
+  freeUnlock: boolean;
+  hasAnswered: boolean;
+}): boolean => opts.freeUnlock || opts.hasAnswered || opts.hasActiveEntitlement || opts.hasTesterAccess;
 
-assert(isPrivateDailyUnlocked({ testerAccess: false, premium: false, freeUnlock: true, hasAnswered: false }) === true, 'free-unlock day still unlocks with no subscription (existing behavior preserved)');
-assert(isPrivateDailyUnlocked({ testerAccess: false, premium: true, freeUnlock: false, hasAnswered: false }) === true, 'a real premium entitlement unlocks a non-free-unlock day');
-assert(isPrivateDailyUnlocked({ testerAccess: true, premium: false, freeUnlock: false, hasAnswered: false }) === true, 'tester override still unlocks (preserved)');
-assert(isPrivateDailyUnlocked({ testerAccess: false, premium: false, freeUnlock: false, hasAnswered: true }) === true, 'an already-answered day stays visible regardless of premium (preserved)');
-assert(isPrivateDailyUnlocked({ testerAccess: false, premium: false, freeUnlock: false, hasAnswered: false }) === false, 'no reason to unlock -> stays locked');
+assert(
+  isPrivateDailyUnlocked({ hasActiveEntitlement: false, hasTesterAccess: false, freeUnlock: true, hasAnswered: false }) === true,
+  'free-unlock day still unlocks with no subscription (existing behavior preserved)',
+);
+assert(
+  isPrivateDailyUnlocked({ hasActiveEntitlement: true, hasTesterAccess: false, freeUnlock: false, hasAnswered: false }) === true,
+  'a server-verified active entitlement unlocks a non-free-unlock day',
+);
+assert(
+  isPrivateDailyUnlocked({ hasActiveEntitlement: false, hasTesterAccess: true, freeUnlock: false, hasAnswered: false }) === true,
+  'a server-verified tester grant unlocks (preserved product intent, now server-authorized)',
+);
+assert(
+  isPrivateDailyUnlocked({ hasActiveEntitlement: false, hasTesterAccess: false, freeUnlock: false, hasAnswered: true }) === true,
+  'an already-answered day stays visible regardless of premium (preserved)',
+);
+assert(
+  isPrivateDailyUnlocked({ hasActiveEntitlement: false, hasTesterAccess: false, freeUnlock: false, hasAnswered: false }) === false,
+  'no server-verified reason to unlock -> stays locked',
+);
+
+// ============================================================================================
+// 6b. ENTITLEMENT EXPIRY LOGIC -- mirrors has_active_entitlement's SQL exactly:
+//     is_active = true AND (expires_at is null OR expires_at > now())
+// ============================================================================================
+
+const hasActiveEntitlementMirror = (row: { isActive: boolean; expiresAt: Date | null } | null, now: Date): boolean => {
+  if (!row) return false;
+  return row.isActive && (row.expiresAt === null || row.expiresAt.getTime() > now.getTime());
+};
+
+const NOW = new Date('2026-09-24T00:00:00Z');
+assert(hasActiveEntitlementMirror(null, NOW) === false, 'no row at all -> not active');
+assert(hasActiveEntitlementMirror({ isActive: false, expiresAt: null }, NOW) === false, 'is_active=false -> not active regardless of expires_at');
+assert(hasActiveEntitlementMirror({ isActive: true, expiresAt: null }, NOW) === true, 'is_active=true with no expiration (non-expiring) -> active');
+assert(
+  hasActiveEntitlementMirror({ isActive: true, expiresAt: new Date(NOW.getTime() + 24 * 60 * 60 * 1000) }, NOW) === true,
+  'is_active=true with a FUTURE expires_at -> active',
+);
+assert(
+  hasActiveEntitlementMirror({ isActive: true, expiresAt: new Date(NOW.getTime() - 24 * 60 * 60 * 1000) }, NOW) === false,
+  'is_active=true with a PAST expires_at -> NOT active (row exists but has lapsed)',
+);
+
+// ============================================================================================
+// 6c. SOURCE-TEXT SAFETY CHECKS -- the CRITICAL SECURITY CORRECTION migration itself, plus the
+//     two Edge Functions. What can only be verified against the actual shipped files.
+// ============================================================================================
+
+const secureAuthMigrationPath = readdirSync(join(__dirname, '../supabase/migrations')).find((f) =>
+  f.includes('secure_entitlement_authorization'),
+);
+assert(!!secureAuthMigrationPath, 'the secure-entitlement-authorization migration file exists');
+if (secureAuthMigrationPath) {
+  const migrationSource = readFileSync(join(__dirname, '../supabase/migrations', secureAuthMigrationPath), 'utf8');
+  // Checks the actual parameter list of each NEW CREATE FUNCTION statement specifically --
+  // the migration's own prose/comment strings legitimately mention "p_premium"/
+  // "p_tester_access" by name (to explain what was removed and why), so a whole-file
+  // substring check would false-positive on that documentation. Extracts just the text
+  // between each "create function ...(" and its matching ")" (the parameter list) rather than
+  // the whole file.
+  const extractParamList = (fnSignaturePrefix: string): string => {
+    const startIndex = migrationSource.indexOf(fnSignaturePrefix);
+    if (startIndex === -1) return '';
+    const openParenIndex = startIndex + fnSignaturePrefix.length - 1;
+    const closeParenIndex = migrationSource.indexOf(')', openParenIndex);
+    return migrationSource.slice(openParenIndex, closeParenIndex + 1);
+  };
+  const getPrivateDailyParams = extractParamList('create function public.get_private_daily(');
+  const submitAnswerParams = extractParamList('create function public.submit_private_daily_answer(');
+  assert(getPrivateDailyParams === '()', `get_private_daily's new CREATE FUNCTION parameter list is empty: () (got "${getPrivateDailyParams}")`);
+  assert(!/p_premium|p_tester_access/.test(submitAnswerParams), `submit_private_daily_answer's new parameter list contains neither p_premium nor p_tester_access (got "${submitAnswerParams}")`);
+  assert(/drop function if exists public\.get_private_daily\(boolean, boolean\)/.test(migrationSource), 'the old client-authorized get_private_daily(boolean, boolean) signature is explicitly dropped');
+  assert(/drop function if exists public\.submit_private_daily_answer\(uuid, uuid, boolean, boolean\)/.test(migrationSource), 'the old client-authorized submit_private_daily_answer signature is explicitly dropped');
+  assert(/create function public\.get_private_daily\(\)/.test(migrationSource), 'the new get_private_daily() takes NO parameters at all');
+  assert(/has_active_entitlement\(v_user, 'apparently_private'\)/.test(migrationSource), 'get_private_daily checks has_active_entitlement server-side');
+  assert(/has_tester_access\(v_user\)/.test(migrationSource), 'get_private_daily checks has_tester_access server-side');
+  assert(/revoke all on function public\.has_tester_access\(uuid\) from authenticated/.test(migrationSource), 'has_tester_access is revoked from authenticated -- never directly callable by any client');
+  assert(/revoke all on function public\.has_active_entitlement\(uuid, text\) from authenticated/.test(migrationSource), 'has_active_entitlement is revoked from authenticated -- never directly callable by any client');
+  assert(/is_admin\(\)/.test(migrationSource) && /admin_grant_tester_access/.test(migrationSource), 'admin_grant_tester_access is gated by the existing is_admin() authorization boundary');
+  // Exactly one policy is created anywhere in this migration (user_entitlements' own
+  // select-own) -- tester_access_grants gets zero. A simple count is more robust here than a
+  // greedy regex spanning "create policy ... for insert/update/delete" (a dotall/multiline
+  // pattern like that can accidentally match across unrelated later statements in the file).
+  const policyStatements = migrationSource.match(/create policy \S+ on public\.\S+/g) ?? [];
+  assert(policyStatements.length === 1 && policyStatements[0].includes('user_entitlements'), `exactly one RLS policy exists in this migration, and it is user_entitlements' own select-own policy (found: ${JSON.stringify(policyStatements)})`);
+  assert(/for select to authenticated/.test(migrationSource), 'that one policy is a SELECT policy, never insert/update/delete');
+}
+
+for (const [fnName, needsUserAuth] of [['sync-revenuecat-entitlement', true], ['revenuecat-webhook', false]] as const) {
+  const source = readFileSync(join(__dirname, '../supabase/functions', fnName, 'index.ts'), 'utf8');
+  assert(!/console\.(log|warn|error)\([^)]*REVENUECAT_SECRET_API_KEY/.test(source), `${fnName}: never logs REVENUECAT_SECRET_API_KEY's value`);
+  assert(!/console\.(log|warn|error)\([^)]*REVENUECAT_WEBHOOK_AUTH/.test(source), `${fnName}: never logs REVENUECAT_WEBHOOK_AUTH's value`);
+  assert(!/return new Response\([^)]*secretKey/.test(source) && !/return new Response\([^)]*configuredAuth/.test(source), `${fnName}: never returns a secret value in any Response`);
+  if (needsUserAuth) {
+    assert(/auth\.getUser\(\)/.test(source), `${fnName}: derives the caller's identity from a verified Supabase JWT (auth.getUser()), never from the request body`);
+    assert(!/req\.json\(\)[\s\S]{0,200}app_user_id/.test(source), `${fnName}: never reads an app_user_id/user id out of the request body as authoritative`);
+  } else {
+    assert(/Authorization/.test(source) && /REVENUECAT_WEBHOOK_AUTH/.test(source), `${fnName}: validates the RevenueCat webhook Authorization header against REVENUECAT_WEBHOOK_AUTH`);
+    assert(/refreshUserEntitlement/.test(source), `${fnName}: re-queries RevenueCat's own current state rather than trusting the webhook payload's entitlement data directly`);
+  }
+}
+
+// Client code must never reference either server-only secret name, and must never send the
+// old client-asserted authorization parameters to either RPC.
+for (const relativePath of ['../src/services/purchases-service.ts', '../src/services/daily-service.ts', '../src/data/consumer-private-daily.ts']) {
+  const source = readFileSync(join(__dirname, relativePath), 'utf8');
+  assert(!/REVENUECAT_SECRET_API_KEY/.test(source), `${relativePath}: never references REVENUECAT_SECRET_API_KEY`);
+  assert(!/REVENUECAT_WEBHOOK_AUTH/.test(source), `${relativePath}: never references REVENUECAT_WEBHOOK_AUTH`);
+  assert(!/p_premium/.test(source), `${relativePath}: never sends a p_premium parameter to any RPC`);
+  assert(!/p_tester_access/.test(source), `${relativePath}: never sends a p_tester_access parameter to any RPC`);
+}
 
 // ============================================================================================
 // 7. LOCKED CATALOG / PREVIEW QUIZ SAFETY -- unchanged from Build 6, re-asserted here since
