@@ -12,6 +12,7 @@
       "icon": "./assets/images/brand/app-icon.png",
       "bundleIdentifier": "com.supergreatventures.apparently",
       "buildNumber": "6",
+      "associatedDomains": ["applinks:apparentlyyou.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

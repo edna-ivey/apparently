@@ -14,5 +14,15 @@
   "rewrites": [
     { "source": "/quiz/:quizId", "destination": "/quiz/%5BquizId%5D" },
     { "source": "/s/:token", "destination": "/s/%5Btoken%5D" }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    },
+    {
+      "source": "/apple-app-site-association",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    }
   ]
 }

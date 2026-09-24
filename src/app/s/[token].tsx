@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature } from '@/components/brand-signature';
@@ -17,6 +17,27 @@ import { ensureAnonymousSession } from '@/services/auth-service';
 import { getCompareResult, submitCompareResponse, type CompareResultRow } from '@/services/compare-service';
 import { getSharedQuizResult } from '@/services/quiz-share-service';
 import { getOrCreateRespondentToken } from '@/utils/respondent-token';
+
+// Universal Links (see app.json's iOS associatedDomains + public/.well-known/apple-app-site-
+// association) already make this same https://apparentlyyou.com/s/<token> URL open directly
+// in the installed app on iOS -- opened from Messages, Notes, etc. Safari deliberately does
+// NOT re-trigger a Universal Link for a URL tapped from WITHIN Safari itself (Apple's own
+// documented behavior, to avoid unwanted app-switching mid-browsing) — this button is the
+// explicit, user-initiated fallback for exactly that case: a custom-scheme link (this app's
+// own "apparently" scheme, unlike a Universal Link, always prompts/opens regardless of
+// source), preserving the token and mode=compare so the recipient lands on the exact same
+// screen inside the app that they were viewing on web. A manual button tap only — never an
+// automatic redirect attempt on page load, which would fight a recipient who genuinely wants
+// to keep using the web version.
+const isIOSWebVisitor = (): boolean => {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined') {
+    return false;
+  }
+  const ua = navigator.userAgent ?? '';
+  // iPadOS 13+ reports its userAgent as a desktop Mac; a real Mac never reports touch points,
+  // so pairing the Macintosh UA with maxTouchPoints > 1 reliably distinguishes an iPad.
+  return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && (navigator.maxTouchPoints ?? 0) > 1);
+};
 
 // Result-first shared landing: a recipient opening this link sees the SHARER's result FIRST —
 // never dumped into an unanswered quiz. Reuses only approved quiz definition/result copy (via
@@ -184,6 +205,17 @@ export default function SharedResultScreen() {
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <BrandSignature variant="full" />
+
+          {isIOSWebVisitor() && (
+            <Pressable
+              style={styles.openInAppBanner}
+              onPress={() => {
+                const path = `apparently://s/${token}${showCompare ? '?mode=compare' : ''}`;
+                void Linking.openURL(path);
+              }}>
+              <ThemedText style={styles.openInAppBannerText}>Open in Apparently You →</ThemedText>
+            </Pressable>
+          )}
 
           {state.phase === 'loading' && (
             <View style={styles.stateCard}>
@@ -533,6 +565,15 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.five },
   stepGap: { gap: Spacing.four },
   introGap: { gap: Spacing.one },
+  openInAppBanner: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F7F3FF',
+    borderRadius: 99,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    marginTop: -Spacing.three,
+  },
+  openInAppBannerText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
   stateCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
