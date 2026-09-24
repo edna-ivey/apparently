@@ -169,19 +169,19 @@ export type NumericBandQuizDefinition = QuizBase & {
   resultBands: QuizResultBand[];
   meterLabel: string;
   scoreLabel: string;
-  // Optional full override for You's Recent Read line — when set, formatResultMetric uses
-  // `${percent}% ${recentReadMetricLabel}` verbatim instead of the default
-  // `${percent}% ${scoreLabel} meter` phrasing. Petty leaves this unset and keeps its exact
-  // existing wording; Dating sets it to "dating difficulty" (no "meter" suffix wanted).
+  // No longer rendered anywhere (You's Recent Read card dropped its scoring-derived percent
+  // line — see the "remove fake quiz percentages" product fix). Left as authored content on
+  // each quiz definition rather than stripped from every content file for a UI change that
+  // doesn't touch content; simply unused by any current screen.
   recentReadMetricLabel?: string;
 };
 
 // Four (or more) competing archetypes scored independently; the highest total wins (see
 // scoring.ts for the deterministic tie-break). mixLabel is the eyebrow over the per-archetype
-// percentage breakdown (e.g. "YOUR CRISIS MIX"). recentReadMetricLabel is the suffix after
-// the percentage on You's Recent Read card (e.g. "of your crisis picks") — content-owned per
-// quiz, same way scoreLabel lets numericBand quizzes control their own "X% <label> meter"
-// wording, so a future archetype quiz isn't stuck reusing Crisis's exact phrase.
+// percentage breakdown (e.g. "YOUR CRISIS MIX") — no longer rendered on the consumer result
+// screen (see the "remove fake quiz percentages" product fix); mix/percentages remain
+// computed internally for tie-breaking/history. recentReadMetricLabel: same "authored but no
+// longer rendered" status as NumericBandQuizDefinition's own copy above.
 export type ArchetypeQuizDefinition = QuizBase & {
   scoringType: 'archetype';
   archetypes: QuizArchetype[];

@@ -429,30 +429,6 @@ function StandardResultCard({ result }: { result: ResultDisplay }) {
             {line}
           </ThemedText>
         ))}
-        {result.mix ? (
-          <View style={styles.mixBlock}>
-            <ThemedText style={styles.mixLabel}>{result.mixLabel}</ThemedText>
-            {result.mix.map((entry) => {
-              const isPrimary = entry.id === result.resultId;
-              return (
-                <View key={entry.id} style={styles.mixRow}>
-                  <ThemedText style={[styles.mixRowTitle, isPrimary && styles.mixRowTitlePrimary]}>
-                    {entry.title}
-                  </ThemedText>
-                  <View style={styles.mixBarTrack}>
-                    <View style={[styles.mixBarFill, { width: `${entry.percent}%` }, isPrimary && styles.mixBarFillPrimary]} />
-                  </View>
-                  <ThemedText style={[styles.mixRowPercent, isPrimary && styles.mixRowPercentPrimary]}>{entry.percent}%</ThemedText>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.meterBlock}>
-            <ThemedText style={styles.meterPercent}>{result.percent}%</ThemedText>
-            <ThemedText style={styles.meterLabel}>{result.meterLabel}</ThemedText>
-          </View>
-        )}
       </View>
 
       <View style={styles.whyCard}>
@@ -869,86 +845,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '700',
-  },
-  meterBlock: {
-    marginTop: Spacing.three,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 18,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    gap: 2,
-  },
-  meterPercent: {
-    color: '#FFFFFF',
-    fontSize: 44,
-    lineHeight: 48,
-    fontWeight: '900',
-  },
-  meterLabel: {
-    color: '#DCD6FF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.3,
-  },
-  // Archetype quizzes' counterpart to meterBlock above — a labeled breakdown instead of one
-  // number, sorted so the primary (highlighted) result naturally leads.
-  mixBlock: {
-    marginTop: Spacing.three,
-    gap: Spacing.two,
-  },
-  mixLabel: {
-    color: '#DCD6FF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.3,
-    marginBottom: Spacing.half,
-  },
-  mixRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  // Wide enough for the longest archetype names ("The Improviser", "The Commander") to
-  // render on one line without truncating — the bar column (flex: 1) absorbs the difference,
-  // so it's modestly narrower than before rather than the row needing to grow overall.
-  // numberOfLines is deliberately not set here: if a future, longer archetype name ever
-  // doesn't fit even at this width, it wraps cleanly instead of ellipsis-truncating.
-  mixRowTitle: {
-    width: 118,
-    color: '#DCD6FF',
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '700',
-  },
-  mixRowTitlePrimary: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-  },
-  mixBarTrack: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    overflow: 'hidden',
-  },
-  mixBarFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  mixBarFillPrimary: {
-    backgroundColor: '#FFFFFF',
-  },
-  mixRowPercent: {
-    width: 36,
-    textAlign: 'right',
-    color: '#DCD6FF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  mixRowPercentPrimary: {
-    color: '#FFFFFF',
-    fontWeight: '900',
   },
   // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
   // TRY THIS) — same violet verdict card as every other quiz's hero read, just with an

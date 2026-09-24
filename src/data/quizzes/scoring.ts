@@ -535,22 +535,6 @@ export const resolveStoredQuizProfileSignals = (definition: QuizDefinition, resu
   return definition.resultBands.find((candidate) => candidate.id === resultId)?.profileSignals;
 };
 
-// Recent Read's metric line on You — quiz-type-aware so a future scoringType isn't stuck with
-// Petty's "X% <label> meter" phrasing. For archetype quizzes the suffix is content-owned
-// (definition.recentReadMetricLabel — e.g. Crisis's "of your crisis picks"), the same way
-// numericBand quizzes already own their scoreLabel, so no quiz-specific wording is
-// hardcoded into this generic formatter. A numericBand quiz can also fully override the
-// suffix via its own optional recentReadMetricLabel (e.g. Dating's "dating difficulty", no
-// "meter" wanted) — Petty leaves that field unset and keeps its exact existing phrasing.
-export const formatResultMetric = (definition: QuizDefinition, record: QuizResultRecord): string => {
-  if (definition.scoringType === 'archetype') {
-    return `${record.percent}% ${definition.recentReadMetricLabel}`;
-  }
-  return definition.recentReadMetricLabel
-    ? `${record.percent}% ${definition.recentReadMetricLabel}`
-    : `${record.percent}% ${definition.scoreLabel} meter`;
-};
-
 // --- THEY HAVE NOTES. Compare — deterministic "THE PART YOU MISSED" selection -------------
 //
 // Chooses AT MOST one question where the owner and a friend disagreed, using the exact
