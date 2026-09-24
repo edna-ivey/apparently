@@ -11,16 +11,14 @@ import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import {
   getDemoPersonalityProfile,
   getSignatureStrengthLabel,
-  PERSONALITY_DIMENSIONS,
   scorePersonalityProfile,
-  type DimensionResult,
-  type PersonalityDimensionId,
   type PersonalityProfile,
 } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
-import { formatResultMetric, resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { buildYouProfileCards, buildYourSevenCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
@@ -33,73 +31,6 @@ import {
   groupEvidenceIntoAnswers,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
-
-// Real dimensions (evidenceCount >= 1) ranked for the "EARLY READS" fallback — used only
-// when topTraits is empty (i.e. no dimension has yet reached the >=2 evidenceCount
-// scorePersonalityProfile requires for a real signature trait). Rank: evidenceCount, then
-// signatureStrength, then a fixed deterministic dimension order as the final tie-break, so
-// two dimensions with identical real evidence never flicker order between renders.
-const DIMENSION_ORDER = new Map(PERSONALITY_DIMENSIONS.map((dimension, index) => [dimension.id, index]));
-
-const getEarlySignals = (dimensions: DimensionResult[]): DimensionResult[] =>
-  dimensions
-    .filter((dimension) => dimension.evidenceCount >= 1)
-    .sort((a, b) => {
-      if (b.evidenceCount !== a.evidenceCount) return b.evidenceCount - a.evidenceCount;
-      if (b.signatureStrength !== a.signatureStrength) return b.signatureStrength - a.signatureStrength;
-      return (DIMENSION_ORDER.get(a.dimension) ?? 0) - (DIMENSION_ORDER.get(b.dimension) ?? 0);
-    })
-    .slice(0, 5);
-
-// Deliberately modest language for 1-2 real data points — never implies a defining trait.
-const getEarlySignalLabel = (evidenceCount: number): string => (evidenceCount <= 1 ? 'First signal' : 'Early read');
-
-export type YouProfileCard = {
-  dimension: PersonalityDimensionId;
-  label: string;
-  strengthLabel: string;
-};
-
-const MAX_PROFILE_CARDS = 5;
-
-// The ONE unified display list for remote You — mature topTraits ALWAYS lead (already ranked
-// by signatureStrength, already capped to 5 by scorePersonalityProfile itself), then whatever
-// slots remain fill with the next-ranked real early-signal dimensions, excluding any
-// dimension already shown as mature. Personality evidence is append-only in this V1 model, so
-// the number of distinct dimensions with real evidence never decreases during normal use —
-// this list must never shrink either. The bug this replaces: branching on
-// `topTraits.length > 0 ? topTraits : earlySignals` meant the INSTANT any dimension matured,
-// every still-valid early-signal card vanished, even though nothing about those other
-// dimensions became less real. A dimension maturing should only ever change how THAT
-// dimension is labeled — never make an unrelated, still-valid dimension disappear.
-//
-// getEarlySignals' own internal ranking (evidenceCount, then signatureStrength, then a fixed
-// dimension order) already sorts every mature dimension (evidenceCount >= 2) at or above every
-// true early-signal dimension (evidenceCount === 1, the only way a dimension can fail to
-// qualify as mature when topTraits isn't already at its own 5-item cap — see this function's
-// exported test fixtures for the exhaustive check). That means filtering the mature ones back
-// out of getEarlySignals' own top-5 slice always leaves exactly the right next-ranked early
-// dimensions behind — never a hidden gap. Never fabricates a card: every entry here traces
-// back to a real evidenceCount >= 1.
-export const buildYouProfileCards = (profile: PersonalityProfile): YouProfileCard[] => {
-  const matureCards: YouProfileCard[] = profile.topTraits.map((trait) => ({
-    dimension: trait.id,
-    label: trait.name,
-    strengthLabel: getSignatureStrengthLabel(trait.signatureStrength),
-  }));
-
-  const matureDimensionIds = new Set(matureCards.map((card) => card.dimension));
-
-  const earlyCards: YouProfileCard[] = getEarlySignals(profile.dimensions)
-    .filter((dimension) => !matureDimensionIds.has(dimension.dimension))
-    .map((dimension) => ({
-      dimension: dimension.dimension,
-      label: dimension.displayName,
-      strengthLabel: getEarlySignalLabel(dimension.evidenceCount),
-    }));
-
-  return [...matureCards, ...earlyCards].slice(0, MAX_PROFILE_CARDS);
-};
 
 // The section eyebrow above the pattern/early-read cards — staged by profileActivityCount
 // (Dailies + distinct completed quizzes, NOT raw answer volume), matching the product's
@@ -193,10 +124,17 @@ export default function YouScreen() {
     }
   }, [loadRemote]);
 
-  const profileCards = useMemo(
-    () => (remoteState.status === 'ready' ? buildYouProfileCards(remoteState.profile) : []),
-    [remoteState],
-  );
+  // Below the 50-profile-answer milestone: the existing, unchanged 5-card progressive
+  // experience. At/above it: YOUR 7 is unlocked -- up to 7 real evidenced dimensions, never
+  // silently capped back down to 5 by reusing the mature-only topTraits-based selector.
+  const profileCards = useMemo(() => {
+    if (remoteState.status !== 'ready') {
+      return [];
+    }
+    return remoteState.counts.profileAnswerCount >= 50
+      ? buildYourSevenCards(remoteState.profile)
+      : buildYouProfileCards(remoteState.profile);
+  }, [remoteState]);
 
   // Additive only — reads the same persisted quiz-results store the quiz runner writes to
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
@@ -254,7 +192,6 @@ export default function YouScreen() {
       <ThemedText style={styles.recentReadResultTitle}>
         {resolveResultDisplayTitle(latestQuizDefinition, latestResult.resultId) ?? latestResult.resultTitle}
       </ThemedText>
-      <ThemedText style={styles.recentReadMeter}>{formatResultMetric(latestQuizDefinition, latestResult)}</ThemedText>
       <ThemedText style={styles.recentReadCta}>See result →</ThemedText>
     </Pressable>
   );
@@ -513,7 +450,6 @@ const styles = StyleSheet.create({
   recentReadCard: { backgroundColor: '#F7F3FF', borderRadius: 24, padding: Spacing.four, gap: Spacing.half, borderWidth: 1, borderColor: '#EAE2FF' },
   recentReadQuizTitle: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   recentReadResultTitle: { color: Brand.ink, fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
-  recentReadMeter: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
   recentReadCta: { color: Brand.pink, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
   progressCard: { backgroundColor: '#FFE5EF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two },
   progressTop: { flexDirection: 'row', justifyContent: 'space-between' },
