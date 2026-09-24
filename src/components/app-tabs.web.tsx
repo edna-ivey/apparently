@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
     width: '100%',
-    padding: Spacing.three,
+    padding: Spacing.two,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -63,12 +63,23 @@ const styles = StyleSheet.create({
   innerContainer: {
     backgroundColor: '#FFFFFF',
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    // Narrower horizontal padding/gap than before — at a 375px-wide viewport, the original
+    // Spacing.four/Spacing.two/Spacing.three values (here and on tabListContainer/
+    // tabButtonView below) left too little room for "apparently." plus all 4 tab labels,
+    // overflowing the page horizontally by tens of pixels (measured: the natural content
+    // width of the bar exceeded the viewport, so the row pushed its last item off-screen
+    // rather than shrinking — flexShrink alone doesn't shrink text/padding, only free space).
+    // Discovered via QA once onboarding's redirect was bypassed for the first time — every
+    // earlier visual QA pass on this project never actually reached this bar, since /you and
+    // /compare always redirected to /onboarding first. iOS's native tab bar (app-tabs.tsx,
+    // NativeTabs) is a completely different component and was never affected.
+    paddingHorizontal: Spacing.two,
     borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
-    gap: Spacing.two,
+    flexShrink: 1,
+    gap: Spacing.half,
     maxWidth: MaxContentWidth,
     boxShadow: '0 8px 24px rgba(23, 21, 29, 0.10)',
   },
@@ -84,7 +95,7 @@ const styles = StyleSheet.create({
   },
   tabButtonView: {
     paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.two,
     borderRadius: Spacing.three,
     backgroundColor: 'transparent',
   },
