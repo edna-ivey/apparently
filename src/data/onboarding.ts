@@ -222,6 +222,26 @@ export const setUserProfile = async (profile: UserProfile): Promise<void> => {
   await storage.setItem(PROFILE_KEY, JSON.stringify(profile));
 };
 
+// Settings-facing edit path -- writes the SAME storage key/shape setUserProfile always has,
+// but also updates the reactive snapshot and notifies subscribers immediately (the same thing
+// completeOnboarding already does inline for the very first write). This is what makes editing
+// a field in Settings update "[Name], apparently." on You in the same session, with no force-
+// close/relaunch needed -- without this, a screen already mounted and subscribed via
+// useUserProfile would only see the change on its next full hydration.
+export const updateUserProfile = async (patch: Partial<UserProfile>): Promise<void> => {
+  const current = profileSnapshot.hydrated ? profileSnapshot.profile : await getUserProfile();
+  if (!current) {
+    // Settings only ever edits an EXISTING profile created during onboarding -- never invents
+    // one. If somehow reached with no profile yet, this is a no-op rather than fabricating a
+    // partial/invalid record.
+    return;
+  }
+  const next: UserProfile = { ...current, ...patch };
+  await setUserProfile(next);
+  profileSnapshot = { hydrated: true, profile: next };
+  notifyProfile();
+};
+
 // --- Reactive profile access, on top of the plain get/set above (same storage, same key,
 // no second read path) — added because the You screen previously read the profile via a
 // one-shot useEffect + getUserProfile() on mount. If a device's tab navigator mounts (or
