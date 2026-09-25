@@ -13,6 +13,7 @@ import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import type { PrivateQuizCategory, QuizDefinition } from '@/data/quizzes/types';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
+import { usePremiumStatus } from '@/services/purchases-service';
 
 type CategoryFilter = 'All' | PrivateQuizCategory;
 
@@ -44,6 +45,14 @@ export default function PrivateScreen() {
   const contentWidth = useResponsiveContentWidth();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
+
+  // Real RevenueCat entitlement truth only (never the client tester-access build flag — see
+  // purchases-service.ts's useEffectivePremium correction). The pre-subscription sales pitch
+  // ("One preview is on us...") must never show to someone who already subscribed; a
+  // real-money subscriber reading their own paywall pitch back at them reads as broken, not
+  // reassuring.
+  const premium = usePremiumStatus();
+  const isSubscriber = premium.status === 'premium';
 
   // Same persisted quiz history Explore already reads from — no second completion system.
   // One useQuizResults() call (a hook, so it can't live inside the loop below) feeds every
@@ -95,8 +104,21 @@ export default function PrivateScreen() {
 
           <View style={styles.headingGroup}>
             <ThemedText style={styles.heading}>apparently private.</ThemedText>
-            <ThemedText style={styles.headingSupport}>The questions get a little more personal in here.</ThemedText>
-            <ThemedText style={styles.headingNote}>One preview is on us. The rest are staying mysterious for now.</ThemedText>
+            {isSubscriber ? (
+              <>
+                {/* Approved core positioning (also used on paywall.tsx) — a subscriber never
+                    sees the pre-subscription sales pitch below read back at them. */}
+                <ThemedText style={styles.headingSupport}>The questions stop being polite in here.</ThemedText>
+                <ThemedText style={styles.headingNote}>
+                  Some will gas you up. Some will clock you. Some might have you staring at the ceiling for a minute. {'\u{1F440}'}
+                </ThemedText>
+              </>
+            ) : (
+              <>
+                <ThemedText style={styles.headingSupport}>The questions get a little more personal in here.</ThemedText>
+                <ThemedText style={styles.headingNote}>One preview is on us. The rest are staying mysterious for now.</ThemedText>
+              </>
+            )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
@@ -117,9 +139,14 @@ export default function PrivateScreen() {
             <View key={card.id} style={styles.previewCard}>
               <View style={styles.previewHeader}>
                 <ThemedText style={styles.previewEyebrow}>{card.definition.category.toUpperCase()}</ThemedText>
-                <View style={styles.previewBadge}>
-                  <ThemedText style={styles.previewBadgeText}>{card.completed ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
-                </View>
+                {/* A subscriber already has full access — this was never a "free preview" FOR
+                    THEM, so the badge only appears for a completed result or for a
+                    non-subscriber (preserving today's free-tier semantics unchanged). */}
+                {(card.completed || !isSubscriber) && (
+                  <View style={styles.previewBadge}>
+                    <ThemedText style={styles.previewBadgeText}>{card.completed ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
+                  </View>
+                )}
               </View>
               <ThemedText style={styles.previewTitle}>{card.definition.title}</ThemedText>
               <ThemedText style={styles.previewMeta}>{card.definition.meta} · Apparently Private</ThemedText>
@@ -154,11 +181,18 @@ export default function PrivateScreen() {
               <Pressable key={entry.id} style={styles.lockedCard} onPress={() => setLockedInfoEntry(entry)}>
                 <View style={styles.lockedHeader}>
                   <ThemedText style={styles.lockedCategory}>{entry.category.toUpperCase()}</ThemedText>
-                  <View style={styles.lockedBadgeRow}>
-                    <ThemedText style={styles.lockedBadge}>PRIVATE</ThemedText>
-                    <ThemedText style={styles.lockedBadgeDot}>·</ThemedText>
-                    <ThemedText style={styles.lockedBadge}>LOCKED</ThemedText>
-                  </View>
+                  {/* A subscriber's paid access didn't fail to unlock this — it simply isn't
+                      built yet. "LOCKED" (implying a subscription problem) is only accurate
+                      for a non-subscriber; a subscriber sees "COMING SOON" instead. */}
+                  {isSubscriber ? (
+                    <ThemedText style={styles.lockedBadge}>COMING SOON</ThemedText>
+                  ) : (
+                    <View style={styles.lockedBadgeRow}>
+                      <ThemedText style={styles.lockedBadge}>PRIVATE</ThemedText>
+                      <ThemedText style={styles.lockedBadgeDot}>·</ThemedText>
+                      <ThemedText style={styles.lockedBadge}>LOCKED</ThemedText>
+                    </View>
+                  )}
                 </View>
                 <ThemedText style={styles.lockedTitle}>{entry.title}</ThemedText>
                 <ThemedText style={styles.lockedSubtitle}>{entry.subtitle}</ThemedText>
