@@ -1,19 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
+import { CardStyle, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
-import {
-  getDemoPersonalityProfile,
-  getSignatureStrengthLabel,
-  scorePersonalityProfile,
-  type PersonalityProfile,
-} from '@/data/personality';
+import { getDemoPersonalityProfile, scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
@@ -23,7 +19,6 @@ import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-re
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
-import { getSubscriptionManagementUrl, restorePurchases, usePremiumStatus } from '@/services/purchases-service';
 import {
   computeProfileActivityCounts,
   getMyPersonalityEvidence,
@@ -31,24 +26,6 @@ import {
   groupEvidenceIntoAnswers,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
-
-// The section eyebrow above the pattern/early-read cards — staged by profileActivityCount
-// (Dailies + distinct completed quizzes, NOT raw answer volume), matching the product's
-// "the more I answer, the more Apparently You starts to know me" thesis: the label itself
-// grows up as activity accumulates, independent of whether the scoring engine has actually
-// matured any dimension yet at that stage. "Your Patterns" is reserved for 5+ activities AND
-// a real scorePersonalityProfile().topTraits entry — the scoring engine's own mature-trait
-// threshold is never bent just because activityCount crossed 5; short of that, this always
-// falls back to the same honest Early Reads presentation used at every earlier stage.
-const getSectionEyebrow = (activityCount: number, hasMatureTraits: boolean): string => {
-  if (activityCount <= 1) {
-    return 'FIRST SIGNALS';
-  }
-  if (activityCount <= 4) {
-    return "WE'RE NOTICING...";
-  }
-  return hasMatureTraits ? 'YOUR PATTERNS' : 'EARLY READS';
-};
 
 // "1 answer shaping your read" / "11 answers shaping your read" — profileAnswerCount, never
 // raw activity count (a 10-question quiz's first completion is 10 answers here, not 1).
@@ -68,17 +45,48 @@ type RemoteYouState =
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
 
+// The structural avatar/relic hero — a deliberate LOGIC/LAYOUT PROTOTYPE for the future avatar
+// system, not final art. Avatar (left on wide, top on narrow) and the character-name+relic
+// group (right on wide, below on narrow) are two structurally SEPARATE elements with a fixed
+// generous gap between them by construction — the relic can never overlap or touch the avatar,
+// on any viewport. Both use plain, simple placeholder geometry: the existing Magnetic Loop
+// mark for the avatar (nothing new to invent there) and a bare rotated-square "gem" shape for
+// the relic (no creature art, no trait-specific appearance mapping — those are later Build 8
+// passes). The character name is reserved directly above the relic, per the approved future
+// naming concept (first two core traits, e.g. Lumi + Fox -> Lumifox) — shown here as neutral
+// placeholder copy since the real 40-syllable mapping doesn't exist yet.
+function IdentityHero({ isWide }: { isWide: boolean }) {
+  return (
+    <View style={isWide ? styles.heroRow : styles.heroColumn}>
+      <View style={styles.avatarArea}>
+        <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={styles.avatarImage} />
+      </View>
+      <View style={isWide ? styles.relicGroupWide : styles.relicGroupNarrow}>
+        <ThemedText style={styles.characterNamePlaceholder}>CHARACTER NAME</ThemedText>
+        <View style={styles.relicShape}>
+          <View style={styles.relicShapeInner} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function YouScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
+  // Same signal useResponsiveContentWidth already uses internally to decide whether to cap
+  // width (undefined below its tablet breakpoint) — reused here rather than re-deriving a
+  // second breakpoint, so "wide enough for a side-by-side hero" and "wide enough for a capped
+  // content column" always agree.
+  const isWide = contentWidth !== undefined;
 
   // Local prototype path — completely unchanged, still built from the same demo data. Only
-  // ever rendered when isRemoteDailyEnabled is false (see the branch in the JSX below).
+  // ever rendered when isRemoteDailyEnabled is false (see the branch in the JSX below). The
+  // internal seven-trait selection (topTraits) still exists and still feeds the avatar-
+  // building logic later — this screen just stops surfacing it as its own progress UI.
   const localPersonalityProfile = useMemo(() => getDemoPersonalityProfile(), []);
   const localTopPatterns = localPersonalityProfile.topTraits;
-  const localAnswersCount = localPersonalityProfile.answeredCount;
-  const localRemainingToReveal = Math.max(0, 50 - localAnswersCount);
 
   // Real remote path — Michelle's/a real tester's own personality_evidence, never demo data.
   // Uses the SAME consumer anonymous identity Today already established (ensureAnonymousSession
@@ -101,9 +109,9 @@ export default function YouScreen() {
 
     const [evidenceResult, quizResultsResult] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
     // Both reads must succeed — a quiz-history fetch failure is NEVER treated as "zero
-    // quizzes completed" (that would silently under-report profileAnswerCount/Your 7 even
-    // though real quiz personality evidence already exists). Never falls back to demo data
-    // on either error — the same small retryable state either way.
+    // quizzes completed" (that would silently under-report profileAnswerCount/the internal
+    // seven-trait threshold even though real quiz personality evidence already exists). Never
+    // falls back to demo data on either error — the same small retryable state either way.
     if (!evidenceResult.ok) {
       setRemoteState({ status: 'error', message: evidenceResult.message });
       return;
@@ -124,9 +132,11 @@ export default function YouScreen() {
     }
   }, [loadRemote]);
 
-  // Below the 50-profile-answer milestone: the existing, unchanged 5-card progressive
-  // experience. At/above it: YOUR 7 is unlocked -- up to 7 real evidenced dimensions, never
-  // silently capped back down to 5 by reusing the mature-only topTraits-based selector.
+  // Below the 50-profile-answer milestone: the existing, unchanged up-to-5-card progressive
+  // experience. At/above it: up to 7 real evidenced dimensions, never silently capped back
+  // down to 5 by reusing the mature-only topTraits-based selector. This selection logic is
+  // UNCHANGED from Build 7 — this pass only changes how the result is presented (see
+  // "YOUR SIGNATURE" below), never the underlying ranking/threshold.
   const profileCards = useMemo(() => {
     if (remoteState.status !== 'ready') {
       return [];
@@ -153,35 +163,15 @@ export default function YouScreen() {
   const latestQuizDefinition = latestResult ? getQuizDefinition(latestResult.quizId) : null;
 
   // Reactive, not a one-shot read: if this screen mounted (or was kept mounted by the tab
-  // navigator) around the same time onboarding completed, a one-shot effect could capture a
-  // snapshot from just before the profile was written and never update. useUserProfile
-  // re-renders this screen the moment completeOnboarding() actually saves the name — no
-  // app restart needed. Same underlying storage/key as before, via the same module.
+  // navigator) around the same time onboarding completed (or a Settings edit just landed),
+  // a one-shot effect could capture a stale snapshot. useUserProfile re-renders this screen
+  // the moment the profile actually changes — no app restart needed.
   const userProfile = useUserProfile();
   useEffect(() => {
     void hydrateUserProfile();
   }, []);
   const firstName = userProfile === 'loading' ? null : userProfile?.firstName ?? null;
   const displayName = firstName && firstName.trim().length > 0 ? firstName : 'You';
-
-  // Subscription status surface — real RevenueCat entitlement truth only (see
-  // purchases-service.ts's usePremiumStatus, deliberately independent of the tester-access
-  // build flag so this card always reflects what a real purchase/restore would show).
-  const premium = usePremiumStatus();
-  const [restoreState, setRestoreState] = useState<{ phase: 'idle' | 'restoring' | 'done'; message?: string }>({ phase: 'idle' });
-  const handleRestore = async () => {
-    setRestoreState({ phase: 'restoring' });
-    const result = await restorePurchases();
-    setRestoreState({
-      phase: 'done',
-      message: result.ok
-        ? result.restored
-          ? 'Apparently Private is active on this account.'
-          : 'No active Apparently Private subscription was found.'
-        : result.message,
-    });
-  };
-  const managementUrl = getSubscriptionManagementUrl();
 
   const recentReadCard = latestQuizDefinition && latestResult && (
     <Pressable
@@ -202,12 +192,22 @@ export default function YouScreen() {
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="mark" />
-          <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
-              <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={styles.avatarImage} />
-            </View>
-            <ThemedText style={styles.name}>{displayName}, apparently.</ThemedText>
+          <View style={styles.topRow}>
+            <BrandSignature variant="mark" />
+            <Pressable
+              onPress={() => router.push('/settings')}
+              hitSlop={12}
+              accessibilityLabel="Settings"
+              accessibilityRole="button"
+              style={styles.gearButton}>
+              <ThemedText style={styles.gearIcon}>⚙</ThemedText>
+            </Pressable>
+          </View>
+
+          <IdentityHero isWide={isWide} />
+
+          <View style={styles.identityHeader}>
+            <ThemedText style={styles.displayName}>{displayName}, apparently.</ThemedText>
             {isRemoteDailyEnabled ? (
               remoteState.status === 'ready' && (
                 <>
@@ -222,68 +222,18 @@ export default function YouScreen() {
             )}
           </View>
 
-          <View style={styles.subscriptionCard}>
-            <View style={styles.subscriptionTextGroup}>
-              <ThemedText style={styles.eyebrow}>APPARENTLY PRIVATE</ThemedText>
-              <ThemedText style={styles.subscriptionStatus}>{premium.status === 'premium' ? 'Active' : 'Free'}</ThemedText>
-            </View>
-            {premium.status === 'premium' ? (
-              managementUrl && Platform.OS !== 'web' ? (
-                <Pressable style={styles.subscriptionCta} onPress={() => void Linking.openURL(managementUrl)}>
-                  <ThemedText style={styles.subscriptionCtaText}>Manage →</ThemedText>
-                </Pressable>
-              ) : null
-            ) : (
-              <Pressable style={styles.subscriptionCta} onPress={() => router.push('/paywall')}>
-                <ThemedText style={styles.subscriptionCtaText}>Subscribe →</ThemedText>
-              </Pressable>
-            )}
-          </View>
-          <View style={styles.restoreRow}>
-            <Pressable disabled={restoreState.phase === 'restoring'} onPress={() => void handleRestore()}>
-              <ThemedText style={styles.restoreText}>{restoreState.phase === 'restoring' ? 'Restoring…' : 'Restore Purchases'}</ThemedText>
-            </Pressable>
-            {restoreState.phase === 'done' && restoreState.message && (
-              <ThemedText style={styles.restoreMessage}>{restoreState.message}</ThemedText>
-            )}
-          </View>
-
           {!isRemoteDailyEnabled && (
             <>
-              <View style={styles.scoreCard}>
-                <ThemedText style={styles.eyebrow}>YOUR COMMONALITY</ThemedText>
-                <ThemedText style={styles.score}>37%</ThemedText>
-                <ThemedText style={styles.scoreLabel}>Uncommon</ThemedText>
-                <ThemedText style={styles.copy}>You tend to zig when the room zags. Respectfully.</ThemedText>
-              </View>
-              <ThemedText style={styles.sectionTitle}>Your patterns</ThemedText>
+              <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
                 {localTopPatterns.map((pattern, index) => (
-                  <View key={pattern.id} style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
+                  <View key={pattern.id} style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
                     <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
                     <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
-                    {/* Not pattern.percent: that number clamps to 88 for nearly every top
-                        trait at this evidence scale, which is what made five cards show
-                        identical, fake-looking values — signatureStrength is the real,
-                        already-computed ranking signal, just read qualitatively instead of
-                        as a raw percent. */}
-                    <ThemedText style={styles.patternStrength}>{getSignatureStrengthLabel(pattern.signatureStrength)}</ThemedText>
                   </View>
                 ))}
               </ScrollView>
               {recentReadCard}
-              <View style={styles.progressCard}>
-                <View style={styles.progressTop}>
-                  <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
-                  <ThemedText style={styles.progressCount}>{localAnswersCount} / 50</ThemedText>
-                </View>
-                <ThemedText style={styles.progressTitle}>
-                  {localRemainingToReveal > 0 ? `${localRemainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
-                </ThemedText>
-                <View style={styles.track}>
-                  <View style={[styles.fill, { width: `${Math.min(100, (localAnswersCount / 50) * 100)}%` }]} />
-                </View>
-              </View>
             </>
           )}
 
@@ -316,14 +266,12 @@ export default function YouScreen() {
             <>
               {profileCards.length > 0 && (
                 <>
-                  <ThemedText style={styles.sectionTitle}>
-                    {getSectionEyebrow(remoteState.counts.profileActivityCount, remoteState.profile.topTraits.length > 0)}
-                  </ThemedText>
+                  <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
                     {profileCards.map((card, index) => (
                       <View
                         key={card.dimension}
-                        style={[styles.pattern, { backgroundColor: [Brand.pink, '#DDF5EE', '#FFF0D2', '#E8F1FF', '#FDE9D2'][index % 5] }]}>
+                        style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
                         <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
                         <ThemedText style={styles.patternName}>{card.label}</ThemedText>
                         <ThemedText style={styles.patternStrength}>{card.strengthLabel}</ThemedText>
@@ -334,21 +282,6 @@ export default function YouScreen() {
               )}
 
               {recentReadCard}
-
-              <View style={styles.progressCard}>
-                <View style={styles.progressTop}>
-                  <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
-                  <ThemedText style={styles.progressCount}>{remoteState.counts.profileAnswerCount} / 50</ThemedText>
-                </View>
-                <ThemedText style={styles.progressTitle}>
-                  {remoteState.counts.profileAnswerCount < 50
-                    ? `${50 - remoteState.counts.profileAnswerCount} more answers until Your 7.`
-                    : 'Your 7 is ready.'}
-                </ThemedText>
-                <View style={styles.track}>
-                  <View style={[styles.fill, { width: `${Math.min(100, (remoteState.counts.profileAnswerCount / 50) * 100)}%` }]} />
-                </View>
-              </View>
             </>
           )}
 
@@ -365,103 +298,108 @@ const styles = StyleSheet.create({
     // Slightly deeper than the app's own cream so the app column reads as a deliberate
     // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
     // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: '#F0E8DD',
+    backgroundColor: Surface.pageDeep,
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Surface.page,
     ...Platform.select({
       web: {
         marginVertical: 28,
-        borderRadius: 28,
+        borderRadius: Radius.xl,
         boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
         overflow: 'hidden',
       },
       default: {},
     }),
   },
-  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
-  profileHeader: { alignItems: 'center', gap: Spacing.one, paddingBottom: Spacing.three },
-  // A tight circle with a solid fill was built around the old letter avatar; the Magnetic
-  // Loop mark already carries its own rounded-square shape and background, so a matching
-  // soft rounded-square frame (rather than forcing it into a circle) is what lets the mark
-  // read cleanly instead of looking like an icon awkwardly stuffed into a different shape.
-  avatar: {
-    width: 92,
-    height: 92,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.four },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  gearButton: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  gearIcon: { fontSize: 22, color: Brand.inkSecondary },
+
+  // --- Identity hero (avatar/relic prototype) ---------------------------------------------
+  heroRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: Spacing.six },
+  heroColumn: { alignItems: 'center', gap: Spacing.five },
+  avatarArea: {
+    width: 112,
+    height: 112,
+    borderRadius: Radius.lg,
+    backgroundColor: Surface.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(23, 21, 29, 0.08)',
-    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.14)',
+    borderColor: Surface.hairline,
     overflow: 'hidden',
+    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.14)',
   },
-  avatarImage: { width: 92, height: 92 },
-  name: { color: Brand.ink, fontSize: 22, fontWeight: '800' },
+  avatarImage: { width: 112, height: 112 },
+  relicGroupWide: { alignItems: 'center', gap: Spacing.three, paddingTop: Spacing.two },
+  relicGroupNarrow: { alignItems: 'center', gap: Spacing.three },
+  characterNamePlaceholder: {
+    ...Type.display,
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: 1.5,
+    color: Brand.inkSecondary,
+    opacity: 0.55,
+  },
+  // A deliberately bare rotated-square "gem" — placeholder geometry only, not final relic
+  // art. Structurally separate from avatarArea by construction (its own sibling View with a
+  // fixed gap on every layout branch above), never overlapping or touching it.
+  relicShape: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.sm,
+    backgroundColor: Surface.sand,
+    borderWidth: 1,
+    borderColor: 'rgba(23, 21, 29, 0.10)',
+    transform: [{ rotate: '45deg' }],
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.12)',
+  },
+  relicShapeInner: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: Brand.gold,
+    opacity: 0.5,
+  },
+
+  identityHeader: { alignItems: 'center', gap: Spacing.one },
+  displayName: { ...Type.display, textAlign: 'center' },
   subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   sublineSecondary: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', opacity: 0.75, marginTop: 1 },
-  subscriptionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: Spacing.four,
-    borderWidth: 1,
-    borderColor: '#F0E6E8',
-    gap: Spacing.two,
-  },
-  subscriptionTextGroup: { gap: Spacing.half },
-  subscriptionStatus: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
-  subscriptionCta: { backgroundColor: Brand.violet, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  subscriptionCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  restoreRow: { alignItems: 'center', gap: Spacing.half, marginTop: -Spacing.one },
-  restoreText: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
-  restoreMessage: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  scoreCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#F0E6E8' },
-  eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  score: { color: Brand.ink, fontSize: 54, lineHeight: 58, fontWeight: '900' },
-  scoreLabel: { color: Brand.violet, fontSize: 16, fontWeight: '800' },
-  copy: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, marginTop: Spacing.one },
-  sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
+
+  eyebrow: { ...Type.eyebrow },
+  sectionTitle: { ...Type.heading, letterSpacing: 0.6 },
+
   // Horizontal scroll + a card wide enough that even the longest single-word dimension
   // label (e.g. "Collaborative", "Peacekeeping" — 12-13 characters, no space or hyphen to
-  // wrap on) fits on one line at this font size. 136px (104px of inner text width after
-  // padding) was NOT enough — a bold 17px single unbroken word that long needs roughly
-  // 130-145px, wider than the entire old card, which is what was cutting words off rather
-  // than wrapping them. 192px (160px of inner text width) gives every real dimension label
-  // room to sit on one line, with two-word/hyphenated labels ("Even-Keeled", "Holds the
-  // Receipt") still free to wrap naturally at their real word boundary if they ever need to.
-  // `gap` (not `justifyContent: 'space-between'`) guarantees a fixed minimum gap between the
-  // number/name/strength rows regardless of whether the name renders as one line or two, so
-  // a wrapped two-line name can never visually collide with the strength label beneath it —
-  // space-between only adds room when the column has slack, which a 2-line label removes.
+  // wrap on) fits on one line at this font size. `gap` (not `justifyContent: 'space-between'`)
+  // guarantees a fixed minimum gap between the number/name/strength rows regardless of
+  // whether the name renders as one line or two.
   patternList: { gap: Spacing.two, paddingVertical: Spacing.one, paddingRight: Spacing.two },
-  pattern: { width: 192, minHeight: 124, borderRadius: 18, padding: Spacing.three, gap: Spacing.two },
+  pattern: { width: 192, minHeight: 124, borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two },
   patternNumber: { color: 'rgba(23,21,29,0.55)', fontSize: 12, fontWeight: '800' },
   patternName: { color: Brand.ink, fontSize: 17, lineHeight: 22, fontWeight: '800' },
   patternStrength: { fontSize: 12, fontWeight: '800', color: 'rgba(23,21,29,0.65)', letterSpacing: 0.2 },
-  // Additive quiz-completion card — same violet family as the pattern cards, distinct enough
-  // from the pink Commonality/progress cards to read as "a different kind of result."
-  recentReadCard: { backgroundColor: '#F7F3FF', borderRadius: 24, padding: Spacing.four, gap: Spacing.half, borderWidth: 1, borderColor: '#EAE2FF' },
+
+  // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
+  // cards to read as "a different kind of result."
+  recentReadCard: CardStyle.tinted(Surface.lavender, '#EAE2FF'),
   recentReadQuizTitle: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   recentReadResultTitle: { color: Brand.ink, fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
   recentReadCta: { color: Brand.pink, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
-  progressCard: { backgroundColor: '#FFE5EF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two },
-  progressTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  progressCount: { color: Brand.pink, fontSize: 13, fontWeight: '800' },
-  progressTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
-  track: { height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: '#FFFFFF' },
-  fill: { width: '86%', height: '100%', backgroundColor: Brand.pink },
+
   // Remote-only loading/error/empty states — never demo data behind any of these.
-  stateCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8', alignItems: 'center' },
+  stateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two },
   stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  retryButton: { backgroundColor: Brand.pink, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  retryButton: { backgroundColor: Brand.pink, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  emptyStateCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8', alignItems: 'center' },
+  emptyStateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two },
   emptyStateCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
 });
