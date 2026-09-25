@@ -129,23 +129,35 @@ const deriveSnapshotFromCustomerInfo = (customerInfo: CustomerInfo): PremiumSnap
 // ---------------------------------------------------------------------------------------
 // Tester override -- REUSES the existing isPrivateDailyTesterAccessEnabled build flag
 // (src/lib/supabase.ts), never a second/competing tester concept. That flag is already
-// scoped to the dedicated EAS "testflight" build profile's env only (never production/web) --
-// see its own comment. Content-gating helpers below combine it with the real entitlement;
-// the status surface/paywall never read it, so real purchase testing stays fully possible on
-// a tester-access build (see the engineering sprint report's TESTER ACCESS section).
+// scoped to the dedicated EAS "testflight" build profile's env only (never production/web).
+//
+// CORRECTED in Build 8 (see the "delayed Private Daily unlock" investigation): this flag is
+// deliberately NO LONGER OR'd into useEffectivePremium below. It used to be -- "premium =
+// RevenueCat entitlement active OR tester override" -- which is exactly what caused a real,
+// confirmed bug: on the TestFlight build (where this flag is always true), useEffectivePremium
+// already returned true BEFORE a purchase, so a successful purchase's status transition
+// ('free' -> 'premium') never changed useEffectivePremium's OUTPUT value (true || true is
+// still just true). usePrivateDailyExperience's load() is a useCallback keyed on that output
+// value, so its useEffect never saw a dependency change and never refetched -- Private Daily
+// stayed locked until a force-close+relaunch remounted the hook from scratch. A client build
+// flag must never be able to mask a real entitlement transition like this; real paid
+// entitlement now drives every consumer premium surface unconditionally. The flag itself is
+// kept (still real, still exported) purely for "why is this unlocked" display copy in the
+// spots that already show it explicitly (e.g. the Today Private Drop badge) -- never again for
+// gating/gating-adjacent booleans like useEffectivePremium.
 // ---------------------------------------------------------------------------------------
 
 export const isTesterOverrideEnabled = isPrivateDailyTesterAccessEnabled;
 
 // The one function content-gating call sites should use: "can this device see premium
-// content right now." Combines the real entitlement with the tester override, per the
-// approved rule (premium = RevenueCat entitlement active OR approved tester override).
-// Returns false while status is still 'loading'/'error' -- content stays gated (never
-// optimistically unlocked) until a real answer is known, unless the tester override alone
-// already allows it.
+// content right now." Real RevenueCat entitlement ONLY -- see the correction above. Returns
+// false while status is still 'loading'/'error' -- content stays gated (never optimistically
+// unlocked) until a real answer is known. Server-side authorization was always independent of
+// this value (see get_private_daily/submit_private_daily_answer's own tester_access_grants
+// check) -- this change affects client display/reactivity only, never security.
 export const useEffectivePremium = (): boolean => {
   const { status } = usePremiumStatus();
-  return status === 'premium' || isTesterOverrideEnabled;
+  return status === 'premium';
 };
 
 // ---------------------------------------------------------------------------------------

@@ -58,17 +58,27 @@ assert(
 );
 
 // ============================================================================================
-// 2. EFFECTIVE PREMIUM (mirrors useEffectivePremium: entitlement OR tester override)
+// 2. EFFECTIVE PREMIUM (mirrors useEffectivePremium: REAL entitlement only)
+//
+// Build 8 CORRECTION: this used to OR in the client tester-access build flag ("entitlement OR
+// tester override"). That was the confirmed root cause of a real bug -- on the TestFlight
+// build (where the tester flag is always true), a successful purchase's status transition
+// ('free' -> 'premium') never changed this function's OUTPUT (true || true stayed true), so
+// nothing that depended on it as a dependency ever re-ran, and Private Daily stayed locked
+// until a force-close+relaunch. A client build flag must never be able to mask a real
+// entitlement transition -- effective premium is now the real entitlement status alone.
 // ============================================================================================
 
-const effectivePremium = (status: 'loading' | 'free' | 'premium' | 'error', testerOverride: boolean): boolean =>
-  status === 'premium' || testerOverride;
+const effectivePremium = (status: 'loading' | 'free' | 'premium' | 'error'): boolean => status === 'premium';
 
-assert(effectivePremium('premium', false) === true, 'real entitlement alone -> effective premium true');
-assert(effectivePremium('free', true) === true, 'tester override alone -> effective premium true');
-assert(effectivePremium('free', false) === false, 'neither entitlement nor tester override -> effective premium false');
-assert(effectivePremium('loading', false) === false, 'loading status never optimistically counts as premium');
-assert(effectivePremium('error', false) === false, 'error status never optimistically counts as premium');
+assert(effectivePremium('premium') === true, 'real entitlement -> effective premium true');
+assert(effectivePremium('free') === false, 'no real entitlement -> effective premium false, regardless of any client build flag');
+assert(effectivePremium('loading') === false, 'loading status never optimistically counts as premium');
+assert(effectivePremium('error') === false, 'error status never optimistically counts as premium');
+assert(
+  effectivePremium('free') !== true,
+  'a "free" -> "premium" transition is a real, detectable boolean change with no OR-masking -- this is what makes purchase-triggered refetch dependencies actually fire',
+);
 
 // ============================================================================================
 // 3. PURCHASE / RESTORE OUTCOME SHAPES (mirrors subscribeMonthly / restorePurchases)

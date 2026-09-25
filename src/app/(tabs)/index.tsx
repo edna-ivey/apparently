@@ -10,7 +10,7 @@ import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
 import { useConsumerDailyExperience } from '@/data/consumer-daily';
 import { usePrivateDailyExperience } from '@/data/consumer-private-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
-import { isRemoteDailyEnabled, isPrivateDailyTesterAccessEnabled } from '@/lib/supabase';
+import { isRemoteDailyEnabled } from '@/lib/supabase';
 import {
   getDemoPersonalityAnswers,
   getDemoPersonalityProfile,
@@ -348,10 +348,10 @@ export default function HomeScreen() {
           {isCommitted && isRemoteDailyEnabled && privateReady && (
             <View style={styles.privateDropCard}>
               <ThemedText style={styles.privateDropEyebrow}>
-                {isPrivateDailyTesterAccessEnabled
-                  ? 'TESTER ACCESS · PRIVATE UNLOCKED'
-                  : privateReady?.access === 'premium'
-                    ? 'APPARENTLY PRIVATE · UNLOCKED'
+                {privateReady?.access === 'premium'
+                  ? 'APPARENTLY PRIVATE · UNLOCKED'
+                  : privateReady?.access === 'tester'
+                    ? 'TESTER ACCESS · PRIVATE UNLOCKED'
                     : 'PRIVATE DOOR OPEN 👀'}
               </ThemedText>
               {!privateIsCommitted && (
