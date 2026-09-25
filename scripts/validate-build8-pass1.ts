@@ -49,6 +49,17 @@ assert(/router\.push\('\/settings'\)/.test(youSource), 'You has a gear action th
 assert(/gearIcon|gearButton/.test(youSource), 'a gear icon element exists in You (top-right settings entry point)');
 assert(/IdentityHero/.test(youSource), 'You renders the avatar/relic hero prototype');
 assert(/relicShape/.test(youSource) && /avatarArea/.test(youSource), 'the hero has structurally separate avatar and relic elements');
+// Pass 1 correction: the hero must stay a LEFT avatar / RIGHT relic row on every viewport
+// (approved Option B) -- isWide may only scale sizes/gap, never switch to a stacked column.
+assert(!/heroColumn/.test(youSource), 'the hero no longer has a stacked-column layout branch at all');
+assert(
+  /heroRow: \{ flexDirection: 'row'/.test(youSource),
+  "the hero's row style is unconditional (flexDirection: 'row' is not itself gated behind isWide)",
+);
+assert(
+  /<View style={styles\.heroRow}>/.test(youSource),
+  'IdentityHero always renders styles.heroRow (never a ternary between a row and a column style)',
+);
 assert(/CHARACTER NAME/.test(youSource), 'a neutral character-name placeholder is reserved above the relic (no invented syllable mapping)');
 assert(
   !/TRAIT_SYLLABLES|CHARACTER_NAME_MAP|SYLLABLE_MAP/.test(youSource),
@@ -130,6 +141,25 @@ assert(
 assert(
   /OPEN_PRIVATE_QUIZ_IDS = \['keep-you-around', 'be-so-serious'\]/.test(privateSource),
   'no change to which quizzes are free-preview this pass -- that decision is explicitly deferred to when the six new premium quizzes ship',
+);
+
+// --- Pass 1 corrections: subscriber CTA copy + coming-soon modal wording -------------------
+
+assert(
+  /\{isSubscriber \? 'Take the quiz →' : 'Take the preview →'\}/.test(privateSource),
+  'a subscriber sees "Take the quiz →" on an open-quiz card, never "Take the preview →" (that quiz was never a preview FOR them)',
+);
+assert(
+  /Take the preview →/.test(privateSource),
+  'the free/non-subscriber "Take the preview →" copy still exists (unchanged for the free tier)',
+);
+assert(
+  /This one isn&apos;t live yet\.\{'\\n'\}More Private reads are coming\./.test(privateSource),
+  'a subscriber tapping a COMING SOON card sees "This one isn\'t live yet. More Private reads are coming." (never told their subscription is "locked")',
+);
+assert(
+  /This one stays locked for now\.\{'\\n'\}More personal reads are coming\./.test(privateSource),
+  'the free/non-subscriber locked-card modal wording is unchanged',
 );
 
 if (failures > 0) {

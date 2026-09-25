@@ -55,16 +55,29 @@ type RemoteYouState =
 // passes). The character name is reserved directly above the relic, per the approved future
 // naming concept (first two core traits, e.g. Lumi + Fox -> Lumifox) — shown here as neutral
 // placeholder copy since the real 40-syllable mapping doesn't exist yet.
+//
+// Approved Option B layout: avatar LEFT, relic RIGHT, always — this is a fixed left/right
+// relationship, not something that collapses to a stacked column on narrow viewports. `isWide`
+// only scales SIZE (avatar/relic dimensions, gap, character-name type size) between a
+// comfortable desktop scale and a smaller one that still fits 375-390px without overflow; it
+// never switches the row to a column. Two structurally separate sibling Views with a fixed
+// horizontal gap mean the relic can never overlap or touch the avatar on any viewport.
 function IdentityHero({ isWide }: { isWide: boolean }) {
   return (
-    <View style={isWide ? styles.heroRow : styles.heroColumn}>
-      <View style={styles.avatarArea}>
-        <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={styles.avatarImage} />
+    <View style={styles.heroRow}>
+      <View style={[styles.avatarArea, isWide ? styles.avatarAreaWide : styles.avatarAreaNarrow]}>
+        <Image
+          source={MAGNETIC_LOOP_SOURCE}
+          resizeMode="contain"
+          style={isWide ? styles.avatarImageWide : styles.avatarImageNarrow}
+        />
       </View>
-      <View style={isWide ? styles.relicGroupWide : styles.relicGroupNarrow}>
-        <ThemedText style={styles.characterNamePlaceholder}>CHARACTER NAME</ThemedText>
-        <View style={styles.relicShape}>
-          <View style={styles.relicShapeInner} />
+      <View style={styles.relicGroup}>
+        <ThemedText style={[styles.characterNamePlaceholder, isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow]}>
+          CHARACTER NAME
+        </ThemedText>
+        <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
+          <View style={isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow} />
         </View>
       </View>
     </View>
@@ -321,11 +334,11 @@ const styles = StyleSheet.create({
   gearIcon: { fontSize: 22, color: Brand.inkSecondary },
 
   // --- Identity hero (avatar/relic prototype) ---------------------------------------------
-  heroRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: Spacing.six },
-  heroColumn: { alignItems: 'center', gap: Spacing.five },
+  // Always a ROW — avatar left, relic right — on every viewport (approved Option B layout).
+  // isWide only changes the gap/element sizes below, never the row-vs-column direction, so
+  // the left/right relationship holds at 375x812 and 390x844 exactly as it does on desktop.
+  heroRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: Spacing.four },
   avatarArea: {
-    width: 112,
-    height: 112,
     borderRadius: Radius.lg,
     backgroundColor: Surface.card,
     alignItems: 'center',
@@ -335,23 +348,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     boxShadow: '0 8px 20px rgba(23, 21, 29, 0.14)',
   },
-  avatarImage: { width: 112, height: 112 },
-  relicGroupWide: { alignItems: 'center', gap: Spacing.three, paddingTop: Spacing.two },
-  relicGroupNarrow: { alignItems: 'center', gap: Spacing.three },
+  avatarAreaWide: { width: 112, height: 112 },
+  avatarAreaNarrow: { width: 76, height: 76 },
+  avatarImageWide: { width: 112, height: 112 },
+  avatarImageNarrow: { width: 76, height: 76 },
+  // Shared regardless of width — only the character-name type size and relic size below
+  // scale; the group's own alignment/gap stays constant. `maxWidth` + `flexShrink` let the
+  // placeholder name wrap onto a second line rather than force horizontal overflow if a
+  // future real character name is ever longer than this one.
+  relicGroup: { alignItems: 'center', gap: Spacing.two, flexShrink: 1, maxWidth: 160 },
   characterNamePlaceholder: {
     ...Type.display,
-    fontSize: 20,
-    lineHeight: 24,
-    letterSpacing: 1.5,
     color: Brand.inkSecondary,
     opacity: 0.55,
+    textAlign: 'center',
   },
+  characterNamePlaceholderWide: { fontSize: 20, lineHeight: 24, letterSpacing: 1.5 },
+  characterNamePlaceholderNarrow: { fontSize: 14, lineHeight: 17, letterSpacing: 0.8 },
   // A deliberately bare rotated-square "gem" — placeholder geometry only, not final relic
-  // art. Structurally separate from avatarArea by construction (its own sibling View with a
-  // fixed gap on every layout branch above), never overlapping or touching it.
+  // art. Structurally separate from avatarArea by construction (its own sibling View, in the
+  // same row, with a fixed gap), never overlapping or touching it on any viewport.
   relicShape: {
-    width: 72,
-    height: 72,
     borderRadius: Radius.sm,
     backgroundColor: Surface.sand,
     borderWidth: 1,
@@ -361,13 +378,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: '0 8px 20px rgba(23, 21, 29, 0.12)',
   },
-  relicShapeInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: Brand.gold,
-    opacity: 0.5,
-  },
+  relicShapeWide: { width: 72, height: 72 },
+  relicShapeNarrow: { width: 52, height: 52 },
+  relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold, opacity: 0.5 },
+  relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold, opacity: 0.5 },
 
   identityHeader: { alignItems: 'center', gap: Spacing.one },
   displayName: { ...Type.display, textAlign: 'center' },

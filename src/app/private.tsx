@@ -170,7 +170,9 @@ export default function PrivateScreen() {
                 <Pressable
                   style={styles.previewCta}
                   onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
-                  <ThemedText style={styles.previewCtaText}>Take the preview →</ThemedText>
+                  {/* A subscriber already has full access — this was never a "preview" FOR
+                      THEM (it just happens to also be free for everyone else). */}
+                  <ThemedText style={styles.previewCtaText}>{isSubscriber ? 'Take the quiz →' : 'Take the preview →'}</ThemedText>
                 </Pressable>
               )}
             </View>
@@ -207,8 +209,15 @@ export default function PrivateScreen() {
           <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
             <ThemedText style={styles.modalEyebrow}>PRIVATE</ThemedText>
             <ThemedText style={styles.modalTitle}>You&apos;re early.</ThemedText>
+            {/* A subscriber's paid access didn't fail here — this simply isn't built yet.
+                "stays locked" wrongly implies a subscription problem for someone who already
+                pays; a subscriber gets the honest "not live yet" framing instead. */}
             <ThemedText style={styles.modalBody}>
-              This one stays locked for now.{'\n'}More personal reads are coming.
+              {isSubscriber ? (
+                <>This one isn&apos;t live yet.{'\n'}More Private reads are coming.</>
+              ) : (
+                <>This one stays locked for now.{'\n'}More personal reads are coming.</>
+              )}
             </ThemedText>
             <Pressable style={styles.modalCta} onPress={() => setLockedInfoEntry(null)}>
               <ThemedText style={styles.modalCtaText}>Back to Private →</ThemedText>
