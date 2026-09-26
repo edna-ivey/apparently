@@ -14,6 +14,7 @@ import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
 import { buildYouProfileCards, buildYourSevenCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
@@ -62,7 +63,16 @@ type RemoteYouState =
 // comfortable desktop scale and a smaller one that still fits 375-390px without overflow; it
 // never switches the row to a column. Two structurally separate sibling Views with a fixed
 // horizontal gap mean the relic can never overlap or touch the avatar on any viewport.
-function IdentityHero({ isWide }: { isWide: boolean }) {
+//
+// `resolvedRelicSlotCount` (0-3, Build 8 Pass 3) reflects how many of the three Relic slots
+// (relic/color/effect — see private-signals.ts's selectRelicSlots) are backed by a real
+// supported Private signal. This ONLY ever varies a generic opacity tier — it never assigns a
+// specific object, color, or visual effect to any trait, and never reveals WHICH trait
+// resolved which slot. That would require the still-unapproved trait->object/color/effect
+// creative mappings this pass explicitly must not invent.
+function IdentityHero({ isWide, resolvedRelicSlotCount }: { isWide: boolean; resolvedRelicSlotCount: number }) {
+  const outerOpacity = resolvedRelicSlotCount >= 1 ? 1 : 0.35;
+  const innerOpacity = resolvedRelicSlotCount >= 3 ? 1 : resolvedRelicSlotCount >= 2 ? 0.5 : 0;
   return (
     <View style={styles.heroRow}>
       <View style={[styles.avatarArea, isWide ? styles.avatarAreaWide : styles.avatarAreaNarrow]}>
@@ -76,11 +86,36 @@ function IdentityHero({ isWide }: { isWide: boolean }) {
         <ThemedText style={[styles.characterNamePlaceholder, isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow]}>
           CHARACTER NAME
         </ThemedText>
-        <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
-          <View style={isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow} />
+        <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow, { opacity: outerOpacity }]}>
+          <View style={[isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
         </View>
       </View>
     </View>
+  );
+}
+
+// "THE UNDERCURRENT" (Build 8 Pass 3) -- consumer-facing WORKING title for the deeper Private
+// identity layer, confined to this UI component (never baked into private-signals.ts's own
+// naming — that title isn't locked yet). Renders nothing at all when there are zero supported
+// Private traits — no fake traits, no invented "mystery" percentage, no manufactured read
+// just to fill the screen. 1-3 real cards otherwise, never padded to a fixed count.
+function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
+  if (signals.length === 0) {
+    return null;
+  }
+  return (
+    <>
+      <ThemedText style={styles.sectionTitle}>THE UNDERCURRENT</ThemedText>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+        {signals.map((signal, index) => (
+          <View key={signal.dimension} style={[styles.pattern, styles.undercurrentPattern]}>
+            <ThemedText style={styles.undercurrentPatternNumber}>0{index + 1}</ThemedText>
+            <ThemedText style={styles.undercurrentPatternName}>{signal.label}</ThemedText>
+            <ThemedText style={styles.undercurrentPatternStrength}>{signal.strengthLabel}</ThemedText>
+          </View>
+        ))}
+      </ScrollView>
+    </>
   );
 }
 
@@ -100,6 +135,14 @@ export default function YouScreen() {
   // building logic later — this screen just stops surfacing it as its own progress UI.
   const localPersonalityProfile = useMemo(() => getDemoPersonalityProfile(), []);
   const localTopPatterns = localPersonalityProfile.topTraits;
+  // Real for the demo profile too (Build 8 Pass 3) -- the demo data happens to carry zero
+  // Private-12 evidence, so this naturally selects nothing, exactly as it should when there's
+  // no real signal. Never special-cased to force a demo Undercurrent into existing.
+  const localPrivateSignals = useMemo(() => selectStrongestPrivateSignals(localPersonalityProfile), [localPersonalityProfile]);
+  const localRelicSlots = useMemo(() => selectRelicSlots(localPrivateSignals), [localPrivateSignals]);
+  const localResolvedRelicSlotCount = [localRelicSlots.relicTrait, localRelicSlots.colorTrait, localRelicSlots.effectTrait].filter(
+    Boolean,
+  ).length;
 
   // Real remote path — Michelle's/a real tester's own personality_evidence, never demo data.
   // Uses the SAME consumer anonymous identity Today already established (ensureAnonymousSession
@@ -159,6 +202,19 @@ export default function YouScreen() {
       : buildYouProfileCards(remoteState.profile);
   }, [remoteState]);
 
+  // The deeper Private identity layer (Build 8 Pass 3) — Private-12 dimensions only, real
+  // evidence only, never fabricated to fill three slots. Evidence here may originate from
+  // Private quiz/Daily content by an approved mapping; a Private answer that ALSO carries an
+  // approved Core mapping already contributes to profileCards above through the exact same
+  // profile.dimensions — both layers read the same underlying evidence, filtered by dimension
+  // type, never by source. See src/data/private-signals.ts.
+  const privateSignals = useMemo(
+    () => (remoteState.status === 'ready' ? selectStrongestPrivateSignals(remoteState.profile) : []),
+    [remoteState],
+  );
+  const relicSlots: RelicSlotAssignment = useMemo(() => selectRelicSlots(privateSignals), [privateSignals]);
+  const resolvedRelicSlotCount = [relicSlots.relicTrait, relicSlots.colorTrait, relicSlots.effectTrait].filter(Boolean).length;
+
   // Additive only — reads the same persisted quiz-results store the quiz runner writes to
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
   // for the same reason useUserProfile is: completing a quiz and landing straight on You in
@@ -217,7 +273,10 @@ export default function YouScreen() {
             </Pressable>
           </View>
 
-          <IdentityHero isWide={isWide} />
+          <IdentityHero
+            isWide={isWide}
+            resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
+          />
 
           <View style={styles.identityHeader}>
             <ThemedText style={styles.displayName}>{displayName}, apparently.</ThemedText>
@@ -246,6 +305,7 @@ export default function YouScreen() {
                   </View>
                 ))}
               </ScrollView>
+              <UndercurrentSection signals={localPrivateSignals} />
               {recentReadCard}
             </>
           )}
@@ -293,6 +353,8 @@ export default function YouScreen() {
                   </ScrollView>
                 </>
               )}
+
+              <UndercurrentSection signals={privateSignals} />
 
               {recentReadCard}
             </>
@@ -401,6 +463,14 @@ const styles = StyleSheet.create({
   patternNumber: { color: 'rgba(23,21,29,0.55)', fontSize: 12, fontWeight: '800' },
   patternName: { color: Brand.ink, fontSize: 17, lineHeight: 22, fontWeight: '800' },
   patternStrength: { fontSize: 12, fontWeight: '800', color: 'rgba(23,21,29,0.65)', letterSpacing: 0.2 },
+
+  // The Undercurrent's own cards (Build 8 Pass 3) — deep plum, distinct from Your Signature's
+  // pastel rotation, echoing Private's own deeper surface identity (see private.tsx) without
+  // making the whole You page dark. Never rendered with fewer than 1 or more than 3 real cards.
+  undercurrentPattern: { backgroundColor: Brand.plum },
+  undercurrentPatternNumber: { color: 'rgba(255,249,245,0.55)', fontSize: 12, fontWeight: '800' },
+  undercurrentPatternName: { color: Brand.cream, fontSize: 17, lineHeight: 22, fontWeight: '800' },
+  undercurrentPatternStrength: { fontSize: 12, fontWeight: '800', color: Brand.coral, letterSpacing: 0.2 },
 
   // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
   // cards to read as "a different kind of result."
