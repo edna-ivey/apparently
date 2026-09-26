@@ -44,8 +44,19 @@ export const getMyPersonalityEvidence = async (): Promise<GetPersonalityEvidence
 // originating answer). Real signed effect values are carried through completely unchanged;
 // this function computes nothing and invents nothing — scoring itself still happens entirely
 // inside the existing scorePersonalityProfile().
+//
+// sourceType (Build 8 Pass 3.1): every row sharing one source_id was written by the same
+// insert (either the Daily-answer trigger or submit_quiz_result, never both), so it always
+// carries the same source_type — reading it once per group, straight from the real row, is
+// exactly as safe as reading question_snapshot/category once per group already was. This is
+// what lets the Private-signal qualification rule (src/data/private-signals.ts) tell "one
+// multi-question quiz result" apart from "one isolated Daily answer" using real provenance,
+// never a category/title guess.
 export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): PersonalityAnswerEvidence[] => {
-  const bySource = new Map<string, { question: string; category: string; chosenAnswer: string; effects: PersonalityEffect[] }>();
+  const bySource = new Map<
+    string,
+    { question: string; category: string; chosenAnswer: string; effects: PersonalityEffect[]; sourceType: PersonalityEvidenceRow['source_type'] }
+  >();
 
   for (const row of rows) {
     const entry = bySource.get(row.source_id) ?? {
@@ -53,6 +64,7 @@ export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): Person
       category: row.category,
       chosenAnswer: row.answer_snapshot,
       effects: [],
+      sourceType: row.source_type,
     };
     entry.effects.push({ dimension: row.dimension as PersonalityDimensionId, value: row.effect });
     bySource.set(row.source_id, entry);

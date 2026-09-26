@@ -98,7 +98,11 @@ export type QuizResultRow = {
   created_at: string;
 };
 
-export type PersonalityEvidenceSourceType = 'daily_answer' | 'quiz_result';
+// Canonical definition now lives in personality.ts (Build 8 Pass 3.1), alongside
+// PersonalityAnswerEvidence/DimensionEvidence, which also carry it -- re-exported here so
+// existing importers of this file are unaffected.
+export type { PersonalityEvidenceSourceType } from '@/data/personality';
+import type { PersonalityEvidenceSourceType } from '@/data/personality';
 
 export type PersonalityEvidenceRow = {
   id: string;

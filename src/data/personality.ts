@@ -71,11 +71,28 @@ export type PersonalityDimension = {
   flavor?: string;
 };
 
+// Real provenance from personality_evidence.source_type (see supabase/migrations/
+// 20260913120000_initial_apparently_schema.sql) -- moved here (Build 8 Pass 3.1) from
+// src/services/types.ts, which now re-exports it, so the one canonical definition lives
+// alongside the evidence types it actually describes. This is a SOURCE concept, deliberately
+// separate from PersonalityDimensionType (Core/Private) -- see that type's own comment for why
+// conflating them would be wrong. 'quiz_result' rows are always written by submit_quiz_result's
+// first-completion-only path (a retake never adds more); 'daily_answer' rows can only exist
+// once per (user, question) thanks to daily_answers' own unique constraint, so two
+// 'daily_answer'-sourced evidence rows for the same dimension are always two genuinely
+// independent Daily questions, never the same answer double-counted.
+export type PersonalityEvidenceSourceType = 'daily_answer' | 'quiz_result';
+
 export type PersonalityAnswerEvidence = {
   question: string;
   category: string;
   chosenAnswer: string;
   effects: PersonalityEffect[];
+  // Optional: real remote evidence always carries this (see groupEvidenceIntoAnswers in
+  // personality-service.ts, which reads it straight from the real personality_evidence row).
+  // Undefined only for synthetic/demo data (MICRO_PERSONALITY_SAMPLE) that was never a real
+  // database row -- never a guess, never inferred from category/title text.
+  sourceType?: PersonalityEvidenceSourceType;
 };
 
 export type DimensionEvidence = {
@@ -86,6 +103,9 @@ export type DimensionEvidence = {
   effect: PersonalityEffectValue;
   normalized: number;
   date: string;
+  // Threaded straight through from the originating PersonalityAnswerEvidence.sourceType --
+  // see that field's own comment. Never computed/guessed here.
+  sourceType?: PersonalityEvidenceSourceType;
 };
 
 export type DimensionResult = {
@@ -597,6 +617,7 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
         effect: effect.value,
         normalized,
         date: new Date().toISOString(),
+        sourceType: answer.sourceType,
       });
       dimensionValues.set(effect.dimension, entry);
     });
