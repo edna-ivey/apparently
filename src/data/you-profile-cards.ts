@@ -1,5 +1,6 @@
 import {
   getSignatureStrengthLabel,
+  isCoreDimension,
   PERSONALITY_DIMENSIONS,
   type DimensionResult,
   type PersonalityDimensionId,
@@ -18,9 +19,12 @@ import {
 // two dimensions with identical real evidence never flicker order between renders.
 const DIMENSION_ORDER = new Map(PERSONALITY_DIMENSIONS.map((dimension, index) => [dimension.id, index]));
 
+// Build 8 Pass 3: Your Signature (mature or early-read) is Core-dimension-only -- see
+// PersonalityDimensionType's own comment in personality.ts. Evidence from a private source
+// that targets a Core dimension still fully counts here; this filters by dimension TYPE only.
 const getEarlySignals = (dimensions: DimensionResult[]): DimensionResult[] =>
   dimensions
-    .filter((dimension) => dimension.evidenceCount >= 1)
+    .filter((dimension) => dimension.evidenceCount >= 1 && isCoreDimension(dimension.dimension))
     .sort((a, b) => {
       if (b.evidenceCount !== a.evidenceCount) return b.evidenceCount - a.evidenceCount;
       if (b.signatureStrength !== a.signatureStrength) return b.signatureStrength - a.signatureStrength;
@@ -97,7 +101,13 @@ export const buildYouProfileCards = (profile: PersonalityProfile): YouProfileCar
 // user with fewer than 7 real evidenced dimensions honestly sees however many they actually
 // have — never a fabricated 7th.
 export const buildYourSevenCards = (profile: PersonalityProfile): YouProfileCard[] => {
-  const eligible = profile.dimensions.filter((dimension) => dimension.evidenceCount >= 1);
+  // Build 8 Pass 3: Core-dimension-only (see getEarlySignals' own comment above) -- a
+  // Private-12 dimension must never appear in Your Signature/Your 7, regardless of how much
+  // evidence it has. Evidence from private CONTENT that targets a Core dimension is untouched
+  // by this filter (it's still a Core dimension) and fully contributes.
+  const eligible = profile.dimensions.filter(
+    (dimension) => dimension.evidenceCount >= 1 && isCoreDimension(dimension.dimension),
+  );
 
   const ranked = [...eligible].sort((a, b) => {
     const aMature = a.evidenceCount >= 2;
