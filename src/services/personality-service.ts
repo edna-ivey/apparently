@@ -45,17 +45,26 @@ export const getMyPersonalityEvidence = async (): Promise<GetPersonalityEvidence
 // this function computes nothing and invents nothing — scoring itself still happens entirely
 // inside the existing scorePersonalityProfile().
 //
-// sourceType (Build 8 Pass 3.1): every row sharing one source_id was written by the same
-// insert (either the Daily-answer trigger or submit_quiz_result, never both), so it always
-// carries the same source_type — reading it once per group, straight from the real row, is
-// exactly as safe as reading question_snapshot/category once per group already was. This is
-// what lets the Private-signal qualification rule (src/data/private-signals.ts) tell "one
-// multi-question quiz result" apart from "one isolated Daily answer" using real provenance,
-// never a category/title guess.
+// sourceType/sourceId (Build 8 Pass 3.1 / 3.2): every row sharing one source_id was written by
+// the same insert (either the Daily-answer trigger or submit_quiz_result, never both), so it
+// always carries the same source_type — reading it once per group, straight from the real row,
+// is exactly as safe as reading question_snapshot/category once per group already was. The
+// group's own Map key already IS the real source_id (grouping was always keyed on it); Pass
+// 3.2 also carries that literal value onto the returned PersonalityAnswerEvidence instead of
+// discarding it once grouping is done, so the qualification rule (src/data/private-signals.ts)
+// can count DISTINCT real source_ids directly rather than counting evidence rows/items as a
+// proxy for them.
 export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): PersonalityAnswerEvidence[] => {
   const bySource = new Map<
     string,
-    { question: string; category: string; chosenAnswer: string; effects: PersonalityEffect[]; sourceType: PersonalityEvidenceRow['source_type'] }
+    {
+      question: string;
+      category: string;
+      chosenAnswer: string;
+      effects: PersonalityEffect[];
+      sourceType: PersonalityEvidenceRow['source_type'];
+      sourceId: string;
+    }
   >();
 
   for (const row of rows) {
@@ -65,6 +74,7 @@ export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): Person
       chosenAnswer: row.answer_snapshot,
       effects: [],
       sourceType: row.source_type,
+      sourceId: row.source_id,
     };
     entry.effects.push({ dimension: row.dimension as PersonalityDimensionId, value: row.effect });
     bySource.set(row.source_id, entry);

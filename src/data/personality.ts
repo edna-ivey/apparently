@@ -71,16 +71,21 @@ export type PersonalityDimension = {
   flavor?: string;
 };
 
-// Real provenance from personality_evidence.source_type (see supabase/migrations/
+// Real provenance from personality_evidence.source_type/source_id (see supabase/migrations/
 // 20260913120000_initial_apparently_schema.sql) -- moved here (Build 8 Pass 3.1) from
 // src/services/types.ts, which now re-exports it, so the one canonical definition lives
 // alongside the evidence types it actually describes. This is a SOURCE concept, deliberately
 // separate from PersonalityDimensionType (Core/Private) -- see that type's own comment for why
 // conflating them would be wrong. 'quiz_result' rows are always written by submit_quiz_result's
 // first-completion-only path (a retake never adds more); 'daily_answer' rows can only exist
-// once per (user, question) thanks to daily_answers' own unique constraint, so two
-// 'daily_answer'-sourced evidence rows for the same dimension are always two genuinely
-// independent Daily questions, never the same answer double-counted.
+// once per (user, question) thanks to daily_answers' own unique constraint.
+//
+// Build 8 Pass 3.2: qualification (private-signals.ts) counts DISTINCT source_id values, never
+// a raw evidence-row/item count -- today's personality_evidence_unique_source_dimension
+// constraint (user_id, source_type, source_id, dimension) happens to already prevent one
+// source from ever writing two rows for the same dimension, but the qualification LOGIC is
+// written to be correct on its own terms (via a Set of real source_ids) rather than silently
+// depending on that DB constraint holding forever elsewhere in the system.
 export type PersonalityEvidenceSourceType = 'daily_answer' | 'quiz_result';
 
 export type PersonalityAnswerEvidence = {
@@ -88,11 +93,16 @@ export type PersonalityAnswerEvidence = {
   category: string;
   chosenAnswer: string;
   effects: PersonalityEffect[];
-  // Optional: real remote evidence always carries this (see groupEvidenceIntoAnswers in
-  // personality-service.ts, which reads it straight from the real personality_evidence row).
+  // Optional: real remote evidence always carries these (see groupEvidenceIntoAnswers in
+  // personality-service.ts, which reads them straight from the real personality_evidence row).
   // Undefined only for synthetic/demo data (MICRO_PERSONALITY_SAMPLE) that was never a real
-  // database row -- never a guess, never inferred from category/title text.
+  // database row -- never a guess, never derived from question text/category/title/timestamps/
+  // array index.
   sourceType?: PersonalityEvidenceSourceType;
+  // The real personality_evidence.source_id (a daily_answers.id or a quiz_results.id, as
+  // text) -- the actual identity of the ONE behavioral observation this answer represents.
+  // This is what distinct-source qualification counts, never a synthesized id.
+  sourceId?: string;
 };
 
 export type DimensionEvidence = {
@@ -103,9 +113,10 @@ export type DimensionEvidence = {
   effect: PersonalityEffectValue;
   normalized: number;
   date: string;
-  // Threaded straight through from the originating PersonalityAnswerEvidence.sourceType --
-  // see that field's own comment. Never computed/guessed here.
+  // Threaded straight through from the originating PersonalityAnswerEvidence.sourceType/
+  // sourceId -- see those fields' own comments. Never computed/guessed here.
   sourceType?: PersonalityEvidenceSourceType;
+  sourceId?: string;
 };
 
 export type DimensionResult = {
@@ -618,6 +629,7 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
         normalized,
         date: new Date().toISOString(),
         sourceType: answer.sourceType,
+        sourceId: answer.sourceId,
       });
       dimensionValues.set(effect.dimension, entry);
     });
