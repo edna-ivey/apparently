@@ -32,7 +32,7 @@ const read = (relativePath: string): string => readFileSync(join(__dirname, rela
 
 // 1. One approved quiz_result Private signal may qualify.
 const oneQuizResult = scorePersonalityProfile([
-  { question: 'THE HYPE DEPARTMENT', category: 'The Good Stuff', chosenAnswer: 'result', sourceType: 'quiz_result', effects: [{ dimension: 'supportive_challenging', value: 2 }] },
+  { question: 'THE HYPE DEPARTMENT', category: 'The Good Stuff', chosenAnswer: 'result', sourceType: 'quiz_result', sourceId: 'quiz-result-1', effects: [{ dimension: 'supportive_challenging', value: 2 }] },
 ]);
 const oneQuizSignals = selectStrongestPrivateSignals(oneQuizResult);
 assert(oneQuizSignals.length === 1, `one approved quiz_result Private signal qualifies and appears (got ${oneQuizSignals.length})`);
@@ -63,6 +63,7 @@ const bothTypesQuizResult = scorePersonalityProfile([
     category: 'The Good Stuff',
     chosenAnswer: 'result',
     sourceType: 'quiz_result',
+    sourceId: 'quiz-result-2',
     effects: [
       { dimension: 'duty_first_self_preserving', value: 2 }, // Private
       { dimension: 'protective_hands_off', value: 1 }, // Core
@@ -87,7 +88,7 @@ assert(
 // 4 & 5. One Daily-only Private observation does NOT surface in The Undercurrent or resolve a
 // Relic slot.
 const oneDailyOnly = scorePersonalityProfile([
-  { question: 'Private Daily prompt', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'Private Daily prompt', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', sourceId: 'daily-answer-1', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
 ]);
 const oneDailySignals = selectStrongestPrivateSignals(oneDailyOnly);
 assert(oneDailySignals.length === 0, `one isolated Daily-only Private observation does NOT surface in The Undercurrent (got ${oneDailySignals.length})`);
@@ -99,8 +100,8 @@ assert(
 
 // 6. Two independent Daily observations supporting the SAME Private dimension MAY qualify it.
 const twoDailyIndependent = scorePersonalityProfile([
-  { question: 'Private Daily prompt, day 1', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'Private Daily prompt, day 2', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'Private Daily prompt, day 1', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', sourceId: 'daily-answer-2', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'Private Daily prompt, day 2', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', sourceId: 'daily-answer-3', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
 ]);
 const twoDailySignals = selectStrongestPrivateSignals(twoDailyIndependent);
 assert(twoDailySignals.length === 1 && twoDailySignals[0]?.dimension === 'tactful_blunt', 'two independent Daily observations of the same Private dimension DO qualify it');
@@ -123,8 +124,8 @@ assert(!isPrivateSignalQualified(rawDimension!.evidence), 'that raw evidence cor
 // 8. Quiz + Daily evidence qualifies (either alone would already qualify; combined also
 // qualifies, and is not double-penalized).
 const quizPlusDaily = scorePersonalityProfile([
-  { question: 'Private Daily prompt', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', effects: [{ dimension: 'repair_punishing', value: -2 }] },
-  { question: 'A Private quiz result', category: 'The Good Stuff', chosenAnswer: 'result', sourceType: 'quiz_result', effects: [{ dimension: 'repair_punishing', value: -1 }] },
+  { question: 'Private Daily prompt', category: 'Hidden You', chosenAnswer: 'option', sourceType: 'daily_answer', sourceId: 'daily-answer-4', effects: [{ dimension: 'repair_punishing', value: -2 }] },
+  { question: 'A Private quiz result', category: 'The Good Stuff', chosenAnswer: 'result', sourceType: 'quiz_result', sourceId: 'quiz-result-3', effects: [{ dimension: 'repair_punishing', value: -1 }] },
 ]);
 assert(
   selectStrongestPrivateSignals(quizPlusDaily).some((s) => s.dimension === 'repair_punishing'),
@@ -133,9 +134,9 @@ assert(
 
 // 9. Strongest-three ordering remains deterministic after qualification.
 const forDeterminism = scorePersonalityProfile([
-  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
-  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'repair_punishing', value: -2 }] },
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-result-4', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-result-5', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
+  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-result-6', effects: [{ dimension: 'repair_punishing', value: -2 }] },
 ]);
 const detRun1 = selectStrongestPrivateSignals(forDeterminism).map((s) => s.dimension);
 const detRun2 = selectStrongestPrivateSignals(forDeterminism).map((s) => s.dimension);
@@ -145,11 +146,11 @@ assert(JSON.stringify(detRun1) === JSON.stringify(detRun2), 'strongest-three ord
 // extreme value -- an unqualified dimension with a maximal +/-2 single Daily observation must
 // never appear ahead of (or instead of) a qualified dimension with a weaker value.
 const unqualifiedExtremeVsQualifiedWeak = scorePersonalityProfile([
-  // Unqualified: one isolated Daily observation, but an EXTREME value (2).
-  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', effects: [{ dimension: 'initiating_responsive', value: 2 }] },
-  // Qualified: two independent Daily observations, but a WEAKER value (1 each).
-  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', effects: [{ dimension: 'gives_freely_keeps_score', value: 1 }] },
-  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', effects: [{ dimension: 'gives_freely_keeps_score', value: 1 }] },
+  // Unqualified: one isolated Daily observation (one distinct source), but an EXTREME value (2).
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', sourceId: 'daily-answer-5', effects: [{ dimension: 'initiating_responsive', value: 2 }] },
+  // Qualified: two independent Daily observations (two distinct sources), but a WEAKER value (1 each).
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', sourceId: 'daily-answer-6', effects: [{ dimension: 'gives_freely_keeps_score', value: 1 }] },
+  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', sourceId: 'daily-answer-7', effects: [{ dimension: 'gives_freely_keeps_score', value: 1 }] },
 ]);
 const boundarySignals = selectStrongestPrivateSignals(unqualifiedExtremeVsQualifiedWeak);
 assert(
