@@ -8,7 +8,7 @@ import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Radius, Surface, Type } from '@/constants/design-system';
+import { CardStyle, Elevation, Radius, Surface, Type } from '@/constants/design-system';
 import {
   AGE_RANGES,
   GENDER_IDENTITIES,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: Surface.page,
     ...Platform.select({
-      web: { marginVertical: 28, borderRadius: Radius.xl, boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)', overflow: 'hidden' },
+      web: { marginVertical: 28, borderRadius: Radius.xl, boxShadow: Elevation.shell, overflow: 'hidden' },
       default: {},
     }),
   },

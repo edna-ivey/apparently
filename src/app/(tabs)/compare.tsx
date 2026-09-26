@@ -7,6 +7,7 @@ import { CompareResultPanel } from '@/components/compare-result-panel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { Elevation, Radius, Surface } from '@/constants/design-system';
 import { getQuizDefinition } from '@/data/quizzes';
 import type { ArchetypeQuizDefinition } from '@/data/quizzes/types';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
@@ -252,18 +253,18 @@ const styles = StyleSheet.create({
     // Slightly deeper than the app's own cream so the app column reads as a deliberate
     // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
     // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: '#F0E8DD',
+    backgroundColor: Surface.pageDeep,
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Surface.page,
     ...Platform.select({
       web: {
         marginVertical: 28,
-        borderRadius: 28,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        borderRadius: Radius.xl,
+        boxShadow: Elevation.shell,
         overflow: 'hidden',
       },
       default: {},
@@ -271,17 +272,17 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
   heading: { color: Brand.ink, fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
-  hero: { backgroundColor: Brand.coral, borderRadius: 28, padding: Spacing.four, gap: Spacing.two, marginTop: Spacing.three },
+  hero: { backgroundColor: Brand.coral, borderRadius: Radius.xl, padding: Spacing.four, gap: Spacing.two, marginTop: Spacing.three },
   heroEmoji: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
   heroTitle: { color: '#FFFFFF', fontSize: 24, lineHeight: 29, fontWeight: '800' },
   heroCopy: { color: 'rgba(255,255,255,0.84)', fontSize: 15, lineHeight: 22 },
   stateCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: Surface.card,
+    borderRadius: Radius.lg,
     padding: Spacing.four,
     gap: Spacing.two,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Surface.hairline,
     alignItems: 'center',
   },
   stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
   ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   backButton: { paddingVertical: Spacing.two },
   backText: { color: Brand.violet, fontSize: 14, fontWeight: '700' },
-  unreadCard: { backgroundColor: Brand.pink, borderRadius: 24, padding: Spacing.four, gap: Spacing.half, marginTop: Spacing.two },
+  unreadCard: { backgroundColor: Brand.pink, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.half, marginTop: Spacing.two },
   unreadEyebrow: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   unreadBody: { color: '#FFE5EF', fontSize: 15, fontWeight: '700' },
   unreadCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
@@ -302,10 +303,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Surface.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Surface.hairline,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
   responseResult: { color: Brand.violet, fontSize: 13, fontWeight: '700' },
   responseMatch: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.pink },
-  thingCard: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.four, gap: Spacing.one, marginTop: Spacing.one },
+  thingCard: { backgroundColor: Brand.plum, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.one, marginTop: Spacing.one },
   thingEyebrow: { color: Brand.coral, fontSize: 12, fontWeight: '800', letterSpacing: 0.4 },
   thingBody: { color: Brand.cream, fontSize: 15, lineHeight: 21, fontWeight: '700' },
   thingResult: { color: '#FFFFFF', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },

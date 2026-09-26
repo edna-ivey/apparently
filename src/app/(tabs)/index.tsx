@@ -7,6 +7,7 @@ import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { Elevation, Radius, Surface } from '@/constants/design-system';
 import { useConsumerDailyExperience } from '@/data/consumer-daily';
 import { usePrivateDailyExperience } from '@/data/consumer-private-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
@@ -510,12 +511,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Surface.page,
     ...Platform.select({
       web: {
         marginVertical: 28,
-        borderRadius: 28,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        borderRadius: Radius.xl,
+        boxShadow: Elevation.shell,
         overflow: 'hidden',
       },
       default: {},
@@ -663,10 +664,10 @@ const styles = StyleSheet.create({
   // personality nudge, full breakdown) is deliberately smaller/secondary so it doesn't
   // compete with it — see Part 2 of the visual QA correction.
   revealCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: Surface.card,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Surface.hairline,
     padding: Spacing.four,
     gap: Spacing.two,
   },
@@ -772,7 +773,7 @@ const styles = StyleSheet.create({
   // Pressable so it never implies a real, tappable purchase action exists).
   privateDropCard: {
     backgroundColor: Brand.plum,
-    borderRadius: 24,
+    borderRadius: Radius.lg,
     padding: Spacing.four,
     gap: Spacing.one,
   },
@@ -916,8 +917,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   progressCard: {
-    backgroundColor: '#FFE5EF',
-    borderRadius: 24,
+    backgroundColor: Surface.blush,
+    borderRadius: Radius.lg,
     padding: Spacing.four,
     gap: Spacing.two,
   },

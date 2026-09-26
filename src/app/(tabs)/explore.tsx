@@ -7,6 +7,7 @@ import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
+import { Elevation, Radius, Surface } from '@/constants/design-system';
 import { getQuizDefinition, type FreeQuizCategory } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
@@ -236,12 +237,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Surface.page,
     ...Platform.select({
       web: {
         marginVertical: 28,
-        borderRadius: 28,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        borderRadius: Radius.xl,
+        boxShadow: Elevation.shell,
         overflow: 'hidden',
       },
       default: {},
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   heading: { color: Brand.ink, fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
   headingSupport: { color: Brand.inkSecondary, fontSize: 15, fontWeight: '600' },
   categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
-  category: { backgroundColor: '#FFFFFF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
+  category: { backgroundColor: Surface.card, borderRadius: Radius.pill, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: Surface.hairline },
   categoryActive: { backgroundColor: Brand.pink, borderColor: Brand.pink },
   categoryText: { color: Brand.ink, fontSize: 13, fontWeight: '800' },
   categoryTextActive: { color: '#FFFFFF' },
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
   quizLastResult: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700' },
   // The plum premium surface — visibly a different room from the pastel free cards around it.
   // Placed between Featured and the free library, per spec — a portal, not a card in the list.
-  privatePortal: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
+  privatePortal: { backgroundColor: Brand.plum, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.one },
   privatePortalEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   privatePortalTitle: { color: Brand.cream, fontSize: 19, lineHeight: 24, fontWeight: '800', marginTop: Spacing.one },
   privatePortalSupport: { color: 'rgba(255,249,245,0.65)', fontSize: 13, fontWeight: '600' },

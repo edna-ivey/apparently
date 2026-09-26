@@ -7,7 +7,7 @@ import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signatu
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
-import { CardStyle, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
+import { CardStyle, Elevation, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { getDemoPersonalityProfile, scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
       web: {
         marginVertical: 28,
         borderRadius: Radius.xl,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        boxShadow: Elevation.shell,
         overflow: 'hidden',
       },
       default: {},

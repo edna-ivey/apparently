@@ -82,6 +82,11 @@ export const Elevation = {
     shadowRadius: 40,
     elevation: 6,
   },
+  // The page-shell shadow -- web-only (native's safeArea always fills its container exactly,
+  // nothing to lift off a background). Every consumer tab screen's own safeArea already used
+  // this exact value ad hoc before Build 8 Pass 2 captured it as a shared token; distinct from
+  // `soft`/`lifted` above, which are per-card, not per-page-column.
+  shell: '0 24px 64px rgba(23, 21, 29, 0.10)',
 } as const;
 
 // ---------------------------------------------------------------------------------------
