@@ -111,7 +111,10 @@ assert(
 // 4. PRIVATE LANDING -- subscriber-aware copy, real premium status, free tier unchanged
 // ============================================================================================
 
-const privateSource = read('../src/app/private.tsx');
+// Build 8 Pass 2 moved this into the (tabs) group so Private could become a real primary
+// tab, at the same /private URL (see the navigation-migration commit for the proof this is
+// based on) -- update the path this script reads from accordingly.
+const privateSource = read('../src/app/(tabs)/private.tsx');
 
 assert(/usePremiumStatus/.test(privateSource), 'private.tsx reads real RevenueCat premium status');
 assert(

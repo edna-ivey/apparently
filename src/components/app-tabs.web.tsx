@@ -1,8 +1,14 @@
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 
+import { Radius, Surface } from '@/constants/design-system';
 import { Brand, MaxContentWidth, Spacing } from '@/constants/theme';
 
+// Private is the LOCKED center tab position (Today / Explore / Private / Compare / You) —
+// same navigation for free users and subscribers; see src/app/(tabs)/private.tsx for the
+// free/subscriber content branching. This bar never special-cases Private's own deeper-plum
+// surface identity — it stays one unified, neutral navigation system regardless of which
+// screen is active, exactly as approved.
 export default function AppTabs() {
   return (
     <Tabs>
@@ -14,6 +20,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="explore" href="/explore" asChild>
             <TabButton>Explore</TabButton>
+          </TabTrigger>
+          <TabTrigger name="private" href="/private" asChild>
+            <TabButton>Private</TabButton>
           </TabTrigger>
           <TabTrigger name="compare" href="/compare" asChild>
             <TabButton>Compare</TabButton>
@@ -61,20 +70,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   innerContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Surface.card,
     paddingVertical: Spacing.two,
-    // Narrower horizontal padding/gap than before — at a 375px-wide viewport, the original
-    // Spacing.four/Spacing.two/Spacing.three values (here and on tabListContainer/
-    // tabButtonView below) left too little room for "apparently." plus all 4 tab labels,
-    // overflowing the page horizontally by tens of pixels (measured: the natural content
-    // width of the bar exceeded the viewport, so the row pushed its last item off-screen
-    // rather than shrinking — flexShrink alone doesn't shrink text/padding, only free space).
-    // Discovered via QA once onboarding's redirect was bypassed for the first time — every
-    // earlier visual QA pass on this project never actually reached this bar, since /you and
-    // /compare always redirected to /onboarding first. iOS's native tab bar (app-tabs.tsx,
-    // NativeTabs) is a completely different component and was never affected.
+    // Narrow horizontal padding/gap — at a 375px-wide viewport, generous padding/gap values
+    // leave too little room for "apparently." plus every tab label, overflowing the page
+    // horizontally (measured: the natural content width of the bar exceeded the viewport, so
+    // the row pushed its last item off-screen rather than shrinking — flexShrink alone
+    // doesn't shrink text/padding, only free space). Re-measured and re-tuned when Private
+    // became a 5th tab in Build 8 Pass 2 (previously tuned for 4 tabs only). Discovered via QA
+    // once onboarding's redirect was bypassed for the first time — every earlier visual QA
+    // pass on this project never actually reached this bar, since /you and /compare always
+    // redirected to /onboarding first. iOS's native tab bar (app-tabs.tsx, NativeTabs) is a
+    // completely different component and was never affected.
     paddingHorizontal: Spacing.two,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
@@ -85,9 +94,12 @@ const styles = StyleSheet.create({
   },
   brandText: {
     color: Brand.ink,
-    fontSize: 14,
+    // Slightly smaller than before (14px) -- with Private now a 5th tab, this frees just
+    // enough width to give tabButtonView real breathing room again instead of shrinking it
+    // to the point where the last label sits flush against the pill's own rounded corner.
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     marginRight: 'auto',
   },
   pressed: {
@@ -95,12 +107,12 @@ const styles = StyleSheet.create({
   },
   tabButtonView: {
     paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: Spacing.one,
     borderRadius: Spacing.three,
     backgroundColor: 'transparent',
   },
   tabButtonActive: {
-    backgroundColor: '#FFE5EF',
+    backgroundColor: Surface.blush,
   },
   tabButtonText: {
     color: Brand.inkSecondary,

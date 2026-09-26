@@ -6,14 +6,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, Spacing } from '@/constants/theme';
+import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/design-system';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import type { PrivateQuizCategory, QuizDefinition } from '@/data/quizzes/types';
-import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
+import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { usePremiumStatus } from '@/services/purchases-service';
+
+// Build 8 Pass 2: Private became the LOCKED-position center primary tab (Today / Explore /
+// Private / Compare / You), replacing what used to be a modal-style push destination at the
+// same /private URL (src/app/private.tsx, now removed — see that removal's own commit message
+// for the route-collision proof this migration is based on). Moving the file here is what
+// changes the URL's underlying screen; because Expo Router resolves a route group's file to
+// the SAME pathless URL either way, /private itself is unchanged, so every existing
+// router.push('/private') call site (Today's Private Drop card, Explore's private portal,
+// the quiz runner's onBackToPrivate) keeps working with zero changes needed there — the same
+// already-proven pattern this app already uses for router.push('/you')/('/explore').
+//
+// Structural adaptation only: the old top-row "×" dismiss button is gone (a persistent tab has
+// no "close" action — you simply tap another tab, exactly like Today/Explore/Compare/You never
+// had one), and top/bottom spacing now follows the same useResponsiveTopInset()/BottomTabInset
+// convention every other tab already uses, so Private clears the floating web nav and native
+// bottom tab bar identically to its siblings. Every other line of Pass 1 logic/copy below is
+// unchanged: the free/subscriber branching, the open-quiz cards, the locked catalog, and the
+// coming-soon modal are byte-for-byte the same behavior as Pass 1, just inside a tab shell.
 
 type CategoryFilter = 'All' | PrivateQuizCategory;
 
@@ -43,6 +62,7 @@ type OpenQuizCard = {
 export default function PrivateScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
+  const topInset = useResponsiveTopInset();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
 
@@ -93,13 +113,7 @@ export default function PrivateScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.topRow}>
-            <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close" accessibilityRole="button" style={styles.closeButton}>
-              <ThemedText style={styles.closeText}>×</ThemedText>
-            </Pressable>
-          </View>
-
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: topInset }]} showsVerticalScrollIndicator={false}>
           <BrandSignature variant="mark" />
 
           <View style={styles.headingGroup}>
@@ -237,14 +251,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: Brand.plum,
     ...Platform.select({
-      web: { marginVertical: 28, borderRadius: 28, overflow: 'hidden' },
+      web: { marginVertical: 28, borderRadius: Radius.xl, overflow: 'hidden' },
       default: {},
     }),
   },
-  content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.four },
-  topRow: { flexDirection: 'row', justifyContent: 'flex-end', minHeight: 28 },
-  closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
-  closeText: { color: 'rgba(255,249,245,0.7)', fontSize: 26, lineHeight: 26, fontWeight: '600' },
+  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.four },
   headingGroup: { gap: Spacing.one },
   heading: { color: Brand.cream, fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -0.7 },
   headingSupport: { color: 'rgba(255,249,245,0.8)', fontSize: 15, lineHeight: 21, fontWeight: '600' },
