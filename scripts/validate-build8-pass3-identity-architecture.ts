@@ -121,6 +121,7 @@ const bothAtOnceAnswer: PersonalityAnswerEvidence[] = [
     question: 'A Private quiz result (simulated)',
     category: 'The Good Stuff',
     chosenAnswer: 'Example result',
+    sourceType: 'quiz_result',
     effects: [
       { dimension: 'direct_indirect', value: 2 }, // Core
       { dimension: 'tactful_blunt', value: -2 }, // Private ("Blunt" pole)
@@ -137,7 +138,7 @@ assert(isCoreDimension('direct_indirect') && isPrivateDimension('tactful_blunt')
 // No automatic inference converts one type into the other -- a Private-only answer never
 // produces Core evidence for an unrelated dimension, and vice versa.
 const privateOnlyAnswer: PersonalityAnswerEvidence[] = [
-  { question: 'Private-only result', category: 'X', chosenAnswer: 'Y', effects: [{ dimension: 'repair_punishing', value: 2 }] },
+  { question: 'Private-only result', category: 'X', chosenAnswer: 'Y', sourceType: 'quiz_result', effects: [{ dimension: 'repair_punishing', value: 2 }] },
 ];
 const privateOnlyProfile = scorePersonalityProfile(privateOnlyAnswer);
 const coreEvidenceFromPrivateOnlyAnswer = privateOnlyProfile.dimensions.filter((d) => isCoreDimension(d.dimension) && d.evidenceCount > 0);
@@ -155,8 +156,10 @@ assert(
 const mixedAnswers: PersonalityAnswerEvidence[] = [
   { question: 'q1', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'direct_indirect', value: 2 }] },
   { question: 'q2', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'direct_indirect', value: 2 }] },
-  { question: 'q3', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q4', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  // Two independent Daily observations (real source_type) -- qualifies tactful_blunt under
+  // the Pass 3.1 rule, same as it would have unconditionally before that rule existed.
+  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q4', category: 'c', chosenAnswer: 'a', sourceType: 'daily_answer', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
 ];
 const mixedProfile = scorePersonalityProfile(mixedAnswers);
 assert(
@@ -187,27 +190,32 @@ const zeroPrivateProfile = scorePersonalityProfile([
 ]);
 assert(selectStrongestPrivateSignals(zeroPrivateProfile).length === 0, 'zero Private evidence -> zero supported Private traits (no fabrication)');
 
+// sourceType: 'quiz_result' throughout this section -- these fixtures test selection
+// count/order/determinism (does the selector return the right NUMBER and RANKING), not the
+// qualification boundary itself (see the dedicated Pass 3.1 qualification tests further down,
+// and validate-build8-pass3.1-private-signal-confidence.ts for the exhaustive boundary suite).
+// A single quiz_result-sourced item already qualifies under the Pass 3.1 rule.
 const onePrivateProfile = scorePersonalityProfile([
-  { question: 'q', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
 ]);
 const oneSignals = selectStrongestPrivateSignals(onePrivateProfile);
 assert(oneSignals.length === 1, `exactly 1 real Private signal returns 1 (got ${oneSignals.length})`);
 assert(oneSignals.every((s) => isPrivateDimension(s.dimension)), 'every returned signal is a genuine Private-12 dimension');
 
 const twoPrivateProfile = scorePersonalityProfile([
-  { question: 'q1', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q2', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
 ]);
 assert(selectStrongestPrivateSignals(twoPrivateProfile).length === 2, '2 real Private signals returns 2');
 
 const fourPrivateProfile = scorePersonalityProfile([
-  { question: 'q1', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q2', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q3', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
-  { question: 'q4', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
-  { question: 'q5', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'repair_punishing', value: -2 }] },
-  { question: 'q6', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'repair_punishing', value: -2 }] },
-  { question: 'q7', category: 'c', chosenAnswer: 'a', effects: [{ dimension: 'initiating_responsive', value: 1 }] },
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
+  { question: 'q4', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
+  { question: 'q5', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'repair_punishing', value: -2 }] },
+  { question: 'q6', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'repair_punishing', value: -2 }] },
+  { question: 'q7', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', effects: [{ dimension: 'initiating_responsive', value: 1 }] },
 ]);
 const fourSignals = selectStrongestPrivateSignals(fourPrivateProfile);
 assert(fourSignals.length === 3, `4+ real Private signals still caps at the strongest 3 (got ${fourSignals.length})`);
