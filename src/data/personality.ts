@@ -36,6 +36,22 @@ export type PersonalityDimensionId =
   | 'perspective_taking_self_referencing'
   | 'initiating_responsive';
 
+// The two personality layers (Build 8 Pass 3 — Core You / Private You identity architecture).
+// This is a CLASSIFICATION of the dimension itself, never of an answer's SOURCE (which public/
+// private content it came from) — those are different concepts. Where an answer happens does
+// NOT determine whether it can affect the Creature; only which dimension(s) its approved
+// mapping targets does. A Private-content answer (a Private quiz result, a Private Daily
+// option) can carry an approved mapping to a 'core' dimension, a 'private' dimension, or both
+// at once — see PERSONALITY_DIMENSIONS below and isCoreDimension/isPrivateDimension.
+//
+// 'core' -- Core You (the original 20): builds Your Signature, the Creature, and (future)
+// the Character Name input. Evidence may originate from public OR private content.
+// 'private' -- Private You (the 12 approved in the 20260922010000 expansion): builds The
+// Undercurrent and the Relic. Evidence may currently only originate from private content
+// (no public content maps to these — see the Pass 3 content audit), but that is a fact about
+// today's approved mappings, not a rule this type encodes.
+export type PersonalityDimensionType = 'core' | 'private';
+
 export type PersonalityEffectValue = -2 | -1 | 1 | 2;
 
 export type PersonalityEffect = {
@@ -45,6 +61,7 @@ export type PersonalityEffect = {
 
 export type PersonalityDimension = {
   id: PersonalityDimensionId;
+  type: PersonalityDimensionType;
   name: string;
   positivePole: string;
   positiveLabel: string;
@@ -116,6 +133,7 @@ export type PersonalityProfile = {
 export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   {
     id: 'planner_spontaneous',
+    type: 'core',
     name: 'Planner ↔ Spontaneous',
     positivePole: 'I NEED A PLAN',
     positiveLabel: 'Planner',
@@ -126,6 +144,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'emotional_intensity',
+    type: 'core',
     name: 'Emotional Intensity ↔ Even-Keeled',
     positivePole: 'BIG FEELINGS',
     positiveLabel: 'Emotionally Intense',
@@ -136,6 +155,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'direct_indirect',
+    type: 'core',
     name: 'Direct ↔ Indirect',
     positivePole: 'SAY IT WITH YOUR CHEST',
     positiveLabel: 'Direct',
@@ -146,6 +166,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'social_attunement',
+    type: 'core',
     name: 'Social Radar ↔ Face Value',
     positivePole: 'VIBE CHECKER',
     positiveLabel: 'Vibe checker',
@@ -156,6 +177,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'protective_hands_off',
+    type: 'core',
     name: 'Protective ↔ Hands-Off',
     positivePole: "DON'T PLAY WITH MINE",
     positiveLabel: 'Protective',
@@ -166,6 +188,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'adventure_comfort',
+    type: 'core',
     name: 'Adventurous ↔ Comfort-Seeking',
     positivePole: "LET'S GO",
     positiveLabel: 'Adventurous',
@@ -176,6 +199,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'independent_collaborative',
+    type: 'core',
     name: 'Independent ↔ Collaborative',
     positivePole: 'I GOT IT',
     positiveLabel: 'Independent',
@@ -186,6 +210,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'control_allowing',
+    type: 'core',
     name: 'Control ↔ Let It Play Out',
     positivePole: 'LET ME HANDLE IT',
     positiveLabel: 'Control',
@@ -196,6 +221,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'practical_idealistic',
+    type: 'core',
     name: 'Practical ↔ Idealistic',
     positivePole: 'BE FOR REAL',
     positiveLabel: 'Practical',
@@ -206,6 +232,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'sentimental_thick_skinned',
+    type: 'core',
     name: 'Sentimental ↔ Thick-Skinned',
     positivePole: 'SOFTIE',
     positiveLabel: 'Sentimental',
@@ -216,6 +243,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'rules_bending',
+    type: 'core',
     name: 'Rule-Oriented ↔ Rule-Bending',
     positivePole: 'BY THE BOOK',
     positiveLabel: 'Rule-oriented',
@@ -226,6 +254,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'conflict_peacekeeping',
+    type: 'core',
     name: 'Conflict-Forward ↔ Peacekeeping',
     positivePole: 'SAY IT NOW',
     positiveLabel: 'Conflict-forward',
@@ -236,6 +265,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'trust_verify',
+    type: 'core',
     name: 'Trusting ↔ Skeptical',
     positivePole: 'BENEFIT OF THE DOUBT',
     positiveLabel: 'Trust first',
@@ -246,6 +276,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'forgiving_receipts',
+    type: 'core',
     name: 'Forgiving ↔ Holds the Receipt',
     positivePole: 'LET IT GO',
     positiveLabel: 'Forgiving',
@@ -256,6 +287,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'playful_serious',
+    type: 'core',
     name: 'Playful ↔ Serious',
     positivePole: 'JOKESTER',
     positiveLabel: 'Playful',
@@ -266,6 +298,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'competitive_cooperative',
+    type: 'core',
     name: 'Competitive ↔ Cooperative',
     positivePole: 'I CAME TO WIN',
     positiveLabel: 'Competitive',
@@ -276,6 +309,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'curious_decisive',
+    type: 'core',
     name: 'Curious ↔ Decisive',
     positivePole: 'RABBIT HOLE',
     positiveLabel: 'Curious',
@@ -286,6 +320,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'private_open',
+    type: 'core',
     name: 'Private ↔ Open',
     positivePole: 'KEEP IT CUTE & PRIVATE',
     positiveLabel: 'Private',
@@ -296,6 +331,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'patient_urgent',
+    type: 'core',
     name: 'Patient ↔ Urgent',
     positivePole: 'I CAN WAIT',
     positiveLabel: 'Patient',
@@ -306,6 +342,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'ambitious_content',
+    type: 'core',
     name: 'Ambitious ↔ Content',
     positivePole: "WHAT'S NEXT?",
     positiveLabel: 'Ambitious',
@@ -319,6 +356,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   // reword/rename/re-pole these, and do not add a 33rd.
   {
     id: 'accountability_defensiveness',
+    type: 'private',
     name: 'Accountability ↔ Defensiveness',
     positivePole: 'OWNS IT',
     positiveLabel: 'Accountability',
@@ -329,6 +367,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'reflective_reactive',
+    type: 'private',
     name: 'Reflective ↔ Reactive',
     positivePole: 'LET ME THINK',
     positiveLabel: 'Reflective',
@@ -339,6 +378,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'self_secure_reassurance',
+    type: 'private',
     name: 'Self-Secure ↔ Reassurance-Seeking',
     positivePole: 'I KNOW WE’RE GOOD',
     positiveLabel: 'Self-secure',
@@ -349,6 +389,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'boundary_holding_approval_seeking',
+    type: 'private',
     name: 'Boundary-Holding ↔ Approval-Seeking',
     positivePole: 'THEY CAN BE MAD',
     positiveLabel: 'Boundary-holding',
@@ -359,6 +400,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'vulnerable_armored',
+    type: 'private',
     name: 'Vulnerable ↔ Armored',
     positivePole: 'SAY THE SOFT THING',
     positiveLabel: 'Vulnerable',
@@ -369,6 +411,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'repair_punishing',
+    type: 'private',
     name: 'Repair-Oriented ↔ Punishing',
     positivePole: 'LET’S FIX IT',
     positiveLabel: 'Repair-oriented',
@@ -379,6 +422,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'tactful_blunt',
+    type: 'private',
     name: 'Tactful ↔ Blunt',
     positivePole: 'PROTECT THE LANDING',
     positiveLabel: 'Tactful',
@@ -389,6 +433,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'duty_first_self_preserving',
+    type: 'private',
     name: 'Duty-First ↔ Self-Preserving',
     positivePole: 'I’LL SHOW UP',
     positiveLabel: 'Duty-first',
@@ -399,6 +444,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'supportive_challenging',
+    type: 'private',
     name: 'Supportive ↔ Challenging',
     positivePole: 'I’M IN YOUR CORNER',
     positiveLabel: 'Supportive',
@@ -409,6 +455,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'gives_freely_keeps_score',
+    type: 'private',
     name: 'Gives Freely ↔ Keeps Score',
     positivePole: 'NO LEDGER',
     positiveLabel: 'Gives freely',
@@ -419,6 +466,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'perspective_taking_self_referencing',
+    type: 'private',
     name: 'Perspective-Taking ↔ Self-Referencing',
     positivePole: 'I CAN SEE YOUR SIDE',
     positiveLabel: 'Perspective-taking',
@@ -429,6 +477,7 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
   },
   {
     id: 'initiating_responsive',
+    type: 'private',
     name: 'Initiating ↔ Responsive',
     positivePole: 'I START THE ENERGY',
     positiveLabel: 'Initiating',
@@ -440,6 +489,27 @@ export const PERSONALITY_DIMENSIONS: PersonalityDimension[] = [
 ];
 
 const dimensionMap = new Map(PERSONALITY_DIMENSIONS.map((dimension) => [dimension.id, dimension]));
+
+// ---------------------------------------------------------------------------------------
+// Core/Private classification (Build 8 Pass 3). Derived entirely from each dimension's own
+// `type` field above -- never hand-duplicated as a second list, so it can never drift out of
+// sync with PERSONALITY_DIMENSIONS. This classifies the DIMENSION, never an answer's source;
+// see PersonalityDimensionType's own comment for why those are different concepts.
+// ---------------------------------------------------------------------------------------
+
+export const CORE_DIMENSION_IDS: readonly PersonalityDimensionId[] = PERSONALITY_DIMENSIONS.filter(
+  (dimension) => dimension.type === 'core',
+).map((dimension) => dimension.id);
+
+export const PRIVATE_DIMENSION_IDS: readonly PersonalityDimensionId[] = PERSONALITY_DIMENSIONS.filter(
+  (dimension) => dimension.type === 'private',
+).map((dimension) => dimension.id);
+
+export const isCoreDimension = (dimensionId: PersonalityDimensionId): boolean =>
+  dimensionMap.get(dimensionId)?.type === 'core';
+
+export const isPrivateDimension = (dimensionId: PersonalityDimensionId): boolean =>
+  dimensionMap.get(dimensionId)?.type === 'private';
 
 const normalizeEffect = (value: PersonalityEffectValue): number => {
   if (value === -2) return -1;
@@ -570,8 +640,15 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
     };
   });
 
+  // Build 8 Pass 3 correction: topTraits is "Your Signature" -- it must be Core-dimension-
+  // only. Before this filter, a Private-12 dimension with enough evidence could rank into the
+  // top 5 here, since this loop iterates all 32 canonical dimensions with no type awareness.
+  // Evidence from ANY source (public or private content) that targets a Core dimension still
+  // fully counts -- this filters by dimension TYPE, never by where the evidence came from.
+  // Everything else about the ranking (evidenceCount >= 2, sort by signatureStrength, cap 5)
+  // is byte-for-byte unchanged.
   const topTraits = dimensions
-    .filter((dimension) => dimension.evidenceCount >= 2)
+    .filter((dimension) => dimension.evidenceCount >= 2 && isCoreDimension(dimension.dimension))
     .sort((a, b) => b.signatureStrength - a.signatureStrength)
     .slice(0, 5)
     .map((dimension) => ({
@@ -593,6 +670,24 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
     answeredCount: answers.length,
   };
 };
+
+// ---------------------------------------------------------------------------------------
+// Creature input boundary (Build 8 Pass 3) -- SCAFFOLDING ONLY. This is not the Creature
+// system; there is no Creature system yet. It exists so that when a real Creature is built,
+// it has one typed, Core-only, already-correct place to read its input from, instead of a
+// future author reaching for `profile.dimensions` (all 32, unfiltered) or inventing a second
+// classification. Deliberately identical in shape/ranking to "Your Signature" (topTraits
+// above) -- the Creature's Core-only input IS the same ranked Core evidence Your Signature
+// already shows, per the approved architecture ("Core You builds Your Signature, Creature,
+// and future Character Name input"). Evidence may originate from public OR private content;
+// this boundary only ever excludes Private-12 dimensions, never a source.
+//
+// Does NOT decide which trait controls which Creature part (Eyes/Ears/Wings/Body/Tail/Head
+// Feature/Chest Symbol) -- those seven mappings are still unapproved and unauthored; this
+// function's caller, once it exists, is where that future, separately-approved logic goes.
+export type CoreSignatureTrait = SignatureTrait;
+
+export const getCoreCreatureInputTraits = (profile: PersonalityProfile): CoreSignatureTrait[] => profile.topTraits;
 
 export const MICRO_PERSONALITY_SAMPLE: PersonalityAnswerEvidence[] = [
   {
