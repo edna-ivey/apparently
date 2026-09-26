@@ -2,6 +2,7 @@ import {
   getSignatureStrengthLabel,
   isPrivateDimension,
   PERSONALITY_DIMENSIONS,
+  type DimensionEvidence,
   type DimensionResult,
   type PersonalityDimensionId,
   type PersonalityProfile,
@@ -35,19 +36,57 @@ export type PrivateSignalTrait = {
 
 const MAX_PRIVATE_SIGNALS = 3;
 
+// ---------------------------------------------------------------------------------------
+// Qualification (Build 8 Pass 3.1) -- "the harshness must be earned." A Private identity
+// label must represent a genuine PATTERN before it becomes a persistent, consumer-visible
+// part of The Undercurrent/Relic -- never a single isolated Daily answer. This is a display-
+// eligibility gate on top of real evidence, not a second scoring system: it never deletes,
+// hides, or recomputes anything in profile.dimensions itself (see this function's own
+// evidence-count filter below, which is completely unchanged and still real) -- it only
+// decides which already-real dimensions are ESTABLISHED enough to surface here.
+//
+// The rule, using real personality_evidence.source_type (via DimensionEvidence.sourceType --
+// see personality.ts/personality-service.ts), never a category/title guess:
+//   - >= 1 'quiz_result'-sourced evidence item -> qualified. A quiz result is derived from
+//     several answers scored together (submit_quiz_result's first-completion-only,
+//     retake-protected profileSignals), so it already represents a broader pattern by
+//     construction -- one is sufficient.
+//   - >= 2 'daily_answer'-sourced evidence items -> qualified. daily_answers has a real
+//     UNIQUE(user_id, question_id) constraint, so two daily_answer-sourced evidence rows for
+//     the same dimension are structurally guaranteed to be two DIFFERENT questions/days --
+//     genuinely independent observations, never the same answer double-counted.
+//   - Otherwise (a single isolated Daily answer, or evidence with no known source -- e.g. the
+//     local demo profile) -> not yet qualified. Still real, still retained in
+//     profile.dimensions; just not established enough to surface here yet.
+// This applies to Private-12 surfacing ONLY. Core evidence/confidence (Your Signature, the
+// Creature) is completely untouched by this gate -- see personality.ts's own topTraits filter
+// and getCoreCreatureInputTraits, neither of which reference sourceType at all.
+export const isPrivateSignalQualified = (evidence: DimensionEvidence[]): boolean => {
+  const hasQuizResult = evidence.some((item) => item.sourceType === 'quiz_result');
+  if (hasQuizResult) {
+    return true;
+  }
+  const independentDailyObservations = evidence.filter((item) => item.sourceType === 'daily_answer').length;
+  return independentDailyObservations >= 2;
+};
+
 // "What are this user's strongest supported Private traits?" -- Private-12 dimensions only
 // (isPrivateDimension), real stored evidence only (evidenceCount >= 1, never fabricated to
-// fill three slots), deterministic (mature-first, then signatureStrength, then a fixed
-// canonical dimension order as the final tie-break — identical ranking shape to
-// buildYourSevenCards). Returns 0-3 entries: exactly as many as are genuinely supported, never
-// padded. A Core-20 dimension can never appear here regardless of its evidence, and evidence
+// fill three slots), QUALIFIED only (isPrivateSignalQualified above — see its own comment),
+// deterministic (mature-first, then signatureStrength, then a fixed canonical dimension order
+// as the final tie-break — identical ranking shape to buildYourSevenCards). Returns 0-3
+// entries: exactly as many as are genuinely supported AND established, never padded. Filtering
+// unqualified dimensions out BEFORE ranking (rather than merely deprioritizing them) means an
+// unqualified dimension can never outrank a qualified one, even with an extreme single value.
+// A Core-20 dimension can never appear here regardless of its evidence, and evidence
 // originating from ANY source (a Private quiz, a Private Daily) that targets a Private
 // dimension is exactly what this reads — there is no separate "was this private-sourced"
 // check because dimension TYPE alone determines eligibility, not source (see
 // PersonalityDimensionType's own comment in personality.ts).
 export const selectStrongestPrivateSignals = (profile: PersonalityProfile): PrivateSignalTrait[] => {
   const eligible = profile.dimensions.filter(
-    (dimension) => dimension.evidenceCount >= 1 && isPrivateDimension(dimension.dimension),
+    (dimension) =>
+      dimension.evidenceCount >= 1 && isPrivateDimension(dimension.dimension) && isPrivateSignalQualified(dimension.evidence),
   );
 
   const ranked = [...eligible].sort((a, b) => {
