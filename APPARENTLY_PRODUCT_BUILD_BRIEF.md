@@ -1,6 +1,8 @@
 # APPARENTLY.
 ## Product Vision + MVP Build Brief
 
+> **Authority note:** `docs/APPARENTLY_YOU_PRODUCT_CREATIVE_BIBLE.md` is the governing product/creative source of truth (currently v1.4). This build brief is execution guidance and may lag behind the Bible as the product evolves. Where the two conflict, the Bible wins — surface the conflict rather than silently resolving it in either document.
+
 **Working title:** Apparently.  
 **Core idea:** A playful social identity app where tiny daily questions, longer quizzes, world voting, comparison, and an evolving avatar gradually build a living picture of who you are.
 

@@ -2,6 +2,10 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+## Project docs
+
+Before making product, UX, personality, scoring, content, subscription, Creature, Relic, or Apparently Private decisions, read [`docs/APPARENTLY_YOU_PRODUCT_CREATIVE_BIBLE.md`](docs/APPARENTLY_YOU_PRODUCT_CREATIVE_BIBLE.md) — the governing product/creative source of truth (currently v1.4). [`APPARENTLY_PRODUCT_BUILD_BRIEF.md`](APPARENTLY_PRODUCT_BUILD_BRIEF.md) is execution guidance and existing code may lag behind the Bible; where they conflict, the Bible wins.
+
 ## Get started
 
 1. Install dependencies
