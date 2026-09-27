@@ -94,14 +94,48 @@ function IdentityHero({ isWide, resolvedRelicSlotCount }: { isWide: boolean; res
   );
 }
 
-// "THE UNDERCURRENT" (Build 8 Pass 3) -- consumer-facing WORKING title for the deeper Private
-// identity layer, confined to this UI component (never baked into private-signals.ts's own
-// naming — that title isn't locked yet). Renders nothing at all when there are zero supported
-// Private traits — no fake traits, no invented "mystery" percentage, no manufactured read
-// just to fill the screen. 1-3 real cards otherwise, never padded to a fixed count.
+// "THE UNDERCURRENT" (Build 8 Pass 3; locked-state added for the Bible v1.4 identity-states
+// pass) -- consumer-facing WORKING title for the deeper Private identity layer, confined to
+// this UI component (never baked into private-signals.ts's own naming — that title isn't
+// locked yet).
+//
+// Deliberately reads NO entitlement/subscription state at all -- only whether qualifying
+// evidence exists (`signals`, already real/qualified/deterministic — see
+// private-signals.ts). This is what makes every required identity state fall out correctly
+// with no extra branching:
+//   - a free user with zero earned Private evidence sees the locked state below;
+//   - an active subscriber with zero evidence YET (hasn't engaged with Private content)
+//     sees the exact same locked state -- and since that state contains no acquisition
+//     language ("subscribe"/"unlock"/"free preview" never appear here), a subscriber is
+//     never shown messaging meant for a non-subscriber, without needing to check who they are;
+//   - a former subscriber whose entitlement has lapsed keeps seeing their real, already-earned
+//     signals in the revealed state below, because this component was never gating on
+//     entitlement to begin with -- canceling changes nothing here, by construction, not by a
+//     special "preserve on cancel" code path that could be forgotten or bypassed elsewhere.
+// 1-3 real cards when qualified evidence exists, never padded to a fixed count; a locked
+// silhouette (no fabricated trait names, no fake numbers) otherwise.
 function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
+  const router = useRouter();
+
   if (signals.length === 0) {
-    return null;
+    return (
+      <>
+        <ThemedText style={styles.sectionTitle}>THE UNDERCURRENT</ThemedText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+          <View style={styles.lockedSlot} />
+          <View style={styles.lockedSlot} />
+          <View style={styles.lockedSlot} />
+        </ScrollView>
+        <View style={styles.undercurrentTeaser}>
+          <ThemedText style={styles.undercurrentTeaserCopy}>
+            Apparently Private learns what tends to show up underneath when things get personal.
+          </ThemedText>
+          <Pressable style={styles.undercurrentTeaserCta} onPress={() => router.push('/private')}>
+            <ThemedText style={styles.undercurrentTeaserCtaText}>Enter Private →</ThemedText>
+          </Pressable>
+        </View>
+      </>
+    );
   }
   return (
     <>
@@ -471,6 +505,25 @@ const styles = StyleSheet.create({
   undercurrentPatternNumber: { color: 'rgba(255,249,245,0.55)', fontSize: 12, fontWeight: '800' },
   undercurrentPatternName: { color: Brand.cream, fontSize: 17, lineHeight: 22, fontWeight: '800' },
   undercurrentPatternStrength: { fontSize: 12, fontWeight: '800', color: Brand.coral, letterSpacing: 0.2 },
+
+  // Locked Undercurrent state (no qualifying Private evidence yet) -- three concealed trait
+  // positions (never fabricated labels/numbers, just reserved shape) plus a teaser + entry
+  // point into Apparently Private. Same card footprint as a revealed card so the section reads
+  // as "the same three slots, not yet filled" rather than a different layout entirely.
+  lockedSlot: {
+    width: 192,
+    minHeight: 124,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: Surface.hairline,
+    backgroundColor: Surface.card,
+    opacity: 0.7,
+  },
+  undercurrentTeaser: { ...CardStyle.tinted(Surface.card, Surface.hairline), gap: Spacing.three, alignItems: 'flex-start' },
+  undercurrentTeaserCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  undercurrentTeaserCta: { backgroundColor: Brand.plum, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, alignSelf: 'flex-start' },
+  undercurrentTeaserCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
 
   // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
   // cards to read as "a different kind of result."
