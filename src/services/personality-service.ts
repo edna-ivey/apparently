@@ -49,11 +49,15 @@ export const getMyPersonalityEvidence = async (): Promise<GetPersonalityEvidence
 // the same insert (either the Daily-answer trigger or submit_quiz_result, never both), so it
 // always carries the same source_type — reading it once per group, straight from the real row,
 // is exactly as safe as reading question_snapshot/category once per group already was. The
-// group's own Map key already IS the real source_id (grouping was always keyed on it); Pass
-// 3.2 also carries that literal value onto the returned PersonalityAnswerEvidence instead of
-// discarding it once grouping is done, so the qualification rule (src/data/private-signals.ts)
-// can count DISTINCT real source_ids directly rather than counting evidence rows/items as a
-// proxy for them.
+// group's own Map key already IS the real source_id (grouping was always keyed on it).
+//
+// occurredAt (Bible v1.4 qualification-foundation reconciliation pass): also carries the
+// group's earliest real row.created_at through as PersonalityAnswerEvidence.occurredAt, so
+// personality.ts's active-board opposite-pole timestamp tie-break (§15A) resolves against the
+// ACTUAL moment this evidence was recorded rather than "now" (its previous, fabricated
+// behavior). Rows sharing one source_id come from one insert and should carry near-identical
+// created_at values already; taking the minimum is a defensive, deterministic choice, never a
+// guess.
 export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): PersonalityAnswerEvidence[] => {
   const bySource = new Map<
     string,
@@ -64,6 +68,7 @@ export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): Person
       effects: PersonalityEffect[];
       sourceType: PersonalityEvidenceRow['source_type'];
       sourceId: string;
+      occurredAt: string;
     }
   >();
 
@@ -75,8 +80,12 @@ export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): Person
       effects: [],
       sourceType: row.source_type,
       sourceId: row.source_id,
+      occurredAt: row.created_at,
     };
     entry.effects.push({ dimension: row.dimension as PersonalityDimensionId, value: row.effect });
+    if (new Date(row.created_at).getTime() < new Date(entry.occurredAt).getTime()) {
+      entry.occurredAt = row.created_at;
+    }
     bySource.set(row.source_id, entry);
   }
 

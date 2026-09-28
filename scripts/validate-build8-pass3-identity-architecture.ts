@@ -193,19 +193,22 @@ assert(selectStrongestPrivateSignals(zeroPrivateProfile).length === 0, 'zero Pri
 
 // sourceType: 'quiz_result' throughout this section -- these fixtures test selection
 // count/order/determinism (does the selector return the right NUMBER and RANKING), not the
-// qualification boundary itself (see the dedicated Pass 3.1 qualification tests further down,
-// and validate-build8-pass3.1-private-signal-confidence.ts for the exhaustive boundary suite).
-// A single quiz_result-sourced item already qualifies under the Pass 3.1 rule.
+// qualification boundary itself (see the dedicated qualification tests in
+// validate-build8-pass3.1-private-signal-confidence.ts and
+// validate-build8-pass4-bible-qualification-reconciliation.ts for the exhaustive boundary
+// suite). Each dimension below is given enough raw points (>= 3, the Bible v1.4 active-board
+// threshold -- see personality.ts's ACTIVE_BOARD_QUALIFICATION_THRESHOLD) to genuinely qualify,
+// so these fixtures test count/order/determinism without tripping over the threshold itself.
 const onePrivateProfile = scorePersonalityProfile([
-  { question: 'q', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-1', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-1', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },
 ]);
 const oneSignals = selectStrongestPrivateSignals(onePrivateProfile);
 assert(oneSignals.length === 1, `exactly 1 real Private signal returns 1 (got ${oneSignals.length})`);
 assert(oneSignals.every((s) => isPrivateDimension(s.dimension)), 'every returned signal is a genuine Private-12 dimension');
 
 const twoPrivateProfile = scorePersonalityProfile([
-  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-2', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-3', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-2', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-3', effects: [{ dimension: 'vulnerable_armored', value: -2 }, { dimension: 'vulnerable_armored', value: -1 }] },
 ]);
 assert(selectStrongestPrivateSignals(twoPrivateProfile).length === 2, '2 real Private signals returns 2');
 
@@ -216,10 +219,11 @@ const fourPrivateProfile = scorePersonalityProfile([
   { question: 'q4', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-7', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
   { question: 'q5', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-8', effects: [{ dimension: 'repair_punishing', value: -2 }] },
   { question: 'q6', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-9', effects: [{ dimension: 'repair_punishing', value: -2 }] },
-  { question: 'q7', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-10', effects: [{ dimension: 'initiating_responsive', value: 1 }] },
+  { question: 'q7', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-10', effects: [{ dimension: 'initiating_responsive', value: 2 }] },
+  { question: 'q8', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-t-11', effects: [{ dimension: 'initiating_responsive', value: 1 }] },
 ]);
 const fourSignals = selectStrongestPrivateSignals(fourPrivateProfile);
-assert(fourSignals.length === 3, `4+ real Private signals still caps at the strongest 3 (got ${fourSignals.length})`);
+assert(fourSignals.length === 3, `4 real, all genuinely qualifying (>= 3 raw points) Private signals still caps at the strongest 3 (got ${fourSignals.length})`);
 assert(
   !fourSignals.some((s) => s.dimension === 'initiating_responsive'),
   'with 4 real signals, the weakest (single-evidence) one is correctly excluded from the strongest-3',

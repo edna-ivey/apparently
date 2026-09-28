@@ -101,8 +101,14 @@ export type PersonalityAnswerEvidence = {
   sourceType?: PersonalityEvidenceSourceType;
   // The real personality_evidence.source_id (a daily_answers.id or a quiz_results.id, as
   // text) -- the actual identity of the ONE behavioral observation this answer represents.
-  // This is what distinct-source qualification counts, never a synthesized id.
   sourceId?: string;
+  // The real personality_evidence.created_at for this observation (ISO string) -- Bible v1.4
+  // §15A's opposite-pole tie-break ("the pole that first reached that tied high score by
+  // timestamp wins") requires the ACTUAL historical moment evidence was recorded, never "now."
+  // Optional only for synthetic/demo data (MICRO_PERSONALITY_SAMPLE) that was never a real row.
+  // Threaded straight from personality-service.ts's groupEvidenceIntoAnswers (real
+  // personality_evidence.created_at) -- never guessed/derived here.
+  occurredAt?: string;
 };
 
 export type DimensionEvidence = {
@@ -140,6 +146,13 @@ export type DimensionResult = {
   displayName: string;
   displayPercent: number;
   evidence: DimensionEvidence[];
+  // Bible v1.4 §15A/§43 "active identity ledger" qualification -- true only when the winning
+  // pole's raw cumulative evidence points (see resolveActiveBoardPole below) reach
+  // ACTIVE_BOARD_QUALIFICATION_THRESHOLD. This is the ONE shared gate for whether a dimension
+  // may appear in Your Signature (Core) or The Undercurrent (Private) -- see topTraits below
+  // and src/data/private-signals.ts's selectStrongestPrivateSignals, which both read this
+  // instead of maintaining their own separate thresholds.
+  activeBoardQualified: boolean;
 };
 
 export type SignatureTrait = {
@@ -595,8 +608,14 @@ export const calculateSignatureStrength = (normalizedScore: number, confidence: 
   return intensity * confidence * breadthFactor;
 };
 
-export const getDisplayedPole = (normalizedScore: number, dimension: PersonalityDimension) => {
-  if (normalizedScore >= 0) {
+// `signOverride` lets a caller (scorePersonalityProfile below) hand in the Bible-resolved
+// winning pole (see resolveActiveBoardPole) instead of trusting normalizedScore's own sign --
+// see that function's comment for why the two can disagree at the raw-point level. Omitted,
+// this falls back to normalizedScore's own sign, unchanged from before this pass (used when
+// there is no evidence at all, where resolveActiveBoardPole has no winner to report).
+export const getDisplayedPole = (normalizedScore: number, dimension: PersonalityDimension, signOverride?: 1 | -1) => {
+  const effectiveSign = signOverride ?? (normalizedScore >= 0 ? 1 : -1);
+  if (effectiveSign >= 0) {
     return {
       label: dimension.positivePole,
       name: dimension.positiveLabel,
@@ -610,6 +629,97 @@ export const getDisplayedPole = (normalizedScore: number, dimension: Personality
     value: Math.round(((1 - ((normalizedScore + 1) / 2)) * 100)),
   };
 };
+
+// ---------------------------------------------------------------------------------------
+// Active identity ledger / opposite-pole resolution (Bible v1.4 §15A, §43) -- REPLACES the
+// prior evidenceCount-based Core threshold and private-signals.ts's distinct-source-count
+// Private threshold with the ONE rule the Bible actually specifies for both layers:
+//
+//   "A trait pole must have at least 3 active cumulative evidence points before it may appear
+//   in Your Signature or The Undercurrent or drive a Creature or Relic characteristic."
+//   "Evidence may accumulate toward both poles of the same dimension... the higher active
+//   cumulative score is the current winning expression... If opposing poles are tied... the
+//   pole that first reached that tied high score by timestamp wins."
+//
+// This counts RAW POINTS (the signed effect magnitudes already stored on each DimensionEvidence
+// item), never distinct source_ids and never a plain evidence-item count -- a single +2 item is
+// 2 raw points, not "1 qualifying source." Deliberately dependency-free/pure so it can also
+// back the within-quiz raw-evidence pipeline's own pole resolution in
+// src/data/quiz-personality-awards.ts without a circular import (that module keeps its own
+// small copy scoped to a single quiz's temporary evidence -- see its header comment for why
+// these are two separate thresholds despite sharing the same current numeric value).
+// ---------------------------------------------------------------------------------------
+
+export const ACTIVE_BOARD_QUALIFICATION_THRESHOLD = 3;
+
+export type ActiveBoardPoleResolution = {
+  // 1 = the dimension's positive pole is winning; -1 = the negative pole is winning. Only
+  // meaningful when winningRawPoints > 0 -- with zero evidence both totals are 0 and this is
+  // an arbitrary placeholder (never surfaced, since qualifies is always false in that case).
+  winningSign: 1 | -1;
+  winningRawPoints: number;
+  losingRawPoints: number;
+  qualifies: boolean;
+};
+
+const rawPoleTotal = (evidence: DimensionEvidence[], sign: 1 | -1): number =>
+  evidence
+    .filter((item) => Math.sign(item.effect) === sign)
+    .reduce((sum, item) => sum + Math.abs(item.effect), 0);
+
+// The real timestamp (DimensionEvidence.date -- see PersonalityAnswerEvidence.occurredAt) at
+// which a pole's running cumulative total first reached `target`, walking that pole's own
+// evidence oldest-first. Returns null only when that pole has no evidence at all.
+const firstTimestampReaching = (evidence: DimensionEvidence[], sign: 1 | -1, target: number): string | null => {
+  const ordered = evidence
+    .filter((item) => Math.sign(item.effect) === sign)
+    .slice()
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  let running = 0;
+  for (const item of ordered) {
+    running += Math.abs(item.effect);
+    if (running >= target) {
+      return item.date;
+    }
+  }
+  return null;
+};
+
+export const resolveActiveBoardPole = (evidence: DimensionEvidence[]): ActiveBoardPoleResolution => {
+  const positiveTotal = rawPoleTotal(evidence, 1);
+  const negativeTotal = rawPoleTotal(evidence, -1);
+
+  let winningSign: 1 | -1;
+  if (positiveTotal !== negativeTotal) {
+    winningSign = positiveTotal > negativeTotal ? 1 : -1;
+  } else if (positiveTotal === 0) {
+    // No evidence toward either pole -- arbitrary, irrelevant (qualifies will be false).
+    winningSign = 1;
+  } else {
+    // Tied raw totals -- Bible v1.4 §15A: "the pole that first reached that tied high score by
+    // timestamp wins."
+    const positiveReachedAt = firstTimestampReaching(evidence, 1, positiveTotal);
+    const negativeReachedAt = firstTimestampReaching(evidence, -1, negativeTotal);
+    if (positiveReachedAt && negativeReachedAt) {
+      winningSign = new Date(positiveReachedAt).getTime() <= new Date(negativeReachedAt).getTime() ? 1 : -1;
+    } else {
+      winningSign = positiveReachedAt ? 1 : -1;
+    }
+  }
+
+  const winningRawPoints = winningSign === 1 ? positiveTotal : negativeTotal;
+  const losingRawPoints = winningSign === 1 ? negativeTotal : positiveTotal;
+
+  return {
+    winningSign,
+    winningRawPoints,
+    losingRawPoints,
+    qualifies: winningRawPoints >= ACTIVE_BOARD_QUALIFICATION_THRESHOLD,
+  };
+};
+
+export const isActiveBoardQualified = (evidence: DimensionEvidence[]): boolean => resolveActiveBoardPole(evidence).qualifies;
 
 export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): PersonalityProfile => {
   const dimensionValues = new Map<PersonalityDimensionId, { values: number[]; categories: Set<string>; evidence: DimensionEvidence[] }>();
@@ -627,7 +737,11 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
         chosenAnswer: answer.chosenAnswer,
         effect: effect.value,
         normalized,
-        date: new Date().toISOString(),
+        // Real historical timestamp when known (see PersonalityAnswerEvidence.occurredAt's own
+        // comment) -- only synthetic/demo data with no real row falls back to "now." Bible
+        // v1.4 §15A's tie-break depends on this being the ACTUAL observation time, not the
+        // moment scoring happens to run.
+        date: answer.occurredAt ?? new Date().toISOString(),
         sourceType: answer.sourceType,
         sourceId: answer.sourceId,
       });
@@ -647,7 +761,12 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
     const confidence = calculateConfidence(evidenceCount);
     const breadth = calculateBreadth(categories);
     const signatureStrength = calculateSignatureStrength(average, confidence, breadth);
-    const displayedPole = getDisplayedPole(average, dimension);
+    // Bible v1.4 §15A/§43 active-board resolution -- the winning pole (with its own
+    // timestamp-based tie-break) determines BOTH which pole displays (below) and whether this
+    // dimension may appear in Your Signature/The Undercurrent (activeBoardQualified, read by
+    // topTraits just below and by private-signals.ts's selectStrongestPrivateSignals).
+    const activeBoard = resolveActiveBoardPole(entry.evidence);
+    const displayedPole = getDisplayedPole(average, dimension, evidenceCount > 0 ? activeBoard.winningSign : undefined);
 
     return {
       dimension: dimension.id,
@@ -670,6 +789,7 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
       displayName: displayedPole.name,
       displayPercent: displayedPole.value,
       evidence: entry.evidence,
+      activeBoardQualified: activeBoard.qualifies,
     };
   });
 
@@ -678,10 +798,16 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
   // top 5 here, since this loop iterates all 32 canonical dimensions with no type awareness.
   // Evidence from ANY source (public or private content) that targets a Core dimension still
   // fully counts -- this filters by dimension TYPE, never by where the evidence came from.
-  // Everything else about the ranking (evidenceCount >= 2, sort by signatureStrength, cap 5)
-  // is byte-for-byte unchanged.
+  //
+  // Bible v1.4 reconciliation pass: the qualification gate is now activeBoardQualified (>=3
+  // active cumulative raw points toward the winning pole -- see resolveActiveBoardPole), not
+  // the prior "evidenceCount >= 2" threshold, which neither matched the Bible's raw-point rule
+  // nor Private's (now also-retired) distinct-source rule. Ranking/cap among QUALIFIED traits
+  // (sort by signatureStrength, cap 5) is otherwise unchanged by this pass -- the Bible's own
+  // display count for Your Signature is "up to seven" (§16), a separate, pre-existing
+  // discrepancy from this cap of 5 that this pass does not touch (see final report).
   const topTraits = dimensions
-    .filter((dimension) => dimension.evidenceCount >= 2 && isCoreDimension(dimension.dimension))
+    .filter((dimension) => dimension.activeBoardQualified && isCoreDimension(dimension.dimension))
     .sort((a, b) => b.signatureStrength - a.signatureStrength)
     .slice(0, 5)
     .map((dimension) => ({

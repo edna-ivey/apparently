@@ -88,17 +88,20 @@ assert(/MAX_PRIVATE_SIGNALS = 3/.test(read('../src/data/private-signals.ts')), '
 // Real functional proof: 1, 2, and 3 qualifying signals render exactly that many cards' worth
 // of data, and the Relic only fully resolves at 3 -- the exact underlying data this pass's UI
 // consumes, unchanged from Pass 3/3.1/3.2.
+// Each dimension below is given >= 3 raw points (the Bible v1.4 active-board threshold -- see
+// personality.ts's ACTIVE_BOARD_QUALIFICATION_THRESHOLD) so it genuinely qualifies; a bare
+// single -2 (2 raw points) would no longer qualify under the reconciled rule.
 const oneSignalProfile = scorePersonalityProfile([
-  { question: 'q', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-1', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
+  { question: 'q', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-1', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },
 ]);
 const oneSignals = selectStrongestPrivateSignals(oneSignalProfile);
 assert(oneSignals.length === 1, 'active subscriber with 1 qualifying trait: selector returns exactly 1');
 assert(selectRelicSlots(oneSignals).colorTrait === null, 'with <3 qualifying traits, the Relic stays a silhouette (color/effect slots unresolved)');
 
 const threeSignalProfile = scorePersonalityProfile([
-  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-2', effects: [{ dimension: 'tactful_blunt', value: -2 }] },
-  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-3', effects: [{ dimension: 'vulnerable_armored', value: -2 }] },
-  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-4', effects: [{ dimension: 'repair_punishing', value: -2 }] },
+  { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-2', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },
+  { question: 'q2', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-3', effects: [{ dimension: 'vulnerable_armored', value: -2 }, { dimension: 'vulnerable_armored', value: -1 }] },
+  { question: 'q3', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-4', effects: [{ dimension: 'repair_punishing', value: -2 }, { dimension: 'repair_punishing', value: -1 }] },
 ]);
 const threeSignals = selectStrongestPrivateSignals(threeSignalProfile);
 assert(threeSignals.length === 3, 'active subscriber with 3 qualifying traits: selector returns exactly 3');
@@ -153,7 +156,12 @@ assert(!/name="settings"/.test(webTabsSource) && !/name="settings"/.test(nativeT
 
 const privateSignalsSource = read('../src/data/private-signals.ts');
 const personalitySource = read('../src/data/personality.ts');
-assert(!/isPrivateSignalQualified/.test(personalitySource), 'the Private qualification gate still lives only in private-signals.ts, not in Core scoring');
+// Bible v1.4 qualification-foundation reconciliation: the qualification gate is now the SHARED
+// active-board rule living in personality.ts (resolveActiveBoardPole/isActiveBoardQualified),
+// read by both Core topTraits and Private selectStrongestPrivateSignals -- the retired
+// distinct-source function (which used to live only in private-signals.ts) no longer exists
+// anywhere at all.
+assert(/export const isActiveBoardQualified/.test(personalitySource), 'the shared Core+Private active-board qualification rule lives in personality.ts');
 assert(/MAX_PRIVATE_SIGNALS = 3/.test(privateSignalsSource), 'the 3-slot Relic/Undercurrent cap is unchanged');
 assert(/CORE_DIMENSION_IDS\.length === 20/.test(read('./validate-build8-pass3-identity-architecture.ts')), 'the Core-20/Private-12 split validation still exists and still asserts the exact counts (re-run separately for its own full result)');
 
