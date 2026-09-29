@@ -6,6 +6,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreatureComposer, type CreatureRecipe } from '@/components/creature-lab/creature-composer';
 import { RegistrationTemplateView } from '@/components/creature-lab/registration-template-view';
+import {
+  CANONICAL_V0_CANVAS,
+  CANONICAL_V0_FAMILY_LABEL,
+  CANONICAL_V0_GOLD_STANDARD,
+  CANONICAL_V0_PARTS,
+  CANONICAL_V0_QA_MIX_1,
+  CANONICAL_V0_QA_MIX_2,
+  CANONICAL_V0_SLOT_ORDER,
+  type CanonicalV0Family,
+  type CanonicalV0Slot,
+} from '@/data/creature-lab/creature-canonical-v0';
+// eslint-disable-next-line @typescript-eslint/no-var-requires -- static JSON require, refreshed by `npx tsx scripts/creature-factory/generate-manifest.ts`
+const CREATURE_FACTORY_MANIFEST = require('../../../scripts/creature-factory/manifest.json') as {
+  summary: { total: number; complete: number; bodyOnlyRegistered: number; missingArt: number };
+  generatedAt: string;
+};
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
@@ -256,6 +272,75 @@ export default function CreatureLabScreen() {
           <Pressable style={styles.toggle} onPress={() => setShowSlotBounds((v) => !v)}>
             <ThemedText type="smallBold">SHOW SLOT BOUNDS: {showSlotBounds ? 'ON' : 'OFF'}</ThemedText>
           </Pressable>
+
+          <Section title="CANONICAL FACTORY (v0, FROZEN) -- autonomous production pass">
+            <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
+              Manifest: {CREATURE_FACTORY_MANIFEST.summary.complete}/280 complete (full 7-part kit), {' '}
+              {CREATURE_FACTORY_MANIFEST.summary.bodyOnlyRegistered} body-only-registered, {CREATURE_FACTORY_MANIFEST.summary.missingArt}{' '}
+              missing-art (need new illustrated art this pass had no image-generation tool to create). Frozen geometry: canvas{' '}
+              {CANONICAL_V0_CANVAS.width}x{CANONICAL_V0_CANVAS.height}, anchors in scripts/creature-factory/canonical-geometry.ts, one
+              documented deviation (ear-root Y 205.4-&gt;400 -- at the given value every family&apos;s ears clamp to ~0.16-0.19x and are
+              fully hidden behind the head-feature regardless of paint order; verified empirically). Full manifest:
+              scripts/creature-factory/manifest.json. Run `npx tsx scripts/creature-factory/validate-canonical-assets.ts` and
+              `python3 scripts/creature-factory/validate_canonical_pixels.py` to re-validate. Source originals in assets/creatures/
+              untouched; canonical registered copies live under assets/creatures-canonical/v0/.
+            </ThemedText>
+
+            <ThemedText type="smallBold" style={styles.coordGroupHeading}>
+              Gold standard: {CANONICAL_V0_FAMILY_LABEL[CANONICAL_V0_GOLD_STANDARD]}
+            </ThemedText>
+            <View style={styles.row}>
+              {CANONICAL_V0_SLOT_ORDER.map((slot) => (
+                <View key={slot} style={styles.column}>
+                  <ThemedText type="small">{PART_LABEL[slot]}</ThemedText>
+                  <CanonicalV0PartView source={CANONICAL_V0_PARTS[CANONICAL_V0_GOLD_STANDARD][slot]} width={110} />
+                </View>
+              ))}
+              <CanonicalV0Composite recipe={ALL_FAMILY(CANONICAL_V0_GOLD_STANDARD)} width={280} />
+            </View>
+
+            <ThemedText type="smallBold" style={styles.coordGroupHeading}>
+              Other 7 registered families (same frozen geometry, zero per-family tuning)
+            </ThemedText>
+            <View style={styles.row}>
+              {(Object.keys(CANONICAL_V0_PARTS) as CanonicalV0Family[])
+                .filter((f) => f !== CANONICAL_V0_GOLD_STANDARD)
+                .map((fam) => (
+                  <View key={fam} style={styles.column}>
+                    <ThemedText type="small">{CANONICAL_V0_FAMILY_LABEL[fam]}</ThemedText>
+                    <CanonicalV0Composite recipe={ALL_FAMILY(fam)} width={180} />
+                  </View>
+                ))}
+            </View>
+
+            <ThemedText type="smallBold" style={styles.coordGroupHeading}>
+              Mix-and-match QA: every slot a different family
+            </ThemedText>
+            <View style={styles.row}>
+              <CanonicalV0Composite recipe={CANONICAL_V0_QA_MIX_1} width={280} />
+              <View>
+                {CANONICAL_V0_SLOT_ORDER.map((slot) => (
+                  <ThemedText key={slot} type="small">
+                    {PART_LABEL[slot]}: {CANONICAL_V0_FAMILY_LABEL[CANONICAL_V0_QA_MIX_1[slot]]}
+                  </ThemedText>
+                ))}
+              </View>
+            </View>
+
+            <ThemedText type="smallBold" style={styles.coordGroupHeading}>
+              Mix-and-match QA: bulky body + landscape-canvas wings + dramatic parts
+            </ThemedText>
+            <View style={styles.row}>
+              <CanonicalV0Composite recipe={CANONICAL_V0_QA_MIX_2} width={280} />
+              <View>
+                {CANONICAL_V0_SLOT_ORDER.map((slot) => (
+                  <ThemedText key={slot} type="small">
+                    {PART_LABEL[slot]}: {CANONICAL_V0_FAMILY_LABEL[CANONICAL_V0_QA_MIX_2[slot]]}
+                  </ThemedText>
+                ))}
+              </View>
+            </View>
+          </Section>
 
           <Section title="Current v0 vs current v1 vs proposed v2 -- for Michelle's review">
             <ThemedText type="small" themeColor="textSecondary" style={styles.note}>
@@ -683,6 +768,34 @@ function RegisteredComposite({ width }: { width: number }) {
 
 // v2 equivalent of RegisteredPartView/RegisteredComposite above -- same contract (x=0,y=0,
 // width=100%,height=100%, contentFit="contain", no other positioning) on the v2 1800x2000 canvas.
+const CANONICAL_V0_ASPECT = CANONICAL_V0_CANVAS.width / CANONICAL_V0_CANVAS.height;
+
+function ALL_FAMILY(family: CanonicalV0Family): Record<CanonicalV0Slot, CanonicalV0Family> {
+  return { body: family, eyes: family, ears: family, wings: family, tail: family, headFeature: family, chestCrest: family };
+}
+
+// x=0, y=0, width=100%, height=100% for every slot -- the whole point of the canonical factory
+// is that this is the ONLY positioning logic needed, for any combination of families.
+function CanonicalV0PartView({ source, width }: { source: CreaturePartSet['body']; width: number }) {
+  const height = width / CANONICAL_V0_ASPECT;
+  return (
+    <View style={[styles.canvasPreview, { width, height }]}>
+      <Image source={source} contentFit="contain" style={StyleSheet.absoluteFill} />
+    </View>
+  );
+}
+
+function CanonicalV0Composite({ recipe, width }: { recipe: Record<CanonicalV0Slot, CanonicalV0Family>; width: number }) {
+  const height = width / CANONICAL_V0_ASPECT;
+  return (
+    <View style={[styles.canvasPreview, { width, height }]}>
+      {CANONICAL_V0_SLOT_ORDER.map((slot) => (
+        <Image key={slot} source={CANONICAL_V0_PARTS[recipe[slot]][slot]} contentFit="contain" style={StyleSheet.absoluteFill} />
+      ))}
+    </View>
+  );
+}
+
 function V2RegisteredPartView({ source, width }: { source: CreaturePartSet['body']; width: number }) {
   const height = width / V2_CANVAS_ASPECT_RATIO;
   return (
