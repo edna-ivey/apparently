@@ -24,6 +24,11 @@ export type CreatureTestComposerProps = {
   layerOrder?: CreatureTestSlot[];
   layerVisibility?: Partial<Record<CreatureTestSlot, boolean>>;
   showRig?: boolean;
+  /** Slot currently being calibrated -- gets an always-on (independent of showRig) highlight
+   * box that moves/scales/rotates WITH the layer, so a calibration change is unmistakable even
+   * with Show Rig off. See the bug this was added to debug: width/height-based "scaling" could
+   * silently fail to reflow on web; a wrapper transform can't silently no-op the same way. */
+  highlightSlot?: CreatureTestSlot | null;
 };
 
 const CANVAS = CREATURE_TEST_CANVAS.width; // square, 1254
@@ -34,8 +39,26 @@ const CANVAS = CREATURE_TEST_CANVAS.width; // square, 1254
  * other slot's final transform is its shared ANCHOR composed with that category's own small
  * correction from `config` -- see creature-test-config.ts. No positioning logic lives here
  * beyond that composition; this component never adjusts anything per-category itself.
+ *
+ * Transform model (fixed after a real bug: recalculating width/height/left/top per scale value
+ * did not reliably reflow on web with expo-image -- every rendered <img> always reported
+ * style width/height 100%/left/top 0 regardless of what was passed in, so a changed `scale`
+ * silently had no visible effect even though the underlying state update was correct). Every
+ * layer is now a FIXED full-stage-size (0,0,stageWidth,stageWidth) positioning wrapper; the
+ * actual x/y/scale/rotation is a `transform: [translateX, translateY, scale, rotate]` array on
+ * an inner wrapper of that same fixed size. Both RN and CSS default an element's transform
+ * origin to its own center, so this scales/rotates around the layer's own center with no extra
+ * origin trick needed. The <Image> itself is always width:100%/height:100% and unchanged.
  */
-export function CreatureTestComposer({ recipe, config, width, layerOrder = DEFAULT_LAYER_ORDER, layerVisibility, showRig }: CreatureTestComposerProps) {
+export function CreatureTestComposer({
+  recipe,
+  config,
+  width,
+  layerOrder = DEFAULT_LAYER_ORDER,
+  layerVisibility,
+  showRig,
+  highlightSlot,
+}: CreatureTestComposerProps) {
   const height = width; // square stage
 
   return (
@@ -45,9 +68,12 @@ export function CreatureTestComposer({ recipe, config, width, layerOrder = DEFAU
         if (!visible) return null;
         const category = recipe[slot];
         const source = CREATURE_TEST_ASSETS[category][slot];
+        const highlighted = highlightSlot === slot;
 
         if (slot === 'body') {
-          return <TransformedLayer key={slot} source={source} transform={BODY_RIG} stageWidth={width} debugLabel={showRig ? 'body' : undefined} />;
+          return (
+            <TransformedLayer key={slot} source={source} transform={BODY_RIG} stageWidth={width} debugOutline={showRig} highlighted={highlighted} />
+          );
         }
 
         const anchor = ANCHORS[slot];
@@ -61,7 +87,8 @@ export function CreatureTestComposer({ recipe, config, width, layerOrder = DEFAU
             transform={transform}
             spacingScaleX={spacingScale}
             stageWidth={width}
-            debugLabel={showRig ? slot : undefined}
+            debugOutline={showRig}
+            highlighted={highlighted}
           />
         );
       })}
@@ -75,47 +102,46 @@ function TransformedLayer({
   transform,
   spacingScaleX = 1,
   stageWidth,
-  debugLabel,
+  debugOutline,
+  highlighted,
 }: {
   source: ImageSourcePropType;
   transform: CreatureTransform;
   spacingScaleX?: number;
   stageWidth: number;
-  debugLabel?: string;
+  debugOutline?: boolean;
+  highlighted?: boolean;
 }) {
   const unit = stageWidth / CANVAS; // px per 1254-space unit at current display size
-  const scaledSize = stageWidth * transform.scale;
-  const baseOffset = (stageWidth - scaledSize) / 2;
-  const left = baseOffset + transform.x * unit;
-  const top = baseOffset + transform.y * unit;
 
-  const rotateTransform = transform.rotation ? [{ rotate: `${transform.rotation}deg` }] : undefined;
-  // Horizontal-only spacing adjustment for eyes: a separate scaleX applied on top of the
-  // uniform scale above, so "spacing" and "overall scale" stay independent controls as the
-  // brief asks for, without needing to split the paired eyes asset into two images yet.
-  const spacingTransform = spacingScaleX !== 1 ? [{ scaleX: spacingScaleX }] : undefined;
+  const outerTransform = [
+    { translateX: transform.x * unit },
+    { translateY: transform.y * unit },
+    { scale: transform.scale },
+    { rotate: `${transform.rotation}deg` },
+  ];
+
+  const content =
+    spacingScaleX !== 1 ? (
+      // Inner wrapper carries ONLY the eye-spacing scaleX, nested inside the outer x/y/scale/
+      // rotation wrapper -- the <Image> below is still rendered exactly once either way.
+      <View style={[styles.fill, { transform: [{ scaleX: spacingScaleX }] }]}>
+        <Image source={source} contentFit="contain" style={styles.fill} />
+      </View>
+    ) : (
+      <Image source={source} contentFit="contain" style={styles.fill} />
+    );
 
   return (
-    <>
-      <Image
-        source={source}
-        contentFit="contain"
-        style={[styles.layer, { left, top, width: scaledSize, height: scaledSize, transform: rotateTransform }]}
-      />
-      {spacingTransform ? (
-        // scaleX needs its own transformed element since RN merges transform arrays in order;
-        // applying it on the same node as rotate above would compound unpredictably for
-        // non-zero rotation, so eyes with spacing adjustment render through this wrapper
-        // instead when spacing != 1. Kept as a separate branch to keep the common case (no
-        // spacing adjustment) simple.
-        <View pointerEvents="none" style={[styles.layer, { left, top, width: scaledSize, height: scaledSize, transform: spacingTransform }]}>
-          <Image source={source} contentFit="contain" style={StyleSheet.absoluteFill} />
-        </View>
-      ) : null}
-      {debugLabel ? (
-        <View pointerEvents="none" style={[styles.layer, styles.debugBox, { left, top, width: scaledSize, height: scaledSize }]} />
-      ) : null}
-    </>
+    // Fixed full-stage-size positioning wrapper -- never resized, only ever positioned at
+    // (0,0,stageWidth,stageWidth). All actual positioning happens via `transform` below.
+    <View style={[styles.layer, { left: 0, top: 0, width: stageWidth, height: stageWidth }]}>
+      <View style={[styles.fill, { transform: outerTransform }]}>
+        {content}
+        {debugOutline ? <View pointerEvents="none" style={[styles.fill, styles.debugBox]} /> : null}
+        {highlighted ? <View pointerEvents="none" style={[styles.fill, styles.highlightBox]} /> : null}
+      </View>
+    </View>
   );
 }
 
@@ -180,10 +206,21 @@ const styles = StyleSheet.create({
   layer: {
     position: 'absolute',
   },
+  fill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: '100%',
+    height: '100%',
+  },
   debugBox: {
     borderWidth: 1,
     borderColor: 'rgba(0,150,255,0.6)',
     borderStyle: 'dashed',
+  },
+  highlightBox: {
+    borderWidth: 3,
+    borderColor: 'rgba(230,30,90,0.95)',
   },
   rigBorder: {
     position: 'absolute',

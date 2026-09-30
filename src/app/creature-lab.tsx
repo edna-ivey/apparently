@@ -184,6 +184,7 @@ function CreatureLabInner() {
                   layerOrder={DEFAULT_LAYER_ORDER}
                   layerVisibility={layerVisibility}
                   showRig={showRig}
+                  highlightSlot={selectedSlot}
                 />
               </View>
               {showBeforeAfter ? (
@@ -339,6 +340,21 @@ function CalibrationPanel({
           onChange={(spacingScale) => onChange({ spacingScale } as never)}
         />
       ) : null}
+
+      <Text style={[styles.smallMuted, styles.sectionLabel]}>
+        Verification tests (prove the transform is actually applied -- can stay in the tool or be removed later)
+      </Text>
+      <View style={styles.buttonRow}>
+        <SecondaryButton label="TEST 25%" onPress={() => onChange({ scale: 0.25 / anchor.scale })} />
+        <SecondaryButton label="TEST 50%" onPress={() => onChange({ scale: 0.5 / anchor.scale })} />
+        <SecondaryButton label="TEST 100%" onPress={() => onChange({ scale: 1 / anchor.scale })} />
+      </View>
+      <View style={styles.buttonRow}>
+        <SecondaryButton label="MOVE LEFT 200" onPress={() => onChange({ x: correction.x - 200 })} />
+        <SecondaryButton label="MOVE RIGHT 200" onPress={() => onChange({ x: correction.x + 200 })} />
+        <SecondaryButton label="MOVE UP 200" onPress={() => onChange({ y: correction.y - 200 })} />
+        <SecondaryButton label="MOVE DOWN 200" onPress={() => onChange({ y: correction.y + 200 })} />
+      </View>
     </View>
   );
 }

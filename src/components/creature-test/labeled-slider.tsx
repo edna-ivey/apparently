@@ -5,6 +5,15 @@ import { PanResponder, StyleSheet, Text, TextInput, View } from 'react-native';
 // and adding a native module just for this dev tool would need a rebuild). Pure PanResponder +
 // View, works identically on web and native. Paired with a numeric text input for precise entry,
 // per the brief's "sliders plus numeric inputs" ask.
+//
+// Bug fixed here: onPanResponderMove previously computed the drag ratio from
+// `gesture.moveX` (the touch's ABSOLUTE page X) directly against the track's own WIDTH, with no
+// correction for the track's own position on the page -- so during an actual drag the computed
+// ratio was wrong (off by the track's left offset), while a single tap (onPanResponderGrant,
+// which used the touch's target-relative `locationX`) could still land on a correct value. That
+// made the bug look intermittent/values-look-right-but-render-is-wrong rather than obviously
+// broken. Fixed by measuring the track's own page offset on layout and reusing it for both
+// grant and move.
 export function LabeledSlider({
   label,
   value,
@@ -23,6 +32,8 @@ export function LabeledSlider({
   const [trackWidth, setTrackWidth] = useState(0);
   const [textValue, setTextValue] = useState(String(round(value, step)));
   const trackWidthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+  const trackRef = useRef<View>(null);
 
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const quantize = (n: number) => round(clamp(n), step);
@@ -31,23 +42,28 @@ export function LabeledSlider({
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => {
+          measureTrack();
+        },
         onPanResponderMove: (_evt, gesture) => {
           const width = trackWidthRef.current;
           if (width <= 0) return;
-          const x = clampNumber(gesture.moveX, 0, width);
-          updateFromRatio(x / width);
-        },
-        onPanResponderGrant: (evt) => {
-          const width = trackWidthRef.current;
-          if (width <= 0) return;
-          // locationX is relative to the track itself on the initial touch.
-          const x = clampNumber(evt.nativeEvent.locationX, 0, width);
+          const relativeX = gesture.moveX - trackPageXRef.current;
+          const x = clampNumber(relativeX, 0, width);
           updateFromRatio(x / width);
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [min, max, step],
   );
+
+  function measureTrack() {
+    trackRef.current?.measure((_x, _y, measuredWidth, _height, pageX) => {
+      trackWidthRef.current = measuredWidth;
+      trackPageXRef.current = pageX;
+      setTrackWidth(measuredWidth);
+    });
+  }
 
   function updateFromRatio(ratio: number) {
     const next = quantize(min + ratio * (max - min));
@@ -61,11 +77,9 @@ export function LabeledSlider({
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <View
+        ref={trackRef}
         style={styles.track}
-        onLayout={(e) => {
-          trackWidthRef.current = e.nativeEvent.layout.width;
-          setTrackWidth(e.nativeEvent.layout.width);
-        }}
+        onLayout={measureTrack}
         {...panResponder.panHandlers}
       >
         <View style={styles.trackFill} />
@@ -75,7 +89,13 @@ export function LabeledSlider({
         style={styles.input}
         value={textValue}
         onChangeText={setTextValue}
-        onEndEditing={() => {
+        onBlur={() => {
+          const parsed = Number(textValue);
+          const next = Number.isFinite(parsed) ? quantize(parsed) : value;
+          onChange(next);
+          setTextValue(String(next));
+        }}
+        onSubmitEditing={() => {
           const parsed = Number(textValue);
           const next = Number.isFinite(parsed) ? quantize(parsed) : value;
           onChange(next);
