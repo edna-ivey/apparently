@@ -4,11 +4,14 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
+import { CreatureTestComposer, type CreatureTestRecipe } from '@/components/creature-test/creature-test-composer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
 import { CardStyle, Elevation, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
+import { buildCreatureIdentity, type CreatureIdentity } from '@/data/creature/creature-identity';
+import { buildInitialAssetCorrections, buildInitialSlotDefaults } from '@/data/creature-test/creature-test-config';
 import { getDemoPersonalityProfile, scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
@@ -33,6 +36,10 @@ import {
 const formatAnswersShapingRead = (profileAnswerCount: number): string =>
   `${profileAnswerCount} answer${profileAnswerCount === 1 ? '' : 's'} shaping your read`;
 
+const CREATURE_REVEAL_ANSWER_THRESHOLD = 50;
+const CREATURE_SLOT_DEFAULTS = buildInitialSlotDefaults();
+const CREATURE_ASSET_CORRECTIONS = buildInitialAssetCorrections();
+
 // "1 Daily · 0 quizzes" / "2 Dailies · 1 quiz" / "7 Dailies · 3 quizzes" — dailyAnswerCount and
 // quizCompletionCount (distinct quizzes with >=1 completion; retakes don't add another).
 const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount: number): string => {
@@ -46,45 +53,55 @@ type RemoteYouState =
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
 
-// The structural avatar/relic hero — a deliberate LOGIC/LAYOUT PROTOTYPE for the future avatar
-// system, not final art. Avatar (left on wide, top on narrow) and the character-name+relic
-// group (right on wide, below on narrow) are two structurally SEPARATE elements with a fixed
-// generous gap between them by construction — the relic can never overlap or touch the avatar,
-// on any viewport. Both use plain, simple placeholder geometry: the existing Magnetic Loop
-// mark for the avatar (nothing new to invent there) and a bare rotated-square "gem" shape for
-// the relic (no creature art, no trait-specific appearance mapping — those are later Build 8
-// passes). The character name is reserved directly above the relic, per the approved future
-// naming concept (first two core traits, e.g. Lumi + Fox -> Lumifox) — shown here as neutral
-// placeholder copy since the real 40-syllable mapping doesn't exist yet.
-//
-// Approved Option B layout: avatar LEFT, relic RIGHT, always — this is a fixed left/right
-// relationship, not something that collapses to a stacked column on narrow viewports. `isWide`
-// only scales SIZE (avatar/relic dimensions, gap, character-name type size) between a
-// comfortable desktop scale and a smaller one that still fits 375-390px without overflow; it
-// never switches the row to a column. Two structurally separate sibling Views with a fixed
-// horizontal gap mean the relic can never overlap or touch the avatar on any viewport.
-//
-// `resolvedRelicSlotCount` (0-3, Build 8 Pass 3) reflects how many of the three Relic slots
-// (relic/color/effect — see private-signals.ts's selectRelicSlots) are backed by a real
-// supported Private signal. This ONLY ever varies a generic opacity tier — it never assigns a
-// specific object, color, or visual effect to any trait, and never reveals WHICH trait
-// resolved which slot. That would require the still-unapproved trait->object/color/effect
-// creative mappings this pass explicitly must not invent.
-function IdentityHero({ isWide, resolvedRelicSlotCount }: { isWide: boolean; resolvedRelicSlotCount: number }) {
+// The identity hero now renders the production 5-slot Creature once the user crosses the
+// 50-answer reveal threshold AND has five qualifying Core traits. Before reveal, the existing
+// Magnetic Loop remains the neutral placeholder. The Creature recipe and character name are
+// derived from the same ranked Core list that powers Your Signature, so there is no second
+// ranking or parallel identity calculation. The Relic remains structurally separate and keeps
+// its existing Private-signal behavior.
+function IdentityHero({
+  isWide,
+  resolvedRelicSlotCount,
+  creatureIdentity,
+  creatureRevealed,
+}: {
+  isWide: boolean;
+  resolvedRelicSlotCount: number;
+  creatureIdentity: CreatureIdentity | null;
+  creatureRevealed: boolean;
+}) {
   const outerOpacity = resolvedRelicSlotCount >= 1 ? 1 : 0.35;
   const innerOpacity = resolvedRelicSlotCount >= 3 ? 1 : resolvedRelicSlotCount >= 2 ? 0.5 : 0;
+  const avatarSize = isWide ? 112 : 76;
+  const shouldRenderCreature = creatureRevealed && creatureIdentity?.isComplete === true;
+  const recipe = shouldRenderCreature ? (creatureIdentity.recipe as CreatureTestRecipe) : null;
+
   return (
     <View style={styles.heroRow}>
       <View style={[styles.avatarArea, isWide ? styles.avatarAreaWide : styles.avatarAreaNarrow]}>
-        <Image
-          source={MAGNETIC_LOOP_SOURCE}
-          resizeMode="contain"
-          style={isWide ? styles.avatarImageWide : styles.avatarImageNarrow}
-        />
+        {recipe ? (
+          <CreatureTestComposer
+            recipe={recipe}
+            slotDefaults={CREATURE_SLOT_DEFAULTS}
+            assetCorrections={CREATURE_ASSET_CORRECTIONS}
+            width={avatarSize}
+          />
+        ) : (
+          <Image
+            source={MAGNETIC_LOOP_SOURCE}
+            resizeMode="contain"
+            style={isWide ? styles.avatarImageWide : styles.avatarImageNarrow}
+          />
+        )}
       </View>
       <View style={styles.relicGroup}>
-        <ThemedText style={[styles.characterNamePlaceholder, isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow]}>
-          CHARACTER NAME
+        <ThemedText
+          style={[
+            styles.characterNamePlaceholder,
+            isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow,
+            shouldRenderCreature ? styles.characterNameRevealed : null,
+          ]}>
+          {shouldRenderCreature ? creatureIdentity?.name : 'CHARACTER NAME'}
         </ThemedText>
         <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow, { opacity: outerOpacity }]}>
           <View style={[isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
@@ -228,6 +245,16 @@ export default function YouScreen() {
   // codebase — see buildYourSignatureCards' own header comment), never Your Signature
   // qualification. A user with 2 qualifying Core traits sees 2 immediately; crossing 50
   // answered questions neither adds nor removes a Your Signature card by itself.
+  const localCreatureIdentity = useMemo(() => buildCreatureIdentity(localPersonalityProfile), [localPersonalityProfile]);
+  const remoteCreatureIdentity = useMemo(
+    () => (remoteState.status === 'ready' ? buildCreatureIdentity(remoteState.profile) : null),
+    [remoteState],
+  );
+  const remoteCreatureRevealed =
+    remoteState.status === 'ready' &&
+    remoteState.counts.profileAnswerCount >= CREATURE_REVEAL_ANSWER_THRESHOLD &&
+    remoteCreatureIdentity?.isComplete === true;
+
   const profileCards = useMemo(() => {
     if (remoteState.status !== 'ready') {
       return [];
@@ -309,6 +336,8 @@ export default function YouScreen() {
           <IdentityHero
             isWide={isWide}
             resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
+            creatureIdentity={isRemoteDailyEnabled ? remoteCreatureIdentity : localCreatureIdentity}
+            creatureRevealed={isRemoteDailyEnabled ? remoteCreatureRevealed : false}
           />
 
           <View style={styles.identityHeader}>
@@ -460,6 +489,7 @@ const styles = StyleSheet.create({
   },
   characterNamePlaceholderWide: { fontSize: 20, lineHeight: 24, letterSpacing: 1.5 },
   characterNamePlaceholderNarrow: { fontSize: 14, lineHeight: 17, letterSpacing: 0.8 },
+  characterNameRevealed: { color: Brand.ink, opacity: 1 },
   // A deliberately bare rotated-square "gem" — placeholder geometry only, not final relic
   // art. Structurally separate from avatarArea by construction (its own sibling View, in the
   // same row, with a fixed gap), never overlapping or touching it on any viewport.
