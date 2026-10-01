@@ -45,19 +45,11 @@ export const CREATURE_TEST_SLOT_LABEL: Record<CreatureTestSlot, string> = {
 // Every file shares an identical 1254x1254 canvas (verified: all 40 files, no exceptions).
 export const CREATURE_TEST_CANVAS = { width: 1254, height: 1254 };
 
-// KNOWN SOURCE-ASSET DEFECT (do not silently work around by editing the file -- flagged for a
-// source re-export instead): apparently_you_strong_wings.svg's embedded PNG has NO alpha
-// channel (mode RGB, not RGBA) -- it has an opaque gray/white checkerboard baked into the pixels
-// where every other one of the 40 assets is properly transparent. Rendered as-is in this tool;
-// see the in-app banner. Every other file (including the other 7 wings files) is correct RGBA.
-export const CREATURE_TEST_KNOWN_ASSET_ISSUES: { category: CreatureTestCategory; slot: CreatureTestSlot; description: string }[] = [
-  {
-    category: 'strong',
-    slot: 'wings',
-    description:
-      "apparently_you_strong_wings.svg's embedded PNG has no alpha channel (opaque checkerboard baked in, not transparent). Every other of the 40 source files is correctly RGBA. Needs a source re-export -- not fixed here.",
-  },
-];
+export const CREATURE_TEST_KNOWN_ASSET_ISSUES: {
+  category: CreatureTestCategory;
+  slot: CreatureTestSlot;
+  description: string;
+}[] = [];
 
 export const CREATURE_TEST_ASSETS: Record<CreatureTestCategory, Record<CreatureTestSlot, ImageSourcePropType>> = {
   strong: {

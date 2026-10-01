@@ -1,13 +1,22 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import { StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import {
   CREATURE_TEST_ASSETS,
-  CREATURE_TEST_CANVAS,
   type CreatureTestCategory,
   type CreatureTestSlot,
 } from '@/data/creature-test/creature-test-assets';
-import { ANCHORS, BODY_RIG, composeTransform, type CreatureCategoryConfig, type CreatureTransform } from '@/data/creature-test/creature-test-config';
+import {
+  BODY_CANVAS_INSET,
+  BODY_CANVAS_SIZE,
+  BODY_RIG,
+  COMPOSITION_CANVAS_SIZE,
+  resolveEyeTransform,
+  resolveTransform,
+  type AssetCorrections,
+  type CreatureTransform,
+  type SlotDefaults,
+} from '@/data/creature-test/creature-test-config';
 
 export type CreatureTestRecipe = Record<CreatureTestSlot, CreatureTestCategory>;
 
@@ -18,48 +27,48 @@ export const DEFAULT_LAYER_ORDER: CreatureTestSlot[] = ['wings', 'tail', 'body',
 
 export type CreatureTestComposerProps = {
   recipe: CreatureTestRecipe;
-  /** Per-category correction config (mutable in the Lab; identity = "use the shared anchor as-is"). */
-  config: Record<CreatureTestCategory, CreatureCategoryConfig>;
+  slotDefaults: SlotDefaults;
+  assetCorrections: AssetCorrections;
   width: number;
   layerOrder?: CreatureTestSlot[];
   layerVisibility?: Partial<Record<CreatureTestSlot, boolean>>;
   showRig?: boolean;
-  /** Slot currently being calibrated -- gets an always-on (independent of showRig) highlight
-   * box that moves/scales/rotates WITH the layer, so a calibration change is unmistakable even
-   * with Show Rig off. See the bug this was added to debug: width/height-based "scaling" could
-   * silently fail to reflow on web; a wrapper transform can't silently no-op the same way. */
+  /** Slot currently being calibrated -- gets a highlight box that moves/scales/rotates WITH the
+   * layer, so a calibration change is unmistakable. Independent of showRig; gated by
+   * showSelectionBox below so it can be hidden while judging the creature visually without
+   * affecting calibration itself. */
   highlightSlot?: CreatureTestSlot | null;
+  /** Whether to actually render the highlightSlot box (default false). Purely a display toggle
+   * -- calibration works identically whether this is on or off. */
+  showSelectionBox?: boolean;
 };
 
-const CANVAS = CREATURE_TEST_CANVAS.width; // square, 1254
-
 /**
- * Renders the 5 modular layers on one fixed 1254x1254 stage, scaled to `width` for display.
- * The body is always the locked master rig (BODY_RIG, identical for every category). Every
- * other slot's final transform is its shared ANCHOR composed with that category's own small
- * correction from `config` -- see creature-test-config.ts. No positioning logic lives here
- * beyond that composition; this component never adjusts anything per-category itself.
- *
- * Transform model (fixed after a real bug: recalculating width/height/left/top per scale value
- * did not reliably reflow on web with expo-image -- every rendered <img> always reported
- * style width/height 100%/left/top 0 regardless of what was passed in, so a changed `scale`
- * silently had no visible effect even though the underlying state update was correct). Every
- * layer is now a FIXED full-stage-size (0,0,stageWidth,stageWidth) positioning wrapper; the
- * actual x/y/scale/rotation is a `transform: [translateX, translateY, scale, rotate]` array on
- * an inner wrapper of that same fixed size. Both RN and CSS default an element's transform
- * origin to its own center, so this scales/rotates around the layer's own center with no extra
- * origin trick needed. The <Image> itself is always width:100%/height:100% and unchanged.
+ * Renders the 5 modular layers inside a fixed COMPOSITION_CANVAS_SIZE stage, scaled to `width`
+ * for display. The original BODY_CANVAS_SIZE (1254x1254) master coordinate system -- the one
+ * every x/y/scale/rotation value is measured in -- is centered inside that larger stage,
+ * unchanged in size or position, purely to give dramatic ears/horns/wings/tails transparent
+ * room to extend into without clipping. The body is always the locked master rig (BODY_RIG,
+ * identical for every category, rendered at the body canvas's own position). Every other
+ * slot's final transform is `slotDefaults[slot]` composed with that category's own optional
+ * correction from `assetCorrections` (absent = identity = "use the slot default exactly") --
+ * this is what makes swapping a category's asset change ONLY the artwork, never the socket.
  */
 export function CreatureTestComposer({
   recipe,
-  config,
+  slotDefaults,
+  assetCorrections,
   width,
   layerOrder = DEFAULT_LAYER_ORDER,
   layerVisibility,
   showRig,
   highlightSlot,
+  showSelectionBox = false,
 }: CreatureTestComposerProps) {
   const height = width; // square stage
+  const unit = width / COMPOSITION_CANVAS_SIZE; // px per 1254-grid unit at current display size
+  const bodyCanvasPx = BODY_CANVAS_SIZE * unit;
+  const bodyOffsetPx = BODY_CANVAS_INSET * unit;
 
   return (
     <View style={[styles.stage, { width, height }]}>
@@ -68,31 +77,45 @@ export function CreatureTestComposer({
         if (!visible) return null;
         const category = recipe[slot];
         const source = CREATURE_TEST_ASSETS[category][slot];
-        const highlighted = highlightSlot === slot;
+        const highlighted = highlightSlot === slot && showSelectionBox;
 
         if (slot === 'body') {
           return (
-            <TransformedLayer key={slot} source={source} transform={BODY_RIG} stageWidth={width} debugOutline={showRig} highlighted={highlighted} />
+            <TransformedLayer
+              key={slot}
+              source={source}
+              transform={BODY_RIG}
+              bodyCanvasPx={bodyCanvasPx}
+              bodyOffsetPx={bodyOffsetPx}
+              unit={unit}
+              debugOutline={showRig}
+              highlighted={highlighted}
+            />
           );
         }
 
-        const anchor = ANCHORS[slot];
-        const correction = config[category][slot];
-        const transform = composeTransform(anchor, correction);
-        const spacingScale = slot === 'eyes' ? (correction as { spacingScale?: number }).spacingScale ?? 1 : 1;
+        const correction = assetCorrections[category]?.[slot];
+        const isEyes = slot === 'eyes';
+        const resolved = isEyes
+          ? resolveEyeTransform(slotDefaults.eyes, correction as Partial<SlotDefaults['eyes']> | undefined)
+          : resolveTransform(slotDefaults[slot], correction as Partial<CreatureTransform> | undefined);
+        const spacingScale = isEyes ? (resolved as unknown as { spacingScale: number }).spacingScale : 1;
+
         return (
           <TransformedLayer
             key={slot}
             source={source}
-            transform={transform}
+            transform={resolved}
             spacingScaleX={spacingScale}
-            stageWidth={width}
+            bodyCanvasPx={bodyCanvasPx}
+            bodyOffsetPx={bodyOffsetPx}
+            unit={unit}
             debugOutline={showRig}
             highlighted={highlighted}
           />
         );
       })}
-      {showRig ? <RigOverlay stageWidth={width} /> : null}
+      {showRig ? <RigOverlay stageWidth={width} unit={unit} bodyCanvasPx={bodyCanvasPx} bodyOffsetPx={bodyOffsetPx} /> : null}
     </View>
   );
 }
@@ -101,19 +124,21 @@ function TransformedLayer({
   source,
   transform,
   spacingScaleX = 1,
-  stageWidth,
+  bodyCanvasPx,
+  bodyOffsetPx,
+  unit,
   debugOutline,
   highlighted,
 }: {
   source: ImageSourcePropType;
   transform: CreatureTransform;
   spacingScaleX?: number;
-  stageWidth: number;
+  bodyCanvasPx: number;
+  bodyOffsetPx: number;
+  unit: number;
   debugOutline?: boolean;
   highlighted?: boolean;
 }) {
-  const unit = stageWidth / CANVAS; // px per 1254-space unit at current display size
-
   const outerTransform = [
     { translateX: transform.x * unit },
     { translateY: transform.y * unit },
@@ -133,9 +158,11 @@ function TransformedLayer({
     );
 
   return (
-    // Fixed full-stage-size positioning wrapper -- never resized, only ever positioned at
-    // (0,0,stageWidth,stageWidth). All actual positioning happens via `transform` below.
-    <View style={[styles.layer, { left: 0, top: 0, width: stageWidth, height: stageWidth }]}>
+    // Fixed positioning wrapper matching the ORIGINAL 1254 body-canvas region, centered inside
+    // the larger composition stage -- never resized, only ever positioned here. All actual
+    // positioning happens via `transform` below, which is free to visibly extend past this
+    // wrapper's own box (overflow: visible throughout) into the surrounding safe area.
+    <View style={[styles.layer, { left: bodyOffsetPx, top: bodyOffsetPx, width: bodyCanvasPx, height: bodyCanvasPx }]}>
       <View style={[styles.fill, { transform: outerTransform }]}>
         {content}
         {debugOutline ? <View pointerEvents="none" style={[styles.fill, styles.debugBox]} /> : null}
@@ -146,9 +173,9 @@ function TransformedLayer({
 }
 
 // Approximate, illustrative reference points for visual debugging only -- NOT the transform
-// math (which is purely anchor + correction, see above). These exist so "Show Rig" can point
-// at roughly where each attachment conceptually lives on the master body, estimated from
-// visual inspection of the approved artwork.
+// math (which is purely slotDefault + correction, see above). Expressed in the original
+// 1254-unit body-canvas system; RigOverlay offsets them by bodyOffsetPx to place them correctly
+// inside the larger composition stage.
 const DEBUG_REFERENCE_POINTS: { label: string; x: number; y: number; color: string }[] = [
   { label: 'eyes anchor', x: 627, y: 580, color: 'rgba(220,30,60,0.9)' },
   { label: 'ears/horns anchor', x: 627, y: 150, color: 'rgba(230,140,20,0.9)' },
@@ -159,29 +186,35 @@ const DEBUG_REFERENCE_POINTS: { label: string; x: number; y: number; color: stri
 
 const DEBUG_BODY_BBOX = { x0: 230, y0: 15, x1: 1020, y1: 1215 };
 
-function RigOverlay({ stageWidth }: { stageWidth: number }) {
-  const unit = stageWidth / CANVAS;
+function RigOverlay({ stageWidth, unit, bodyCanvasPx, bodyOffsetPx }: { stageWidth: number; unit: number; bodyCanvasPx: number; bodyOffsetPx: number }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {/* stage boundary */}
-      <View style={[styles.rigBorder, { left: 0, top: 0, width: stageWidth, height: stageWidth }]} />
-      {/* center lines */}
-      <View style={[styles.rigLine, { left: stageWidth / 2, top: 0, width: 1, height: stageWidth }]} />
-      <View style={[styles.rigLine, { left: 0, top: stageWidth / 2, width: stageWidth, height: 1 }]} />
+      {/* FULL COMPOSITION BOUNDS -- the entire safe-area canvas */}
+      <View style={[styles.compositionBorder, { left: 0, top: 0, width: stageWidth, height: stageWidth }]} />
+      <Text style={[styles.rigLabel, { left: 4, top: 4, color: 'rgba(40,100,220,0.9)' }]}>FULL COMPOSITION BOUNDS</Text>
+
+      {/* BODY CANVAS -- the original, unchanged 1254x1254 master coordinate system */}
+      <View style={[styles.bodyCanvasBorder, { left: bodyOffsetPx, top: bodyOffsetPx, width: bodyCanvasPx, height: bodyCanvasPx }]} />
+      <Text style={[styles.rigLabel, { left: bodyOffsetPx + 4, top: bodyOffsetPx + 4, color: 'rgba(0,0,0,0.7)' }]}>BODY CANVAS</Text>
+
+      {/* center lines (of the body canvas, since that's the coordinate system everything is calibrated against) */}
+      <View style={[styles.rigLine, { left: bodyOffsetPx + bodyCanvasPx / 2, top: bodyOffsetPx, width: 1, height: bodyCanvasPx }]} />
+      <View style={[styles.rigLine, { left: bodyOffsetPx, top: bodyOffsetPx + bodyCanvasPx / 2, width: bodyCanvasPx, height: 1 }]} />
+
       {/* body bounding box (approximate) */}
       <View
         style={[
           styles.rigDashedBox,
           {
-            left: DEBUG_BODY_BBOX.x0 * unit,
-            top: DEBUG_BODY_BBOX.y0 * unit,
+            left: bodyOffsetPx + DEBUG_BODY_BBOX.x0 * unit,
+            top: bodyOffsetPx + DEBUG_BODY_BBOX.y0 * unit,
             width: (DEBUG_BODY_BBOX.x1 - DEBUG_BODY_BBOX.x0) * unit,
             height: (DEBUG_BODY_BBOX.y1 - DEBUG_BODY_BBOX.y0) * unit,
           },
         ]}
       />
       {DEBUG_REFERENCE_POINTS.map((pt) => (
-        <RigCrosshair key={pt.label} x={pt.x * unit} y={pt.y * unit} color={pt.color} />
+        <RigCrosshair key={pt.label} x={bodyOffsetPx + pt.x * unit} y={bodyOffsetPx + pt.y * unit} color={pt.color} />
       ))}
     </View>
   );
@@ -205,6 +238,7 @@ const styles = StyleSheet.create({
   },
   layer: {
     position: 'absolute',
+    overflow: 'visible',
   },
   fill: {
     position: 'absolute',
@@ -212,6 +246,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: '100%',
     height: '100%',
+    overflow: 'visible',
   },
   debugBox: {
     borderWidth: 1,
@@ -222,10 +257,21 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(230,30,90,0.95)',
   },
-  rigBorder: {
+  compositionBorder: {
     position: 'absolute',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(40,100,220,0.55)',
+    borderStyle: 'dashed',
+  },
+  bodyCanvasBorder: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.55)',
+  },
+  rigLabel: {
+    position: 'absolute',
+    fontSize: 10,
+    fontWeight: '700',
   },
   rigLine: {
     position: 'absolute',

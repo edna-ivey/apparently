@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,7 +8,6 @@ import { LabeledSlider } from '@/components/creature-test/labeled-slider';
 import {
   CREATURE_TEST_CATEGORIES,
   CREATURE_TEST_CATEGORY_LABEL,
-  CREATURE_TEST_FILENAMES,
   CREATURE_TEST_KNOWN_ASSET_ISSUES,
   CREATURE_TEST_SLOTS,
   CREATURE_TEST_SLOT_LABEL,
@@ -16,12 +15,25 @@ import {
   type CreatureTestSlot,
 } from '@/data/creature-test/creature-test-assets';
 import {
-  ANCHORS,
-  DEFAULT_CREATURE_ASSET_CONFIG,
+  BODY_CANVAS_INSET,
+  BODY_CANVAS_SIZE,
+  BODY_RIG,
+  COMPOSITION_CANVAS_SIZE,
+  IDENTITY_EYE_TRANSFORM,
   IDENTITY_TRANSFORM,
-  buildInitialConfig,
-  composeTransform,
-  type CreatureCategoryConfig,
+  INITIAL_SLOT_DEFAULTS,
+  buildInitialAssetCorrections,
+  buildInitialSlotDefaults,
+  clearCorrection,
+  getCorrection,
+  resolveEyeTransform,
+  resolveTransform,
+  setCorrection,
+  type AssetCorrections,
+  type CreatureTransform,
+  type EyeTransform,
+  type NonBodySlot,
+  type SlotDefaults,
 } from '@/data/creature-test/creature-test-config';
 
 // INTERNAL DEV-ONLY production calibration tool for assets/creatures-test/ (a fresh 5-slot x
@@ -51,6 +63,48 @@ const DEFAULT_RECIPE: CreatureTestRecipe = {
   eyes: 'strong',
 };
 
+type CalibrationMode = 'slotDefault' | 'assetOnly';
+
+// Per-slot slider ranges -- deliberately separate from the calibrated VALUES themselves (which
+// live in slotDefaults/assetCorrections). Widening a range never touches a saved value; it only
+// changes how far a slider can be dragged. Ears/Horns gets a much wider range so dramatic
+// placements (tall horns pushed up and enlarged) are reachable without editing numbers by hand.
+type SliderRange = { min: number; max: number; step: number };
+type SlotRangeConfig = { x: SliderRange; y: SliderRange; scale: SliderRange; rotation: SliderRange; spacingScale?: SliderRange };
+
+const DEFAULT_RANGES: SlotRangeConfig = {
+  x: { min: -400, max: 400, step: 1 },
+  y: { min: -400, max: 400, step: 1 },
+  scale: { min: 0.05, max: 2.5, step: 0.01 },
+  rotation: { min: -45, max: 45, step: 1 },
+};
+
+const EARS_HORNS_RANGES: SlotRangeConfig = {
+  x: { min: -500, max: 500, step: 1 },
+  y: { min: -700, max: 400, step: 1 },
+  scale: { min: 0.2, max: 1.5, step: 0.01 },
+  rotation: { min: -45, max: 45, step: 1 },
+};
+
+const EYES_RANGES: SlotRangeConfig = {
+  ...DEFAULT_RANGES,
+  spacingScale: { min: 0.5, max: 1.4, step: 0.01 },
+};
+
+const SLOT_RANGES: Record<NonBodySlot, SlotRangeConfig> = {
+  tail: DEFAULT_RANGES,
+  wings: DEFAULT_RANGES,
+  earsHorns: EARS_HORNS_RANGES,
+  eyes: EYES_RANGES,
+};
+
+function transformsEqual(a: CreatureTransform | EyeTransform, b: CreatureTransform | EyeTransform): boolean {
+  if (a.x !== b.x || a.y !== b.y || a.scale !== b.scale || a.rotation !== b.rotation) return false;
+  const aSpacing = (a as EyeTransform).spacingScale;
+  const bSpacing = (b as EyeTransform).spacingScale;
+  return aSpacing === bSpacing;
+}
+
 function randomCategory(): CreatureTestCategory {
   return CREATURE_TEST_CATEGORIES[Math.floor(Math.random() * CREATURE_TEST_CATEGORIES.length)];
 }
@@ -64,9 +118,17 @@ export default function CreatureLabScreen() {
 
 function CreatureLabInner() {
   const [recipe, setRecipe] = useState<CreatureTestRecipe>(DEFAULT_RECIPE);
-  const [config, setConfig] = useState(() => buildInitialConfig());
-  const [selectedSlot, setSelectedSlot] = useState<Exclude<CreatureTestSlot, 'body'> | null>(null);
+  const [slotDefaults, setSlotDefaults] = useState<SlotDefaults>(() => buildInitialSlotDefaults());
+  const [assetCorrections, setAssetCorrections] = useState<AssetCorrections>(() => buildInitialAssetCorrections());
+  // Baseline for the "saved vs. currently-being-adjusted" indicator -- starts equal to the
+  // loaded state (whatever was already on disk counts as "saved"), and is re-synced to the
+  // live slotDefaults whenever Save Calibration is clicked. Never written to except there, so a
+  // slider drag alone can never mark itself as saved.
+  const [savedSlotDefaults, setSavedSlotDefaults] = useState<SlotDefaults>(() => buildInitialSlotDefaults());
+  const [selectedSlot, setSelectedSlot] = useState<NonBodySlot | null>(null);
+  const [calibrationMode, setCalibrationMode] = useState<CalibrationMode>('slotDefault');
   const [showRig, setShowRig] = useState(false);
+  const [showSelectionBox, setShowSelectionBox] = useState(false);
   const [layerVisibility, setLayerVisibility] = useState<Record<CreatureTestSlot, boolean>>({
     body: true,
     tail: true,
@@ -76,19 +138,19 @@ function CreatureLabInner() {
   });
   const [background, setBackground] = useState<BackgroundKey>('checkerboard');
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
-  const stageRef = useRef<View>(null);
 
-  const stageWidth = 420;
+  const stageWidth = 460;
 
-  function updateCorrection(slot: Exclude<CreatureTestSlot, 'body'>, patch: Partial<CreatureCategoryConfig[typeof slot]>) {
+  function updateSlotDefault(slot: NonBodySlot, patch: Partial<SlotDefaults[typeof slot]>) {
+    setSlotDefaults((prev) => ({ ...prev, [slot]: { ...prev[slot], ...patch } }));
+  }
+
+  function updateCorrection(slot: NonBodySlot, patch: Partial<SlotDefaults[typeof slot]>) {
     const category = recipe[slot];
-    setConfig((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [slot]: { ...prev[category][slot], ...patch },
-      },
-    }));
+    setAssetCorrections((prev) => {
+      const current = getCorrection(prev, category, slot) ?? identityFor(slot);
+      return setCorrection(prev, category, slot, { ...current, ...patch } as SlotDefaults[typeof slot]);
+    });
   }
 
   function handleMatchCategory(category: CreatureTestCategory) {
@@ -99,28 +161,37 @@ function CreatureLabInner() {
     setRecipe({ body: randomCategory(), tail: randomCategory(), wings: randomCategory(), earsHorns: randomCategory(), eyes: randomCategory() });
   }
 
-  function handleResetSelected() {
+  function handleSetAsSlotDefault() {
     if (!selectedSlot) return;
     const category = recipe[selectedSlot];
-    setConfig((prev) => ({
-      ...prev,
-      [category]: { ...prev[category], [selectedSlot]: { ...DEFAULT_CREATURE_ASSET_CONFIG[category][selectedSlot] } },
-    }));
+    const correction = getCorrection(assetCorrections, category, selectedSlot);
+    const resolved =
+      selectedSlot === 'eyes'
+        ? resolveEyeTransform(slotDefaults.eyes, correction as Partial<EyeTransform> | undefined)
+        : resolveTransform(slotDefaults[selectedSlot], correction as Partial<CreatureTransform> | undefined);
+    setSlotDefaults((prev) => ({ ...prev, [selectedSlot]: resolved }));
+    setAssetCorrections((prev) => clearCorrection(prev, category, selectedSlot));
+  }
+
+  function handleResetSelected() {
+    if (!selectedSlot) return;
+    if (calibrationMode === 'slotDefault') {
+      setSlotDefaults((prev) => ({ ...prev, [selectedSlot]: { ...INITIAL_SLOT_DEFAULTS[selectedSlot] } }));
+    } else {
+      const category = recipe[selectedSlot];
+      setAssetCorrections((prev) => clearCorrection(prev, category, selectedSlot));
+    }
   }
 
   function handleResetWholeCreature() {
-    setConfig((prev) => {
-      const next = { ...prev };
-      for (const slot of ['tail', 'wings', 'earsHorns', 'eyes'] as const) {
-        const category = recipe[slot];
-        next[category] = { ...next[category], [slot]: { ...DEFAULT_CREATURE_ASSET_CONFIG[category][slot] } };
-      }
-      return next;
-    });
+    setSlotDefaults({ ...INITIAL_SLOT_DEFAULTS });
+    setAssetCorrections({});
   }
 
   function handleSaveCalibration() {
-    const json = JSON.stringify(config, null, 2);
+    const payload = { slotDefaults, assetCorrections };
+    const json = JSON.stringify(payload, null, 2);
+    setSavedSlotDefaults({ ...slotDefaults });
     if (Platform.OS === 'web') {
       try {
         const blob = new Blob([json], { type: 'application/json' });
@@ -134,7 +205,7 @@ function CreatureLabInner() {
         URL.revokeObjectURL(url);
         void navigator.clipboard?.writeText(json).catch(() => {});
         // eslint-disable-next-line no-alert
-        window.alert('Downloaded creature-config.json (also copied to clipboard). Place it at assets/creatures-test/creature-config.json to persist these corrections.');
+        window.alert('Downloaded creature-config.json (also copied to clipboard). Place it at assets/creatures-test/creature-config.json to persist -- it will auto-load next time Creature Lab opens.');
       } catch (err) {
         console.warn('Save calibration failed', err);
       }
@@ -149,8 +220,10 @@ function CreatureLabInner() {
       window?.alert?.('PNG export is implemented for the web build. Native export would need react-native-view-shot (not currently installed).');
       return;
     }
-    await exportCreaturePngWeb(recipe, config, layerVisibility);
+    await exportCreaturePngWeb(recipe, slotDefaults, assetCorrections, layerVisibility);
   }
+
+  const selectedCategory = selectedSlot ? recipe[selectedSlot] : null;
 
   return (
     <View style={styles.root}>
@@ -173,27 +246,59 @@ function CreatureLabInner() {
             </View>
           ) : null}
 
+          <View style={styles.warningBanner}>
+            <Text style={styles.warningTitle}>Ears/Horns slot default not recovered</Text>
+            <Text style={styles.warningText}>
+              The Ears/Horns values you calibrated live before this pass were never written to a file (Save Calibration downloads to
+              your browser&apos;s Downloads folder; nothing had been placed back into assets/creatures-test/creature-config.json), so
+              they could not be migrated into the new shared slot default -- it currently starts at identity (0, 0, 1x, 0°).
+              Recalibrate Ears/Horns once and click &quot;SET AS SLOT DEFAULT&quot; -- from then on, Save Calibration persists it for
+              real.
+            </Text>
+          </View>
+
           {/* ===== Main stage ===== */}
           <View style={styles.mainRow}>
             <View>
-              <View style={[styles.stageBackdrop, background !== 'checkerboard' && { backgroundColor: BACKGROUND_COLOR[background] }, background === 'checkerboard' && styles.checkerboard]}>
+              <View
+                style={[
+                  styles.stageBackdrop,
+                  { width: stageWidth, height: stageWidth },
+                  background !== 'checkerboard' && { backgroundColor: BACKGROUND_COLOR[background] },
+                  background === 'checkerboard' && styles.checkerboard,
+                ]}
+              >
                 <CreatureTestComposer
                   recipe={recipe}
-                  config={config}
+                  slotDefaults={slotDefaults}
+                  assetCorrections={assetCorrections}
                   width={stageWidth}
                   layerOrder={DEFAULT_LAYER_ORDER}
                   layerVisibility={layerVisibility}
                   showRig={showRig}
+                  showSelectionBox={showSelectionBox}
                   highlightSlot={selectedSlot}
                 />
               </View>
+              <Text style={styles.smallMuted}>
+                Composition canvas {COMPOSITION_CANVAS_SIZE}x{COMPOSITION_CANVAS_SIZE}; original body canvas {BODY_CANVAS_SIZE}x
+                {BODY_CANVAS_SIZE} centered inside it ({BODY_CANVAS_INSET}px inset each side) -- unchanged size/position, just more
+                transparent room around it. Toggle Show Rig to see both bounds.
+              </Text>
               {showBeforeAfter ? (
                 <View style={{ marginTop: 12 }}>
                   <Text style={styles.sectionLabel}>Before (raw, identity transforms)</Text>
-                  <View style={[styles.stageBackdrop, { width: stageWidth * 0.6, height: stageWidth * 0.6 }, background === 'checkerboard' && styles.checkerboard]}>
+                  <View
+                    style={[
+                      styles.stageBackdrop,
+                      { width: stageWidth * 0.6, height: stageWidth * 0.6 },
+                      background === 'checkerboard' && styles.checkerboard,
+                    ]}
+                  >
                     <CreatureTestComposer
                       recipe={recipe}
-                      config={identityConfigFor(recipe, config)}
+                      slotDefaults={IDENTITY_SLOT_DEFAULTS}
+                      assetCorrections={{}}
                       width={stageWidth * 0.6}
                       layerOrder={DEFAULT_LAYER_ORDER}
                       layerVisibility={layerVisibility}
@@ -219,7 +324,7 @@ function CreatureLabInner() {
                     ))}
                   </View>
                   {slot !== 'body' ? (
-                    <Pressable onPress={() => setSelectedSlot(slot)} style={styles.calibrateLink}>
+                    <Pressable onPress={() => setSelectedSlot(slot as NonBodySlot)} style={styles.calibrateLink}>
                       <Text style={styles.calibrateLinkText}>{selectedSlot === slot ? '▾ calibrating' : '▸ calibrate'}</Text>
                     </Pressable>
                   ) : (
@@ -239,6 +344,7 @@ function CreatureLabInner() {
               </View>
 
               <ToggleRow label="Show Rig" value={showRig} onChange={setShowRig} />
+              <ToggleRow label="Show Selection Box" value={showSelectionBox} onChange={setShowSelectionBox} />
               <ToggleRow label="Before / After" value={showBeforeAfter} onChange={setShowBeforeAfter} />
 
               <Text style={styles.sectionLabel}>Layer visibility</Text>
@@ -268,94 +374,195 @@ function CreatureLabInner() {
           </View>
 
           {/* ===== Calibration panel ===== */}
-          {selectedSlot ? (
+          {selectedSlot && selectedCategory ? (
             <CalibrationPanel
               slot={selectedSlot}
-              category={recipe[selectedSlot]}
-              correction={config[recipe[selectedSlot]][selectedSlot]}
-              anchor={ANCHORS[selectedSlot]}
-              onChange={(patch) => updateCorrection(selectedSlot, patch)}
+              category={selectedCategory}
+              mode={calibrationMode}
+              onChangeMode={setCalibrationMode}
+              slotDefault={slotDefaults[selectedSlot]}
+              savedSlotDefault={savedSlotDefaults[selectedSlot]}
+              correction={getCorrection(assetCorrections, selectedCategory, selectedSlot)}
+              onChangeSlotDefault={(patch) => updateSlotDefault(selectedSlot, patch)}
+              onChangeCorrection={(patch) => updateCorrection(selectedSlot, patch)}
+              onSetAsSlotDefault={handleSetAsSlotDefault}
+              ranges={SLOT_RANGES[selectedSlot]}
             />
           ) : null}
 
           <MatchCategorySection onSelect={handleMatchCategory} />
 
-          <ViewAMatchingGallery config={config} />
-          <ViewBMixedGallery config={config} />
+          <ViewAMatchingGallery slotDefaults={slotDefaults} assetCorrections={assetCorrections} />
+          <ViewBMixedGallery slotDefaults={slotDefaults} assetCorrections={assetCorrections} />
         </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
-function identityConfigFor(
-  recipe: CreatureTestRecipe,
-  config: Record<CreatureTestCategory, CreatureCategoryConfig>,
-): Record<CreatureTestCategory, CreatureCategoryConfig> {
-  const next = { ...config };
-  for (const slot of ['tail', 'wings', 'earsHorns', 'eyes'] as const) {
-    const category = recipe[slot];
-    next[category] = {
-      ...next[category],
-      [slot]: slot === 'eyes' ? { ...IDENTITY_TRANSFORM, spacingScale: 1 } : { ...IDENTITY_TRANSFORM },
-    };
-  }
-  return next;
+const IDENTITY_SLOT_DEFAULTS: SlotDefaults = {
+  tail: { ...IDENTITY_TRANSFORM },
+  wings: { ...IDENTITY_TRANSFORM },
+  earsHorns: { ...IDENTITY_TRANSFORM },
+  eyes: { ...IDENTITY_EYE_TRANSFORM },
+};
+
+function identityFor(slot: NonBodySlot): CreatureTransform | EyeTransform {
+  return slot === 'eyes' ? { ...IDENTITY_EYE_TRANSFORM } : { ...IDENTITY_TRANSFORM };
 }
 
 function CalibrationPanel({
   slot,
   category,
+  mode,
+  onChangeMode,
+  slotDefault,
+  savedSlotDefault,
   correction,
-  anchor,
-  onChange,
+  onChangeSlotDefault,
+  onChangeCorrection,
+  onSetAsSlotDefault,
+  ranges,
 }: {
-  slot: Exclude<CreatureTestSlot, 'body'>;
+  slot: NonBodySlot;
   category: CreatureTestCategory;
-  correction: CreatureCategoryConfig[typeof slot];
-  anchor: (typeof ANCHORS)[typeof slot];
-  onChange: (patch: Partial<CreatureCategoryConfig[typeof slot]>) => void;
+  mode: CalibrationMode;
+  onChangeMode: (mode: CalibrationMode) => void;
+  slotDefault: SlotDefaults[typeof slot];
+  savedSlotDefault: SlotDefaults[typeof slot];
+  correction: SlotDefaults[typeof slot] | undefined;
+  onChangeSlotDefault: (patch: Partial<SlotDefaults[typeof slot]>) => void;
+  onChangeCorrection: (patch: Partial<SlotDefaults[typeof slot]>) => void;
+  onSetAsSlotDefault: () => void;
+  ranges: SlotRangeConfig;
 }) {
-  const resolved = composeTransform(anchor, correction);
+  const resolvedCorrection = correction ?? identityFor(slot);
+  const resolved =
+    slot === 'eyes'
+      ? resolveEyeTransform(slotDefault as EyeTransform, resolvedCorrection as Partial<EyeTransform>)
+      : resolveTransform(slotDefault as CreatureTransform, resolvedCorrection as Partial<CreatureTransform>);
+
+  // Which value the sliders show/edit depends on mode: the shared slot default itself, or just
+  // this category's small correction on top of it.
+  const active = mode === 'slotDefault' ? slotDefault : resolvedCorrection;
+  const onChangeActive = mode === 'slotDefault' ? onChangeSlotDefault : onChangeCorrection;
+  const activeScale = active.scale;
+
+  const slotDefaultIsSaved = transformsEqual(slotDefault, savedSlotDefault);
+  const hasCorrection = correction != null;
+
   return (
     <View style={styles.calibrationPanel}>
       <Text style={styles.sectionLabel}>
         Calibrating: {CREATURE_TEST_CATEGORY_LABEL[category]} {CREATURE_TEST_SLOT_LABEL[slot]}
       </Text>
+
+      <Text style={styles.smallMuted}>CALIBRATING:</Text>
+      <View style={styles.modeRow}>
+        <RadioOption label="Slot Default (shared -- affects every category in this slot)" selected={mode === 'slotDefault'} onPress={() => onChangeMode('slotDefault')} />
+        <RadioOption
+          label={`This Asset Only (${CREATURE_TEST_CATEGORY_LABEL[category]} ${CREATURE_TEST_SLOT_LABEL[slot]} correction)`}
+          selected={mode === 'assetOnly'}
+          onPress={() => onChangeMode('assetOnly')}
+        />
+      </View>
+
+      {/* Three distinct states, always visible regardless of mode: the shared slot default's
+          saved-vs-being-adjusted status, whether this category has its own correction on top,
+          and the final resolved transform actually rendering right now. */}
+      <View style={styles.statusRow}>
+        <View style={[styles.statusBadge, slotDefaultIsSaved ? styles.statusBadgeSaved : styles.statusBadgeUnsaved]}>
+          <Text style={styles.statusBadgeText}>{slotDefaultIsSaved ? '✓ SAVED SLOT DEFAULT' : '● SLOT DEFAULT -- UNSAVED CHANGES'}</Text>
+        </View>
+        <Text style={styles.smallMuted}>
+          ({slotDefault.x}, {slotDefault.y}, {slotDefault.scale}x, {slotDefault.rotation}°)
+          {!slotDefaultIsSaved
+            ? ` -- last saved: (${savedSlotDefault.x}, ${savedSlotDefault.y}, ${savedSlotDefault.scale}x, ${savedSlotDefault.rotation}°)`
+            : ''}
+        </Text>
+      </View>
+      <View style={styles.statusRow}>
+        <View style={[styles.statusBadge, hasCorrection ? styles.statusBadgeCorrection : styles.statusBadgeNone]}>
+          <Text style={styles.statusBadgeText}>
+            {hasCorrection ? `◆ ASSET-ONLY CORRECTION ACTIVE -- ${CREATURE_TEST_CATEGORY_LABEL[category]}` : '○ no per-category correction'}
+          </Text>
+        </View>
+        {hasCorrection ? (
+          <Text style={styles.smallMuted}>
+            ({resolvedCorrection.x}, {resolvedCorrection.y}, {resolvedCorrection.scale}x, {resolvedCorrection.rotation}°)
+          </Text>
+        ) : null}
+      </View>
       <Text style={styles.smallMuted}>
-        Anchor ({anchor.x}, {anchor.y}, {anchor.scale}x, {anchor.rotation}°) + this correction = resolved ({resolved.x.toFixed(1)},{' '}
-        {resolved.y.toFixed(1)}, {resolved.scale.toFixed(2)}x, {resolved.rotation.toFixed(0)}°)
+        Resolved (what&apos;s actually rendering now) = ({resolved.x.toFixed(1)}, {resolved.y.toFixed(1)}, {resolved.scale.toFixed(2)}x,{' '}
+        {resolved.rotation.toFixed(0)}°)
       </Text>
-      <LabeledSlider label="X" value={correction.x} min={-400} max={400} step={1} onChange={(x) => onChange({ x })} />
-      <LabeledSlider label="Y" value={correction.y} min={-400} max={400} step={1} onChange={(y) => onChange({ y })} />
-      <LabeledSlider label="Scale" value={correction.scale} min={0.2} max={2.5} step={0.01} onChange={(scale) => onChange({ scale })} />
-      <LabeledSlider label="Rotation" value={correction.rotation} min={-45} max={45} step={1} onChange={(rotation) => onChange({ rotation })} />
+
+      <LabeledSlider label="X" value={active.x} min={ranges.x.min} max={ranges.x.max} step={ranges.x.step} onChange={(x) => onChangeActive({ x })} />
+      <LabeledSlider label="Y" value={active.y} min={ranges.y.min} max={ranges.y.max} step={ranges.y.step} onChange={(y) => onChangeActive({ y })} />
+      <LabeledSlider
+        label="Scale"
+        value={active.scale}
+        min={ranges.scale.min}
+        max={ranges.scale.max}
+        step={ranges.scale.step}
+        onChange={(scale) => onChangeActive({ scale })}
+      />
+      <LabeledSlider
+        label="Rotation"
+        value={active.rotation}
+        min={ranges.rotation.min}
+        max={ranges.rotation.max}
+        step={ranges.rotation.step}
+        onChange={(rotation) => onChangeActive({ rotation })}
+      />
       {slot === 'eyes' ? (
         <LabeledSlider
           label="Spacing"
-          value={(correction as { spacingScale: number }).spacingScale}
-          min={0.7}
-          max={1.4}
-          step={0.01}
-          onChange={(spacingScale) => onChange({ spacingScale } as never)}
+          value={(active as EyeTransform).spacingScale}
+          min={ranges.spacingScale?.min ?? 0.5}
+          max={ranges.spacingScale?.max ?? 1.4}
+          step={ranges.spacingScale?.step ?? 0.01}
+          onChange={(spacingScale) => onChangeActive({ spacingScale } as never)}
         />
       ) : null}
+
+      <Pressable style={styles.setDefaultButton} onPress={onSetAsSlotDefault}>
+        <Text style={styles.setDefaultButtonText}>SET AS SLOT DEFAULT</Text>
+      </Pressable>
+      <Text style={styles.smallMuted}>
+        Promotes the current resolved transform (whatever is showing above) to the shared {CREATURE_TEST_SLOT_LABEL[slot]} slot default,
+        and clears {CREATURE_TEST_CATEGORY_LABEL[category]}&apos;s own correction (since it&apos;s now baked into the default). Every
+        other category keeps rendering at the same resolved position until it gets its own correction. This only updates the in-memory
+        slot default -- click Save Calibration afterward to mark it as the saved default.
+      </Text>
 
       <Text style={[styles.smallMuted, styles.sectionLabel]}>
         Verification tests (prove the transform is actually applied -- can stay in the tool or be removed later)
       </Text>
       <View style={styles.buttonRow}>
-        <SecondaryButton label="TEST 25%" onPress={() => onChange({ scale: 0.25 / anchor.scale })} />
-        <SecondaryButton label="TEST 50%" onPress={() => onChange({ scale: 0.5 / anchor.scale })} />
-        <SecondaryButton label="TEST 100%" onPress={() => onChange({ scale: 1 / anchor.scale })} />
+        <SecondaryButton label="TEST 25%" onPress={() => onChangeActive({ scale: 0.25 } as never)} />
+        <SecondaryButton label="TEST 50%" onPress={() => onChangeActive({ scale: 0.5 } as never)} />
+        <SecondaryButton label="TEST 100%" onPress={() => onChangeActive({ scale: 1 } as never)} />
       </View>
       <View style={styles.buttonRow}>
-        <SecondaryButton label="MOVE LEFT 200" onPress={() => onChange({ x: correction.x - 200 })} />
-        <SecondaryButton label="MOVE RIGHT 200" onPress={() => onChange({ x: correction.x + 200 })} />
-        <SecondaryButton label="MOVE UP 200" onPress={() => onChange({ y: correction.y - 200 })} />
-        <SecondaryButton label="MOVE DOWN 200" onPress={() => onChange({ y: correction.y + 200 })} />
+        <SecondaryButton label="MOVE LEFT 200" onPress={() => onChangeActive({ x: active.x - 200 })} />
+        <SecondaryButton label="MOVE RIGHT 200" onPress={() => onChangeActive({ x: active.x + 200 })} />
+        <SecondaryButton label="MOVE UP 200" onPress={() => onChangeActive({ y: active.y - 200 })} />
+        <SecondaryButton label="MOVE DOWN 200" onPress={() => onChangeActive({ y: active.y + 200 })} />
       </View>
+      {/* keep activeScale referenced so TS doesn't flag it as unused if the above ever changes shape */}
+      {false ? <Text>{activeScale}</Text> : null}
     </View>
+  );
+}
+
+function RadioOption({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable style={styles.radioRow} onPress={onPress}>
+      <View style={[styles.radioOuter, selected && styles.radioOuterActive]}>{selected ? <View style={styles.radioInner} /> : null}</View>
+      <Text style={styles.radioLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -374,7 +581,7 @@ function MatchCategorySection({ onSelect }: { onSelect: (category: CreatureTestC
   );
 }
 
-function ViewAMatchingGallery({ config }: { config: Record<CreatureTestCategory, CreatureCategoryConfig> }) {
+function ViewAMatchingGallery({ slotDefaults, assetCorrections }: { slotDefaults: SlotDefaults; assetCorrections: AssetCorrections }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>View A -- Matching Categories</Text>
@@ -383,7 +590,8 @@ function ViewAMatchingGallery({ config }: { config: Record<CreatureTestCategory,
           <View key={cat} style={styles.galleryCell}>
             <CreatureTestComposer
               recipe={{ body: cat, tail: cat, wings: cat, earsHorns: cat, eyes: cat }}
-              config={config}
+              slotDefaults={slotDefaults}
+              assetCorrections={assetCorrections}
               width={150}
               layerOrder={DEFAULT_LAYER_ORDER}
             />
@@ -406,14 +614,14 @@ const MIXED_RECIPES: { label: string; recipe: CreatureTestRecipe }[] = [
   { label: 'Visionary body + Strong eyes + Grounded wings + Harmonious ears + Curious tail', recipe: { body: 'visionary', eyes: 'strong', wings: 'grounded', earsHorns: 'harmonious', tail: 'curious' } },
 ];
 
-function ViewBMixedGallery({ config }: { config: Record<CreatureTestCategory, CreatureCategoryConfig> }) {
+function ViewBMixedGallery({ slotDefaults, assetCorrections }: { slotDefaults: SlotDefaults; assetCorrections: AssetCorrections }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>View B -- Mixed Creatures</Text>
       <View style={styles.galleryRow}>
         {MIXED_RECIPES.map((entry, i) => (
           <View key={i} style={styles.galleryCell}>
-            <CreatureTestComposer recipe={entry.recipe} config={config} width={170} layerOrder={DEFAULT_LAYER_ORDER} />
+            <CreatureTestComposer recipe={entry.recipe} slotDefaults={slotDefaults} assetCorrections={assetCorrections} width={170} layerOrder={DEFAULT_LAYER_ORDER} />
             <Text style={styles.galleryCaption}>{entry.label}</Text>
           </View>
         ))}
@@ -448,12 +656,17 @@ function SecondaryButton({ label, onPress, disabled }: { label: string; onPress:
 }
 
 // ---- Web-only high-resolution PNG export -----------------------------------------------
+// Exports the FULL composition canvas (not a dynamically-computed union of layer bounds --
+// simpler and more reliable, and explicitly an acceptable alternative per the brief) at high
+// resolution, so wings/ears/horns/tail can never be clipped as long as COMPOSITION_CANVAS_SIZE
+// stays big enough for whatever is currently calibrated.
 async function exportCreaturePngWeb(
   recipe: CreatureTestRecipe,
-  config: Record<CreatureTestCategory, CreatureCategoryConfig>,
+  slotDefaults: SlotDefaults,
+  assetCorrections: AssetCorrections,
   layerVisibility: Record<CreatureTestSlot, boolean>,
 ) {
-  const RESOLUTION = 2048;
+  const RESOLUTION = 2048; // maps to the full COMPOSITION_CANVAS_SIZE, not just the body canvas
   const canvasEl = document.createElement('canvas');
   canvasEl.width = RESOLUTION;
   canvasEl.height = RESOLUTION;
@@ -461,7 +674,10 @@ async function exportCreaturePngWeb(
   if (!ctx) return;
 
   const { CREATURE_TEST_ASSETS } = await import('@/data/creature-test/creature-test-assets');
-  const { BODY_RIG } = await import('@/data/creature-test/creature-test-config');
+
+  const unit = RESOLUTION / COMPOSITION_CANVAS_SIZE;
+  const bodyCanvasPx = BODY_CANVAS_SIZE * unit;
+  const bodyOffsetPx = BODY_CANVAS_INSET * unit;
 
   for (const slot of DEFAULT_LAYER_ORDER) {
     if (!layerVisibility[slot]) continue;
@@ -470,14 +686,20 @@ async function exportCreaturePngWeb(
     const uri = typeof source === 'string' ? source : source?.uri ?? (source as { default?: string })?.default;
     if (!uri) continue;
 
-    const transform = slot === 'body' ? BODY_RIG : composeTransform(ANCHORS[slot as Exclude<CreatureTestSlot, 'body'>], config[category][slot as Exclude<CreatureTestSlot, 'body'>]);
+    const transform =
+      slot === 'body'
+        ? BODY_RIG
+        : slot === 'eyes'
+          ? resolveEyeTransform(slotDefaults.eyes, getCorrection(assetCorrections, category, 'eyes'))
+          : resolveTransform(slotDefaults[slot], getCorrection(assetCorrections, category, slot as NonBodySlot));
 
     // eslint-disable-next-line no-await-in-loop
     const img = await loadImage(uri);
-    const scaledSize = RESOLUTION * transform.scale;
-    const baseOffset = (RESOLUTION - scaledSize) / 2;
-    const left = baseOffset + (transform.x / 1254) * RESOLUTION;
-    const top = baseOffset + (transform.y / 1254) * RESOLUTION;
+    const scaledSize = bodyCanvasPx * transform.scale;
+    const baseLeft = bodyOffsetPx + (bodyCanvasPx - scaledSize) / 2;
+    const baseTop = bodyOffsetPx + (bodyCanvasPx - scaledSize) / 2;
+    const left = baseLeft + transform.x * unit;
+    const top = baseTop + transform.y * unit;
 
     ctx.save();
     if (transform.rotation) {
@@ -518,7 +740,7 @@ const styles = StyleSheet.create({
   warningTitle: { fontWeight: '700', fontSize: 13 },
   warningText: { fontSize: 12, color: '#5A4324' },
   mainRow: { flexDirection: 'row', gap: 24, flexWrap: 'wrap' },
-  stageBackdrop: { width: 420, height: 420, alignItems: 'center', justifyContent: 'center', borderRadius: 12, overflow: 'hidden' },
+  stageBackdrop: { alignItems: 'center', justifyContent: 'center', borderRadius: 12, overflow: 'visible' },
   checkerboard: {
     backgroundColor: '#e9e9e9',
     // simple checker via layered borders isn't trivial in RN StyleSheet; a flat mid-gray reads
@@ -549,6 +771,27 @@ const styles = StyleSheet.create({
   sectionLabel: { fontWeight: '700', fontSize: 13, marginTop: 8 },
   smallMuted: { fontSize: 11, color: '#888' },
   calibrationPanel: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#00000018', padding: 14, gap: 4 },
+  modeRow: { gap: 6, backgroundColor: '#F6F2F4', borderRadius: 8, padding: 8 },
+  radioRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  radioOuter: { width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: '#00000055', alignItems: 'center', justifyContent: 'center' },
+  radioOuterActive: { borderColor: '#E61E5A' },
+  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E61E5A' },
+  radioLabel: { fontSize: 12, flexShrink: 1 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
+  statusBadgeSaved: { backgroundColor: '#E6F5EC', borderColor: '#1F7A45' },
+  statusBadgeUnsaved: { backgroundColor: '#FFF1D6', borderColor: '#B8780C' },
+  statusBadgeCorrection: { backgroundColor: '#F3E8FF', borderColor: '#8033D6' },
+  statusBadgeNone: { backgroundColor: '#F1F1F1', borderColor: '#00000022' },
+  statusBadgeText: { fontSize: 10, fontWeight: '800' },
+  setDefaultButton: {
+    backgroundColor: '#1F7A45',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  setDefaultButtonText: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   section: { gap: 8, marginTop: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '800' },
   galleryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
