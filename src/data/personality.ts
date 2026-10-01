@@ -799,17 +799,21 @@ export const scorePersonalityProfile = (answers: PersonalityAnswerEvidence[]): P
   // Evidence from ANY source (public or private content) that targets a Core dimension still
   // fully counts -- this filters by dimension TYPE, never by where the evidence came from.
   //
-  // Bible v1.4 reconciliation pass: the qualification gate is now activeBoardQualified (>=3
+  // Bible v1.4 §15A/§43 reconciliation: the qualification gate is activeBoardQualified (>=3
   // active cumulative raw points toward the winning pole -- see resolveActiveBoardPole), not
-  // the prior "evidenceCount >= 2" threshold, which neither matched the Bible's raw-point rule
-  // nor Private's (now also-retired) distinct-source rule. Ranking/cap among QUALIFIED traits
-  // (sort by signatureStrength, cap 5) is otherwise unchanged by this pass -- the Bible's own
-  // display count for Your Signature is "up to seven" (§16), a separate, pre-existing
-  // discrepancy from this cap of 5 that this pass does not touch (see final report).
+  // evidenceCount-based.
+  //
+  // Bible v1.4 §16 reconciliation: capped at 7, not 5 -- "the underlying system selects up to
+  // seven strongest qualifying Core trait poles." This is now the ONE canonical ranked-Core
+  // list: src/data/you-profile-cards.ts's buildYourSignatureCards (the You page's "YOUR
+  // SIGNATURE") and getCoreCreatureInputTraits below both read this exact list/order/cap --
+  // never a second, separately-capped Core ranking. No padding: a dimension either qualifies
+  // (activeBoardQualified) and is ranked, or it is absent entirely -- there is no "early
+  // signal"/evidenceCount>=1 fallback tier here or anywhere downstream of it.
   const topTraits = dimensions
     .filter((dimension) => dimension.activeBoardQualified && isCoreDimension(dimension.dimension))
     .sort((a, b) => b.signatureStrength - a.signatureStrength)
-    .slice(0, 5)
+    .slice(0, 7)
     .map((dimension) => ({
       id: dimension.dimension,
       name: dimension.displayName,

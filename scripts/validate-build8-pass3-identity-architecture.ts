@@ -24,7 +24,7 @@ import {
   type PersonalityAnswerEvidence,
   type PersonalityDimensionId,
 } from '../src/data/personality';
-import { buildYouProfileCards, buildYourSevenCards } from '../src/data/you-profile-cards';
+import { buildYourSignatureCards } from '../src/data/you-profile-cards';
 import { selectStrongestPrivateSignals, selectRelicSlots } from '../src/data/private-signals';
 
 let failures = 0;
@@ -172,15 +172,13 @@ assert(
   'a Core dimension with real evidence (regardless of what ELSE that source also mapped to) DOES appear in Your Signature',
 );
 
-const under50Cards = buildYouProfileCards(mixedProfile);
-const over50Cards = buildYourSevenCards(mixedProfile);
-assert(under50Cards.every((card) => isCoreDimension(card.dimension)), 'buildYouProfileCards (below-50 threshold) never returns a Private dimension');
-assert(over50Cards.every((card) => isCoreDimension(card.dimension)), 'buildYourSevenCards (Your 7) never returns a Private dimension');
-assert(over50Cards.some((card) => card.dimension === 'direct_indirect'), 'Your 7 still surfaces the real Core evidence from the mixed profile');
-assert(!over50Cards.some((card) => card.dimension === 'tactful_blunt'), 'Your 7 excludes the Private dimension from that same mixed profile');
+const signatureCards = buildYourSignatureCards(mixedProfile);
+assert(signatureCards.every((card) => isCoreDimension(card.dimension)), 'buildYourSignatureCards never returns a Private dimension');
+assert(signatureCards.some((card) => card.dimension === 'direct_indirect'), 'Your Signature still surfaces the real Core evidence from the mixed profile');
+assert(!signatureCards.some((card) => card.dimension === 'tactful_blunt'), 'Your Signature excludes the Private dimension from that same mixed profile');
 
 // Fewer than seven Core signals remains valid -- never padded with a fabricated 8th/duplicate.
-assert(over50Cards.length === 1, `with only 1 real Core-evidenced dimension, exactly 1 card is returned, never padded (got ${over50Cards.length})`);
+assert(signatureCards.length === 1, `with only 1 real Core-evidenced dimension, exactly 1 card is returned, never padded (got ${signatureCards.length})`);
 
 // ============================================================================================
 // T. THE UNDERCURRENT (Private signal selector)

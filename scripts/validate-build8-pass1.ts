@@ -41,10 +41,15 @@ assert(!/\/\s*50/.test(youSource) === false || !/progressCount/.test(youSource),
 assert(!/'YOUR 7'/.test(youSource) && !/>YOUR 7</.test(youSource), 'You no longer exposes "YOUR 7" as a consumer-facing label');
 assert(!/YOUR PATTERNS/.test(youSource), 'You no longer uses the retired "YOUR PATTERNS" label');
 assert(/YOUR SIGNATURE/.test(youSource), 'You renders the new "YOUR SIGNATURE" identity section label');
-assert(
-  /buildYourSevenCards/.test(youSource) && /buildYouProfileCards/.test(youSource) && /profileAnswerCount >= 50/.test(youSource),
-  'the internal seven-trait selection logic (buildYourSevenCards at >=50 answers, buildYouProfileCards below) is UNCHANGED -- this pass only changed presentation',
-);
+// buildYourSevenCards/buildYouProfileCards (the old mixed-mature/early-signal "Your 7"
+// mechanic, gated by profileAnswerCount >= 50) were retired in the Bible v1.4 §16
+// reconciliation pass -- see src/data/you-profile-cards.ts's buildYourSignatureCards, the one
+// remaining Bible-compliant, qualification-gated, up-to-7 Core selector. This Build 8 Pass 1
+// check now only re-confirms the still-true parts of its original assertion: "YOUR SIGNATURE"
+// is the label, and Your Signature is driven by real Core evidence, not a subscription or
+// milestone-progress surface -- not the specific (now-retired) selector functions.
+assert(/buildYourSignatureCards/.test(youSource), 'You renders Your Signature via the Bible v1.4 §16-compliant buildYourSignatureCards');
+assert(!/buildYourSevenCards|buildYouProfileCards/.test(youSource), 'the retired Your 7 / early-signal selector functions no longer exist in You');
 assert(/router\.push\('\/settings'\)/.test(youSource), 'You has a gear action that navigates to /settings');
 assert(/gearIcon|gearButton/.test(youSource), 'a gear icon element exists in You (top-right settings entry point)');
 assert(/IdentityHero/.test(youSource), 'You renders the avatar/relic hero prototype');

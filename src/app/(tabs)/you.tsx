@@ -15,7 +15,7 @@ import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submiss
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
-import { buildYouProfileCards, buildYourSevenCards } from '@/data/you-profile-cards';
+import { buildYourSignatureCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
@@ -222,18 +222,17 @@ export default function YouScreen() {
     }
   }, [loadRemote]);
 
-  // Below the 50-profile-answer milestone: the existing, unchanged up-to-5-card progressive
-  // experience. At/above it: up to 7 real evidenced dimensions, never silently capped back
-  // down to 5 by reusing the mature-only topTraits-based selector. This selection logic is
-  // UNCHANGED from Build 7 — this pass only changes how the result is presented (see
-  // "YOUR SIGNATURE" below), never the underlying ranking/threshold.
+  // "YOUR SIGNATURE" (Bible v1.4 §16) — up to seven strongest qualifying Core trait poles,
+  // never padded. Deliberately independent of profileAnswerCount/the 50-answer milestone:
+  // that threshold gates the Creature reveal (Bible §17, not yet implemented in this
+  // codebase — see buildYourSignatureCards' own header comment), never Your Signature
+  // qualification. A user with 2 qualifying Core traits sees 2 immediately; crossing 50
+  // answered questions neither adds nor removes a Your Signature card by itself.
   const profileCards = useMemo(() => {
     if (remoteState.status !== 'ready') {
       return [];
     }
-    return remoteState.counts.profileAnswerCount >= 50
-      ? buildYourSevenCards(remoteState.profile)
-      : buildYouProfileCards(remoteState.profile);
+    return buildYourSignatureCards(remoteState.profile);
   }, [remoteState]);
 
   // The deeper Private identity layer (Build 8 Pass 3) — Private-12 dimensions only, real
