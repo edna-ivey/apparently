@@ -7,6 +7,20 @@ import {
 } from '@/data/personality';
 import type { CreatureTestCategory, CreatureTestSlot } from '@/data/creature-test/creature-test-assets';
 
+// PERSISTENCE (Build 8 Creature v1 polish pass): the personality profile remains the sole
+// source of truth. buildCreatureIdentity below is a pure function of PersonalityProfile --
+// nothing here is written to Supabase or persisted as a canonical recipe. If a user's
+// qualifying Core traits change later (new evidence, expiration, etc.), calling this again
+// naturally yields an updated CreatureIdentity -- the Creature can evolve by construction,
+// with no separate migration or sync step.
+//
+// EXTENSION POINT -- a future "Your Creature evolved" product moment would compare a
+// previously-seen CreatureIdentity (its `name`/`recipe` only -- small, not raw evidence)
+// against a freshly-resolved one and detect a meaningful change. That comparison, and any
+// storage of the "previously seen" snapshot, does NOT exist yet (see
+// src/data/creature/creature-reveal-state.ts for the one thing that IS persisted today -- a
+// local, presentation-only "has the first reveal already played" flag, which is not an
+// identity snapshot and cannot influence what Creature renders).
 export type CreatureCharacteristic = CreatureTestCategory;
 export type CreatureRecipe = Record<CreatureTestSlot, CreatureCharacteristic>;
 
@@ -90,16 +104,20 @@ export function resolveTraitCharacteristic(trait: SignatureTrait): CreatureChara
     throw new Error(`Creature mapping missing for Core trait dimension: ${trait.id}`);
   }
 
-  if (trait.displayName === dimension.positiveLabel) {
+  // SignatureTrait.name carries the actual pole label (e.g. "Direct"/"Indirect") --
+  // SignatureTrait.displayName is the unrelated ALL-CAPS tagline (dimension.displayPole, e.g.
+  // "SAY IT WITH YOUR CHEST") and can never equal dimension.positiveLabel/negativeLabel. Using
+  // .displayName here was a bug: it made every real qualifying trait throw.
+  if (trait.name === dimension.positiveLabel) {
     return mapping.positive;
   }
 
-  if (trait.displayName === dimension.negativeLabel) {
+  if (trait.name === dimension.negativeLabel) {
     return mapping.negative;
   }
 
   throw new Error(
-    `Creature trait pole could not be resolved for ${trait.id}: "${trait.displayName}"`,
+    `Creature trait pole could not be resolved for ${trait.id}: "${trait.name}"`,
   );
 }
 

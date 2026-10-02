@@ -126,19 +126,29 @@ assert(
 );
 
 // ============================================================================================
-// IDENTITY HERO LAYOUT — Bible v1.4: creature left, character name large on the right, Relic
-// smaller below the character name.
+// IDENTITY HERO LAYOUT — Bible v1.4 / Creature-centerpiece pass: creature (now the large
+// Creature Avatar, not a small placeholder mark) before the name+Relic group in source order
+// on every layout branch; within that group, the character name still renders above the
+// Relic shape. The hero now has two layout branches (row on wide, column on narrow -- see
+// IdentityHero's own header comment for why) built from two shared JSX variables (`avatar`,
+// `nameAndRelic`) rather than one inline tree, so this checks those variables' own source
+// order plus that BOTH branches render avatar before nameAndRelic.
 // ============================================================================================
 
-assert(/heroRow.*flexDirection: 'row'/.test(youCode) || /flexDirection: 'row'/.test(youCode.match(/heroRow: \{[^}]*\}/)?.[0] ?? ''), 'the hero is a row layout');
-const heroJsxMatch = youCode.match(/<View style=\{styles\.heroRow\}>[\s\S]*?<\/View>\s*\);\s*\n}/);
-const heroJsx = heroJsxMatch?.[0] ?? '';
-const avatarIndex = heroJsx.indexOf('avatarArea');
-const relicGroupIndex = heroJsx.indexOf('relicGroup');
-const nameIndex = heroJsx.indexOf('characterNamePlaceholder');
-const relicShapeIndex = heroJsx.indexOf('styles.relicShape,');
-assert(avatarIndex !== -1 && avatarIndex < relicGroupIndex, 'the avatar (creature) renders BEFORE the relic group in source order -- avatar on the left');
-assert(nameIndex !== -1 && relicShapeIndex !== -1 && nameIndex < relicShapeIndex, 'within the relic group, the character name renders ABOVE the relic shape -- name large on top, Relic smaller below it');
+assert(/heroRow.*flexDirection: 'row'/.test(youCode) || /flexDirection: 'row'/.test(youCode.match(/heroRow: \{[^}]*\}/)?.[0] ?? ''), 'the hero row style is a row layout, still used on wide viewports');
+const identityHeroBody = identityHeroMatch?.[0] ?? '';
+const avatarVarIndex = identityHeroBody.indexOf('const avatar =');
+const nameAndRelicVarIndex = identityHeroBody.indexOf('const nameAndRelic =');
+assert(avatarVarIndex !== -1 && nameAndRelicVarIndex !== -1 && avatarVarIndex < nameAndRelicVarIndex, 'the avatar (Creature) JSX is defined BEFORE the name+Relic JSX in source order');
+const nameAndRelicJsx = identityHeroBody.slice(nameAndRelicVarIndex);
+const nameIndexInGroup = nameAndRelicJsx.indexOf('characterNamePlaceholder');
+const relicShapeIndexInGroup = nameAndRelicJsx.indexOf('styles.relicShape,');
+assert(nameIndexInGroup !== -1 && relicShapeIndexInGroup !== -1 && nameIndexInGroup < relicShapeIndexInGroup, 'within the name+Relic group, the character name renders ABOVE the relic shape -- name large on top, Relic smaller below it');
+assert(
+  /\{avatar\}\s*\{nameAndRelic\}/.test(identityHeroBody) && identityHeroBody.match(/\{avatar\}\s*\{nameAndRelic\}/g)?.length === 2,
+  'BOTH layout branches (wide row, narrow column) render {avatar} before {nameAndRelic} -- avatar/Creature always comes first, on every viewport',
+);
+assert(/CreatureAvatar/.test(youCode), 'the hero renders the real Creature through the production CreatureAvatar wrapper, not a duplicated compositing path');
 
 // ============================================================================================
 // Settings remains reachable only from You (gear), never a primary tab -- unchanged by this
