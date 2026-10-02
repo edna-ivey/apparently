@@ -1,38 +1,135 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Local-only "has this device already seen the Creature reveal celebration" flag. Deliberately
-// NOT part of CreatureIdentity/buildCreatureIdentity (src/data/creature/creature-identity.ts)
-// and never sent anywhere -- it answers a presentation question ("should the one-time reveal
-// moment play right now?"), never an identity question ("what is the user's Creature?"). The
-// Creature itself stays fully derived from the live personality profile every time (see
-// creature-identity.ts's own header comment on why no recipe is persisted) -- this flag cannot
-// change what Creature renders, only whether the celebratory reveal sequence plays again.
-//
-// EXTENSION POINT (Build 8 Creature v1 polish pass): a future "Your Creature evolved" moment
-// would follow the same shape -- persist the previously-seen CreatureIdentity (name + recipe
-// only, not raw evidence) locally or remotely, and on each resolve compare it against the
-// freshly-computed one from current profile data. CreatureIdentity's recipe/name fields are
-// already structured for exactly that diff. That comparison is NOT implemented here; this
-// module only tracks whether the FIRST reveal has played.
+import type { RevealedMixedCreatureSnapshot } from '@/data/creature/creature-progression';
+import {
+  CHARACTERISTIC_NAMING_ROOTS,
+  CREATURE_SLOT_BY_RANK,
+  type CreatureRecipe,
+} from '@/data/creature/creature-identity';
 
-const CREATURE_REVEAL_SEEN_KEY = 'apparently:creature-reveal-seen';
+export const CREATURE_EVOLUTION_STORAGE_KEY = 'apparently:creature-evolution:v1';
+export const CREATURE_EVOLUTION_SCHEMA_VERSION = 1 as const;
 
-export const hasSeenCreatureReveal = async (): Promise<boolean> => {
-  try {
-    const value = await AsyncStorage.getItem(CREATURE_REVEAL_SEEN_KEY);
-    return value === 'true';
-  } catch {
-    // Storage read failure -- fail toward showing the reveal again rather than silently
-    // skipping a moment the user may never have actually seen.
+export type CreatureEvolutionState = {
+  version: typeof CREATURE_EVOLUTION_SCHEMA_VERSION;
+  firstFormRevealSeen: boolean;
+  mixedSnapshot: RevealedMixedCreatureSnapshot | null;
+};
+
+export const EMPTY_CREATURE_EVOLUTION_STATE: CreatureEvolutionState = {
+  version: CREATURE_EVOLUTION_SCHEMA_VERSION,
+  firstFormRevealSeen: false,
+  mixedSnapshot: null,
+};
+
+const storage = {
+  getItem: async (key: string) => {
+    try {
+      if (typeof window !== 'undefined' && 'localStorage' in window) {
+        return window.localStorage.getItem(key);
+      }
+      return await AsyncStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: async (key: string, value: string) => {
+    try {
+      if (typeof window !== 'undefined' && 'localStorage' in window) {
+        window.localStorage.setItem(key, value);
+        return;
+      }
+      await AsyncStorage.setItem(key, value);
+    } catch {
+      // Presentation persistence is best-effort. The live personality profile remains truth.
+    }
+  },
+};
+
+const isString = (value: unknown): value is string => typeof value === 'string';
+const isNullableDateKey = (value: unknown): value is string | null =>
+  value === null || (isString(value) && /^\d{4}-\d{2}-\d{2}$/.test(value));
+
+const isCompleteRecipe = (value: unknown): value is CreatureRecipe => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
   }
+  const record = value as Record<string, unknown>;
+  return CREATURE_SLOT_BY_RANK.every(
+    (part) => isString(record[part]) && record[part] in CHARACTERISTIC_NAMING_ROOTS,
+  );
 };
 
-export const markCreatureRevealSeen = async (): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(CREATURE_REVEAL_SEEN_KEY, 'true');
-  } catch {
-    // Best-effort only -- a failed write just means the reveal may play again next time,
-    // never a crash.
+const isValidSnapshot = (value: unknown): value is RevealedMixedCreatureSnapshot => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
   }
+  const candidate = value as Record<string, unknown>;
+  return (
+    isString(candidate.name) &&
+    isCompleteRecipe(candidate.recipe) &&
+    Array.isArray(candidate.traits) &&
+    candidate.traits.length === CREATURE_SLOT_BY_RANK.length &&
+    candidate.traits.every((trait) => {
+      if (!trait || typeof trait !== 'object' || Array.isArray(trait)) return false;
+      const item = trait as Record<string, unknown>;
+      return (
+        typeof item.rank === 'number' &&
+        isString(item.part) &&
+        CREATURE_SLOT_BY_RANK.includes(item.part as (typeof CREATURE_SLOT_BY_RANK)[number]) &&
+        isString(item.traitName) &&
+        isString(item.characteristic) &&
+        item.characteristic in CHARACTERISTIC_NAMING_ROOTS
+      );
+    }) &&
+    isString(candidate.firstMixedRevealedAt) &&
+    isString(candidate.firstMixedRevealedLocalDate) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(candidate.firstMixedRevealedLocalDate) &&
+    isNullableDateKey(candidate.lastCheckedEvolutionDate)
+  );
 };
+
+export function parseCreatureEvolutionState(value: unknown): CreatureEvolutionState | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  const candidate = value as Record<string, unknown>;
+  if (
+    candidate.version !== CREATURE_EVOLUTION_SCHEMA_VERSION ||
+    typeof candidate.firstFormRevealSeen !== 'boolean' ||
+    (candidate.mixedSnapshot !== null && !isValidSnapshot(candidate.mixedSnapshot))
+  ) {
+    return null;
+  }
+  const mixedSnapshot = candidate.mixedSnapshot as RevealedMixedCreatureSnapshot | null;
+  return {
+    version: CREATURE_EVOLUTION_SCHEMA_VERSION,
+    firstFormRevealSeen: candidate.firstFormRevealSeen,
+    mixedSnapshot: mixedSnapshot
+      ? {
+          name: mixedSnapshot.name,
+          recipe: { ...mixedSnapshot.recipe },
+          traits: mixedSnapshot.traits.map((trait) => ({ ...trait })),
+          firstMixedRevealedAt: mixedSnapshot.firstMixedRevealedAt,
+          firstMixedRevealedLocalDate: mixedSnapshot.firstMixedRevealedLocalDate,
+          lastCheckedEvolutionDate: mixedSnapshot.lastCheckedEvolutionDate,
+        }
+      : null,
+  };
+}
+
+export async function loadCreatureEvolutionState(): Promise<CreatureEvolutionState> {
+  const stored = await storage.getItem(CREATURE_EVOLUTION_STORAGE_KEY);
+  if (!stored) {
+    return { ...EMPTY_CREATURE_EVOLUTION_STATE };
+  }
+  try {
+    return parseCreatureEvolutionState(JSON.parse(stored)) ?? { ...EMPTY_CREATURE_EVOLUTION_STATE };
+  } catch {
+    return { ...EMPTY_CREATURE_EVOLUTION_STATE };
+  }
+}
+
+export async function saveCreatureEvolutionState(state: CreatureEvolutionState): Promise<void> {
+  await storage.setItem(CREATURE_EVOLUTION_STORAGE_KEY, JSON.stringify(state));
+}

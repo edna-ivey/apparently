@@ -3,57 +3,89 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
-import type { CreatureIdentity } from '@/data/creature/creature-identity';
 import type { CreatureTestRecipe } from '@/components/creature-test/creature-test-composer';
 import { Brand, Spacing } from '@/constants/theme';
 import { CardStyle, Radius, Surface, Type } from '@/constants/design-system';
 
-// The one-time "Apparently, this is you." moment -- plays once per device the first time the
-// Creature reveal conditions are met (see src/data/creature/creature-reveal-state.ts; the You
-// screen decides WHEN to mount this, this component only presents it). Soft editorial/magical
-// collectible direction: warm cream card, gentle depth, rounded corners, no fantasy-RPG
-// chrome. Entrance uses react-native-reanimated's existing FadeIn/FadeInDown (already used
-// elsewhere in this app -- see src/components/ui/collapsible.tsx) -- a short, single,
-// non-blocking fade, never a multi-step forced sequence. The user can dismiss immediately;
-// nothing here gates navigation.
+// Shared presentation for First Form, first mixed form, and Friday evolution results. The You
+// screen decides which moment to present; this component only renders it. Soft editorial /
+// magical collectible direction: warm cream card, gentle depth, rounded corners, no fantasy-
+// RPG chrome. Entrance uses one short FadeIn/FadeInDown pair, never a multi-step forced
+// sequence. The user can dismiss immediately; nothing here gates navigation.
 //
 // User-facing language only: no slot names, no characteristic/category codes framed as
 // technical labels, no "resolver"/"recipe" language. Makes no diagnostic or fixed-personality-
 // truth claim -- the supporting line frames this as a reflection of current patterns, not a
 // verdict.
+export type CreatureRevealKind = 'first-form' | 'first-mixed' | 'evolved' | 'unchanged';
+
+export type CreatureRevealPresentation = {
+  name: string;
+  recipe: CreatureTestRecipe;
+  traitNames: string[];
+};
+
 export type CreatureRevealOverlayProps = {
-  identity: CreatureIdentity;
+  kind: CreatureRevealKind;
+  creature: CreatureRevealPresentation;
+  changes?: string[];
   onDismiss: () => void;
 };
 
-export function CreatureRevealOverlay({ identity, onDismiss }: CreatureRevealOverlayProps) {
-  if (!identity.recipe || identity.name === null) {
-    return null;
-  }
-  const recipe = identity.recipe as CreatureTestRecipe;
-  // The 5 contributing patterns, strongest first -- the same real trait labels already shown
-  // in "YOUR SIGNATURE" elsewhere on You, never a technical slot/category code.
-  const contributingTraitNames = identity.assignments.map((assignment) => assignment.trait.name);
+const REVEAL_COPY: Record<CreatureRevealKind, { eyebrow: string; supporting: string; cta: string }> = {
+  'first-form': {
+    eyebrow: 'YOUR FIRST FORM',
+    supporting: 'One strong pattern is already taking shape. Apparently has been paying attention.',
+    cta: 'Meet your Creature →',
+  },
+  'first-mixed': {
+    eyebrow: 'You evolved.',
+    supporting: 'Your strongest patterns have come together in a form that is unmistakably yours.',
+    cta: 'Continue →',
+  },
+  evolved: {
+    eyebrow: 'You evolved.',
+    supporting: 'Your answers shifted the patterns showing up most strongly.',
+    cta: 'See the new you →',
+  },
+  unchanged: {
+    eyebrow: 'Still you.',
+    supporting: 'Your strongest patterns held steady this week.',
+    cta: 'Continue →',
+  },
+};
+
+export function CreatureRevealOverlay({ kind, creature, changes = [], onDismiss }: CreatureRevealOverlayProps) {
+  const copy = REVEAL_COPY[kind];
 
   return (
     <Animated.View entering={FadeIn.duration(260)} style={styles.backdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} accessibilityLabel="Dismiss" accessibilityRole="button" />
       <Animated.View entering={FadeInDown.duration(320)} style={styles.card}>
-        <ThemedText style={styles.eyebrow}>APPARENTLY, THIS IS YOU.</ThemedText>
-        <CreatureAvatar recipe={recipe} size={168} />
-        <ThemedText style={styles.name}>{identity.name}</ThemedText>
-        <ThemedText style={styles.supportingLine}>
-          Built from the patterns showing up most strongly in your answers.
-        </ThemedText>
+        <ThemedText style={styles.eyebrow}>{copy.eyebrow}</ThemedText>
+        <CreatureAvatar recipe={creature.recipe} size={168} />
+        <ThemedText style={styles.name}>{creature.name}</ThemedText>
+        <ThemedText style={styles.supportingLine}>{copy.supporting}</ThemedText>
         <View style={styles.traitRow}>
-          {contributingTraitNames.map((name) => (
-            <View key={name} style={styles.traitChip}>
+          {creature.traitNames.map((name, index) => (
+            <View key={`${name}-${index}`} style={styles.traitChip}>
               <ThemedText style={styles.traitChipText}>{name}</ThemedText>
             </View>
           ))}
         </View>
-        <Pressable style={styles.continueButton} onPress={onDismiss}>
-          <ThemedText style={styles.continueButtonText}>Continue →</ThemedText>
+        {changes.length > 0 ? (
+          <View style={styles.changeList}>
+            {changes.map((change) => (
+              <ThemedText key={change} style={styles.changeText}>• {change}</ThemedText>
+            ))}
+          </View>
+        ) : null}
+        <Pressable
+          style={styles.continueButton}
+          onPress={onDismiss}
+          accessibilityRole="button"
+          accessibilityLabel={copy.cta.replace(' →', '')}>
+          <ThemedText style={styles.continueButtonText}>{copy.cta}</ThemedText>
         </Pressable>
       </Animated.View>
     </Animated.View>
@@ -123,6 +155,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: Brand.ink,
+  },
+  changeList: {
+    width: '100%',
+    gap: Spacing.one,
+    borderTopWidth: 1,
+    borderTopColor: Surface.hairline,
+    paddingTop: Spacing.three,
+  },
+  changeText: {
+    color: Brand.inkSecondary,
+    fontSize: 13,
+    lineHeight: 18,
   },
   continueButton: {
     marginTop: Spacing.two,

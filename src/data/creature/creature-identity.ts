@@ -7,20 +7,12 @@ import {
 } from '@/data/personality';
 import type { CreatureTestCategory, CreatureTestSlot } from '@/data/creature-test/creature-test-assets';
 
-// PERSISTENCE (Build 8 Creature v1 polish pass): the personality profile remains the sole
-// source of truth. buildCreatureIdentity below is a pure function of PersonalityProfile --
-// nothing here is written to Supabase or persisted as a canonical recipe. If a user's
-// qualifying Core traits change later (new evidence, expiration, etc.), calling this again
-// naturally yields an updated CreatureIdentity -- the Creature can evolve by construction,
-// with no separate migration or sync step.
-//
-// EXTENSION POINT -- a future "Your Creature evolved" product moment would compare a
-// previously-seen CreatureIdentity (its `name`/`recipe` only -- small, not raw evidence)
-// against a freshly-resolved one and detect a meaningful change. That comparison, and any
-// storage of the "previously seen" snapshot, does NOT exist yet (see
-// src/data/creature/creature-reveal-state.ts for the one thing that IS persisted today -- a
-// local, presentation-only "has the first reveal already played" flag, which is not an
-// identity snapshot and cannot influence what Creature renders).
+// The personality profile remains the sole source of truth for the CURRENT candidate.
+// buildCreatureIdentity and buildFirstFormIdentity are pure functions of PersonalityProfile;
+// neither writes to Supabase nor owns progression timing. The small local presentation
+// snapshot which keeps an already-revealed mixed Creature visually stable between global
+// Evolution Days lives in creature-progression.ts / creature-reveal-state.ts. It contains no
+// raw personality evidence and never feeds back into this resolver.
 export type CreatureCharacteristic = CreatureTestCategory;
 export type CreatureRecipe = Record<CreatureTestSlot, CreatureCharacteristic>;
 
@@ -93,6 +85,13 @@ export type CreatureIdentity = {
   isComplete: boolean;
 };
 
+export type FirstFormIdentity = {
+  name: string;
+  recipe: CreatureRecipe;
+  trait: SignatureTrait;
+  characteristic: CreatureCharacteristic;
+};
+
 const getDimensionDefinition = (id: PersonalityDimensionId) =>
   PERSONALITY_DIMENSIONS.find((dimension) => dimension.id === id);
 
@@ -128,6 +127,26 @@ export function buildCreatureName(
   const firstRoot = CHARACTERISTIC_NAMING_ROOTS[firstCharacteristic].first;
   const secondRoot = CHARACTERISTIC_NAMING_ROOTS[secondCharacteristic].second;
   return `${firstRoot}${secondRoot.toLowerCase()}`;
+}
+
+export function buildFirstFormIdentity(profile: PersonalityProfile): FirstFormIdentity | null {
+  const [trait] = getCoreCreatureInputTraits(profile);
+  if (!trait) {
+    return null;
+  }
+
+  const characteristic = resolveTraitCharacteristic(trait);
+  const recipe = CREATURE_SLOT_BY_RANK.reduce<CreatureRecipe>((acc, slot) => {
+    acc[slot] = characteristic;
+    return acc;
+  }, {} as CreatureRecipe);
+
+  return {
+    name: CHARACTERISTIC_NAMING_ROOTS[characteristic].first,
+    recipe,
+    trait,
+    characteristic,
+  };
 }
 
 export function buildCreatureIdentity(profile: PersonalityProfile): CreatureIdentity {

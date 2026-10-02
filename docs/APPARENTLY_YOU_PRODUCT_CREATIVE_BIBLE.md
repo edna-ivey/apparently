@@ -948,39 +948,80 @@ If only five Core traits currently qualify, show five. If seven qualify, show se
 
 ## 17. THE CREATURE
 
+**LOCKED — Creature v1 progression model (October 2026)**
+
 The user's primary collectible identity is a generated creature.
 
-The creature is based entirely on Core You. Private traits never build the Creature.
+The Creature is based entirely on Core You. Private traits never build the Creature.
 
-### LOCKED STRUCTURAL ORDER
+### LOCKED V1 STRUCTURAL ORDER
+
+Creature v1 uses the five strongest qualifying Core traits only:
 
 - #1 Core trait -> Eyes
-- #2 Core trait -> Ears
+- #2 Core trait -> Ears / Horns
 - #3 Core trait -> Wings
 - #4 Core trait -> Body
 - #5 Core trait -> Tail
-- #6 Core trait -> Crown / headpiece
-- #7 Core trait -> Chestplate / medal
 
-This rank-to-part order is locked. The final authored artwork for each trait pole remains separate creative work.
+The body rig and shared production calibration are locked. Crown/headpiece and chestplate/medal are not part of Creature v1 and must not be invented as active slots.
 
-### CREATURE REVEAL
+### FIRST FORM
 
 **LOCKED**
 
-Before the user reaches 50 answered questions, the Creature is shown only as a silhouette.
+The user receives an early Creature payoff instead of waiting until 50 answers.
 
-At 50 answered questions, the Creature reveal unlocks permanently.
+First Form becomes eligible when both are true:
 
-At reveal, use the qualifying Core traits the user actually has. Do not invent missing traits to force seven parts.
+- the user has at least 8 profile answers; and
+- at least one Core trait qualifies.
 
-If fewer than seven Core traits qualify at the 50-answer reveal, reveal the earned identity and leave remaining trait-driven parts unrevealed.
+First Form uses the user's current #1 qualifying Core trait characteristic for all five visual parts. It is intentionally a pure, single-family Creature. For example, a Curious First Form uses Curious eyes, ears/horns, wings, body, and tail.
 
-As additional Core traits later qualify, the remaining Creature parts can visually appear. This gives the user a reason to keep answering.
+First Form uses that characteristic's first naming root only, such as Curious -> Lumi or Bold -> Zora.
 
-Crossing 50 is an unlock event, not a permanent 50-question progress bar.
+Before First Form eligibility, show the neutral Creature placeholder. Do not fabricate a trait to reveal early.
 
-Build 8 may still use simple placeholder shapes/objects to test the system before final artwork.
+Before the first mixed form, First Form may reflect the current top characteristic as the profile continues learning, but its first-reveal celebration should not replay repeatedly.
+
+### FIRST MIXED FORM
+
+**LOCKED**
+
+The first mixed Creature reveals immediately when both are true:
+
+- `profileAnswerCount >= 50`; and
+- five qualifying Core traits exist.
+
+The first mixed reveal never waits for Evolution Day.
+
+The five ranked Core traits map to the five locked parts above. If five Core traits do not yet qualify, keep First Form visible and continue learning rather than inventing missing traits.
+
+### GLOBAL EVOLUTION DAY
+
+**LOCKED**
+
+After the first mixed form has been revealed, visible Creature changes happen only at the global weekly Evolution Day.
+
+Evolution Day is **Friday** for the entire app. This is one shared app cadence, not a rolling seven-day timer per user.
+
+The personality profile continues learning from real evidence every day. Between Evolution Days, the visible mixed Creature remains the last revealed mixed form even if the live candidate changes underneath it.
+
+On or after the latest Friday the user has not checked, present:
+
+**Did you evolve?**
+
+The user chooses **Find out**. The app compares the last revealed mixed Creature with the current derived mixed Creature.
+
+- If the derived identity changed, reveal **You evolved.** and persist the new visible mixed form.
+- If it did not change, reveal **Still you.** and keep the existing visible form.
+
+If the user misses multiple Fridays, do not replay a backlog. Offer one catch-up check against the latest Friday and the current derived identity.
+
+If the first mixed form is revealed on a Friday, that same Friday does not immediately trigger another evolution check. The next eligible check is the following Friday. If first mixed reveal occurs on Thursday, the next day's Friday check is eligible.
+
+The personality profile remains the source of truth for the current candidate identity. A small presentation snapshot may be stored to remember the last revealed mixed Creature and the last checked Evolution Day; that snapshot must not replace the live personality profile as identity truth.
 
 ---
 
@@ -988,17 +1029,26 @@ Build 8 may still use simple placeholder shapes/objects to test the system befor
 
 **LOCKED**
 
-The character's name comes from the user's first two strongest qualifying Core traits.
+Mixed Creature names come from the characteristics represented by the user's first two strongest qualifying Core traits.
 
-Each trait will eventually have a name fragment.
+The top characteristic supplies the first-word root. The second characteristic supplies the second-word root.
 
-Example concept: Lumi + Fox -> Lumifox
+Locked roots:
 
-The actual trait-to-name-fragment mapping has not yet been approved.
+- Strong: Vara / Stone
+- Sentimental: Sera / Pearl
+- Grounded: Tera / Moss
+- Curious: Lumi / Fox
+- Playful: Jovi / Dash
+- Visionary: Nova / Moon
+- Bold: Zora / Blaze
+- Harmonious: Mira / Sage
 
-If fewer than two Core traits qualify, do not invent a second trait merely to create a compound name. The final compound character name waits until two qualifying Core traits exist.
+Example: Bold + Curious = **Zorafox**.
 
-Claude does not invent trait-name mappings. Michelle and Forge create and approve them first.
+First Form uses only the first naming root of its single characteristic, such as Curious -> **Lumi**.
+
+Do not invent or randomize names outside this locked system.
 
 ---
 
