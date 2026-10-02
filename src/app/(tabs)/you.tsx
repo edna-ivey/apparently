@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,14 +6,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
 import { CreatureRevealOverlay } from '@/components/creature/creature-reveal-overlay';
-import type { CreatureTestRecipe } from '@/components/creature-test/creature-test-composer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
 import { CardStyle, Elevation, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
-import { buildCreatureIdentity, type CreatureIdentity } from '@/data/creature/creature-identity';
-import { hasSeenCreatureReveal, markCreatureRevealSeen } from '@/data/creature/creature-reveal-state';
+import {
+  buildCreatureIdentity,
+  buildFirstFormIdentity,
+  type CreatureIdentity,
+  type CreatureRecipe,
+} from '@/data/creature/creature-identity';
+import {
+  checkWeeklyEvolution,
+  createMixedCreatureSnapshot,
+  formatEvolutionDate,
+  getNextFridayCheckpointKey,
+  getPendingEvolutionCheckpointKey,
+  isFirstFormEligible,
+  isFirstMixedFormEligible,
+} from '@/data/creature/creature-progression';
+import {
+  loadCreatureEvolutionState,
+  saveCreatureEvolutionState,
+  type CreatureEvolutionState,
+} from '@/data/creature/creature-reveal-state';
 import { getDemoPersonalityProfile, scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
@@ -38,8 +55,6 @@ import {
 const formatAnswersShapingRead = (profileAnswerCount: number): string =>
   `${profileAnswerCount} answer${profileAnswerCount === 1 ? '' : 's'} shaping your read`;
 
-const CREATURE_REVEAL_ANSWER_THRESHOLD = 50;
-
 // "1 Daily · 0 quizzes" / "2 Dailies · 1 quiz" / "7 Dailies · 3 quizzes" — dailyAnswerCount and
 // quizCompletionCount (distinct quizzes with >=1 completion; retakes don't add another).
 const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount: number): string => {
@@ -53,12 +68,23 @@ type RemoteYouState =
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
 
-// The identity centerpiece. Renders the production 5-slot Creature once the user crosses the
-// 50-answer reveal threshold AND has five qualifying Core traits; before that, the existing
-// Magnetic Loop remains the neutral placeholder. The Creature recipe and character name are
-// derived from the same ranked Core list that powers Your Signature, so there is no second
-// ranking or parallel identity calculation. The Relic remains structurally separate and keeps
-// its existing Private-signal behavior -- never overlapping or touching the Creature.
+type VisibleCreature = {
+  name: string;
+  recipe: CreatureRecipe;
+  traitNames: string[];
+};
+
+type RevealMoment = {
+  kind: 'first-form' | 'first-mixed' | 'evolved' | 'unchanged';
+  creature: VisibleCreature;
+  changes?: string[];
+};
+
+// The identity centerpiece. It renders the pure five-part First Form at 8 real profile answers
+// plus one qualifying Core trait, then the last revealed mixed snapshot after the 50-answer /
+// five-trait gate. Before First Form, the Magnetic Loop remains the neutral placeholder. Both
+// forms derive from the same ranked Core list that powers Your Signature, so there is no
+// second ranking. The Relic remains structurally separate and unchanged.
 //
 // Layout: on wide viewports, the approved left/right relationship holds (Creature left,
 // name+Relic right) -- it has room to. On narrow phone widths, a large centerpiece Creature
@@ -70,20 +96,17 @@ type RemoteYouState =
 function IdentityHero({
   isWide,
   resolvedRelicSlotCount,
-  creatureIdentity,
-  creatureRevealed,
+  creature,
 }: {
   isWide: boolean;
   resolvedRelicSlotCount: number;
-  creatureIdentity: CreatureIdentity | null;
-  creatureRevealed: boolean;
+  creature: VisibleCreature | null;
 }) {
   const outerOpacity = resolvedRelicSlotCount >= 1 ? 1 : 0.35;
   const innerOpacity = resolvedRelicSlotCount >= 3 ? 1 : resolvedRelicSlotCount >= 2 ? 0.5 : 0;
   const creatureSize = isWide ? 240 : 196;
   const placeholderSize = isWide ? 112 : 76;
-  const shouldRenderCreature = creatureRevealed && creatureIdentity?.isComplete === true;
-  const recipe = shouldRenderCreature ? (creatureIdentity.recipe as CreatureTestRecipe) : null;
+  const recipe = creature?.recipe ?? null;
 
   const avatar = recipe ? (
     <CreatureAvatar recipe={recipe} size={creatureSize} />
@@ -99,9 +122,9 @@ function IdentityHero({
         style={[
           styles.characterNamePlaceholder,
           isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow,
-          shouldRenderCreature ? styles.characterNameRevealed : null,
+          creature ? styles.characterNameRevealed : null,
         ]}>
-        {shouldRenderCreature ? creatureIdentity?.name : 'CHARACTER NAME'}
+        {creature?.name ?? 'CHARACTER NAME'}
       </ThemedText>
       <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow, { opacity: outerOpacity }]}>
         <View style={[isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
@@ -194,6 +217,7 @@ export default function YouScreen() {
   // second breakpoint, so "wide enough for a side-by-side hero" and "wide enough for a capped
   // content column" always agree.
   const isWide = contentWidth !== undefined;
+  const [calendarNow, setCalendarNow] = useState(() => new Date());
 
   // Local prototype path — completely unchanged, still built from the same demo data. Only
   // ever rendered when isRemoteDailyEnabled is false (see the branch in the JSX below). The
@@ -217,7 +241,6 @@ export default function YouScreen() {
   const [remoteState, setRemoteState] = useState<RemoteYouState>({ status: 'loading' });
 
   const loadRemote = useCallback(async () => {
-    setRemoteState({ status: 'loading' });
     await ensureAnonymousSession();
     // Opportunistic retry point for any quiz completion that failed to reach the server
     // earlier (see pending-quiz-submissions.ts) — "You opening" is exactly the moment the
@@ -248,67 +271,206 @@ export default function YouScreen() {
     setRemoteState({ status: 'ready', profile, counts });
   }, []);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (isRemoteDailyEnabled) {
+      setCalendarNow(new Date());
       void loadRemote();
     }
-  }, [loadRemote]);
+  }, [loadRemote]));
 
-  // The Creature (Bible §17) — the SAME ranked Core list Your Signature uses
-  // (getCoreCreatureInputTraits/profile.topTraits, see creature-identity.ts), sliced to the
-  // top 5 ranks. Reveal requires BOTH profileAnswerCount >= 50 AND all 5 ranks qualifying
-  // (isComplete) -- fewer qualifying traits (even at 50+ answers) means the placeholder stays,
-  // never a partial/fake Creature. The local demo path never reveals (creatureRevealed=false
-  // is passed to IdentityHero below), matching its existing "no real Your Signature either"
-  // behavior.
-  const localCreatureIdentity = useMemo(() => buildCreatureIdentity(localPersonalityProfile), [localPersonalityProfile]);
+  // The live profile always derives the current candidates. Only the mixed presentation
+  // snapshot below is persisted, so the app can keep the last revealed Creature stable while
+  // the profile continues learning between global Friday checks.
   const remoteCreatureIdentity = useMemo(
     () => (remoteState.status === 'ready' ? buildCreatureIdentity(remoteState.profile) : null),
     [remoteState],
   );
-  const remoteCreatureRevealed =
-    remoteState.status === 'ready' &&
-    remoteState.counts.profileAnswerCount >= CREATURE_REVEAL_ANSWER_THRESHOLD &&
-    remoteCreatureIdentity?.isComplete === true;
+  const remoteFirstFormIdentity = useMemo(
+    () => (remoteState.status === 'ready' ? buildFirstFormIdentity(remoteState.profile) : null),
+    [remoteState],
+  );
+  const [evolutionState, setEvolutionState] = useState<CreatureEvolutionState | null>(null);
+  const [revealMoment, setRevealMoment] = useState<RevealMoment | null>(null);
 
-  // The one-time "Apparently, this is you." reveal moment (see creature-reveal-overlay.tsx) --
-  // plays once per device the first time remoteCreatureRevealed becomes true, never again
-  // after creature-reveal-state.ts's local flag is set. Purely a presentation concern; it
-  // cannot affect what Creature is computed above.
-  const [showCreatureReveal, setShowCreatureReveal] = useState(false);
   useEffect(() => {
-    if (!remoteCreatureRevealed) {
-      return;
-    }
     let cancelled = false;
-    void hasSeenCreatureReveal().then((seen) => {
-      if (!cancelled && !seen) {
-        setShowCreatureReveal(true);
+    void loadCreatureEvolutionState().then((state) => {
+      if (!cancelled) {
+        setEvolutionState(state);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [remoteCreatureRevealed]);
-  const dismissCreatureReveal = useCallback(() => {
-    setShowCreatureReveal(false);
-    void markCreatureRevealSeen();
   }, []);
 
-  // Pre-reveal copy (never a countdown, never "1 more answer" framing -- see this file's own
-  // product guardrails): distinguishes "hasn't reached 50 answers yet" from "has, but Apparently
-  // You hasn't found 5 strong enough Core patterns yet," so a user past 50 answers is never
-  // told something misleadingly close ("almost there") when the real blocker is pattern
-  // strength, not raw answer count.
+  useEffect(() => {
+    let midnightTimer: ReturnType<typeof setTimeout>;
+    const scheduleNextLocalDay = () => {
+      const now = new Date();
+      const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
+      midnightTimer = setTimeout(() => {
+        setCalendarNow(new Date());
+        scheduleNextLocalDay();
+      }, nextDay.getTime() - now.getTime());
+    };
+    scheduleNextLocalDay();
+    return () => clearTimeout(midnightTimer);
+  }, []);
+
+  const persistEvolutionState = useCallback((nextState: CreatureEvolutionState) => {
+    setEvolutionState(nextState);
+    void saveCreatureEvolutionState(nextState);
+  }, []);
+
+  const profileAnswerCount = remoteState.status === 'ready' ? remoteState.counts.profileAnswerCount : 0;
+  const firstFormEligible = isFirstFormEligible(profileAnswerCount, remoteFirstFormIdentity);
+  const firstMixedEligible = isFirstMixedFormEligible(profileAnswerCount, remoteCreatureIdentity);
+
+  useEffect(() => {
+    if (evolutionState === null || revealMoment !== null || remoteState.status !== 'ready') {
+      return;
+    }
+
+    if (evolutionState.mixedSnapshot === null && firstMixedEligible) {
+      const snapshot = createMixedCreatureSnapshot(remoteCreatureIdentity, new Date());
+      // This effect synchronizes two independently hydrated external sources (the remote
+      // profile and local presentation storage). The state update is the synchronization
+      // result, not React-derived state that could be calculated during render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      persistEvolutionState({ ...evolutionState, mixedSnapshot: snapshot });
+      setRevealMoment({
+        kind: 'first-mixed',
+        creature: {
+          name: snapshot.name,
+          recipe: snapshot.recipe,
+          traitNames: snapshot.traits.map((trait) => trait.traitName),
+        },
+      });
+      return;
+    }
+
+    if (
+      evolutionState.mixedSnapshot === null &&
+      firstFormEligible &&
+      !evolutionState.firstFormRevealSeen &&
+      remoteFirstFormIdentity
+    ) {
+      setRevealMoment({
+        kind: 'first-form',
+        creature: {
+          name: remoteFirstFormIdentity.name,
+          recipe: remoteFirstFormIdentity.recipe,
+          traitNames: [remoteFirstFormIdentity.trait.name],
+        },
+      });
+    }
+  }, [
+    evolutionState,
+    firstFormEligible,
+    firstMixedEligible,
+    persistEvolutionState,
+    remoteCreatureIdentity,
+    remoteFirstFormIdentity,
+    remoteState.status,
+    revealMoment,
+  ]);
+
+  const mixedSnapshot = evolutionState?.mixedSnapshot ?? null;
+  const visibleCreature = useMemo<VisibleCreature | null>(() => {
+    if (mixedSnapshot) {
+      return {
+        name: mixedSnapshot.name,
+        recipe: mixedSnapshot.recipe,
+        traitNames: mixedSnapshot.traits.map((trait) => trait.traitName),
+      };
+    }
+    if (firstFormEligible && remoteFirstFormIdentity) {
+      return {
+        name: remoteFirstFormIdentity.name,
+        recipe: remoteFirstFormIdentity.recipe,
+        traitNames: [remoteFirstFormIdentity.trait.name],
+      };
+    }
+    return null;
+  }, [firstFormEligible, mixedSnapshot, remoteFirstFormIdentity]);
+
+  const pendingEvolutionDate = mixedSnapshot
+    ? getPendingEvolutionCheckpointKey(calendarNow, mixedSnapshot)
+    : null;
+  const nextEvolutionDate = getNextFridayCheckpointKey(calendarNow);
+
+  const dismissCreatureReveal = useCallback(() => {
+    if (revealMoment?.kind === 'first-form' && evolutionState) {
+      persistEvolutionState({ ...evolutionState, firstFormRevealSeen: true });
+    }
+    setRevealMoment(null);
+  }, [evolutionState, persistEvolutionState, revealMoment]);
+
+  const checkEvolution = useCallback(() => {
+    if (!pendingEvolutionDate || !mixedSnapshot || !evolutionState) {
+      return;
+    }
+
+    if (
+      remoteCreatureIdentity?.isComplete !== true ||
+      remoteCreatureIdentity.name === null
+    ) {
+      const heldSnapshot = { ...mixedSnapshot, lastCheckedEvolutionDate: pendingEvolutionDate };
+      persistEvolutionState({ ...evolutionState, mixedSnapshot: heldSnapshot });
+      setRevealMoment({
+        kind: 'unchanged',
+        creature: {
+          name: heldSnapshot.name,
+          recipe: heldSnapshot.recipe,
+          traitNames: heldSnapshot.traits.map((trait) => trait.traitName),
+        },
+      });
+      return;
+    }
+
+    const result = checkWeeklyEvolution(
+      mixedSnapshot,
+      remoteCreatureIdentity as CreatureIdentity & { name: string; recipe: CreatureRecipe },
+      pendingEvolutionDate,
+    );
+    persistEvolutionState({ ...evolutionState, mixedSnapshot: result.snapshot });
+    const changeMessages = result.changes.map((change) => change.message);
+    setRevealMoment({
+      kind: result.outcome === 'changed' ? 'evolved' : 'unchanged',
+      creature: {
+        name: result.snapshot.name,
+        recipe: result.snapshot.recipe,
+        traitNames: result.snapshot.traits.map((trait) => trait.traitName),
+      },
+      changes:
+        changeMessages.length > 3
+          ? [...changeMessages.slice(0, 3), `${changeMessages.length - 3} other details shifted too.`]
+          : changeMessages,
+    });
+  }, [
+    evolutionState,
+    mixedSnapshot,
+    pendingEvolutionDate,
+    persistEvolutionState,
+    remoteCreatureIdentity,
+  ]);
+
+  // Intentional pre-First-Form copy, followed by gentle learning copy while a pure First Form
+  // is visible. There is no fake progress bar or promise that one more answer causes a change.
   const creaturePreRevealCopy = useMemo(() => {
-    if (remoteState.status !== 'ready' || remoteCreatureRevealed) {
+    if (remoteState.status !== 'ready' || mixedSnapshot) {
       return null;
     }
-    if (remoteState.counts.profileAnswerCount < CREATURE_REVEAL_ANSWER_THRESHOLD) {
-      return 'Your Creature is still taking shape. Keep answering and it will reveal itself.';
+    if (!firstFormEligible) {
+      return profileAnswerCount < 8
+        ? 'Your Creature is listening. A First Form appears when a real pattern starts to hold.'
+        : 'Apparently is still waiting for one strong enough pattern to take shape.';
     }
-    return 'Apparently You is still learning enough strong patterns to complete your Creature.';
-  }, [remoteState, remoteCreatureRevealed]);
+    return firstMixedEligible
+      ? null
+      : 'Your First Form reflects what is strongest right now. Keep answering; every real pattern matters.';
+  }, [firstFormEligible, firstMixedEligible, mixedSnapshot, profileAnswerCount, remoteState.status]);
 
   // "YOUR SIGNATURE" (Bible v1.4 §16) — up to seven strongest qualifying Core trait poles,
   // never padded. Deliberately independent of profileAnswerCount/the 50-answer milestone:
@@ -396,12 +558,39 @@ export default function YouScreen() {
           <IdentityHero
             isWide={isWide}
             resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
-            creatureIdentity={isRemoteDailyEnabled ? remoteCreatureIdentity : localCreatureIdentity}
-            creatureRevealed={isRemoteDailyEnabled ? remoteCreatureRevealed : false}
+            creature={isRemoteDailyEnabled ? visibleCreature : null}
           />
 
           {isRemoteDailyEnabled && creaturePreRevealCopy && (
             <ThemedText style={styles.creaturePreRevealCopy}>{creaturePreRevealCopy}</ThemedText>
+          )}
+
+          {isRemoteDailyEnabled && remoteState.status === 'ready' && (
+            <ThemedText style={styles.evolutionDateCopy}>
+              {mixedSnapshot
+                ? pendingEvolutionDate
+                  ? `Evolution Day: ${formatEvolutionDate(pendingEvolutionDate)}`
+                  : `Next Evolution Day: ${formatEvolutionDate(nextEvolutionDate)}`
+                : 'Evolution Day: Friday'}
+            </ThemedText>
+          )}
+
+          {isRemoteDailyEnabled && pendingEvolutionDate && mixedSnapshot && (
+            <View style={styles.evolutionPrompt}>
+              <View style={styles.evolutionPromptCopy}>
+                <ThemedText style={styles.evolutionPromptTitle}>Did you evolve?</ThemedText>
+                <ThemedText style={styles.evolutionPromptSupporting}>
+                  Apparently has been paying attention since your last reveal.
+                </ThemedText>
+              </View>
+              <Pressable
+                style={styles.evolutionPromptButton}
+                onPress={checkEvolution}
+                accessibilityRole="button"
+                accessibilityLabel="Find out whether your Creature evolved">
+                <ThemedText style={styles.evolutionPromptButtonText}>Find out</ThemedText>
+              </Pressable>
+            </View>
           )}
 
           <View style={styles.identityHeader}>
@@ -445,7 +634,12 @@ export default function YouScreen() {
           {isRemoteDailyEnabled && remoteState.status === 'error' && (
             <View style={styles.stateCard}>
               <ThemedText style={styles.stateText}>We couldn&apos;t load your read right now.</ThemedText>
-              <Pressable style={styles.retryButton} onPress={() => void loadRemote()}>
+              <Pressable
+                style={styles.retryButton}
+                onPress={() => {
+                  setRemoteState({ status: 'loading' });
+                  void loadRemote();
+                }}>
                 <ThemedText style={styles.retryButtonText}>Retry →</ThemedText>
               </Pressable>
             </View>
@@ -489,8 +683,13 @@ export default function YouScreen() {
           {isRemoteDailyEnabled && remoteState.status !== 'ready' && recentReadCard}
         </ScrollView>
       </SafeAreaView>
-      {showCreatureReveal && remoteCreatureIdentity ? (
-        <CreatureRevealOverlay identity={remoteCreatureIdentity} onDismiss={dismissCreatureReveal} />
+      {revealMoment ? (
+        <CreatureRevealOverlay
+          kind={revealMoment.kind}
+          creature={revealMoment.creature}
+          changes={revealMoment.changes}
+          onDismiss={dismissCreatureReveal}
+        />
       ) : null}
     </ThemedView>
   );
@@ -586,6 +785,31 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: Spacing.four,
   },
+  evolutionDateCopy: {
+    textAlign: 'center',
+    color: Brand.plum,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  evolutionPrompt: {
+    ...CardStyle.tinted(Surface.lavender, '#E4D8FF'),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  evolutionPromptCopy: { flex: 1, gap: Spacing.one },
+  evolutionPromptTitle: { ...Type.heading, color: Brand.ink },
+  evolutionPromptSupporting: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18 },
+  evolutionPromptButton: {
+    backgroundColor: Brand.plum,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  evolutionPromptButtonText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
   identityHeader: { alignItems: 'center', gap: Spacing.one },
   displayName: { ...Type.display, textAlign: 'center' },
   subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
