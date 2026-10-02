@@ -167,3 +167,35 @@ export const computeProfileActivityCounts = (
     profileAnswerCount: dailyAnswerCount + quizAnswerCount,
   };
 };
+
+// --- Commonality (Build 9) ----------------------------------------------------------------
+//
+// Real aggregate Commonality (Bible v1.4 §25) -- see get_my_commonality() in
+// supabase/migrations/20261002020000_add_commonality_rpc.sql for the full real calculation
+// (Public-room Daily answers only, >= 10-respondent per-question eligibility, >= 10-eligible-
+// answer user-level threshold before any aggregate number is shown). This is the first real
+// implementation; nothing before this displayed anything but hardcoded demo literals.
+
+export type MyCommonalityRow = {
+  eligible_answer_count: number;
+  average_percent: number | null;
+  rare_pick_count: number;
+};
+
+export type GetMyCommonalityResult = { ok: true; data: MyCommonalityRow } | { ok: false; message: string };
+
+export const getMyCommonality = async (): Promise<GetMyCommonalityResult> => {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' };
+  }
+  const { data, error } = await supabase.rpc('get_my_commonality');
+  if (error) {
+    console.warn('[personality-service] getMyCommonality failed:', error.message);
+    return { ok: false, message: error.message };
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as MyCommonalityRow | undefined;
+  if (!row) {
+    return { ok: false, message: 'get_my_commonality returned no row.' };
+  }
+  return { ok: true, data: row };
+};

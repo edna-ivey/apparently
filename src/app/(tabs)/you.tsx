@@ -44,9 +44,11 @@ import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
 import {
   computeProfileActivityCounts,
+  getMyCommonality,
   getMyPersonalityEvidence,
   getMyQuizResults,
   groupEvidenceIntoAnswers,
+  type MyCommonalityRow,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
 
@@ -67,6 +69,11 @@ type RemoteYouState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
+
+type CommonalityState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; data: MyCommonalityRow };
 
 type VisibleCreature = {
   name: string;
@@ -138,37 +145,41 @@ function IdentityHero({
   const placeholderSize = isWide ? 112 : 76;
   const recipe = creature?.recipe ?? null;
 
-  // Soft magical atmosphere behind the Creature -- three overlapping, heavily-blurred-looking
-  // pastel circles (plain Views + soft shadow, no gradient library/new dependency needed; see
-  // this component's own file header for why). Purely decorative (pointerEvents none). The
-  // stage is always sized off creatureSize (even while a placeholder is showing) so the hero's
-  // footprint never jumps when the real Creature first appears. Every ring's offset is computed
-  // explicitly here (rather than relying on nested-absolute centering) so each stays precisely
-  // concentric regardless of platform.
+  // Soft magical atmosphere behind the Creature (Build 9 correction pass — the original three
+  // concentric, solid-filled pastel rings read as a literal target/bullseye, not atmosphere;
+  // see the Build 9 correction report). Replaced with two softly-tinted, fully-transparent-fill
+  // blobs (color comes ONLY from the blurred box-shadow, never a solid backgroundColor, so
+  // there is no hard disc edge to read as a "ring") offset diagonally from one another rather
+  // than sharing one center — an off-center light source, not a target. Purely decorative
+  // (pointerEvents none). The stage is always sized off creatureSize (even while a placeholder
+  // is showing) so the hero's footprint never jumps when the real Creature first appears.
   const glowSize = creatureSize * 1.65;
-  const ringSize = (fraction: number) => glowSize * fraction;
-  const ringOffset = (size: number) => (glowSize - size) / 2;
-  const glowBlushSize = ringSize(1);
-  const glowLavenderSize = ringSize(0.72);
-  const glowGoldSize = ringSize(0.4);
+  const glowPrimarySize = glowSize * 0.82;
+  const glowSecondarySize = glowSize * 0.58;
   const heroGlow = (
     <View pointerEvents="none" style={[styles.heroGlowStage, { width: glowSize, height: glowSize }]}>
       <View
         style={[
-          styles.heroGlowBlush,
-          { width: glowBlushSize, height: glowBlushSize, borderRadius: glowBlushSize / 2, top: ringOffset(glowBlushSize), left: ringOffset(glowBlushSize) },
+          styles.heroGlowPrimary,
+          {
+            width: glowPrimarySize,
+            height: glowPrimarySize,
+            borderRadius: glowPrimarySize / 2,
+            top: glowSize * 0.08,
+            left: glowSize * 0.04,
+          },
         ]}
       />
       <View
         style={[
-          styles.heroGlowLavender,
-          { width: glowLavenderSize, height: glowLavenderSize, borderRadius: glowLavenderSize / 2, top: ringOffset(glowLavenderSize), left: ringOffset(glowLavenderSize) },
-        ]}
-      />
-      <View
-        style={[
-          styles.heroGlowGold,
-          { width: glowGoldSize, height: glowGoldSize, borderRadius: glowGoldSize / 2, top: ringOffset(glowGoldSize), left: ringOffset(glowGoldSize) },
+          styles.heroGlowSecondary,
+          {
+            width: glowSecondarySize,
+            height: glowSecondarySize,
+            borderRadius: glowSecondarySize / 2,
+            top: glowSize * 0.3,
+            left: glowSize * 0.38,
+          },
         ]}
       />
     </View>
@@ -247,13 +258,26 @@ function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
   const router = useRouter();
 
   if (signals.length === 0) {
+    // Build 9 correction: the original three dashed, hollow outline pills read as "missing
+    // content" (the user's own words) rather than an intentional mystery. Replaced with three
+    // VEILED pills -- same filled-plum footprint as a revealed Undercurrent pill (so the shape
+    // itself already reads as "the same section, just not open yet"), each carrying a small
+    // sparkle glyph instead of being empty. Still zero fabricated labels/numbers -- the glyph
+    // is decorative, never a stand-in trait name.
     return (
       <>
         <ThemedText style={styles.sectionTitle}>THE UNDERCURRENT</ThemedText>
+        <ThemedText style={styles.undercurrentLockedEyebrow}>PRIVATE IS STILL LEARNING YOU</ThemedText>
         <View style={styles.patternList}>
-          <View style={styles.lockedSlot} />
-          <View style={styles.lockedSlot} />
-          <View style={styles.lockedSlot} />
+          <View style={styles.lockedSlot}>
+            <ThemedText style={styles.lockedSlotGlyph}>✦</ThemedText>
+          </View>
+          <View style={styles.lockedSlot}>
+            <ThemedText style={styles.lockedSlotGlyph}>✦</ThemedText>
+          </View>
+          <View style={styles.lockedSlot}>
+            <ThemedText style={styles.lockedSlotGlyph}>✦</ThemedText>
+          </View>
         </View>
         <View style={styles.undercurrentTeaser}>
           <ThemedText style={styles.undercurrentTeaserCopy}>
@@ -279,6 +303,65 @@ function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
             </View>
           </View>
         ))}
+      </View>
+    </>
+  );
+}
+
+// "YOUR COMMONALITY" (Build 9) — real respondent-compared data only (Bible v1.4 §25). Moved
+// here from Today, where it never actually existed as real logic -- the "37%"/"06 rare picks"
+// previously visible on Today were hardcoded demo literals in that screen's local-prototype
+// branch (experience.source === 'local'), never real data; see get_my_commonality() in
+// supabase/migrations/20261002020000_add_commonality_rpc.sql for the actual calculation this
+// now reads. Honest building state (never a fabricated percentage) whenever the user has
+// fewer than 10 Commonality-eligible answered questions -- exactly the Bible's own "STILL
+// LEARNING THE ROOM" fallback.
+function CommonalitySection({ state }: { state: CommonalityState }) {
+  if (state.status === 'loading') {
+    return null;
+  }
+  if (state.status === 'error') {
+    // A failed Commonality read is never shown as a broken card on an otherwise-working You
+    // page -- it simply doesn't render this section this time (the next focus/retry of You
+    // tries again via loadCommonality).
+    return null;
+  }
+
+  const { eligible_answer_count: eligibleCount, average_percent: percent, rare_pick_count: rareCount } = state.data;
+
+  if (percent === null || eligibleCount < 10) {
+    return (
+      <>
+        <ThemedText style={styles.sectionTitle}>YOUR COMMONALITY</ThemedText>
+        <View style={styles.commonalityCard}>
+          <ThemedText style={styles.commonalityBuildingEyebrow}>STILL LEARNING THE ROOM</ThemedText>
+          <ThemedText style={styles.commonalityBuildingCopy}>
+            Answer a few more Dailies the room has also answered, and we’ll start comparing notes.
+          </ThemedText>
+        </View>
+      </>
+    );
+  }
+
+  const tagline =
+    percent >= 60
+      ? 'You tend to see it the way the room does.'
+      : percent >= 40
+        ? 'You land right in the middle of the room.'
+        : 'You don’t exactly move with the crowd.';
+
+  return (
+    <>
+      <ThemedText style={styles.sectionTitle}>YOUR COMMONALITY</ThemedText>
+      <View style={styles.commonalityCard}>
+        <ThemedText style={styles.commonalityPercent}>{percent}%</ThemedText>
+        <ThemedText style={styles.commonalityTagline}>{tagline}</ThemedText>
+        <ThemedText style={styles.commonalityExplainer}>
+          Across the questions we can compare, your choices were shared by about {percent}% of the room.
+        </ThemedText>
+        <ThemedText style={styles.commonalityFootnote}>
+          {eligibleCount} comparable answer{eligibleCount === 1 ? '' : 's'} · {rareCount} rare pick{rareCount === 1 ? '' : 's'}
+        </ThemedText>
       </View>
     </>
   );
@@ -315,6 +398,11 @@ export default function YouScreen() {
   // is idempotent/concurrent-safe — see auth-service.ts); never creates a second identity,
   // never touches Admin auth.
   const [remoteState, setRemoteState] = useState<RemoteYouState>({ status: 'loading' });
+  // Kept independent of remoteState (Build 9) -- a real Commonality read failing must never
+  // block the rest of You (Signature/Undercurrent/Creature all have nothing to do with
+  // Commonality data). See get_my_commonality() in
+  // supabase/migrations/20261002020000_add_commonality_rpc.sql for the real calculation.
+  const [commonalityState, setCommonalityState] = useState<CommonalityState>({ status: 'loading' });
 
   const loadRemote = useCallback(async () => {
     await ensureAnonymousSession();
@@ -347,12 +435,19 @@ export default function YouScreen() {
     setRemoteState({ status: 'ready', profile, counts });
   }, []);
 
+  const loadCommonality = useCallback(async () => {
+    setCommonalityState({ status: 'loading' });
+    const result = await getMyCommonality();
+    setCommonalityState(result.ok ? { status: 'ready', data: result.data } : { status: 'error', message: result.message });
+  }, []);
+
   useFocusEffect(useCallback(() => {
     if (isRemoteDailyEnabled) {
       setCalendarNow(new Date());
       void loadRemote();
+      void loadCommonality();
     }
-  }, [loadRemote]));
+  }, [loadRemote, loadCommonality]));
 
   // The live profile always derives the current candidates. Only the mixed presentation
   // snapshot below is persisted, so the app can keep the last revealed Creature stable while
@@ -759,6 +854,8 @@ export default function YouScreen() {
 
               <UndercurrentSection signals={privateSignals} />
 
+              <CommonalitySection state={commonalityState} />
+
               {recentReadCard}
             </>
           )}
@@ -817,13 +914,13 @@ const styles = StyleSheet.create({
   // Sized off glowSize (computed in IdentityHero) so the footprint never jumps between the
   // placeholder and the real Creature.
   heroStage: { alignItems: 'center', justifyContent: 'center' },
-  // Soft magical atmosphere (Build 9) -- three concentric, softly-shadowed pastel rings
-  // standing in for a gradient/blur (no new dependency; see IdentityHero's own comment).
-  // Purely decorative, always behind the Creature by source order (drawn first).
+  // Soft magical atmosphere (Build 9 correction) -- two off-center, transparent-fill blobs
+  // whose only visible color comes from a wide, low-opacity blurred shadow (see IdentityHero's
+  // own comment for why this replaced the original three concentric rings). Purely decorative,
+  // always behind the Creature by source order (drawn first).
   heroGlowStage: { position: 'absolute' },
-  heroGlowBlush: { position: 'absolute', backgroundColor: Surface.blush, boxShadow: '0 0 60px 20px rgba(255,229,239,0.55)' },
-  heroGlowLavender: { position: 'absolute', backgroundColor: Surface.lavender, boxShadow: '0 0 40px 10px rgba(247,243,255,0.6)' },
-  heroGlowGold: { position: 'absolute', backgroundColor: Surface.sand, boxShadow: '0 0 30px 8px rgba(255,243,221,0.6)' },
+  heroGlowPrimary: { position: 'absolute', backgroundColor: 'transparent', boxShadow: '0 0 90px 55px rgba(255,214,232,0.38)' },
+  heroGlowSecondary: { position: 'absolute', backgroundColor: 'transparent', boxShadow: '0 0 70px 40px rgba(243,232,255,0.32)' },
   // Placeholder-only frame (the pre-reveal Magnetic Loop mark benefits from a bounded card;
   // the real revealed Creature renders through CreatureAvatar instead, unframed, so it reads
   // as a floating hero illustration rather than a boxed icon).
@@ -979,24 +1076,37 @@ const styles = StyleSheet.create({
   undercurrentPatternName: { color: Brand.cream, fontSize: 14, lineHeight: 17, fontWeight: '800' },
   undercurrentPatternStrength: { fontSize: 11, fontWeight: '700', color: Brand.coral, letterSpacing: 0.2 },
 
-  // Locked Undercurrent state (no qualifying Private evidence yet) -- three concealed trait
-  // positions (never fabricated labels/numbers, just reserved shape) plus a teaser + entry
-  // point into Apparently Private. Same pill footprint as a revealed pill so the section reads
-  // as "the same three slots, not yet filled" rather than a different layout entirely.
+  // Locked Undercurrent state (no qualifying Private evidence yet) -- Build 9 correction: three
+  // VEILED pills, not hollow dashed outlines (the prior treatment read as "missing content,"
+  // per direct user feedback on the real preview). Filled with the same deep plum identity a
+  // revealed Undercurrent pill uses (undercurrentPattern), just softened/translucent, so the
+  // shape itself already communicates "the same section, sealed" rather than "empty." Each
+  // carries a small sparkle glyph -- purely decorative, never a fabricated trait label.
+  undercurrentLockedEyebrow: { ...Type.eyebrow, color: Brand.plum, opacity: 0.8, marginTop: -Spacing.one },
   lockedSlot: {
     width: 104,
     height: 40,
     borderRadius: Radius.pill,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: Surface.hairline,
-    backgroundColor: Surface.card,
-    opacity: 0.7,
+    // rgba (not Brand.plum + a View-level `opacity`) so the glyph on top renders at full
+    // strength instead of inheriting the pill's own translucency.
+    backgroundColor: 'rgba(36,1,31,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  lockedSlotGlyph: { color: Brand.plum, fontSize: 15, opacity: 0.85 },
   undercurrentTeaser: { ...CardStyle.tinted(Surface.card, Surface.hairline), gap: Spacing.three, alignItems: 'flex-start' },
   undercurrentTeaserCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600' },
   undercurrentTeaserCta: { backgroundColor: Brand.plum, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, alignSelf: 'flex-start' },
   undercurrentTeaserCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
+
+  // "YOUR COMMONALITY" (Build 9) -- one elegant editorial card, real data only.
+  commonalityCard: { ...CardStyle.tinted(Surface.seafoam, '#D7EEE5'), ...Elevation.soft, alignItems: 'center', gap: Spacing.one },
+  commonalityPercent: { ...Type.display, fontSize: 40, lineHeight: 44 },
+  commonalityTagline: { ...Type.body, color: Brand.ink, fontWeight: '800', textAlign: 'center' },
+  commonalityExplainer: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.half },
+  commonalityFootnote: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700', opacity: 0.75, marginTop: Spacing.one },
+  commonalityBuildingEyebrow: { ...Type.eyebrow, color: Brand.inkSecondary },
+  commonalityBuildingCopy: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.one },
 
   // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
   // cards to read as "a different kind of result."

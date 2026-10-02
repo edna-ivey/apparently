@@ -2,14 +2,23 @@
 # runtime import/require from src/ (grepped before adding each entry) -- never anything the
 # Expo app actually bundles or needs at build time.
 #
-# IMPORTANT -- see the Build 9 final report for the real finding: these exclusions are small
-# (well under 1MB combined). The actual EAS archive bulk (~236MB of the ~239MB working tree)
-# is the assets/creatures*/ family, which this file deliberately does NOT exclude -- most of
-# that is still statically require()'d by the still-registered /creature-lab route
-# (src/app/creature-lab.tsx -> src/data/creature-lab/creature-assets.ts), so excluding it here
-# would break the Metro bundle, not just shrink it. That is a product/code decision (retiring
-# an R&D-only route), not a build-config change, and is explicitly flagged for review rather
-# than acted on in this pass.
+# CORRECTION (Build 9 correction pass): the original comment here claimed src/app/creature-lab.tsx
+# imports src/data/creature-lab/creature-assets.ts -- that was wrong (a same-named-folder
+# misread; the route only ever imported the separate, current src/data/creature-test/ system).
+# The actual obsolete tree (src/data/creature-lab/, src/components/creature-lab/,
+# scripts/creature-factory/, and the asset folders assets/creatures-canonical/,
+# assets/creatures-dev-registered/, assets/creatures-dev-prototype/ it alone referenced) had
+# zero real importers and has been git-rm'd entirely -- see the Build 9 correction report for
+# before/after archive size. assets/creatures-test/ is the current production asset tree
+# (used by CreatureAvatar for every real user) and is correctly never excluded here.
+#
+# assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
+# (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
+# remaining thing the removed obsolete tree referenced. Excluded from the EAS upload here
+# (EAS Build includes untracked-but-not-gitignored files by default) rather than deleted from
+# disk, since it has no git history to recover it from -- that decision is left to whoever owns
+# this local checkout.
+assets/creatures/
 
 # Documentation -- never imported by app code.
 docs/
