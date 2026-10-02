@@ -93,26 +93,97 @@ type RevealMoment = {
 // Relic below the name) -- composition over forcing a row that would clip. CreatureAvatar
 // itself is always rendered at a literal square (size === size), so the full calibrated
 // 1700x1700 composition scales uniformly with no cropping and no distortion at any size here.
+// Relic silhouette (Build 9) -- the pale, flat-opacity diamond this replaces read as a broken/
+// missing image, not an intentional locked state. Always renders the SAME gem silhouette (never
+// literally near-invisible) with a soft plum/gold glow whose warmth scales with how many of the
+// three Relic slots have resolved -- 0 resolved reads as a quiet, clearly-a-shape "this is
+// locked, not missing" mystical object; 3 resolved reads as the real earned glow. A tiny sparkle
+// glyph marks the still-locked state so it reads as "there is something here to unlock,"
+// connected to Apparently Private, never as empty geometry.
+function RelicGlyph({ resolvedSlotCount, wide }: { resolvedSlotCount: number; wide: boolean }) {
+  const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
+  const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
+  const isLocked = resolvedSlotCount === 0;
+
+  return (
+    <View style={[styles.relicShape, wide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
+      <View style={[StyleSheet.absoluteFill, styles.relicShapeGlow, { opacity: glowOpacity }]} />
+      <View style={[wide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
+      {isLocked && (
+        // relicShape itself is rotated 45deg to read as a gem/diamond -- counter-rotate the
+        // sparkle glyph so IT stays upright rather than inheriting that tilt.
+        <ThemedText
+          style={[styles.relicLockedSparkle, { transform: [{ rotate: '-45deg' }] }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no">
+          ✦
+        </ThemedText>
+      )}
+    </View>
+  );
+}
+
 function IdentityHero({
   isWide,
   resolvedRelicSlotCount,
   creature,
+  onGetYourRead,
 }: {
   isWide: boolean;
   resolvedRelicSlotCount: number;
   creature: VisibleCreature | null;
+  onGetYourRead: (() => void) | null;
 }) {
-  const outerOpacity = resolvedRelicSlotCount >= 1 ? 1 : 0.35;
-  const innerOpacity = resolvedRelicSlotCount >= 3 ? 1 : resolvedRelicSlotCount >= 2 ? 0.5 : 0;
-  const creatureSize = isWide ? 240 : 196;
+  const creatureSize = isWide ? 248 : 204;
   const placeholderSize = isWide ? 112 : 76;
   const recipe = creature?.recipe ?? null;
 
-  const avatar = recipe ? (
-    <CreatureAvatar recipe={recipe} size={creatureSize} />
-  ) : (
-    <View style={[styles.avatarArea, { width: placeholderSize, height: placeholderSize }]}>
-      <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={{ width: placeholderSize, height: placeholderSize }} />
+  // Soft magical atmosphere behind the Creature -- three overlapping, heavily-blurred-looking
+  // pastel circles (plain Views + soft shadow, no gradient library/new dependency needed; see
+  // this component's own file header for why). Purely decorative (pointerEvents none). The
+  // stage is always sized off creatureSize (even while a placeholder is showing) so the hero's
+  // footprint never jumps when the real Creature first appears. Every ring's offset is computed
+  // explicitly here (rather than relying on nested-absolute centering) so each stays precisely
+  // concentric regardless of platform.
+  const glowSize = creatureSize * 1.65;
+  const ringSize = (fraction: number) => glowSize * fraction;
+  const ringOffset = (size: number) => (glowSize - size) / 2;
+  const glowBlushSize = ringSize(1);
+  const glowLavenderSize = ringSize(0.72);
+  const glowGoldSize = ringSize(0.4);
+  const heroGlow = (
+    <View pointerEvents="none" style={[styles.heroGlowStage, { width: glowSize, height: glowSize }]}>
+      <View
+        style={[
+          styles.heroGlowBlush,
+          { width: glowBlushSize, height: glowBlushSize, borderRadius: glowBlushSize / 2, top: ringOffset(glowBlushSize), left: ringOffset(glowBlushSize) },
+        ]}
+      />
+      <View
+        style={[
+          styles.heroGlowLavender,
+          { width: glowLavenderSize, height: glowLavenderSize, borderRadius: glowLavenderSize / 2, top: ringOffset(glowLavenderSize), left: ringOffset(glowLavenderSize) },
+        ]}
+      />
+      <View
+        style={[
+          styles.heroGlowGold,
+          { width: glowGoldSize, height: glowGoldSize, borderRadius: glowGoldSize / 2, top: ringOffset(glowGoldSize), left: ringOffset(glowGoldSize) },
+        ]}
+      />
+    </View>
+  );
+
+  const avatar = (
+    <View style={[styles.heroStage, { width: glowSize, height: glowSize }]}>
+      {heroGlow}
+      {recipe ? (
+        <CreatureAvatar recipe={recipe} size={creatureSize} />
+      ) : (
+        <View style={[styles.avatarArea, { width: placeholderSize, height: placeholderSize }]}>
+          <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={{ width: placeholderSize, height: placeholderSize }} />
+        </View>
+      )}
     </View>
   );
 
@@ -126,9 +197,12 @@ function IdentityHero({
         ]}>
         {creature?.name ?? 'CHARACTER NAME'}
       </ThemedText>
-      <View style={[styles.relicShape, isWide ? styles.relicShapeWide : styles.relicShapeNarrow, { opacity: outerOpacity }]}>
-        <View style={[isWide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
-      </View>
+      <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} wide={isWide} />
+      {creature && onGetYourRead && (
+        <Pressable style={styles.getYourReadButton} onPress={onGetYourRead} accessibilityRole="button">
+          <ThemedText style={styles.getYourReadButtonText}>GET YOUR READ →</ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 
@@ -176,11 +250,11 @@ function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
     return (
       <>
         <ThemedText style={styles.sectionTitle}>THE UNDERCURRENT</ThemedText>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+        <View style={styles.patternList}>
           <View style={styles.lockedSlot} />
           <View style={styles.lockedSlot} />
           <View style={styles.lockedSlot} />
-        </ScrollView>
+        </View>
         <View style={styles.undercurrentTeaser}>
           <ThemedText style={styles.undercurrentTeaserCopy}>
             Apparently Private learns what tends to show up underneath when things get personal.
@@ -195,15 +269,17 @@ function UndercurrentSection({ signals }: { signals: PrivateSignalTrait[] }) {
   return (
     <>
       <ThemedText style={styles.sectionTitle}>THE UNDERCURRENT</ThemedText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+      <View style={styles.patternList}>
         {signals.map((signal, index) => (
           <View key={signal.dimension} style={[styles.pattern, styles.undercurrentPattern]}>
-            <ThemedText style={styles.undercurrentPatternNumber}>0{index + 1}</ThemedText>
-            <ThemedText style={styles.undercurrentPatternName}>{signal.label}</ThemedText>
-            <ThemedText style={styles.undercurrentPatternStrength}>{signal.strengthLabel}</ThemedText>
+            <ThemedText style={[styles.patternNumber, styles.undercurrentPatternNumber]}>{index + 1}</ThemedText>
+            <View style={styles.patternTextGroup}>
+              <ThemedText style={styles.undercurrentPatternName}>{signal.label}</ThemedText>
+              <ThemedText style={styles.undercurrentPatternStrength}>{signal.strengthLabel}</ThemedText>
+            </View>
           </View>
         ))}
-      </ScrollView>
+      </View>
     </>
   );
 }
@@ -559,6 +635,7 @@ export default function YouScreen() {
             isWide={isWide}
             resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
             creature={isRemoteDailyEnabled ? visibleCreature : null}
+            onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
           />
 
           {isRemoteDailyEnabled && creaturePreRevealCopy && (
@@ -566,13 +643,17 @@ export default function YouScreen() {
           )}
 
           {isRemoteDailyEnabled && remoteState.status === 'ready' && (
-            <ThemedText style={styles.evolutionDateCopy}>
-              {mixedSnapshot
-                ? pendingEvolutionDate
-                  ? `Evolution Day: ${formatEvolutionDate(pendingEvolutionDate)}`
-                  : `Next Evolution Day: ${formatEvolutionDate(nextEvolutionDate)}`
-                : 'Evolution Day: Friday'}
-            </ThemedText>
+            <View style={styles.evolutionDateChipRow}>
+              <View style={styles.evolutionDateChip}>
+                <ThemedText style={styles.evolutionDateChipText}>
+                  {mixedSnapshot
+                    ? pendingEvolutionDate
+                      ? `Evolution Day · ${formatEvolutionDate(pendingEvolutionDate)}`
+                      : `Next evolution · ${formatEvolutionDate(nextEvolutionDate)}`
+                    : 'Evolution Day · Friday'}
+                </ThemedText>
+              </View>
+            </View>
           )}
 
           {isRemoteDailyEnabled && pendingEvolutionDate && mixedSnapshot && (
@@ -612,14 +693,14 @@ export default function YouScreen() {
           {!isRemoteDailyEnabled && (
             <>
               <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+              <View style={styles.patternList}>
                 {localTopPatterns.map((pattern, index) => (
                   <View key={pattern.id} style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
-                    <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
+                    <ThemedText style={styles.patternNumber}>{index + 1}</ThemedText>
                     <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
                   </View>
                 ))}
-              </ScrollView>
+              </View>
               <UndercurrentSection signals={localPrivateSignals} />
               {recentReadCard}
             </>
@@ -660,17 +741,19 @@ export default function YouScreen() {
               {profileCards.length > 0 && (
                 <>
                   <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.patternList}>
+                  <View style={styles.patternList}>
                     {profileCards.map((card, index) => (
                       <View
                         key={card.dimension}
                         style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
-                        <ThemedText style={styles.patternNumber}>0{index + 1}</ThemedText>
-                        <ThemedText style={styles.patternName}>{card.label}</ThemedText>
-                        <ThemedText style={styles.patternStrength}>{card.strengthLabel}</ThemedText>
+                        <ThemedText style={styles.patternNumber}>{index + 1}</ThemedText>
+                        <View style={styles.patternTextGroup}>
+                          <ThemedText style={styles.patternName}>{card.label}</ThemedText>
+                          <ThemedText style={styles.patternStrength}>{card.strengthLabel}</ThemedText>
+                        </View>
                       </View>
                     ))}
-                  </ScrollView>
+                  </View>
                 </>
               )}
 
@@ -730,6 +813,17 @@ const styles = StyleSheet.create({
   // width, so narrow stacks them instead (see IdentityHero's own comment for why).
   heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.five },
   heroColumn: { alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
+  // The Creature's own "stage" -- centers the avatar/placeholder over its glow atmosphere.
+  // Sized off glowSize (computed in IdentityHero) so the footprint never jumps between the
+  // placeholder and the real Creature.
+  heroStage: { alignItems: 'center', justifyContent: 'center' },
+  // Soft magical atmosphere (Build 9) -- three concentric, softly-shadowed pastel rings
+  // standing in for a gradient/blur (no new dependency; see IdentityHero's own comment).
+  // Purely decorative, always behind the Creature by source order (drawn first).
+  heroGlowStage: { position: 'absolute' },
+  heroGlowBlush: { position: 'absolute', backgroundColor: Surface.blush, boxShadow: '0 0 60px 20px rgba(255,229,239,0.55)' },
+  heroGlowLavender: { position: 'absolute', backgroundColor: Surface.lavender, boxShadow: '0 0 40px 10px rgba(247,243,255,0.6)' },
+  heroGlowGold: { position: 'absolute', backgroundColor: Surface.sand, boxShadow: '0 0 30px 8px rgba(255,243,221,0.6)' },
   // Placeholder-only frame (the pre-reveal Magnetic Loop mark benefits from a bounded card;
   // the real revealed Creature renders through CreatureAvatar instead, unframed, so it reads
   // as a floating hero illustration rather than a boxed icon).
@@ -747,36 +841,53 @@ const styles = StyleSheet.create({
   // scale; the group's own alignment/gap stays constant. `maxWidth` + `flexShrink` let the
   // placeholder name wrap onto a second line rather than force horizontal overflow if a
   // future real character name is ever longer than this one.
-  relicGroup: { alignItems: 'center', gap: Spacing.two, flexShrink: 1, maxWidth: 160 },
+  relicGroup: { alignItems: 'center', gap: Spacing.two, flexShrink: 1, maxWidth: 200 },
   // On narrow, the group no longer sits beside the avatar in a row with its own flexShrink
   // context, so it gets a plain, centered, non-shrinking width instead.
-  relicGroupNarrow: { maxWidth: 260 },
+  relicGroupNarrow: { maxWidth: 280 },
   characterNamePlaceholder: {
     ...Type.display,
     color: Brand.inkSecondary,
     opacity: 0.55,
     textAlign: 'center',
   },
-  characterNamePlaceholderWide: { fontSize: 20, lineHeight: 24, letterSpacing: 1.5 },
-  characterNamePlaceholderNarrow: { fontSize: 14, lineHeight: 17, letterSpacing: 0.8 },
+  characterNamePlaceholderWide: { fontSize: 26, lineHeight: 31, letterSpacing: 0.4 },
+  characterNamePlaceholderNarrow: { fontSize: 15, lineHeight: 18, letterSpacing: 0.8 },
   characterNameRevealed: { color: Brand.ink, opacity: 1 },
-  // A deliberately bare rotated-square "gem" — placeholder geometry only, not final relic
-  // art. Structurally separate from avatarArea by construction (its own sibling View, in the
-  // same row, with a fixed gap), never overlapping or touching it on any viewport.
+  // A rotated-square "gem" silhouette — placeholder geometry only, not final relic art.
+  // Structurally separate from avatarArea by construction (its own sibling View, in the same
+  // row, with a fixed gap), never overlapping or touching it on any viewport. Build 9: always
+  // a clearly-intentional shape (RelicGlyph above layers a soft glow + a locked sparkle on
+  // top of this base) rather than a flat, near-invisible opacity fade that could read as a
+  // missing image.
   relicShape: {
     borderRadius: Radius.sm,
     backgroundColor: Surface.sand,
     borderWidth: 1,
-    borderColor: 'rgba(23, 21, 29, 0.10)',
+    borderColor: 'rgba(23, 21, 29, 0.14)',
     transform: [{ rotate: '45deg' }],
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
     boxShadow: '0 8px 20px rgba(23, 21, 29, 0.12)',
   },
   relicShapeWide: { width: 72, height: 72 },
   relicShapeNarrow: { width: 52, height: 52 },
-  relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold, opacity: 0.5 },
-  relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold, opacity: 0.5 },
+  // Soft under-glow, scales with resolvedSlotCount (see RelicGlyph) -- what makes the locked
+  // state read as "a gem with something glowing inside," not a flat pale square.
+  relicShapeGlow: { borderRadius: Radius.sm, backgroundColor: Brand.gold },
+  relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold },
+  relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold },
+  relicLockedSparkle: { position: 'absolute', fontSize: 14, color: Brand.plum, opacity: 0.5 },
+  getYourReadButton: {
+    marginTop: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Brand.plum,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 10,
+    boxShadow: '0 10px 24px rgba(36, 1, 31, 0.22)',
+  },
+  getYourReadButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.6 },
 
   creaturePreRevealCopy: {
     textAlign: 'center',
@@ -785,12 +896,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     paddingHorizontal: Spacing.four,
   },
-  evolutionDateCopy: {
-    textAlign: 'center',
+  // Build 9: a quiet collectible-status chip, not a headline -- Evolution Day is a background
+  // fact about the Creature, not the thing the page is shouting about.
+  evolutionDateChipRow: { alignItems: 'center' },
+  evolutionDateChip: {
+    borderRadius: Radius.pill,
+    backgroundColor: Surface.lavender,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 5,
+  },
+  evolutionDateChipText: {
     color: Brand.plum,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: '800',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   evolutionPrompt: {
@@ -823,28 +942,51 @@ const styles = StyleSheet.create({
   // wrap on) fits on one line at this font size. `gap` (not `justifyContent: 'space-between'`)
   // guarantees a fixed minimum gap between the number/name/strength rows regardless of
   // whether the name renders as one line or two.
-  patternList: { gap: Spacing.two, paddingVertical: Spacing.one, paddingRight: Spacing.two },
-  pattern: { width: 192, minHeight: 124, borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two },
-  patternNumber: { color: 'rgba(23,21,29,0.55)', fontSize: 12, fontWeight: '800' },
-  patternName: { color: Brand.ink, fontSize: 17, lineHeight: 22, fontWeight: '800' },
-  patternStrength: { fontSize: 12, fontWeight: '800', color: 'rgba(23,21,29,0.65)', letterSpacing: 0.2 },
+  // Build 9: refined compact pills, replacing the old 192x124 boxy cards -- auto-width, a
+  // small rank badge beside the trait name, strength as a quiet caption underneath. Readable
+  // at a glance, not a dashboard tile.
+  patternList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingVertical: Spacing.one },
+  pattern: {
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  patternNumber: {
+    color: 'rgba(23,21,29,0.5)',
+    fontSize: 11,
+    fontWeight: '800',
+    width: 18,
+    height: 18,
+    lineHeight: 18,
+    textAlign: 'center',
+    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    overflow: 'hidden',
+  },
+  patternTextGroup: { gap: 1 },
+  patternName: { color: Brand.ink, fontSize: 14, lineHeight: 17, fontWeight: '800' },
+  patternStrength: { fontSize: 11, fontWeight: '700', color: 'rgba(23,21,29,0.55)', letterSpacing: 0.2 },
 
-  // The Undercurrent's own cards (Build 8 Pass 3) — deep plum, distinct from Your Signature's
-  // pastel rotation, echoing Private's own deeper surface identity (see private.tsx) without
-  // making the whole You page dark. Never rendered with fewer than 1 or more than 3 real cards.
+  // The Undercurrent's own pills (Build 8 Pass 3; pill treatment Build 9) — deep plum,
+  // distinct from Your Signature's pastel rotation, echoing Private's own deeper surface
+  // identity (see private.tsx) without making the whole You page dark. Never rendered with
+  // fewer than 1 or more than 3 real cards.
   undercurrentPattern: { backgroundColor: Brand.plum },
-  undercurrentPatternNumber: { color: 'rgba(255,249,245,0.55)', fontSize: 12, fontWeight: '800' },
-  undercurrentPatternName: { color: Brand.cream, fontSize: 17, lineHeight: 22, fontWeight: '800' },
-  undercurrentPatternStrength: { fontSize: 12, fontWeight: '800', color: Brand.coral, letterSpacing: 0.2 },
+  undercurrentPatternNumber: { color: 'rgba(255,249,245,0.7)', backgroundColor: 'rgba(255,255,255,0.14)' },
+  undercurrentPatternName: { color: Brand.cream, fontSize: 14, lineHeight: 17, fontWeight: '800' },
+  undercurrentPatternStrength: { fontSize: 11, fontWeight: '700', color: Brand.coral, letterSpacing: 0.2 },
 
   // Locked Undercurrent state (no qualifying Private evidence yet) -- three concealed trait
   // positions (never fabricated labels/numbers, just reserved shape) plus a teaser + entry
-  // point into Apparently Private. Same card footprint as a revealed card so the section reads
+  // point into Apparently Private. Same pill footprint as a revealed pill so the section reads
   // as "the same three slots, not yet filled" rather than a different layout entirely.
   lockedSlot: {
-    width: 192,
-    minHeight: 124,
-    borderRadius: Radius.md,
+    width: 104,
+    height: 40,
+    borderRadius: Radius.pill,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: Surface.hairline,
@@ -858,7 +1000,7 @@ const styles = StyleSheet.create({
 
   // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
   // cards to read as "a different kind of result."
-  recentReadCard: CardStyle.tinted(Surface.lavender, '#EAE2FF'),
+  recentReadCard: { ...CardStyle.tinted(Surface.lavender, '#EAE2FF'), ...Elevation.soft },
   recentReadQuizTitle: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
   recentReadResultTitle: { color: Brand.ink, fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
   recentReadCta: { color: Brand.pink, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },

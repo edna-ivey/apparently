@@ -324,10 +324,34 @@ export default function HomeScreen() {
 
           {/* Apparently Private's Daily card — remote-only, shown once the Public Daily is
               committed (mirroring the "answer-first" reveal rhythm the rest of Today already
-              uses). Three real states: locked teaser (prompt only, no choices/Room/response —
-              never fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
-              TestFlight tester access — real choices, answer-before-Room), and answered
-              (real reaction + real Room, same shape as Public). */}
+              uses). Five real states: an intentional loading state (never a silent blank
+              area while the first request is actually in flight), a retry affordance on a
+              genuine load failure (Build 9 Part B — this card used to render NOTHING at all
+              for 'loading'/'error'/'no-live-private', which is exactly what made a transient
+              first-request hiccup look like "the choices never showed up"; usePrivateDailyExperience
+              now also retries this automatically a couple of times, so this state should be
+              rare in practice), locked teaser (prompt only, no choices/Room/response — never
+              fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
+              TestFlight tester access — real choices, answer-before-Room), and answered (real
+              reaction + real Room, same shape as Public). 'no-live-private' intentionally
+              renders nothing — there is genuinely no Private Daily today, not an error. */}
+          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'loading' && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>Loading today’s Private question…</ThemedText>
+            </View>
+          )}
+
+          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'error' && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>We couldn’t load today’s Private question.</ThemedText>
+              <Pressable style={styles.privateDropUnlockButton} onPress={privateDaily.retry}>
+                <ThemedText style={styles.privateDropUnlockButtonText}>Retry →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
           {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'locked' && (
             <View style={styles.privateDropCard}>
               <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>

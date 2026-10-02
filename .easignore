@@ -1,0 +1,28 @@
+# Conservative EAS Build exclusions (Build 9). Only excludes directories confirmed to have NO
+# runtime import/require from src/ (grepped before adding each entry) -- never anything the
+# Expo app actually bundles or needs at build time.
+#
+# IMPORTANT -- see the Build 9 final report for the real finding: these exclusions are small
+# (well under 1MB combined). The actual EAS archive bulk (~236MB of the ~239MB working tree)
+# is the assets/creatures*/ family, which this file deliberately does NOT exclude -- most of
+# that is still statically require()'d by the still-registered /creature-lab route
+# (src/app/creature-lab.tsx -> src/data/creature-lab/creature-assets.ts), so excluding it here
+# would break the Metro bundle, not just shrink it. That is a product/code decision (retiring
+# an R&D-only route), not a build-config change, and is explicitly flagged for review rather
+# than acted on in this pass.
+
+# Documentation -- never imported by app code.
+docs/
+*.md
+
+# Validation/QA scripts -- run via `npx tsx scripts/validate-*.ts` locally/in CI, never
+# imported by the Expo app itself.
+scripts/
+
+# Supabase project (migrations, Edge Functions, local config) -- deployed separately via the
+# Supabase CLI; never part of the Expo client bundle.
+supabase/
+
+# Standard non-build-artifact excludes.
+.git/
+.vscode/

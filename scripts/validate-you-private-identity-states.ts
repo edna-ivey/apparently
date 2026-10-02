@@ -142,8 +142,12 @@ const nameAndRelicVarIndex = identityHeroBody.indexOf('const nameAndRelic =');
 assert(avatarVarIndex !== -1 && nameAndRelicVarIndex !== -1 && avatarVarIndex < nameAndRelicVarIndex, 'the avatar (Creature) JSX is defined BEFORE the name+Relic JSX in source order');
 const nameAndRelicJsx = identityHeroBody.slice(nameAndRelicVarIndex);
 const nameIndexInGroup = nameAndRelicJsx.indexOf('characterNamePlaceholder');
-const relicShapeIndexInGroup = nameAndRelicJsx.indexOf('styles.relicShape,');
-assert(nameIndexInGroup !== -1 && relicShapeIndexInGroup !== -1 && nameIndexInGroup < relicShapeIndexInGroup, 'within the name+Relic group, the character name renders ABOVE the relic shape -- name large on top, Relic smaller below it');
+// Build 9: the Relic now renders through the dedicated <RelicGlyph> component (which itself
+// references styles.relicShape internally) rather than an inline styled View directly inside
+// nameAndRelic -- check for that component instead of the old inline style reference.
+const relicShapeIndexInGroup = nameAndRelicJsx.indexOf('<RelicGlyph');
+assert(nameIndexInGroup !== -1 && relicShapeIndexInGroup !== -1 && nameIndexInGroup < relicShapeIndexInGroup, 'within the name+Relic group, the character name renders ABOVE the Relic -- name large on top, Relic smaller below it');
+assert(/function RelicGlyph/.test(youCode) && /styles\.relicShape/.test(youCode), 'the RelicGlyph component (rendered inside nameAndRelic) itself still uses the real relicShape style');
 assert(
   /\{avatar\}\s*\{nameAndRelic\}/.test(identityHeroBody) && identityHeroBody.match(/\{avatar\}\s*\{nameAndRelic\}/g)?.length === 2,
   'BOTH layout branches (wide row, narrow column) render {avatar} before {nameAndRelic} -- avatar/Creature always comes first, on every viewport',
