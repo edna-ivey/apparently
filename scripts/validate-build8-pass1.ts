@@ -54,13 +54,19 @@ assert(/router\.push\('\/settings'\)/.test(youSource), 'You has a gear action th
 assert(/gearIcon|gearButton/.test(youSource), 'a gear icon element exists in You (top-right settings entry point)');
 assert(/IdentityHero/.test(youSource), 'You renders the avatar/relic hero prototype');
 assert(/relicShape/.test(youSource) && /avatarArea/.test(youSource), 'the hero has structurally separate avatar and relic elements');
-// Pass 1 correction: the hero must stay a LEFT avatar / RIGHT relic row on every viewport
-// (approved Option B) -- isWide may only scale sizes/gap, never switch to a stacked column.
-assert(!/heroColumn/.test(youSource), 'the hero no longer has a stacked-column layout branch at all');
+// Pass 1 correction (superseded by the Creature-centerpiece pass): the hero originally had to
+// stay a LEFT avatar / RIGHT relic row on EVERY viewport (approved Option B), back when the
+// avatar was a small placeholder mark. Promoting the Creature to a substantially larger
+// identity centerpiece means a row no longer fits beside the name+Relic on narrow phone
+// widths without cropping/squeezing -- the explicit instruction for that pass was "preserve
+// the approved left/right relationship where it still works" (wide) and "prioritize good
+// composition and no clipping" on narrow, i.e. a deliberate, approved exception, not a
+// regression. The row style itself remains real and still used on wide viewports.
 assert(
   /heroRow: \{ flexDirection: 'row'/.test(youSource),
-  "the hero's row style is unconditional (flexDirection: 'row' is not itself gated behind isWide)",
+  "the hero's row style still exists and is used on wide viewports",
 );
+assert(/heroColumn/.test(youSource), 'the hero has a deliberate narrow-viewport column fallback (Creature-centerpiece pass) to avoid clipping');
 assert(
   /<View style={styles\.heroRow}>/.test(youSource),
   'IdentityHero always renders styles.heroRow (never a ternary between a row and a column style)',
