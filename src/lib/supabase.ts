@@ -36,13 +36,23 @@ const isRealConfiguredValue = (value: string | undefined): boolean => {
 
 export const isSupabaseConfigured = isRealConfiguredValue(supabaseUrl) && isRealConfiguredValue(supabasePublishableKey);
 
-// Today stays on local prototype Daily data (current production behavior) unless BOTH:
-// Supabase is actually configured, AND this flag is the literal string "true". Never a
-// hidden hard-coded boolean — always read live from the environment, same as
-// isSupabaseConfigured above. Sprint 1B-A: set to "true" only in an ignored .env.local for
-// local testing; apparentlyyou.com stays on local Daily until this is deliberately turned on
-// there (see docs/backend-setup.md).
-export const isRemoteDailyEnabled = isSupabaseConfigured && process.env.EXPO_PUBLIC_REMOTE_DAILY_ENABLED === 'true';
+// Build 9 correction: this used to default OFF (opt-in via "true") from the original Sprint
+// 1B-A staged rollout, when the real backend was brand new and untested. That default was
+// never flipped for the Vercel deployment (apparentlyyou.com) even after Daily, You/Creature,
+// Private Daily, and Commonality all became real, backend-driven features -- the live preview
+// has been silently running the local/prototype fallback this whole time (hardcoded demo
+// "43 answers · 7 day streak", hardcoded demo Signature traits, hardcoded "37%"/"06" stats,
+// Creature/GET YOUR READ/Private Daily hardcoded to null/hidden -- see IdentityHero's and
+// Today's own callers of this flag). Nobody looking at the deployed preview could tell they
+// were looking at fabricated demo content instead of their real account, which is exactly the
+// kind of silent fakery the Bible's Data Honesty rule (§42) forbids.
+//
+// Now opt-OUT instead of opt-in: remote is used whenever Supabase is actually configured,
+// unless this is explicitly set to the literal string "false" (an escape hatch for anyone who
+// deliberately wants the offline/local-only prototype path, e.g. a demo with no backend
+// available). Never a hidden hard-coded boolean -- still always read live from the
+// environment, same as isSupabaseConfigured above.
+export const isRemoteDailyEnabled = isSupabaseConfigured && process.env.EXPO_PUBLIC_REMOTE_DAILY_ENABLED !== 'false';
 
 // TestFlight-beta-only override: unlocks every Private Daily for this build regardless of
 // each question's own is_free_private_unlock flag, so beta testers can answer Private every

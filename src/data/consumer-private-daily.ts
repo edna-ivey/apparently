@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 // Bounded revalidation after a purchase/restore -- see the useEffect below. A successful
 // purchase already awaits syncServerEntitlement() (purchases-service.ts) before resolving, so
@@ -8,6 +9,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // listener, which fires -- and flips isPremium -- synchronously). It never optimistically
 // shows unlocked content; it only decides whether to ask the server again.
 const ENTITLEMENT_REVALIDATION_DELAYS_MS = [800, 1600, 3200];
+
+// Bounded retry for the FIRST load specifically (Build 9 Part B root-cause fix -- see the
+// mount effect below). A transient failure on the very first request after a cold app launch
+// (DNS/TLS warmup, a momentary network blip) previously left this card silently blank forever
+// -- `load()` set phase to 'error', but nothing ever retried and (before this pass) nothing
+// in the consuming screen even rendered an error/retry affordance, so the only way to recover
+// was a full force-close + relaunch, which simply gave the network another chance to succeed
+// on the next cold start. Retrying a few times with a short, increasing delay gives that same
+// "another chance" without requiring the user to do anything.
+const FIRST_LOAD_RETRY_DELAYS_MS = [600, 1500];
 
 import type { ConsumerDailyOption, ConsumerDailyQuestion, DistributionState } from './consumer-daily';
 import type { PersonalityEffect } from '@/data/personality';
@@ -209,8 +220,27 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
     previousIsPremiumRef.current = isPremium;
 
     if (!justBecamePremium) {
-      void load();
-      return;
+      // Bounded retry on a genuinely failed first load (Build 9 Part B) -- see
+      // FIRST_LOAD_RETRY_DELAYS_MS's own comment. Only retries on 'error' (a real
+      // network/RPC failure); 'locked'/'no-live-private'/'ready' are all legitimate resolved
+      // states and never retried here.
+      let cancelled = false;
+      (async () => {
+        let phase = await load();
+        for (const delayMs of FIRST_LOAD_RETRY_DELAYS_MS) {
+          if (cancelled || phase !== 'error') {
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          if (cancelled) {
+            return;
+          }
+          phase = await load();
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
 
     // Just transitioned to premium (a purchase or restore completed this session) — the local
@@ -240,6 +270,28 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
       cancelled = true;
     };
   }, [load, isPremium]);
+
+  // Refresh on app foreground (Build 9 Part B root-cause fix) -- this hook previously only
+  // ever refetched on mount or when the RevenueCat-derived `isPremium` boolean itself changed.
+  // A server-granted tester_access_grants row (the real unlock mechanism for TestFlight
+  // testers -- see daily-service.ts's own header comment) has NOTHING to do with RevenueCat
+  // and never flips `isPremium`, so a tester granted access while the app was already open (or
+  // simply backgrounded and resumed) had no way to see that reflected without a full
+  // force-close + relaunch. This mirrors the exact AppState pattern already established in
+  // purchases-service.ts ("Foreground refresh... RevenueCat's own SDK already re-syncs on
+  // relaunch/foreground internally, but this makes the app's OWN displayed state... re-check
+  // too") — same idea, applied to this hook's own data instead of entitlement state.
+  useEffect(() => {
+    if (!isRemoteDailyEnabled) {
+      return;
+    }
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void load();
+      }
+    });
+    return () => subscription.remove();
+  }, [load]);
 
   const selectDraftOption = useCallback(
     (index: number) => {

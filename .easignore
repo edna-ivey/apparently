@@ -1,0 +1,37 @@
+# Conservative EAS Build exclusions (Build 9). Only excludes directories confirmed to have NO
+# runtime import/require from src/ (grepped before adding each entry) -- never anything the
+# Expo app actually bundles or needs at build time.
+#
+# CORRECTION (Build 9 correction pass): the original comment here claimed src/app/creature-lab.tsx
+# imports src/data/creature-lab/creature-assets.ts -- that was wrong (a same-named-folder
+# misread; the route only ever imported the separate, current src/data/creature-test/ system).
+# The actual obsolete tree (src/data/creature-lab/, src/components/creature-lab/,
+# scripts/creature-factory/, and the asset folders assets/creatures-canonical/,
+# assets/creatures-dev-registered/, assets/creatures-dev-prototype/ it alone referenced) had
+# zero real importers and has been git-rm'd entirely -- see the Build 9 correction report for
+# before/after archive size. assets/creatures-test/ is the current production asset tree
+# (used by CreatureAvatar for every real user) and is correctly never excluded here.
+#
+# assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
+# (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
+# remaining thing the removed obsolete tree referenced. Excluded from the EAS upload here
+# (EAS Build includes untracked-but-not-gitignored files by default) rather than deleted from
+# disk, since it has no git history to recover it from -- that decision is left to whoever owns
+# this local checkout.
+assets/creatures/
+
+# Documentation -- never imported by app code.
+docs/
+*.md
+
+# Validation/QA scripts -- run via `npx tsx scripts/validate-*.ts` locally/in CI, never
+# imported by the Expo app itself.
+scripts/
+
+# Supabase project (migrations, Edge Functions, local config) -- deployed separately via the
+# Supabase CLI; never part of the Expo client bundle.
+supabase/
+
+# Standard non-build-artifact excludes.
+.git/
+.vscode/

@@ -111,8 +111,6 @@ export default function HomeScreen() {
     );
   }, [ready, displayedOption]);
 
-  const remainingToReveal = Math.max(0, 50 - answeredCount);
-
   // Local-only: mirrors the exact prior behavior of bumping this demo counter once per
   // successful LOCAL commit. Remote (including Sprint 1B-A's TEST-ONLY integration content)
   // deliberately never touches this — it's a local prototype flourish, not real progress.
@@ -324,10 +322,34 @@ export default function HomeScreen() {
 
           {/* Apparently Private's Daily card — remote-only, shown once the Public Daily is
               committed (mirroring the "answer-first" reveal rhythm the rest of Today already
-              uses). Three real states: locked teaser (prompt only, no choices/Room/response —
-              never fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
-              TestFlight tester access — real choices, answer-before-Room), and answered
-              (real reaction + real Room, same shape as Public). */}
+              uses). Five real states: an intentional loading state (never a silent blank
+              area while the first request is actually in flight), a retry affordance on a
+              genuine load failure (Build 9 Part B — this card used to render NOTHING at all
+              for 'loading'/'error'/'no-live-private', which is exactly what made a transient
+              first-request hiccup look like "the choices never showed up"; usePrivateDailyExperience
+              now also retries this automatically a couple of times, so this state should be
+              rare in practice), locked teaser (prompt only, no choices/Room/response — never
+              fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
+              TestFlight tester access — real choices, answer-before-Room), and answered (real
+              reaction + real Room, same shape as Public). 'no-live-private' intentionally
+              renders nothing — there is genuinely no Private Daily today, not an error. */}
+          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'loading' && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>Loading today’s Private question…</ThemedText>
+            </View>
+          )}
+
+          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'error' && (
+            <View style={styles.privateDropCard}>
+              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
+              <ThemedText style={styles.privateDropCopy}>We couldn’t load today’s Private question.</ThemedText>
+              <Pressable style={styles.privateDropUnlockButton} onPress={privateDaily.retry}>
+                <ThemedText style={styles.privateDropUnlockButtonText}>Retry →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
           {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'locked' && (
             <View style={styles.privateDropCard}>
               <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
@@ -455,44 +477,15 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Prototype personal stats (commonality, answer count, rare picks, Your 7
-              progress) — real remote users have no real versions of these yet (see the
-              upcoming "Make You Real" work), so none of this may render as if it were real
-              user data. Local prototype mode is completely unaffected. */}
-          {experience.source === 'local' && (
-            <>
-              <View style={styles.statsRow}>
-                <View style={styles.statBlock}>
-                  <ThemedText style={styles.statValue}>37%</ThemedText>
-                  <ThemedText style={styles.statLabel}>commonality</ThemedText>
-                </View>
-                <View style={styles.statBlock}>
-                  <ThemedText style={styles.statValue}>{answeredCount}</ThemedText>
-                  <ThemedText style={styles.statLabel}>your answers</ThemedText>
-                </View>
-                <View style={styles.statBlock}>
-                  <ThemedText style={styles.statValue}>06</ThemedText>
-                  <ThemedText style={styles.statLabel}>rare picks</ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.progressCard}>
-                <View style={styles.progressHeader}>
-                  <View>
-                    <ThemedText style={styles.eyebrow}>YOUR 7</ThemedText>
-                    <ThemedText style={styles.progressTitle}>
-                      {remainingToReveal > 0 ? `${remainingToReveal} more answers until Your 7.` : 'Your 7 is live.'}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={styles.progressCount}>{answeredCount} / 50</ThemedText>
-                </View>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${Math.min(100, (answeredCount / 50) * 100)}%` }]} />
-                </View>
-                <ThemedText style={styles.progressCopy}>Your answers are becoming a pattern.</ThemedText>
-              </View>
-            </>
-          )}
+          {/* Build 9 correction: removed. This block was never real data for any user --
+              "37%"/"06 rare picks" were hardcoded demo literals (only ever visible in local-
+              prototype mode in the first place), and the "YOUR 7 ... X / 50" progress bar is
+              the exact retired milestone-bar concept Bible v1.4 §23 says does not belong on
+              You ("completed '57/50' milestone bars"), let alone on Today. Real aggregate
+              Commonality now lives on You instead (CommonalitySection, real
+              get_my_commonality() data -- see that file's own header comment); Today keeps
+              only the real per-question room distribution for today's specific question,
+              rendered elsewhere on this screen. */}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -897,64 +890,7 @@ const styles = StyleSheet.create({
   privateOptionTextSelected: {
     color: Brand.plum,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.one,
-  },
-  statBlock: {
-    gap: Spacing.one,
-  },
-  statValue: {
-    color: Brand.ink,
-    fontSize: 25,
-    lineHeight: 29,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: Brand.inkSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  progressCard: {
-    backgroundColor: Surface.blush,
-    borderRadius: Radius.lg,
-    padding: Spacing.four,
-    gap: Spacing.two,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-  },
-  progressTitle: {
-    color: Brand.ink,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '800',
-    marginTop: Spacing.one,
-  },
-  progressCount: {
-    color: Brand.pink,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  progressTrack: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    width: '86%',
-    height: '100%',
-    borderRadius: 5,
-    backgroundColor: Brand.pink,
-  },
-  progressCopy: {
-    color: Brand.inkSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '600',
-  },
+  // statsRow/statBlock/.../progressCopy (the old local-prototype-only fake Commonality + "YOUR
+  // 7" milestone-bar block) removed in Build 9 -- see this file's own comment at the former
+  // call site for why.
 });

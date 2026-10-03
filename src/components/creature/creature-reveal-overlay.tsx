@@ -2,10 +2,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
+import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
 import type { CreatureTestRecipe } from '@/components/creature-test/creature-test-composer';
 import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Radius, Surface, Type } from '@/constants/design-system';
+import { Radius, Surface, Type } from '@/constants/design-system';
 
 // Shared presentation for First Form, first mixed form, and Friday evolution results. The You
 // screen decides which moment to present; this component only renders it. Soft editorial /
@@ -55,15 +56,24 @@ const REVEAL_COPY: Record<CreatureRevealKind, { eyebrow: string; supporting: str
   },
 };
 
+const GLOW_SIZE = 300;
+const CREATURE_SIZE = 224;
+
 export function CreatureRevealOverlay({ kind, creature, changes = [], onDismiss }: CreatureRevealOverlayProps) {
   const copy = REVEAL_COPY[kind];
 
   return (
+    // Plum-tinted, not flat black -- "Apparently just revealed something personal about me,"
+    // not a generic system modal. The backdrop itself carries the brand's own premium/
+    // authority surface color (see Brand.plum's own comment in theme.ts).
     <Animated.View entering={FadeIn.duration(260)} style={styles.backdrop}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} accessibilityLabel="Dismiss" accessibilityRole="button" />
       <Animated.View entering={FadeInDown.duration(320)} style={styles.card}>
         <ThemedText style={styles.eyebrow}>{copy.eyebrow}</ThemedText>
-        <CreatureAvatar recipe={creature.recipe} size={168} />
+        <View style={styles.stage}>
+          <AtmosphericGlow size={GLOW_SIZE} />
+          <CreatureAvatar recipe={creature.recipe} size={CREATURE_SIZE} />
+        </View>
         <ThemedText style={styles.name}>{creature.name}</ThemedText>
         <ThemedText style={styles.supportingLine}>{copy.supporting}</ThemedText>
         <View style={styles.traitRow}>
@@ -101,21 +111,27 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(23, 21, 29, 0.42)',
+    backgroundColor: 'rgba(36, 1, 31, 0.72)',
     paddingHorizontal: Spacing.four,
     zIndex: 20,
   },
+  // No hairline border, no flat cream box -- a deeper shadow and a taller radius so this reads
+  // as a floating premium surface rather than a bounded "modal with an image" (direct user
+  // feedback on the prior pass). The Creature's own atmosphere (AtmosphericGlow) is the
+  // dominant visual event inside the card, not a decorative extra.
   card: {
-    ...CardStyle.tinted(Surface.page, Surface.hairline),
+    backgroundColor: Surface.page,
     width: '100%',
-    maxWidth: 360,
-    borderRadius: Radius.xl,
-    paddingVertical: Spacing.five,
+    maxWidth: 400,
+    borderRadius: 32,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.five,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    boxShadow: '0 24px 48px rgba(23, 21, 29, 0.24)',
+    gap: Spacing.two,
+    boxShadow: '0 32px 64px rgba(23, 21, 29, 0.38)',
   },
+  stage: { width: GLOW_SIZE, height: GLOW_SIZE, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   eyebrow: {
     fontSize: 12,
     fontWeight: '700',
@@ -125,8 +141,8 @@ const styles = StyleSheet.create({
   },
   name: {
     ...Type.display,
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 34,
+    lineHeight: 38,
     textAlign: 'center',
     color: Brand.ink,
   },
@@ -141,20 +157,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: Spacing.two,
+    gap: Spacing.one,
   },
+  // Pill, not a bordered square chip -- matches the Signature pill direction the user
+  // explicitly wants preserved, so the trait badge reads as "secondary and consistent," not a
+  // different, boxier visual language inside the same app.
   traitChip: {
-    borderRadius: Radius.sm,
-    backgroundColor: Surface.sand,
-    borderWidth: 1,
-    borderColor: Surface.hairline,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(36, 1, 31, 0.08)',
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   traitChipText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: Brand.ink,
+    fontWeight: '700',
+    color: Brand.plum,
+    letterSpacing: 0.2,
   },
   changeList: {
     width: '100%',
@@ -170,10 +188,11 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     marginTop: Spacing.two,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.pill,
     backgroundColor: Brand.plum,
     paddingVertical: 12,
     paddingHorizontal: Spacing.five,
+    boxShadow: '0 10px 24px rgba(36, 1, 31, 0.28)',
   },
   continueButtonText: {
     color: '#FFFFFF',
