@@ -112,21 +112,57 @@ function RelicGlyph({ resolvedSlotCount, wide }: { resolvedSlotCount: number; wi
   const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
   const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
   const isLocked = resolvedSlotCount === 0;
+  const bloomSize = wide ? 104 : 78;
+  const bloomInnerSize = bloomSize * 0.68;
 
   return (
-    <View style={[styles.relicShape, wide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
-      <View style={[StyleSheet.absoluteFill, styles.relicShapeGlow, { opacity: glowOpacity }]} />
-      <View style={[wide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
-      {isLocked && (
-        // relicShape itself is rotated 45deg to read as a gem/diamond -- counter-rotate the
-        // sparkle glyph so IT stays upright rather than inheriting that tilt.
-        <ThemedText
-          style={[styles.relicLockedSparkle, { transform: [{ rotate: '-45deg' }] }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no">
-          ✦
-        </ThemedText>
-      )}
+    // Final-polish pass: a soft under-bloom (two oversized, very-low-opacity gold rings,
+    // NOT rotated with the gem -- a separate sibling behind it) plus a second, smaller
+    // sparkle. Stays small/secondary by construction: the bloom is faint and the gem itself
+    // is unchanged in size, so it never competes with the Creature beside it.
+    <View style={[styles.relicWrap, { width: bloomSize, height: bloomSize }]}>
+      <View
+        pointerEvents="none"
+        style={[
+          styles.relicBloomOuter,
+          { width: bloomSize, height: bloomSize, borderRadius: bloomSize / 2, top: 0, left: 0 },
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.relicBloomInner,
+          {
+            width: bloomInnerSize,
+            height: bloomInnerSize,
+            borderRadius: bloomInnerSize / 2,
+            top: (bloomSize - bloomInnerSize) / 2,
+            left: (bloomSize - bloomInnerSize) / 2,
+          },
+        ]}
+      />
+      <View style={[styles.relicShape, wide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
+        <View style={[StyleSheet.absoluteFill, styles.relicShapeGlow, { opacity: glowOpacity }]} />
+        <View style={[wide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
+        {isLocked && (
+          // relicShape itself is rotated 45deg to read as a gem/diamond -- counter-rotate the
+          // sparkle glyphs so they stay upright rather than inheriting that tilt.
+          <>
+            <ThemedText
+              style={[styles.relicLockedSparkle, { transform: [{ rotate: '-45deg' }] }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no">
+              ✦
+            </ThemedText>
+            <ThemedText
+              style={[styles.relicLockedSparkleSmall, { transform: [{ rotate: '-45deg' }] }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no">
+              ✦
+            </ThemedText>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -305,10 +341,17 @@ function CommonalitySection({ state }: { state: CommonalityState }) {
   const { eligible_answer_count: eligibleCount, average_percent: percent, rare_pick_count: rareCount } = state.data;
 
   if (percent === null || eligibleCount < 10) {
+    // Final-polish pass: its own quieter card (not the vibrant seafoam "real data" tint --
+    // this is a waiting state, not an achievement) with a touch more depth and a small
+    // decorative accent glyph, rather than reusing commonalityCard verbatim. Copy/thresholds
+    // unchanged.
     return (
       <>
         <ThemedText style={styles.sectionTitle}>YOUR COMMONALITY</ThemedText>
-        <View style={styles.commonalityCard}>
+        <View style={styles.commonalityBuildingCard}>
+          <ThemedText style={styles.commonalityBuildingGlyph} accessibilityElementsHidden importantForAccessibility="no">
+            ✦
+          </ThemedText>
           <ThemedText style={styles.commonalityBuildingEyebrow}>STILL LEARNING THE ROOM</ThemedText>
           <ThemedText style={styles.commonalityBuildingCopy}>
             Answer a few more Dailies the room has also answered, and we’ll start comparing notes.
@@ -965,7 +1008,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
-    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.12)',
+    // Deepened slightly (final-polish pass) for more perceptible depth/elevation beside the
+    // now-larger, richer-shadowed Creature hero.
+    boxShadow: '0 10px 26px rgba(23, 21, 29, 0.16)',
   },
   relicShapeWide: { width: 72, height: 72 },
   relicShapeNarrow: { width: 52, height: 52 },
@@ -975,6 +1020,16 @@ const styles = StyleSheet.create({
   relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold },
   relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold },
   relicLockedSparkle: { position: 'absolute', fontSize: 14, color: Brand.plum, opacity: 0.5 },
+  // A second, smaller/fainter sparkle, offset from the first -- final-polish pass, makes the
+  // locked Relic feel like it has something quietly stirring inside rather than one static mark.
+  relicLockedSparkleSmall: { position: 'absolute', fontSize: 8, color: Brand.gold, opacity: 0.55, top: -10, right: -8 },
+  // Centers the gem + its soft bloom together; sized exactly to the bloom (the largest layer),
+  // so the whole glyph's footprint is fully predictable regardless of resolvedSlotCount.
+  relicWrap: { alignItems: 'center', justifyContent: 'center' },
+  // Soft gold bloom behind the gem -- real rgba fill (not boxShadow) at very low opacity, the
+  // same "stepped, no hard edge" approach as AtmosphericGlow, scaled down to stay secondary.
+  relicBloomOuter: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.10)' },
+  relicBloomInner: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.16)' },
   getYourReadButton: {
     marginTop: Spacing.two,
     borderRadius: Radius.pill,
@@ -1113,6 +1168,16 @@ const styles = StyleSheet.create({
   commonalityTagline: { ...Type.body, color: Brand.ink, fontWeight: '800', textAlign: 'center' },
   commonalityExplainer: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.half },
   commonalityFootnote: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700', opacity: 0.75, marginTop: Spacing.one },
+  // Final-polish pass: the building (insufficient-data) state's own quieter card -- a soft
+  // lavender wash (distinct from commonalityCard's vibrant seafoam "real data" tint, since
+  // this is a waiting state, not an achievement) with its own depth and a small accent glyph.
+  commonalityBuildingCard: {
+    ...CardStyle.tinted(Surface.lavender, '#EAE2FF'),
+    ...Elevation.soft,
+    alignItems: 'center',
+    gap: Spacing.half,
+  },
+  commonalityBuildingGlyph: { color: Brand.violet, fontSize: 18, opacity: 0.6, marginBottom: 2 },
   commonalityBuildingEyebrow: { ...Type.eyebrow, color: Brand.inkSecondary },
   commonalityBuildingCopy: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.one },
 

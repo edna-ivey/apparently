@@ -207,10 +207,17 @@ export default function CreatureReadScreen() {
                 <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
                 <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
               </View>
-              <ThemedText style={styles.pageEyebrow}>{readState.name.toUpperCase()}</ThemedText>
+              {/* Final-polish pass: the combined read is the editorial lede of this screen --
+                  a real display-size name (not the small tracked-out eyebrow used elsewhere),
+                  more breathing room, and a richer, more elevated surface than the five
+                  individual cards below it, so it visually outranks them rather than reading
+                  as just the first card in the same list. */}
+              <ThemedText style={styles.combinedEyebrow}>YOUR READ, COMBINED</ThemedText>
+              <ThemedText style={styles.combinedName}>{readState.name}</ThemedText>
               <View style={styles.combinedCard}>
                 <ThemedText style={styles.combinedReadText}>{readState.combinedRead}</ThemedText>
               </View>
+              <ThemedText style={styles.partsEyebrow}>THE FIVE PARTS</ThemedText>
               {readState.entries.map((entry, index) => (
                 <ReadCard key={entry.slotLabel} entry={entry} accent={PastelAccentRotation[index % PastelAccentRotation.length]} />
               ))}
@@ -266,11 +273,26 @@ const styles = StyleSheet.create({
   pageEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.one },
   pageIntro: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', paddingHorizontal: Spacing.two },
 
+  // Final-polish pass: the mixed Creature's combined-read name/card outrank the five part
+  // cards below -- a real display name (not the small tracked-out eyebrow pageEyebrow uses),
+  // a dedicated "YOUR READ, COMBINED" label, and a deeper, more elevated, more spacious card
+  // than CardStyle.base/the plain lavender tint this replaced.
+  combinedEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.one },
+  combinedName: { ...Type.display, fontSize: 32, lineHeight: 37, textAlign: 'center', marginTop: 2 },
   combinedCard: {
-    ...CardStyle.tinted(Surface.lavender, Surface.hairline),
-    marginBottom: Spacing.two,
+    backgroundColor: Surface.lavender,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: '#EAE2FF',
+    padding: Spacing.five,
+    marginTop: Spacing.one,
+    marginBottom: Spacing.one,
+    boxShadow: '0 16px 36px rgba(121, 100, 232, 0.14)',
   },
-  combinedReadText: { ...Type.body, color: Brand.ink, fontSize: 15, lineHeight: 22 },
+  combinedReadText: { ...Type.body, color: Brand.ink, fontSize: 16, lineHeight: 24 },
+  // A quiet divider label -- makes "the overall read" and "the five contributing parts" read
+  // as two clearly separate sections rather than one continuous list of cards.
+  partsEyebrow: { ...Type.eyebrow, color: Brand.inkSecondary, marginTop: Spacing.two },
 
   readCard: {
     ...CardStyle.base,
