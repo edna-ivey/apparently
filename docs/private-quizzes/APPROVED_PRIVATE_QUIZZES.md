@@ -410,7 +410,7 @@ Do not treat “Lazy” as a Core or Private trait. It is a quiz-level behaviora
 
 **Category:** Career & Ambition  
 **Catalog subtitle:** Success hits different when it has an audience.  
-**Status:** **APPROVED CREATIVE / SCORING PENDING**
+**Status:** **LOCKED**
 
 ## Result spectrum
 
@@ -722,18 +722,150 @@ well.
 
 That was kind of the point.
 
-## Pending before implementation
+## Approved answer-to-result scoring
 
-Do not invent yet:
+Internal result IDs:
 
-- answer-to-result scoring
-- harsh-result gate details
-- tie logic
-- Core personality evidence
-- Private personality evidence
-- reachability fixtures
+- `nobody-clapped` = YOU’D STILL WANT IT IF NOBODY CLAPPED
+- `want-it-seen` = YOU WANT THE WIN... AND YOU WANT IT SEEN
+- `proving-something` = YOU’RE STILL TRYING TO PROVE SOMETHING
+- `performing-for` = WHO EXACTLY ARE WE PERFORMING FOR?
 
-These require a separate scoring/evidence proposal and Michelle approval.
+Shorthand below:
+
+- **CLAP** = nobody-clapped
+- **SEEN** = want-it-seen
+- **PROVE** = proving-something
+- **PERFORM** = performing-for
+
+| Q | A | B | C | D |
+|---|---|---|---|---|
+| 1 | CLAP +2 | SEEN +2 | PROVE +2 | PERFORM +2 |
+| 2 | CLAP +2 | SEEN +1, PROVE +1 | PROVE +2 | PROVE +2 |
+| 3 | CLAP +2 | CLAP +2 | SEEN +2, PERFORM +1 | CLAP +2 |
+| 4 | SEEN +1 | PROVE +2 | SEEN +2 | PROVE +2 |
+| 5 | CLAP +2 | SEEN +2 | SEEN +2, PERFORM +1 | SEEN +1 |
+| 6 | CLAP +2 | CLAP +2 | PERFORM +2 | CLAP +2 |
+| 7 | CLAP +2 | SEEN +1, PROVE +1 | PROVE +2 | PROVE +2 |
+| 8 | CLAP +2 | SEEN +1 | PROVE +2 | CLAP +2 |
+| 9 | CLAP +2 | CLAP +2 | SEEN +2, PERFORM +1 | PROVE +2 |
+| 10 | CLAP +2 | SEEN +2, PROVE +1 | PROVE +2 | PERFORM +2 |
+
+Answer positions are intentionally not tied to a result. The result mapping is authored per answer, not inferred from A/B/C/D position.
+
+## Approved harsh-result gate
+
+`WHO EXACTLY ARE WE PERFORMING FOR?` is a harsh/high-confidence result and must be earned by repeated audience-centered evidence.
+
+PERFORM becomes eligible only when BOTH conditions are met:
+
+1. At least 2 of these 3 strongest signals:
+   - Q1-D — the win loses value if nobody knows
+   - Q6-C — being seen accomplishing it is the best part
+   - Q10-D — without the desired approval, part of them wonders what the point was
+2. At least 1 supporting signal from:
+   - Q3-C — respected title/accomplishment
+   - Q5-C — success needs to be something they are proud to tell people about
+   - Q9-C — public failure hurts most
+
+This requires evidence from at least three separate questions.
+
+If PERFORM has the highest raw score but does not satisfy the gate, remove PERFORM from eligibility and choose the next-highest eligible result.
+
+## Approved tie logic
+
+High-signal questions: **Q1, Q3, Q5, Q6, Q9, Q10**
+
+Resolve result ties in this order:
+
+1. Highest overall result score
+2. Highest score across the six high-signal questions
+3. Most full +2 primary selections
+4. Safer fixed fallback: **CLAP -> SEEN -> PROVE -> PERFORM**
+
+Do **not** enable a close-second result for this quiz.
+
+## Approved answer-level personality evidence
+
+Quiz-result scoring and personality evidence are separate.
+
+Raw evidence follows Bible §15A:
+
+- +1 = supporting evidence
+- +2 = strong/direct evidence
+- a trait pole needs at least 3 raw points from multiple answers before it can qualify for a permanent quiz award
+- zero evidence means zero permanent award; ranking slots never create evidence
+
+| Answer | Raw personality evidence |
+|---|---|
+| 1A | Self-Secure +2 |
+| 1B | Approval-Seeking +1 |
+| 1C | Approval-Seeking +1 |
+| 1D | Approval-Seeking +2 |
+| 2A | Self-Secure +1 |
+| 2B | Reflective +2, Competitive +1 |
+| 2C | Competitive +2, Ambitious +1 |
+| 2D | Competitive +1, Self-Referencing +2 |
+| 3A | none |
+| 3B | none |
+| 3C | Approval-Seeking +2 |
+| 3D | Ambitious +1, Self-Secure +1 |
+| 4A | none |
+| 4B | Approval-Seeking +1 |
+| 4C | Approval-Seeking +1 |
+| 4D | Approval-Seeking +2 |
+| 5A | Self-Secure +2, Practical +1 |
+| 5B | Approval-Seeking +1 |
+| 5C | Approval-Seeking +2 |
+| 5D | Ambitious +1 |
+| 6A | none |
+| 6B | none |
+| 6C | Approval-Seeking +2 |
+| 6D | Ambitious +2, Self-Secure +1 |
+| 7A | Forgiving +1 |
+| 7B | Reflective +1, Forgiving +1 |
+| 7C | Competitive +1, Approval-Seeking +1, Keeps Score +1 |
+| 7D | Keeps Score +2, Punishing +1 |
+| 8A | Ambitious +2 |
+| 8B | Reflective +2, Ambitious +1 |
+| 8C | Ambitious +2 |
+| 8D | Content +2 |
+| 9A | Accountability +1 |
+| 9B | none |
+| 9C | Approval-Seeking +2 |
+| 9D | Competitive +2, Self-Referencing +1 |
+| 10A | Self-Secure +2 |
+| 10B | Reassurance-Seeking +2, Approval-Seeking +1 |
+| 10C | Ambitious +2, Approval-Seeking +1 |
+| 10D | Approval-Seeking +2, Reassurance-Seeking +2 |
+
+Deliberate non-mappings matter. An answer can affect the quiz result while earning no personality evidence when it does not genuinely support a Core or Private pole.
+
+This quiz is expected to produce meaningful evidence primarily for traits such as:
+
+- Core: Ambitious, Content, Competitive, Practical
+- Private: Self-Secure, Approval-Seeking, Reassurance-Seeking, Reflective, Keeps Score, Self-Referencing, with lighter supported evidence possible for Accountability and Punishing
+
+Do not force unrelated traits such as Planner, Direct, Protective, Curious, or other dimensions merely to increase trait coverage.
+
+Apparently Private permanent awards after within-quiz qualification, opposite-pole resolution, and ranking:
+
+- Core: top 3 qualifying supported Core traits -> +1 each
+- Private: top 3 qualifying supported Private traits -> +2 each
+- If fewer than three qualify in either layer, only the qualifying traits receive awards
+
+## Approved reachability fixtures
+
+All four result categories must be realistically reachable.
+
+- **CLAP:** 1A, 2A, 3D, 4A, 5A, 6D, 7A, 8A, 9B, 10A
+- **SEEN:** 1B, 2B, 3C, 4C, 5B, 6C, 7B, 8B, 9C, 10B
+- **PROVE:** 1C, 2C, 3D, 4B, 5D, 6C, 7C, 8C, 9D, 10C
+- **PERFORM:** 1D, 2A, 3C, 4C, 5C, 6C, 7A, 8D, 9C, 10D
+
+The PERFORM fixture must also satisfy the harsh-result gate; it does.
+
+**Implementation note:** the current shared quiz runtime still has legacy result-level profile-signal behavior in places. This approved quiz requires the Bible §15A answer-level evidence flow above. Preserve this locked spec until the runtime is reconciled; do not silently substitute result-level signals.
 
 ---
 
