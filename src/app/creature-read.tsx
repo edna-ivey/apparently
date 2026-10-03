@@ -4,11 +4,12 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature } from '@/components/brand-signature';
+import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Radius, Surface, Type } from '@/constants/design-system';
+import { CardStyle, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
 import { buildFirstFormIdentity, CREATURE_SLOT_BY_RANK, type CreatureRecipe } from '@/data/creature/creature-identity';
 import { getCreatureReadCopyByLabel, getCreatureReadPoleCopy } from '@/data/creature/creature-read-copy';
 import { loadCreatureEvolutionState, type CreatureEvolutionState } from '@/data/creature/creature-reveal-state';
@@ -17,6 +18,9 @@ import { scorePersonalityProfile, type PersonalityProfile } from '@/data/persona
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { computeProfileActivityCounts, getMyPersonalityEvidence, getMyQuizResults, groupEvidenceIntoAnswers } from '@/services/personality-service';
+
+const AVATAR_SIZE = 180;
+const AVATAR_STAGE_SIZE = 240;
 
 const CREATURE_TEST_SLOT_LABEL: Record<(typeof CREATURE_SLOT_BY_RANK)[number], string> = {
   eyes: 'THE EYES',
@@ -38,7 +42,7 @@ type ReadState =
   | { kind: 'error'; message: string }
   // Genuinely no Creature yet (below First Form) -- an honest state, never a fabricated read.
   | { kind: 'not-yet' }
-  | { kind: 'first-form'; name: string; entry: ReadEntry }
+  | { kind: 'first-form'; name: string; recipe: CreatureRecipe; entry: ReadEntry }
   | { kind: 'mixed'; name: string; recipe: CreatureRecipe; entries: ReadEntry[]; combinedRead: string };
 
 // Combines the top-two contributing families into one short synthesis line -- never a third-
@@ -135,6 +139,7 @@ export default function CreatureReadScreen() {
       return {
         kind: 'first-form',
         name: firstForm.name,
+        recipe: firstForm.recipe,
         entry: {
           slotLabel: 'YOUR FIRST FORM',
           traitName: firstForm.trait.name,
@@ -184,6 +189,10 @@ export default function CreatureReadScreen() {
 
           {readState.kind === 'first-form' && (
             <>
+              <View style={styles.avatarStage}>
+                <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
+                <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
+              </View>
               <ThemedText style={styles.pageEyebrow}>{readState.name.toUpperCase()}</ThemedText>
               <ThemedText style={styles.pageIntro}>
                 Your Creature is still in its First Form — built entirely from the single pattern showing up strongest right now.
@@ -194,15 +203,16 @@ export default function CreatureReadScreen() {
 
           {readState.kind === 'mixed' && (
             <>
-              <View style={styles.avatarRow}>
-                <CreatureAvatar recipe={readState.recipe} size={132} />
+              <View style={styles.avatarStage}>
+                <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
+                <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
               </View>
               <ThemedText style={styles.pageEyebrow}>{readState.name.toUpperCase()}</ThemedText>
               <View style={styles.combinedCard}>
                 <ThemedText style={styles.combinedReadText}>{readState.combinedRead}</ThemedText>
               </View>
-              {readState.entries.map((entry) => (
-                <ReadCard key={entry.slotLabel} entry={entry} />
+              {readState.entries.map((entry, index) => (
+                <ReadCard key={entry.slotLabel} entry={entry} accent={PastelAccentRotation[index % PastelAccentRotation.length]} />
               ))}
             </>
           )}
@@ -212,9 +222,15 @@ export default function CreatureReadScreen() {
   );
 }
 
-function ReadCard({ entry }: { entry: ReadEntry }) {
+// accent (optional) -- Build 9 visual-redesign pass: a mixed Creature's five cards previously
+// all rendered as identical plain white cards. A per-slot pastel wash (the same
+// PastelAccentRotation Your Signature's pills already use) visually distinguishes each of the
+// five parts, per the request to make the mixed read "feel collectible/editorial." First
+// Form's single card stays plain white (no accent passed) since there is nothing to
+// distinguish it from.
+function ReadCard({ entry, accent }: { entry: ReadEntry; accent?: string }) {
   return (
-    <View style={styles.readCard}>
+    <View style={[styles.readCard, accent ? { backgroundColor: accent, borderColor: 'transparent' } : null]}>
       <ThemedText style={styles.readCardEyebrow}>{entry.slotLabel}</ThemedText>
       <ThemedText style={styles.readCardTraitName}>{entry.traitName}</ThemedText>
       <ThemedText style={styles.readCardExplanation}>{entry.explanation}</ThemedText>
@@ -236,8 +252,18 @@ const styles = StyleSheet.create({
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
   closeText: { fontSize: 24, color: Brand.inkSecondary },
 
-  avatarRow: { alignItems: 'center', marginTop: Spacing.one },
-  pageEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.two },
+  // Same atmospheric treatment as You's hero and the reveal overlay -- the Creature is the
+  // editorial lede of this screen too, not a small thumbnail above a text block (the First
+  // Form case previously showed no Creature art at all).
+  avatarStage: {
+    width: AVATAR_STAGE_SIZE,
+    height: AVATAR_STAGE_SIZE,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+  },
+  pageEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.one },
   pageIntro: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', paddingHorizontal: Spacing.two },
 
   combinedCard: {

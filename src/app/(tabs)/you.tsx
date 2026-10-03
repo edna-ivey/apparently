@@ -4,6 +4,7 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
+import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
 import { CreatureRevealOverlay } from '@/components/creature/creature-reveal-overlay';
 import { ThemedText } from '@/components/themed-text';
@@ -141,55 +142,29 @@ function IdentityHero({
   creature: VisibleCreature | null;
   onGetYourRead: (() => void) | null;
 }) {
-  const creatureSize = isWide ? 248 : 204;
-  const placeholderSize = isWide ? 112 : 76;
+  // Visual-redesign pass: substantially larger than Build 9's 248/204 -- the Creature is the
+  // page's centerpiece, not an avatar-sized icon. placeholderSize stays modest and framed (see
+  // avatarArea below) since the pre-reveal state is deliberately quiet, not the "collectible"
+  // moment this size exists for.
+  const creatureSize = isWide ? 340 : 272;
+  const placeholderSize = isWide ? 112 : 84;
   const recipe = creature?.recipe ?? null;
-
-  // Soft magical atmosphere behind the Creature (Build 9 correction pass — the original three
-  // concentric, solid-filled pastel rings read as a literal target/bullseye, not atmosphere;
-  // see the Build 9 correction report). Replaced with two softly-tinted, fully-transparent-fill
-  // blobs (color comes ONLY from the blurred box-shadow, never a solid backgroundColor, so
-  // there is no hard disc edge to read as a "ring") offset diagonally from one another rather
-  // than sharing one center — an off-center light source, not a target. Purely decorative
-  // (pointerEvents none). The stage is always sized off creatureSize (even while a placeholder
-  // is showing) so the hero's footprint never jumps when the real Creature first appears.
-  const glowSize = creatureSize * 1.65;
-  const glowPrimarySize = glowSize * 0.82;
-  const glowSecondarySize = glowSize * 0.58;
-  const heroGlow = (
-    <View pointerEvents="none" style={[styles.heroGlowStage, { width: glowSize, height: glowSize }]}>
-      <View
-        style={[
-          styles.heroGlowPrimary,
-          {
-            width: glowPrimarySize,
-            height: glowPrimarySize,
-            borderRadius: glowPrimarySize / 2,
-            top: glowSize * 0.08,
-            left: glowSize * 0.04,
-          },
-        ]}
-      />
-      <View
-        style={[
-          styles.heroGlowSecondary,
-          {
-            width: glowSecondarySize,
-            height: glowSecondarySize,
-            borderRadius: glowSecondarySize / 2,
-            top: glowSize * 0.3,
-            left: glowSize * 0.38,
-          },
-        ]}
-      />
-    </View>
-  );
+  const glowSize = creatureSize * 1.3;
+  // A small presentation-only upward shift -- purely how the Creature sits within its own
+  // atmosphere, never a change to the locked composition calibration itself (see
+  // CreatureAvatar/CreatureTestComposer, untouched). Visually checked against real renders:
+  // most trait combinations carry more silhouette mass upward (ears/horns/wings fanning out)
+  // than downward (feet/tail resting near the bottom), so a literal mathematical center reads
+  // as slightly low. This nudges the optical center up without touching the asset itself.
+  const creatureOpticalShift = -creatureSize * 0.03;
 
   const avatar = (
     <View style={[styles.heroStage, { width: glowSize, height: glowSize }]}>
-      {heroGlow}
+      {recipe && <AtmosphericGlow size={glowSize} />}
       {recipe ? (
-        <CreatureAvatar recipe={recipe} size={creatureSize} />
+        <View style={{ transform: [{ translateY: creatureOpticalShift }] }}>
+          <CreatureAvatar recipe={recipe} size={creatureSize} />
+        </View>
       ) : (
         <View style={[styles.avatarArea, { width: placeholderSize, height: placeholderSize }]}>
           <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={{ width: placeholderSize, height: placeholderSize }} />
@@ -726,63 +701,70 @@ export default function YouScreen() {
             </Pressable>
           </View>
 
-          <IdentityHero
-            isWide={isWide}
-            resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
-            creature={isRemoteDailyEnabled ? visibleCreature : null}
-            onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
-          />
+          {/* Visual-redesign pass: Creature, pre-reveal copy, Evolution chip, and the "Meki,
+              apparently." identity line are wrapped as ONE cluster with its own tight internal
+              gap -- separate from the uniform Spacing.four rhythm `content` uses between major
+              sections below -- so they read as one composed hero scene instead of stacked,
+              evenly-spaced modules (direct user feedback: "feel disconnected"). */}
+          <View style={styles.heroCluster}>
+            <IdentityHero
+              isWide={isWide}
+              resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
+              creature={isRemoteDailyEnabled ? visibleCreature : null}
+              onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
+            />
 
-          {isRemoteDailyEnabled && creaturePreRevealCopy && (
-            <ThemedText style={styles.creaturePreRevealCopy}>{creaturePreRevealCopy}</ThemedText>
-          )}
-
-          {isRemoteDailyEnabled && remoteState.status === 'ready' && (
-            <View style={styles.evolutionDateChipRow}>
-              <View style={styles.evolutionDateChip}>
-                <ThemedText style={styles.evolutionDateChipText}>
-                  {mixedSnapshot
-                    ? pendingEvolutionDate
-                      ? `Evolution Day · ${formatEvolutionDate(pendingEvolutionDate)}`
-                      : `Next evolution · ${formatEvolutionDate(nextEvolutionDate)}`
-                    : 'Evolution Day · Friday'}
-                </ThemedText>
-              </View>
-            </View>
-          )}
-
-          {isRemoteDailyEnabled && pendingEvolutionDate && mixedSnapshot && (
-            <View style={styles.evolutionPrompt}>
-              <View style={styles.evolutionPromptCopy}>
-                <ThemedText style={styles.evolutionPromptTitle}>Did you evolve?</ThemedText>
-                <ThemedText style={styles.evolutionPromptSupporting}>
-                  Apparently has been paying attention since your last reveal.
-                </ThemedText>
-              </View>
-              <Pressable
-                style={styles.evolutionPromptButton}
-                onPress={checkEvolution}
-                accessibilityRole="button"
-                accessibilityLabel="Find out whether your Creature evolved">
-                <ThemedText style={styles.evolutionPromptButtonText}>Find out</ThemedText>
-              </Pressable>
-            </View>
-          )}
-
-          <View style={styles.identityHeader}>
-            <ThemedText style={styles.displayName}>{displayName}, apparently.</ThemedText>
-            {isRemoteDailyEnabled ? (
-              remoteState.status === 'ready' && (
-                <>
-                  <ThemedText style={styles.subline}>{formatAnswersShapingRead(remoteState.counts.profileAnswerCount)}</ThemedText>
-                  <ThemedText style={styles.sublineSecondary}>
-                    {formatDailyQuizBreakdown(remoteState.counts.dailyAnswerCount, remoteState.counts.quizCompletionCount)}
-                  </ThemedText>
-                </>
-              )
-            ) : (
-              <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
+            {isRemoteDailyEnabled && creaturePreRevealCopy && (
+              <ThemedText style={styles.creaturePreRevealCopy}>{creaturePreRevealCopy}</ThemedText>
             )}
+
+            {isRemoteDailyEnabled && remoteState.status === 'ready' && (
+              <View style={styles.evolutionDateChipRow}>
+                <View style={styles.evolutionDateChip}>
+                  <ThemedText style={styles.evolutionDateChipText}>
+                    {mixedSnapshot
+                      ? pendingEvolutionDate
+                        ? `Evolution Day · ${formatEvolutionDate(pendingEvolutionDate)}`
+                        : `Next evolution · ${formatEvolutionDate(nextEvolutionDate)}`
+                      : 'Evolution Day · Friday'}
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+
+            {isRemoteDailyEnabled && pendingEvolutionDate && mixedSnapshot && (
+              <View style={styles.evolutionPrompt}>
+                <View style={styles.evolutionPromptCopy}>
+                  <ThemedText style={styles.evolutionPromptTitle}>Did you evolve?</ThemedText>
+                  <ThemedText style={styles.evolutionPromptSupporting}>
+                    Apparently has been paying attention since your last reveal.
+                  </ThemedText>
+                </View>
+                <Pressable
+                  style={styles.evolutionPromptButton}
+                  onPress={checkEvolution}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find out whether your Creature evolved">
+                  <ThemedText style={styles.evolutionPromptButtonText}>Find out</ThemedText>
+                </Pressable>
+              </View>
+            )}
+
+            <View style={styles.identityHeader}>
+              <ThemedText style={styles.displayName}>{displayName}, apparently.</ThemedText>
+              {isRemoteDailyEnabled ? (
+                remoteState.status === 'ready' && (
+                  <>
+                    <ThemedText style={styles.subline}>{formatAnswersShapingRead(remoteState.counts.profileAnswerCount)}</ThemedText>
+                    <ThemedText style={styles.sublineSecondary}>
+                      {formatDailyQuizBreakdown(remoteState.counts.dailyAnswerCount, remoteState.counts.quizCompletionCount)}
+                    </ThemedText>
+                  </>
+                )
+              ) : (
+                <ThemedText style={styles.subline}>43 answers · 7 day streak</ThemedText>
+              )}
+            </View>
           </View>
 
           {!isRemoteDailyEnabled && (
@@ -903,27 +885,43 @@ const styles = StyleSheet.create({
   gearButton: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   gearIcon: { fontSize: 22, color: Brand.inkSecondary },
 
+  // Hero cluster (visual-redesign pass) -- tighter internal gap than `content`'s section
+  // rhythm, plus a soft rounded backdrop wash (CardStyle-free -- no border, no hard edge) so
+  // the Creature/name/Relic/CTA/Evolution-chip/"Meki, apparently." read as one composed scene
+  // sitting in its own atmosphere, not plain cream page showing through between modules.
+  heroCluster: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.xl,
+    backgroundColor: 'rgba(255, 214, 232, 0.10)',
+    // Deliberately NOT overflow:'hidden' -- AtmosphericGlow's outer rings are meant to bleed
+    // past this card's own soft background fill rather than being clipped into a visible
+    // rounded-rect edge cutting across a circular glow.
+  },
+
   // --- Identity hero (the Creature centerpiece + name/Relic) ------------------------------
   // Wide: a ROW — Creature left, name+Relic right (the approved left/right layout, which has
   // room to hold at this size on a wide viewport). Narrow: a COLUMN — the centerpiece Creature
   // is too large to sit beside the name+Relic without cropping or squeezing either on a phone
   // width, so narrow stacks them instead (see IdentityHero's own comment for why).
-  heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.five },
-  heroColumn: { alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
+  // Visual-redesign pass: wide tightened from Spacing.five to Spacing.four, and heroColumn's
+  // gap shrunk, so the Creature/name/Relic/CTA read as one composed scene rather than
+  // separately-spaced widgets (direct user feedback: "feel disconnected").
+  heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.four },
+  heroColumn: { alignItems: 'center', justifyContent: 'center', gap: Spacing.two },
   // The Creature's own "stage" -- centers the avatar/placeholder over its glow atmosphere.
   // Sized off glowSize (computed in IdentityHero) so the footprint never jumps between the
-  // placeholder and the real Creature.
-  heroStage: { alignItems: 'center', justifyContent: 'center' },
-  // Soft magical atmosphere (Build 9 correction) -- two off-center, transparent-fill blobs
-  // whose only visible color comes from a wide, low-opacity blurred shadow (see IdentityHero's
-  // own comment for why this replaced the original three concentric rings). Purely decorative,
-  // always behind the Creature by source order (drawn first).
-  heroGlowStage: { position: 'absolute' },
-  heroGlowPrimary: { position: 'absolute', backgroundColor: 'transparent', boxShadow: '0 0 90px 55px rgba(255,214,232,0.38)' },
-  heroGlowSecondary: { position: 'absolute', backgroundColor: 'transparent', boxShadow: '0 0 70px 40px rgba(243,232,255,0.32)' },
+  // placeholder and the real Creature. overflow 'visible' is deliberate -- AtmosphericGlow's
+  // outer rings are intentionally larger than this box so the atmosphere bleeds outward rather
+  // than terminating in a visible edge at the stage boundary.
+  heroStage: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   // Placeholder-only frame (the pre-reveal Magnetic Loop mark benefits from a bounded card;
-  // the real revealed Creature renders through CreatureAvatar instead, unframed, so it reads
-  // as a floating hero illustration rather than a boxed icon).
+  // the real revealed Creature renders through CreatureAvatar instead, fully unframed -- no
+  // circle, disc, or container of any kind -- directly over AtmosphericGlow, so it reads as a
+  // floating collectible illustration rather than an avatar icon. Direct user feedback on the
+  // prior pass: "sits inside a white circle/disc... looks pasted on, like an avatar icon.")
   avatarArea: {
     borderRadius: Radius.lg,
     backgroundColor: Surface.card,
@@ -937,8 +935,9 @@ const styles = StyleSheet.create({
   // Shared regardless of width — only the character-name type size and relic size below
   // scale; the group's own alignment/gap stays constant. `maxWidth` + `flexShrink` let the
   // placeholder name wrap onto a second line rather than force horizontal overflow if a
-  // future real character name is ever longer than this one.
-  relicGroup: { alignItems: 'center', gap: Spacing.two, flexShrink: 1, maxWidth: 200 },
+  // future real character name is ever longer than this one. gap tightened (Spacing.two ->
+  // Spacing.one) so name/Relic/CTA read as one connected stack, not separated modules.
+  relicGroup: { alignItems: 'center', gap: Spacing.one, flexShrink: 1, maxWidth: 200 },
   // On narrow, the group no longer sits beside the avatar in a row with its own flexShrink
   // context, so it gets a plain, centered, non-shrinking width instead.
   relicGroupNarrow: { maxWidth: 280 },
@@ -977,7 +976,7 @@ const styles = StyleSheet.create({
   relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold },
   relicLockedSparkle: { position: 'absolute', fontSize: 14, color: Brand.plum, opacity: 0.5 },
   getYourReadButton: {
-    marginTop: Spacing.one,
+    marginTop: Spacing.two,
     borderRadius: Radius.pill,
     backgroundColor: Brand.plum,
     paddingHorizontal: Spacing.four,
@@ -1043,6 +1042,9 @@ const styles = StyleSheet.create({
   // small rank badge beside the trait name, strength as a quiet caption underneath. Readable
   // at a glance, not a dashboard tile.
   patternList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingVertical: Spacing.one },
+  // Visual-redesign pass: a quiet lift (Elevation.soft) added -- same compact pill shape the
+  // user explicitly wants kept, just with a touch of the rest of the page's premium shadow
+  // language so it doesn't read as flat color chips next to the richer hero above it.
   pattern: {
     borderRadius: Radius.pill,
     paddingVertical: Spacing.two,
@@ -1050,6 +1052,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+    ...Elevation.soft,
   },
   patternNumber: {
     color: 'rgba(23,21,29,0.5)',
@@ -1088,12 +1091,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: Radius.pill,
     // rgba (not Brand.plum + a View-level `opacity`) so the glyph on top renders at full
-    // strength instead of inheriting the pill's own translucency.
-    backgroundColor: 'rgba(36,1,31,0.22)',
+    // strength instead of inheriting the pill's own translucency. Deepened from 0.22 to 0.36
+    // and given a violet-tinted edge (visual-redesign pass) -- at the original low alpha,
+    // Brand.plum's near-black hue read as plain grey rather than a deliberate plum tint
+    // (direct user feedback: "avoid excessive gray").
+    backgroundColor: 'rgba(36,1,31,0.36)',
+    borderWidth: 1,
+    borderColor: 'rgba(121,100,232,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lockedSlotGlyph: { color: Brand.plum, fontSize: 15, opacity: 0.85 },
+  lockedSlotGlyph: { color: Brand.cream, fontSize: 15, opacity: 0.9 },
   undercurrentTeaser: { ...CardStyle.tinted(Surface.card, Surface.hairline), gap: Spacing.three, alignItems: 'flex-start' },
   undercurrentTeaserCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600' },
   undercurrentTeaserCta: { backgroundColor: Brand.plum, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, alignSelf: 'flex-start' },
