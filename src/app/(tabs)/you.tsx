@@ -1032,10 +1032,12 @@ const styles = StyleSheet.create({
   relicBloomInner: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.16)' },
   getYourReadButton: {
     marginTop: Spacing.two,
+    minHeight: 44,
     borderRadius: Radius.pill,
     backgroundColor: Brand.plum,
     paddingHorizontal: Spacing.four,
     paddingVertical: 10,
+    justifyContent: 'center',
     boxShadow: '0 10px 24px rgba(36, 1, 31, 0.22)',
   },
   getYourReadButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.6 },
