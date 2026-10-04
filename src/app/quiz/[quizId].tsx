@@ -236,7 +236,7 @@ export default function QuizScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {step !== 'result' && (
             <View style={styles.topRow}>
               {step === 'intro' ? (
@@ -557,6 +557,16 @@ const styles = StyleSheet.create({
       },
       default: {},
     }),
+  },
+  // Without an explicit bounded style on the ScrollView itself (flexGrow on
+  // contentContainerStyle alone isn't enough on native iOS), the ScrollView's own frame can
+  // grow to match its content instead of staying clamped to the visible screen — so long
+  // questions/answers that exceed one screen render past the bottom edge with no way to
+  // reach them, instead of the content scrolling inside a fixed viewport. This reproduced
+  // only on a real device, not the web preview (react-native-web always bounds scroll
+  // containers via CSS regardless of this style).
+  scrollView: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
