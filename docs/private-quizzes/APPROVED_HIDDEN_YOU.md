@@ -2,7 +2,7 @@
 
 **Category:** Hidden You  
 **Catalog subtitle:** People have a whole story about you. Cute. Let's see if it's accurate.  
-**Status:** **APPROVED CREATIVE + RESULT MAPPINGS + PERSONALITY EVIDENCE / RESULT WEIGHTS & TIE LOGIC PENDING**
+**Status:** **LOCKED**
 
 This file preserves Michelle-approved Hidden You content. Do not rewrite without explicit approval.
 
@@ -558,12 +558,76 @@ Do not force every answer into a result. Q6-B/Q6-C legitimately support R2 from 
 
 Q9 deliberately earns zero permanent personality evidence across all answers because it directly asks which result-like misunderstanding feels most recognizable.
 
-## Pending before implementation
+## Approved weighted result scoring
 
-Do not invent without Michelle approval:
-- answer-to-result scoring weights
-- tie logic
-- reachability fixtures
-- any harsh/high-confidence gate if later judged necessary
+Internal result IDs:
+
+- `hidden-feeling` = THEY THINK YOU DON'T CARE.
+- `face` = APPARENTLY, YOUR FACE HAS A REPUTATION.
+- `fine` = EVERYBODY THINKS YOU'RE FINE.
+- `attention` = THEY CALL IT “TOO MUCH.” YOU CALL IT PAYING ATTENTION.
+
+| Q | A | B | C | D |
+|---|---|---|---|---|
+| 1 | HIDDEN_FEELING +1 | FACE +2 | FINE +1 | ATTENTION +2 |
+| 2 | FINE +2 | ATTENTION +2 | FACE +1 | HIDDEN_FEELING +2 |
+| 3 | ATTENTION +2 | HIDDEN_FEELING +2 | FACE +2 | FINE +2 |
+| 4 | ATTENTION +2 | HIDDEN_FEELING +2 | FINE +1 | FACE +1 |
+| 5 | ATTENTION +2 | FACE +1 | HIDDEN_FEELING +2 | FINE +2 |
+| 6 | HIDDEN_FEELING +1 | FACE +2 | FACE +2 | FINE +1 |
+| 7 | FACE +1 | FINE +2 | FINE +2 | HIDDEN_FEELING +2 |
+| 8 | HIDDEN_FEELING +1 | ATTENTION +2 | FACE +1 | FINE +1 |
+| 9 | FINE +3 | HIDDEN_FEELING +3 | FACE +3 | ATTENTION +3 |
+| 10 | HIDDEN_FEELING +3 | FINE +3 | FACE +3 | ATTENTION +3 |
+
+Q9 and Q10 are intentionally strong discriminators because the user directly identifies the recurring misunderstanding and their own contribution to it.
+
+### ATTENTION confidence gate
+
+ATTENTION requires at least 3 ATTENTION signals, including at least one strong repeated-pattern signal:
+- Q3-A
+- Q4-A
+- Q5-A
+- Q9-D
+- Q10-D
+
+If ATTENTION wins raw scoring but fails the gate, remove ATTENTION from eligibility and select the next eligible result.
+
+### FINE confidence gate
+
+FINE requires at least 3 FINE signals, including at least one strong hidden-burden signal:
+- Q2-A
+- Q3-D
+- Q7-B or Q7-C
+- Q9-A
+- Q10-B
+
+If FINE wins raw scoring but fails the gate, remove FINE from eligibility and select the next eligible result.
+
+FACE and HIDDEN_FEELING do not require gates.
+
+The FACE result here measures being misread because of presentation. It must remain distinct from the Style & Vibe quiz, which assesses whether the user's actual presence is intimidating. One quiz result does not feed the other.
+
+### Tie logic
+
+High-signal questions: **Q3, Q5, Q7, Q9, Q10**
+
+Resolve ties:
+1. Highest eligible total
+2. Highest score across high-signal questions
+3. Most +3 selections
+4. Q10 as final self-contribution discriminator
+5. Safer fixed fallback: **HIDDEN_FEELING -> FACE -> FINE -> ATTENTION**
+
+Do not enable a blended result.
+
+### Reachability fixtures
+
+- **HIDDEN_FEELING:** 1A, 2D, 3B, 4B, 5C, 6A, 7D, 8A, 9B, 10A
+- **FACE:** 1B, 2C, 3C, 4D, 5B, 6B, 7A, 8C, 9C, 10C
+- **FINE:** 1C, 2A, 3D, 4C, 5D, 6D, 7C, 8D, 9A, 10B
+- **ATTENTION:** 1D, 2B, 3A, 4A, 5A, 6C, 7A, 8B, 9D, 10D
+
+The FINE fixture clears its hidden-burden gate. The ATTENTION fixture clears its repeated-pattern gate.
 
 Quiz-result scoring and permanent personality evidence remain separate.
