@@ -17,10 +17,13 @@ import { resolveOpacity, resolveTransform } from '@/data/relic/relic-transform';
 import { RelicRenderer } from './relic-renderer';
 
 export type RelicAvatarProps = {
-  /** A FULLY resolved identity -- callers must gate on all three fields being non-null
-   * themselves before rendering this (the Bible's locked-silhouette rule lives in the caller,
-   * e.g. You's existing RelicGlyph, not here) -- this component does not re-check completeness. */
-  identity: { base: NonNullable<ResolvedRelicIdentity['base']>; color: NonNullable<ResolvedRelicIdentity['color']>; effect: NonNullable<ResolvedRelicIdentity['effect']> };
+  /** Base must be resolved (a Relic never renders at all before its strongest signal
+   * qualifies -- callers gate on that, e.g. You's RelicGlyph). Color/effect are genuinely
+   * nullable (Build 11 progressive reveal): a Relic with only its base signal qualified
+   * renders base alone; this component renders exactly as many layers as have real,
+   * evidence-qualified identities behind them -- it never invents a color/effect to complete
+   * the picture, and never has a separate rendering path for a partial vs. complete Relic. */
+  identity: { base: NonNullable<ResolvedRelicIdentity['base']>; color: ResolvedRelicIdentity['color']; effect: ResolvedRelicIdentity['effect'] };
   /** Square render size in logical pixels. */
   size: number;
 };
@@ -33,12 +36,12 @@ export type RelicAvatarProps = {
 // resolves production calibration once and renders through the shared compositing primitive.
 export function RelicAvatar({ identity, size }: RelicAvatarProps) {
   const base = relicTraitByKey(identity.base);
-  const color = colorFamilyByKey(identity.color);
-  const effect = effectByKey(identity.effect);
+  const color = identity.color ? colorFamilyByKey(identity.color) : null;
+  const effect = identity.effect ? effectByKey(identity.effect) : null;
 
   const baseCorrection = APPROVED_BASE_CORRECTIONS[identity.base];
-  const colorCorrection = APPROVED_COLOR_CORRECTIONS[identity.color];
-  const effectCorrection = APPROVED_EFFECT_CORRECTIONS[identity.effect];
+  const colorCorrection = identity.color ? APPROVED_COLOR_CORRECTIONS[identity.color] : undefined;
+  const effectCorrection = identity.effect ? APPROVED_EFFECT_CORRECTIONS[identity.effect] : undefined;
 
   return (
     <View style={styles.container}>
@@ -47,12 +50,12 @@ export function RelicAvatar({ identity, size }: RelicAvatarProps) {
         baseSource={base.source}
         baseTransform={resolveTransform(GLOBAL_BASE_TRANSFORM, baseCorrection)}
         baseOpacity={GLOBAL_BASE_OPACITY}
-        colorSource={color.source}
+        colorSource={color?.source ?? null}
         colorTransform={resolveTransform(GLOBAL_COLOR_TRANSFORM, colorCorrection)}
-        colorOpacity={resolveOpacity(GLOBAL_COLOR_OPACITY, colorCorrection?.opacity)}
-        effectSource={effect.source}
+        colorOpacity={color ? resolveOpacity(GLOBAL_COLOR_OPACITY, colorCorrection?.opacity) : 0}
+        effectSource={effect?.source ?? null}
         effectTransform={resolveTransform(GLOBAL_EFFECT_TRANSFORM, effectCorrection)}
-        effectOpacity={resolveOpacity(GLOBAL_EFFECT_OPACITY, effectCorrection?.opacity)}
+        effectOpacity={effect ? resolveOpacity(GLOBAL_EFFECT_OPACITY, effectCorrection?.opacity) : 0}
       />
     </View>
   );

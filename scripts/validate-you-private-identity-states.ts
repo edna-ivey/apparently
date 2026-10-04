@@ -78,16 +78,22 @@ for (const phrase of FORBIDDEN_ACQUISITION_PHRASES) {
 }
 
 // ============================================================================================
-// STATE 2 — active subscriber: up to 3 qualifying traits, never padded; Relic silhouette until
-// 3 qualify (unchanged Pass 3 logic, re-confirmed here since this pass touches the same file).
+// STATE 2 — active subscriber: up to 3 qualifying traits, never padded. The underlying slot
+// data (selectRelicSlots/resolveRelicIdentity) was ALWAYS progressive -- color/effect slots
+// stay unresolved (null) below 3 qualifying signals, unchanged since Pass 3. What Build 11
+// changed is purely the CONSUMER gate in you.tsx's RelicGlyph: Build 10 required all three
+// slots resolved before rendering anything but the locked silhouette; Build 11 renders the
+// real (partial) Relic through the shared production renderer the moment identity.base alone
+// resolves, adding color/effect as those ranks individually qualify -- see the assertion below
+// against the actual gate condition in source, plus "RELIC PROGRESSION (Build 11)" further down.
 // ============================================================================================
 
 assert(/signals\.map\(\(signal, index\) =>/.test(undercurrentSectionCode), 'the revealed state maps directly over real qualifying signals -- never pads to a fixed count');
 assert(/MAX_PRIVATE_SIGNALS = 3/.test(read('../src/data/private-signals.ts')), 'the selector itself still caps at 3, unchanged');
 
 // Real functional proof: 1, 2, and 3 qualifying signals render exactly that many cards' worth
-// of data, and the Relic only fully resolves at 3 -- the exact underlying data this pass's UI
-// consumes, unchanged from Pass 3/3.1/3.2.
+// of data, and the Relic only fully resolves (all 3 layers) at 3 -- the exact underlying data
+// this pass's UI consumes, unchanged from Pass 3/3.1/3.2.
 // Each dimension below is given >= 3 raw points (the Bible v1.4 active-board threshold -- see
 // personality.ts's ACTIVE_BOARD_QUALIFICATION_THRESHOLD) so it genuinely qualifies; a bare
 // single -2 (2 raw points) would no longer qualify under the reconciled rule.
@@ -96,7 +102,14 @@ const oneSignalProfile = scorePersonalityProfile([
 ]);
 const oneSignals = selectStrongestPrivateSignals(oneSignalProfile);
 assert(oneSignals.length === 1, 'active subscriber with 1 qualifying trait: selector returns exactly 1');
-assert(selectRelicSlots(oneSignals).colorTrait === null, 'with <3 qualifying traits, the Relic stays a silhouette (color/effect slots unresolved)');
+assert(selectRelicSlots(oneSignals).relicTrait !== null, 'with 1 qualifying trait, the base Relic slot IS resolved (Build 11: this alone is enough to reveal the real base object)');
+assert(selectRelicSlots(oneSignals).colorTrait === null, 'with <2 qualifying traits, the color slot stays genuinely unresolved -- never invented ahead of real evidence');
+
+// Build 11 progressive-reveal gate: RelicGlyph must key off identity.base (so 1 qualifying
+// signal already shows the real, partial Relic), and must NOT still require all three slots
+// before rendering anything but the locked placeholder.
+assert(/if \(identity\.base\)/.test(youCode), 'RelicGlyph gates on identity.base alone (Build 11 progressive reveal), not on all three slots being resolved');
+assert(!/resolvedSlotCount >= 3 &&/.test(youCode), 'the old Build 10 all-or-nothing gate (resolvedSlotCount >= 3 && base && color && effect) is gone');
 
 const threeSignalProfile = scorePersonalityProfile([
   { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-2', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },

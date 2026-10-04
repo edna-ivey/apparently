@@ -121,16 +121,20 @@ function RelicGlyph({
 }) {
   const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
   const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
-  const isLocked = resolvedSlotCount === 0;
+  const isLocked = identity.base === null;
   const bloomSize = wide ? 104 : 78;
   const bloomInnerSize = bloomSize * 0.68;
 
-  // Production consolidation pass -- once all three ranks are genuinely qualified (Bible's
-  // "Relic Reveal": 3 qualifying Private traits), render the REAL Relic through the shared
-  // production renderer (same calibration/config every consumer Relic surface uses) instead of
-  // the placeholder gem silhouette below. The soft bloom stays behind it either way, for visual
-  // continuity with the locked state rather than a jarring structural jump on reveal.
-  if (resolvedSlotCount >= 3 && identity.base && identity.color && identity.effect) {
+  // Build 11 "Relic forms over time": the Relic is no longer all-or-nothing. The moment the
+  // user's single strongest qualifying Private signal exists, the REAL base Relic object
+  // renders (through the shared production renderer/calibration, identical to the complete
+  // state) in an intentionally early/forming presentation -- just the base layer, no color or
+  // effect tint yet, since RelicAvatar only paints the layers whose identity is actually
+  // non-null (see relic-renderer.tsx). The color layer joins once a second signal qualifies,
+  // the effect layer once a third does -- never fabricated, never padded ahead of real
+  // evidence. The soft bloom stays behind it at every stage, for visual continuity with the
+  // locked state rather than a jarring structural jump on first reveal.
+  if (identity.base) {
     return (
       <View style={[styles.relicWrap, { width: bloomSize, height: bloomSize }]}>
         <View

@@ -12,15 +12,21 @@ import type { RelicTransform } from '@/data/relic/relic-transform';
 // (relic-avatar.tsx, applies the locked global calibration) and the R&D Relic Lab
 // (src/app/dev/relic-lab.tsx, applies whatever the lab's own calibration controls produce) wrap
 // THIS SAME component -- there is no second, parallel rendering path.
+// colorSource/effectSource are nullable (Build 11 progressive Relic reveal): a Relic with only
+// a qualified base signal renders base alone; with base+color qualified it renders those two
+// layers; the effect layer only ever appears once a third signal has genuinely qualified. This
+// is the SAME compositing math and the SAME locked calibration for every stage -- a null source
+// simply skips that layer's <RelicLayer>, never a separate rendering path, never a placeholder
+// layer. See RelicAvatar for how a ResolvedRelicIdentity's null color/effect reaches here.
 export type RelicRendererProps = {
   width: number;
   baseSource: ImageSourcePropType;
   baseTransform: RelicTransform;
   baseOpacity: number;
-  colorSource: ImageSourcePropType;
+  colorSource: ImageSourcePropType | null;
   colorTransform: RelicTransform;
   colorOpacity: number;
-  effectSource: ImageSourcePropType;
+  effectSource: ImageSourcePropType | null;
   effectTransform: RelicTransform;
   effectOpacity: number;
   backgroundColor?: string;
@@ -48,7 +54,10 @@ export function RelicRenderer({
   );
 }
 
-function RelicLayer({ source, transform, opacity }: { source: ImageSourcePropType; transform: RelicTransform; opacity: number }) {
+function RelicLayer({ source, transform, opacity }: { source: ImageSourcePropType | null; transform: RelicTransform; opacity: number }) {
+  if (!source) {
+    return null;
+  }
   const outerTransform = [
     { translateX: transform.x },
     { translateY: transform.y },
