@@ -201,13 +201,15 @@ export type ArchetypeQuizDefinition = QuizBase & {
   // it. Absent/false for every existing archetype quiz (unchanged: always exactly one result).
   enableCloseSecond?: boolean;
   // Optional data-driven eligibility gates for strong/high-confidence archetype reads.
-  resultGates?: Record<string, { minSignals: number; requiredAnyOf?: string[][] }>;
+  resultGates?: Record<string, { minSignals: number; requiredAnyOf?: string[][]; requiredGroups?: { answers: string[]; min: number }[] }>;
   // Optional explicit final fallback order after configured tie-breaks.
   tieFallbackOrder?: string[];
   // Optional primary-weight value counted by the tie-break (default 2 for legacy quizzes).
   primaryTieWeight?: number;
   // Optional final answer discriminator used after the normal high-signal/+weight tie steps.
   finalTieQuestionId?: string;
+  // Optional extra tie step: compare count of questions where the candidate is the selected choice's primary result.
+  countPrimaryMatchesTieBreak?: boolean;
 };
 
 export type QuizDefinition = NumericBandQuizDefinition | ArchetypeQuizDefinition;

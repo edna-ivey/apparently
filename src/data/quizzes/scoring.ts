@@ -166,6 +166,19 @@ const pickPrimaryArchetypeByHighSignal = (
     return afterPrimaryCount[0];
   }
 
+  if (definition.countPrimaryMatchesTieBreak) {
+    const primaryMatchCount: Record<string, number> = {};
+    afterPrimaryCount.forEach((id) => { primaryMatchCount[id] = 0; });
+    for (const { weights } of perQuestionWeights) {
+      const winner = primaryWeightEntry(weights);
+      if (winner && afterPrimaryCount.includes(winner.archetypeId)) primaryMatchCount[winner.archetypeId] += 1;
+    }
+    const bestMatches = Math.max(...afterPrimaryCount.map((id) => primaryMatchCount[id]));
+    const afterMatches = afterPrimaryCount.filter((id) => primaryMatchCount[id] === bestMatches);
+    if (afterMatches.length === 1) return afterMatches[0];
+    afterPrimaryCount.splice(0, afterPrimaryCount.length, ...afterMatches);
+  }
+
   if (definition.finalTieQuestionId) {
     const finalEntry = perQuestionWeights.find((entry) => entry.questionId === definition.finalTieQuestionId);
     const finalWinner = finalEntry ? primaryWeightEntry(finalEntry.weights)?.archetypeId : null;
@@ -185,7 +198,8 @@ const eligibleArchetypeIds = (definition: ArchetypeQuizDefinition, answers: Reco
     }).map((q) => `${q.id}-${answers[q.id]}`);
     const enough = signals.length >= gate.minSignals;
     const groupsOk = (gate.requiredAnyOf ?? []).every((group) => group.some((key) => signals.includes(key)));
-    if (!enough || !groupsOk) eligible.delete(archetypeId);
+    const countedGroupsOk = (gate.requiredGroups ?? []).every((group) => group.answers.filter((key) => signals.includes(key)).length >= group.min);
+    if (!enough || !groupsOk || !countedGroupsOk) eligible.delete(archetypeId);
   }
   return eligible;
 };
