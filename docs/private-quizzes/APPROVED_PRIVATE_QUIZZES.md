@@ -888,7 +888,7 @@ Historical quiz retained for old results/links:
 
 **Category:** Love & Soulmates  
 **Catalog subtitle:** Wanting a relationship and being ready for one are not the same thing.  
-**Status:** **APPROVED CREATIVE + PERSONALITY EVIDENCE / RESULT SCORING PENDING**
+**Status:** **LOCKED**
 
 ## Result spectrum
 
@@ -1391,13 +1391,79 @@ Quiz-result scoring and personality evidence are separate. Do not force evidence
 
 Do not infer extra flattering or negative personality traits merely from the quiz result. The quiz can make a sharp behavioral read; permanent identity evidence must remain precise.
 
-## Pending before implementation
+## Approved answer-to-result scoring
 
-Do not invent yet:
+Internal result IDs:
 
-- answer-to-result scoring weights
-- harsh-result gate details
-- tie logic
-- reachability fixtures
+- `open` = THE DOOR IS OPEN.
+- `terms` = LOVE, WITH TERMS & CONDITIONS.
+- `walls` = YOUR HEART SAYS YES. YOUR WALLS SAY ABSOLUTELY NOT.
+- `bae` = YOU WANT A BAE, NOT A PARTNERSHIP.
 
-These require a separate scoring/result-logic proposal and Michelle approval before implementation.
+| Q | A | B | C | D |
+|---|---|---|---|---|
+| 1 | WALLS +2 | OPEN +2 | BAE +2 | TERMS +2 |
+| 2 | BAE +2 | WALLS +1 | OPEN +2 | TERMS +2 |
+| 3 | BAE +2 | TERMS +1 | OPEN +2 | WALLS +2 |
+| 4 | WALLS +1 | OPEN +3 | BAE +3 | TERMS +2 |
+| 5 | TERMS +2 | BAE +3 | WALLS +2 | OPEN +2 |
+| 6 | WALLS +2 | BAE +1 | OPEN +2 | TERMS +2 |
+| 7 | BAE +2 | OPEN +3 | WALLS +2 | TERMS +3 |
+| 8 | WALLS +2 | OPEN +3 | TERMS +2 | BAE +3 |
+| 9 | TERMS +2 | BAE +3 | WALLS +3 | OPEN +2 |
+| 10 | WALLS +3 | BAE +3 | TERMS +2 | OPEN +3 |
+
+Q4, Q5, Q7, Q8, Q9, and Q10 carry the strongest readiness evidence and may award +3 result weight.
+
+### BAE hard gate
+
+BAE requires at least 4 BAE signals, including at least one partnership-cost signal and at least one accountability/repair signal.
+
+Partnership-cost signals:
+- Q2-A
+- Q5-B
+- Q8-D
+- Q10-B
+
+Accountability/repair signals:
+- Q3-A
+- Q4-C
+- Q7-A
+
+If BAE wins raw scoring but fails the gate, remove BAE from eligibility and select the next eligible result.
+
+### WALLS confidence gate
+
+WALLS requires at least 3 WALLS signals, including at least one strong armor/vulnerability signal:
+- Q3-D
+- Q7-C
+- Q9-C
+- Q10-A
+
+If WALLS wins raw scoring but fails the gate, remove WALLS from eligibility and select the next eligible result.
+
+OPEN and TERMS do not require gates.
+
+### Tie logic
+
+High-signal questions: **Q4, Q5, Q7, Q8, Q9, Q10**
+
+Resolve ties:
+1. Highest eligible total
+2. Highest score across high-signal questions
+3. Most +3 selections
+4. Most direct archetype matches across all 10
+5. Safer fixed fallback: **OPEN -> TERMS -> WALLS -> BAE**
+
+Do not enable a blended result.
+
+### Reachability fixtures
+
+- **OPEN:** 1B, 2C, 3C, 4B, 5D, 6C, 7B, 8B, 9D, 10D
+- **TERMS:** 1D, 2D, 3B, 4D, 5A, 6D, 7D, 8C, 9A, 10C
+- **WALLS:** 1A, 2B, 3D, 4A, 5C, 6A, 7C, 8A, 9C, 10A
+- **BAE:** 1C, 2A, 3A, 4C, 5B, 6B, 7A, 8D, 9B, 10B
+
+The BAE fixture clears both halves of its hard gate. The WALLS fixture clears its armor/vulnerability gate.
+
+Quiz-result scoring and permanent personality evidence remain separate. Do not infer extra personality traits from the result itself.
