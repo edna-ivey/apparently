@@ -477,23 +477,30 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
         ))}
       </View>
 
-      <View style={styles.privateSection}>
-        <ThemedText style={styles.privateSectionHeading}>THE COST</ThemedText>
-        {read.theCost.map((line, index) => (
-          <ThemedText key={`the-cost-${index}`} style={styles.privateSectionBody}>
-            {line}
-          </ThemedText>
-        ))}
-      </View>
+      {/* Not every approved result has a COST/TRY THIS section (e.g. career-ambition-how-bad's
+          want-it-for-real, love-soulmates-ready's open) -- rendering the heading unconditionally
+          previously showed a bare "THE COST"/"TRY THIS" label with nothing beneath it. */}
+      {read.theCost.length > 0 && (
+        <View style={styles.privateSection}>
+          <ThemedText style={styles.privateSectionHeading}>THE COST</ThemedText>
+          {read.theCost.map((line, index) => (
+            <ThemedText key={`the-cost-${index}`} style={styles.privateSectionBody}>
+              {line}
+            </ThemedText>
+          ))}
+        </View>
+      )}
 
-      <View style={styles.privateSection}>
-        <ThemedText style={styles.privateSectionHeading}>TRY THIS</ThemedText>
-        {read.tryThis.map((line, index) => (
-          <ThemedText key={`try-this-${index}`} style={styles.privateSectionBody}>
-            {line}
-          </ThemedText>
-        ))}
-      </View>
+      {read.tryThis.length > 0 && (
+        <View style={styles.privateSection}>
+          <ThemedText style={styles.privateSectionHeading}>TRY THIS</ThemedText>
+          {read.tryThis.map((line, index) => (
+            <ThemedText key={`try-this-${index}`} style={styles.privateSectionBody}>
+              {line}
+            </ThemedText>
+          ))}
+        </View>
+      )}
 
       {result.secondaryResult && (
         <View style={styles.closeSecondBlock}>
