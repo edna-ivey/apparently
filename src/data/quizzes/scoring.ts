@@ -1,4 +1,5 @@
-import type { PersonalityEffect } from '@/data/personality';
+import type { PersonalityAnswerEvidence, PersonalityEffect } from '@/data/personality';
+import { applyPermanentQuizAwards } from '@/data/quiz-personality-awards';
 
 import type {
   ArchetypeQuizDefinition,
@@ -155,7 +156,7 @@ const pickPrimaryArchetypeByHighSignal = (
   });
   for (const { weights } of perQuestionWeights) {
     const winner = primaryWeightEntry(weights);
-    if (winner && winner.value === 2 && afterHighSignal.includes(winner.archetypeId)) {
+    if (winner && winner.value === (definition.primaryTieWeight ?? 2) && afterHighSignal.includes(winner.archetypeId)) {
       fullPrimaryTwoCount[winner.archetypeId] += 1;
     }
   }
@@ -165,16 +166,40 @@ const pickPrimaryArchetypeByHighSignal = (
     return afterPrimaryCount[0];
   }
 
-  return definition.archetypes.find((archetype) => afterPrimaryCount.includes(archetype.id))!.id;
+  if (definition.finalTieQuestionId) {
+    const finalEntry = perQuestionWeights.find((entry) => entry.questionId === definition.finalTieQuestionId);
+    const finalWinner = finalEntry ? primaryWeightEntry(finalEntry.weights)?.archetypeId : null;
+    if (finalWinner && afterPrimaryCount.includes(finalWinner)) return finalWinner;
+  }
+  const fallback = definition.tieFallbackOrder ?? definition.archetypes.map((a) => a.id);
+  return fallback.find((id) => afterPrimaryCount.includes(id)) ?? afterPrimaryCount[0];
+};
+
+const eligibleArchetypeIds = (definition: ArchetypeQuizDefinition, answers: Record<string, string>): Set<string> => {
+  const eligible = new Set(definition.archetypes.map((a) => a.id));
+  if (!definition.resultGates) return eligible;
+  for (const [archetypeId, gate] of Object.entries(definition.resultGates)) {
+    const signals = definition.questions.filter((q) => {
+      const c = q.choices.find((choice) => choice.id === answers[q.id]);
+      return (c?.resultWeights?.[archetypeId] ?? 0) > 0;
+    }).map((q) => `${q.id}-${answers[q.id]}`);
+    const enough = signals.length >= gate.minSignals;
+    const groupsOk = (gate.requiredAnyOf ?? []).every((group) => group.some((key) => signals.includes(key)));
+    if (!enough || !groupsOk) eligible.delete(archetypeId);
+  }
+  return eligible;
 };
 
 const pickPrimaryArchetype = (
   definition: ArchetypeQuizDefinition,
   totals: Record<string, number>,
   perQuestionWeights: PerQuestionWeights[],
+  answers: Record<string, string>,
 ): string => {
-  const maxScore = Math.max(...definition.archetypes.map((archetype) => totals[archetype.id] ?? 0));
-  const tied = definition.archetypes.filter((archetype) => (totals[archetype.id] ?? 0) === maxScore).map((a) => a.id);
+  const eligible = eligibleArchetypeIds(definition, answers);
+  const candidates = definition.archetypes.filter((a) => eligible.has(a.id));
+  const maxScore = Math.max(...candidates.map((archetype) => totals[archetype.id] ?? 0));
+  const tied = candidates.filter((archetype) => (totals[archetype.id] ?? 0) === maxScore).map((a) => a.id);
 
   if (tied.length === 1) {
     return tied[0];
@@ -267,7 +292,7 @@ export const scoreArchetypeQuiz = (definition: ArchetypeQuizDefinition, answers:
     percentages[archetype.id] = totalPoints > 0 ? Math.round(((totals[archetype.id] ?? 0) / totalPoints) * 100) : 0;
   });
 
-  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWeights);
+  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWeights, answers);
   const primary = definition.archetypes.find((archetype) => archetype.id === primaryId)!;
   const secondary = pickCloseSecond(definition, primary, percentages, perQuestionWeights);
 
@@ -324,6 +349,16 @@ export type ResultDisplay = {
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
 // happens for computing a NEW result. Called once, right when a quiz reaches its result step.
+
+const answerLevelProfileSignals = (definition: QuizDefinition, answers: Record<string, string>): PersonalityEffect[] | undefined => {
+  if (!definition.answerLevelPersonalityEvidence) return undefined;
+  const evidence: PersonalityAnswerEvidence[] = definition.questions.map((question) => {
+    const choice = question.choices.find((candidate) => candidate.id === answers[question.id]);
+    return { question: question.prompt, category: definition.category, chosenAnswer: choice?.label ?? '', effects: choice?.traitSignals ?? [] };
+  });
+  return applyPermanentQuizAwards(evidence, definition.access === 'free' ? 'public' : 'private');
+};
+
 export const computeQuizResult = (definition: QuizDefinition, answers: Record<string, string>): ResultDisplay => {
   if (definition.scoringType === 'archetype') {
     const { primary, totals, percentages, secondary } = scoreArchetypeQuiz(definition, answers);
@@ -345,7 +380,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       mixLabel: definition.mixLabel,
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
-      profileSignals: primary.profileSignals,
+      profileSignals: answerLevelProfileSignals(definition, answers) ?? primary.profileSignals,
       structuredRead: primary.structuredRead,
       secondaryResult: secondary ? { resultId: secondary.id, resultDisplayTitle: resolveArchetypeDisplayTitle(secondary) } : null,
     };
@@ -364,7 +399,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     percent,
     meterLabel: definition.meterLabel,
     resultDisplayTitle: defaultTitleCase(band.title),
-    profileSignals: band.profileSignals,
+    profileSignals: answerLevelProfileSignals(definition, answers) ?? band.profileSignals,
   };
 };
 

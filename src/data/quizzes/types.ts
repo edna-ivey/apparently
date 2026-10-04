@@ -142,6 +142,8 @@ type QuizBase = {
   introCta: string;
   introNote?: string;
   questions: QuizQuestion[];
+  // Opt in to Bible §15A answer-level personality evidence for this quiz.
+  answerLevelPersonalityEvidence?: boolean;
   // Whether a first completion of this quiz may contribute to the living You profile
   // (personality_evidence + profileAnswerCount/Your7). Defaults to true (existing behavior,
   // unchanged) when absent. Set to false ONLY for a quiz whose result→profile mapping hasn't
@@ -198,6 +200,14 @@ export type ArchetypeQuizDefinition = QuizBase & {
   // from >=2 distinct questions, and at least one of those was a full +2 PRIMARY selection for
   // it. Absent/false for every existing archetype quiz (unchanged: always exactly one result).
   enableCloseSecond?: boolean;
+  // Optional data-driven eligibility gates for strong/high-confidence archetype reads.
+  resultGates?: Record<string, { minSignals: number; requiredAnyOf?: string[][] }>;
+  // Optional explicit final fallback order after configured tie-breaks.
+  tieFallbackOrder?: string[];
+  // Optional primary-weight value counted by the tie-break (default 2 for legacy quizzes).
+  primaryTieWeight?: number;
+  // Optional final answer discriminator used after the normal high-signal/+weight tie steps.
+  finalTieQuestionId?: string;
 };
 
 export type QuizDefinition = NumericBandQuizDefinition | ArchetypeQuizDefinition;
