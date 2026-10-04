@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RelicLabComposer } from '@/components/relic-lab/relic-lab-composer';
+import { RelicRenderer } from '@/components/relic/relic-renderer';
 import { LabeledSlider } from '@/components/creature-test/labeled-slider';
 import {
   COLOR_FAMILIES,
@@ -15,7 +15,7 @@ import {
   type ColorFamilyKey,
   type EffectKey,
   type RelicTraitKey,
-} from '@/data/relic-lab/relic-lab-assets';
+} from '@/data/relic/relic-assets';
 import {
   DEFAULT_LAYER_DEFAULTS,
   EMPTY_ASSET_CORRECTIONS,
@@ -378,19 +378,22 @@ function RelicLabInner() {
 
         <View style={styles.mainRow}>
           <View style={styles.previewColumn}>
-            <RelicLabComposer
-              width={stageWidth}
-              baseSource={baseEntry.source}
-              baseTransform={resolvedBase}
-              colorSource={colorEntry.source}
-              colorTransform={resolvedColor}
-              colorOpacity={resolvedColorOpacity}
-              effectSource={effectEntry.source}
-              effectTransform={resolvedEffect}
-              effectOpacity={resolvedEffectOpacity}
-              backgroundColor={BACKGROUND_COLOR[background]}
-              checkerboard={background === 'checkerboard'}
-            />
+            <View style={[styles.previewStageWrap, { width: stageWidth, height: stageWidth }]}>
+              {background === 'checkerboard' && <CheckerboardBackground size={stageWidth} />}
+              <RelicRenderer
+                width={stageWidth}
+                baseSource={baseEntry.source}
+                baseTransform={resolvedBase}
+                baseOpacity={1}
+                colorSource={colorEntry.source}
+                colorTransform={resolvedColor}
+                colorOpacity={resolvedColorOpacity}
+                effectSource={effectEntry.source}
+                effectTransform={resolvedEffect}
+                effectOpacity={resolvedEffectOpacity}
+                backgroundColor={background === 'checkerboard' ? 'transparent' : BACKGROUND_COLOR[background]}
+              />
+            </View>
 
             <View style={styles.chipRow}>
               {BACKGROUND_OPTIONS.map((opt) => (
@@ -418,7 +421,6 @@ function RelicLabInner() {
               </Text>
               <Text style={styles.combinationLine}>Color: {colorEntry.label}</Text>
               <Text style={styles.combinationLine}>Effect: {effectEntry.label}</Text>
-              {baseEntry.filenameMismatch && <Text style={styles.mismatchNote}>⚠ {baseEntry.filenameMismatch}</Text>}
             </View>
 
             <View style={styles.buttonRow}>
@@ -634,6 +636,29 @@ function SecondaryButton({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
+// Lab-only background pattern -- never part of the shared production RelicRenderer, which has
+// no opinion about a preview backdrop at all.
+function CheckerboardBackground({ size }: { size: number }) {
+  const cell = 24;
+  const cols = Math.ceil(size / cell);
+  const rows = Math.ceil(size / cell);
+  const squares: { left: number; top: number }[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      if ((row + col) % 2 === 0) {
+        squares.push({ left: col * cell, top: row * cell });
+      }
+    }
+  }
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }]}>
+      {squares.map((sq) => (
+        <View key={`${sq.left}-${sq.top}`} style={{ position: 'absolute', left: sq.left, top: sq.top, width: cell, height: cell, backgroundColor: '#E3DCD2' }} />
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FAF6F0' },
   content: { padding: 20, gap: 16, paddingBottom: 80 },
@@ -641,6 +666,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 12, color: '#5D5571' },
   mainRow: { flexDirection: 'row', gap: 24, flexWrap: 'wrap' },
   previewColumn: { gap: 12, width: 480 },
+  previewStageWrap: { position: 'relative', overflow: 'hidden', borderRadius: 16 },
   controlsColumn: { gap: 12, flex: 1, minWidth: 360 },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

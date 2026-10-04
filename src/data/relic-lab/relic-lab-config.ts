@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { ColorFamilyKey, EffectKey, RelicTraitKey } from './relic-lab-assets';
+import type { ColorFamilyKey, EffectKey, RelicTraitKey } from '@/data/relic/relic-assets';
+import { IDENTITY_TRANSFORM, resolveOpacity, resolveTransform, type RelicTransform } from '@/data/relic/relic-transform';
 
 // Relic Lab calibration model (R&D ONLY). Three independent layers -- BASE RELIC, COLOR,
 // EFFECT -- each with its own default transform; COLOR and EFFECT also carry their own
@@ -8,10 +9,14 @@ import type { ColorFamilyKey, EffectKey, RelicTraitKey } from './relic-lab-asset
 // to identity), the exact same "default + sparse correction" shape Creature Lab already
 // established (see creature-test-config.ts) -- reused as a PATTERN only. No state, storage
 // key, or saved values are shared with Creature Lab.
+//
+// The transform type/math and the asset registry are the SAME canonical modules production
+// uses (@/data/relic/relic-transform, @/data/relic/relic-assets) -- re-exported here under
+// their original Relic-Lab-only names (RelicLabTransform, etc.) purely so this lab's own UI
+// code doesn't need a sweeping rename. There is still only one transform implementation.
 
-export type RelicLabTransform = { x: number; y: number; scale: number; rotation: number };
-
-export const IDENTITY_TRANSFORM: RelicLabTransform = { x: 0, y: 0, scale: 1, rotation: 0 };
+export type RelicLabTransform = RelicTransform;
+export { IDENTITY_TRANSFORM, resolveOpacity, resolveTransform };
 
 export type RelicLayerDefaults = {
   base: RelicLabTransform;
@@ -19,7 +24,9 @@ export type RelicLayerDefaults = {
   effect: RelicLabTransform & { opacity: number };
 };
 
-// Starting calibration values ONLY (per the brief) -- not an inferred production answer.
+// Starting calibration values ONLY (per the brief) -- not an inferred production answer. (The
+// REAL approved production calibration lives in @/data/relic/relic-production-config.ts, not
+// here -- this lab default is just where a fresh /dev/relic-lab session starts from.)
 export const DEFAULT_LAYER_DEFAULTS: RelicLayerDefaults = {
   base: { ...IDENTITY_TRANSFORM },
   color: { ...IDENTITY_TRANSFORM, opacity: 0.6 },
@@ -39,16 +46,6 @@ export type RelicAssetCorrections = {
 };
 
 export const EMPTY_ASSET_CORRECTIONS: RelicAssetCorrections = { base: {}, color: {}, effect: {} };
-
-export function resolveTransform(base: RelicLabTransform, correction?: Partial<RelicLabTransform>): RelicLabTransform {
-  const c = { ...IDENTITY_TRANSFORM, ...(correction ?? {}) };
-  return { x: base.x + c.x, y: base.y + c.y, scale: base.scale * c.scale, rotation: base.rotation + c.rotation };
-}
-
-export function resolveOpacity(baseOpacity: number, correctionOpacity?: number): number {
-  const resolved = correctionOpacity === undefined ? baseOpacity : baseOpacity * correctionOpacity;
-  return Math.min(1, Math.max(0, resolved));
-}
 
 // --- Persistence (dedicated Relic Lab key -- never Creature Lab's) ----------------------
 // Same dual web/native storage shim pattern already used elsewhere in this app (e.g.

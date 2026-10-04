@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { ColorFamilyKey, EffectKey, RelicTraitKey } from './relic-lab-assets';
-import type { RelicLabTransform } from './relic-lab-config';
+import type { ColorFamilyKey, EffectKey, RelicTraitKey } from '@/data/relic/relic-assets';
+import type { RelicTransform as RelicLabTransform } from '@/data/relic/relic-transform';
 
 // Relic Lab -- explicit, intentional "Save Calibration" workflow (R&D ONLY, same scope as the
 // rest of this tool). Separate from the general layer-defaults/asset-corrections calibration

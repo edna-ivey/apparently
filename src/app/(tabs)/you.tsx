@@ -38,6 +38,8 @@ import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submiss
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
+import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
+import { RelicAvatar } from '@/components/relic/relic-avatar';
 import { buildYourSignatureCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
@@ -108,12 +110,50 @@ type RevealMoment = {
 // locked, not missing" mystical object; 3 resolved reads as the real earned glow. A tiny sparkle
 // glyph marks the still-locked state so it reads as "there is something here to unlock,"
 // connected to Apparently Private, never as empty geometry.
-function RelicGlyph({ resolvedSlotCount, wide }: { resolvedSlotCount: number; wide: boolean }) {
+function RelicGlyph({
+  resolvedSlotCount,
+  identity,
+  wide,
+}: {
+  resolvedSlotCount: number;
+  identity: ResolvedRelicIdentity;
+  wide: boolean;
+}) {
   const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
   const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
   const isLocked = resolvedSlotCount === 0;
   const bloomSize = wide ? 104 : 78;
   const bloomInnerSize = bloomSize * 0.68;
+
+  // Production consolidation pass -- once all three ranks are genuinely qualified (Bible's
+  // "Relic Reveal": 3 qualifying Private traits), render the REAL Relic through the shared
+  // production renderer (same calibration/config every consumer Relic surface uses) instead of
+  // the placeholder gem silhouette below. The soft bloom stays behind it either way, for visual
+  // continuity with the locked state rather than a jarring structural jump on reveal.
+  if (resolvedSlotCount >= 3 && identity.base && identity.color && identity.effect) {
+    return (
+      <View style={[styles.relicWrap, { width: bloomSize, height: bloomSize }]}>
+        <View
+          pointerEvents="none"
+          style={[styles.relicBloomOuter, { width: bloomSize, height: bloomSize, borderRadius: bloomSize / 2, top: 0, left: 0 }]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.relicBloomInner,
+            {
+              width: bloomInnerSize,
+              height: bloomInnerSize,
+              borderRadius: bloomInnerSize / 2,
+              top: (bloomSize - bloomInnerSize) / 2,
+              left: (bloomSize - bloomInnerSize) / 2,
+            },
+          ]}
+        />
+        <RelicAvatar identity={{ base: identity.base, color: identity.color, effect: identity.effect }} size={bloomSize} />
+      </View>
+    );
+  }
 
   return (
     // Final-polish pass: a soft under-bloom (two oversized, very-low-opacity gold rings,
@@ -170,11 +210,13 @@ function RelicGlyph({ resolvedSlotCount, wide }: { resolvedSlotCount: number; wi
 function IdentityHero({
   isWide,
   resolvedRelicSlotCount,
+  relicIdentity,
   creature,
   onGetYourRead,
 }: {
   isWide: boolean;
   resolvedRelicSlotCount: number;
+  relicIdentity: ResolvedRelicIdentity;
   creature: VisibleCreature | null;
   onGetYourRead: (() => void) | null;
 }) {
@@ -219,7 +261,7 @@ function IdentityHero({
         ]}>
         {creature?.name ?? 'CHARACTER NAME'}
       </ThemedText>
-      <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} wide={isWide} />
+      <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} identity={relicIdentity} wide={isWide} />
       {creature && onGetYourRead && (
         <Pressable style={styles.getYourReadButton} onPress={onGetYourRead} accessibilityRole="button">
           <ThemedText style={styles.getYourReadButtonText}>GET YOUR READ →</ThemedText>
@@ -410,6 +452,7 @@ export default function YouScreen() {
   const localResolvedRelicSlotCount = [localRelicSlots.relicTrait, localRelicSlots.colorTrait, localRelicSlots.effectTrait].filter(
     Boolean,
   ).length;
+  const localRelicIdentity = useMemo(() => resolveRelicIdentity(localRelicSlots), [localRelicSlots]);
 
   // Real remote path — Michelle's/a real tester's own personality_evidence, never demo data.
   // Uses the SAME consumer anonymous identity Today already established (ensureAnonymousSession
@@ -685,6 +728,12 @@ export default function YouScreen() {
   );
   const relicSlots: RelicSlotAssignment = useMemo(() => selectRelicSlots(privateSignals), [privateSignals]);
   const resolvedRelicSlotCount = [relicSlots.relicTrait, relicSlots.colorTrait, relicSlots.effectTrait].filter(Boolean).length;
+  // Real Private -> Relic identity resolution (production consolidation pass) -- base object
+  // from rank #1's pole, color family from rank #2's pole, effect from rank #3's pole's family.
+  // null until a given rank is itself qualified; IdentityHero/RelicGlyph only render the real
+  // RelicAvatar once all three are non-null, matching the Bible's locked-silhouette-until-3
+  // rule exactly (see relic-production-config.ts).
+  const relicIdentity = useMemo(() => resolveRelicIdentity(relicSlots), [relicSlots]);
 
   // Additive only — reads the same persisted quiz-results store the quiz runner writes to
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
@@ -753,6 +802,7 @@ export default function YouScreen() {
             <IdentityHero
               isWide={isWide}
               resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
+              relicIdentity={isRemoteDailyEnabled ? relicIdentity : localRelicIdentity}
               creature={isRemoteDailyEnabled ? visibleCreature : null}
               onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
             />
