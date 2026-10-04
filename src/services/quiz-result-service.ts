@@ -25,9 +25,11 @@ export type SubmitQuizResultPayload = {
   traits: string[];
   mix?: Record<string, number>;
   // Result-level canonical signals, only ever present on a fresh completion (ResultDisplay.profileSignals
-  // — reconstructResultDisplay for ?view=result never sets this). Server-validated: max 3, a
-  // known dimension, value in {-2,-1,1,2}, no duplicate dimension — this layer does not
-  // re-validate, the RPC is the actual authority.
+  // — reconstructResultDisplay for ?view=result never sets this). Server-validated: max 6 (3
+  // Core + 3 Private, widened from 3 — see supabase/migrations/20260929010000), a known
+  // dimension, value in {-3,-2,-1,1,2,3} (widened from {-2,-1,1,2} for Build 11's ranked
+  // Private quiz award — see supabase/migrations/20261004120000), no duplicate dimension —
+  // this layer does not re-validate, the RPC is the actual authority.
   profileSignals?: PersonalityEffect[];
   // Question-id -> choice-id map for this completion. Used ONLY by Compare's exact-match-
   // count (see get_compare_result) — never used to re-score anything. Optional so older call

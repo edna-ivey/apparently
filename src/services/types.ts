@@ -102,7 +102,7 @@ export type QuizResultRow = {
 // PersonalityAnswerEvidence/DimensionEvidence, which also carry it -- re-exported here so
 // existing importers of this file are unaffected.
 export type { PersonalityEvidenceSourceType } from '@/data/personality';
-import type { PersonalityEvidenceSourceType } from '@/data/personality';
+import type { PersonalityEffectValue, PersonalityEvidenceSourceType } from '@/data/personality';
 
 export type PersonalityEvidenceRow = {
   id: string;
@@ -113,7 +113,9 @@ export type PersonalityEvidenceRow = {
   answer_snapshot: string;
   category: string;
   dimension: string;
-  effect: -2 | -1 | 1 | 2;
+  // Reuses PersonalityEffectValue (-3|-2|-1|1|2|3 as of Build 11) rather than a second
+  // hand-typed union that could drift from it — see that type's own comment.
+  effect: PersonalityEffectValue;
   created_at: string;
 };
 
