@@ -833,6 +833,9 @@ A single answer may contribute to both systems when strongly justified. For exam
 
 +1 = supporting evidence for that specific trait pole.
 +2 = strong/direct evidence for that specific trait pole.
++3 = reserved exclusively for the rank #1 LOCKED PRIVATE QUIZ RANKED EVIDENCE award (see
+APPARENTLY PRIVATE QUIZZES below) — never an individual answer-level value, never used by
+Daily, never used by Core awards.
 
 An individual answer may award zero, one, or multiple trait-pole scores when each mapping is genuinely supported.
 
@@ -902,11 +905,25 @@ Core / Creature permanent awards:
 
 - Top 3 qualifying supported Core traits: +1 each.
 
-Private / Relic permanent awards:
+Private / Relic permanent awards — **LOCKED PRIVATE QUIZ RANKED EVIDENCE (Build 11)**:
 
-- Top 3 qualifying supported Private traits: +2 each.
+- Rank #1 qualifying supported Private trait: ±3.
+- Rank #2 qualifying supported Private trait: ±2.
+- Rank #3 qualifying supported Private trait: ±1.
 
-If fewer than three traits qualify in either layer, only the qualifying traits receive awards.
+This replaces the earlier equal-weight model (flat +2 for all three ranks). The strongest Private
+finding a quiz produces now outweighs its secondary and tertiary findings instead of all three
+counting equally — #1 is the strongest thing this quiz learned about the user's Private identity,
+#2 a meaningful secondary signal, #3 a lighter supporting signal. Total possible ranked award
+when all three ranks qualify is still 3+2+1 = 6 points, no longer three equal conclusions.
+
+If fewer than three traits qualify in either layer, only the qualifying traits receive awards —
+two qualifying Private traits award only #1 (±3) and #2 (±2); one qualifying trait awards only #1
+(±3). Never invent a third (or second) trait merely to fill a rank.
+
+Core awards from Apparently Private quizzes are unaffected by this change and remain flat +1 each
+(top 3 qualifying Core traits) — Private quizzes must never be allowed to outweigh Core/Creature
+identity.
 
 ### COMPLETION AND VERSIONING
 
@@ -1091,13 +1108,27 @@ Actual trait-to-Relic mappings are OPEN until reviewed and approved by Michelle.
 
 ### RELIC REVEAL
 
-**LOCKED**
+**LOCKED (Build 11 — progressive, replaces the earlier all-or-nothing reveal)**
 
-The Relic remains a silhouette until the user has three qualifying Private trait characteristics.
+The Relic is no longer all-or-nothing. It forms over time, visibly, as real qualifying Private
+evidence accumulates — the same production renderer and the same locked global calibration at
+every stage, never a separate visual path for a partial Relic:
 
-Once three qualifying Private traits exist, the Relic is revealed using #1 object, #2 color, and #3 effect.
+- 0 qualifying Private traits: the Relic stays the intentional locked/mysterious silhouette.
+- 1 qualifying Private trait (the strongest): the real BASE RELIC OBJECT reveals, in an
+  intentionally early/forming presentation (base layer only — no color tint, no effect yet).
+- 2 qualifying Private traits: the COLOR layer joins the base.
+- 3 qualifying Private traits: the EFFECT layer joins — the user's complete first Relic, a
+  meaningful collectible reveal moment.
 
-Do not invent a missing Private trait to complete the Relic.
+Mapping stays exactly as before: #1 qualifying trait -> object, #2 -> color, #3 -> effect.
+
+Do not invent a missing Private trait to complete, or advance, the Relic at any stage.
+
+Target pacing (evidence-driven, not a quiz-count quota): a typical engaged user should normally
+begin seeing a Relic forming within roughly 2-3 Apparently Private quizzes, have multiple layers
+by roughly 3-5, and have earned a complete first Relic by roughly 5-7 — see
+scripts/simulate-relic-pacing.ts for the simulation this is calibrated against.
 
 ---
 
