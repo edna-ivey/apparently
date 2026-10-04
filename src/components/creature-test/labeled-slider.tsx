@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, Text, TextInput, View } from 'react-native';
 
 // Minimal cross-platform slider (no @react-native-community/slider dependency -- not installed,
@@ -14,6 +14,16 @@ import { PanResponder, StyleSheet, Text, TextInput, View } from 'react-native';
 // made the bug look intermittent/values-look-right-but-render-is-wrong rather than obviously
 // broken. Fixed by measuring the track's own page offset on layout and reusing it for both
 // grant and move.
+//
+// Second bug fixed here (found building Relic Lab, which loads its calibration asynchronously
+// after mount): `textValue` was seeded from `value` only once, in the useState initializer --
+// if `value` ever changes from OUTSIDE this component (a reset button, or calibration finishing
+// its async load after the slider already mounted at its default), the slider THUMB moved
+// correctly (its position is computed fresh from the `value` prop every render) but the paired
+// numeric TEXT FIELD stayed stuck showing whatever it displayed at mount, silently drifting out
+// of sync with the real value. Creature Lab never surfaced this because its calibration is
+// already resolved synchronously (a `require()`d JSON file) before this component's first
+// render. Fixed generally, for every consumer, with a plain prop-sync effect.
 export function LabeledSlider({
   label,
   value,
@@ -34,6 +44,14 @@ export function LabeledSlider({
   const trackWidthRef = useRef(0);
   const trackPageXRef = useRef(0);
   const trackRef = useRef<View>(null);
+
+  // Keeps the text field in sync whenever `value` changes from outside this component (see the
+  // file header comment above) -- never fires from the user's own typing, since typing alone
+  // never changes `value` (only onBlur/onSubmitEditing/the slider drag do, and those already
+  // set textValue themselves).
+  useEffect(() => {
+    setTextValue(String(round(value, step)));
+  }, [value, step]);
 
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const quantize = (n: number) => round(clamp(n), step);
