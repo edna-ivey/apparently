@@ -1460,6 +1460,15 @@ These last four titles are current choices but their actual content has not been
 
 ## 33. APPROVED LOVE QUIZ
 
+**SUPERSEDED (2026-10) — see docs/private-quizzes/APPROVED_PRIVATE_QUIZZES.md §3 instead.** This
+section's result family (THE DOOR IS OPEN / READY, WITH FINE PRINT / YOU WANT IT. YOU'RE STILL
+PROTECTING YOURSELF. / YOU LIKE LOVE BETTER IN THEORY) was an earlier draft. A later Private
+Quiz Library pass locked a different, newer result family (THE DOOR IS OPEN. / LOVE, WITH TERMS
+&amp; CONDITIONS. / YOUR HEART SAYS YES. YOUR WALLS SAY ABSOLUTELY NOT. / YOU WANT A BAE, NOT A
+PARTNERSHIP.) in the per-quiz approved doc, confirmed as the shipping version — that is now the
+canonical source for this quiz's content; the draft below is kept only for history and must not
+be used to re-derive copy.
+
 Are you actually ready for love?
 
 Subtitle:

@@ -51,6 +51,15 @@ const CATEGORY_PILLS: CategoryFilter[] = ['All', ...PRIVATE_CATEGORIES];
 // shared-result links keep working exactly as before — removing an id from this array never
 // touches that quiz's own definition or history.
 const OPEN_PRIVATE_QUIZ_IDS = ['keep-you-around', 'be-so-serious'];
+const PREMIUM_PRIVATE_QUIZ_IDS = [
+  'love-soulmates-ready',
+  'career-ambition-how-bad',
+  'career-ambition-proving',
+  'hidden-you-wrong',
+  'life-match-dream-life',
+  'style-vibe-intimidating',
+  'private-private-trouble',
+];
 
 type OpenQuizCard = {
   id: string;
@@ -84,7 +93,8 @@ export default function PrivateScreen() {
   }, []);
 
   const openQuizCards: OpenQuizCard[] = useMemo(() => {
-    return OPEN_PRIVATE_QUIZ_IDS.map((id) => {
+    const playableIds = isSubscriber ? [...OPEN_PRIVATE_QUIZ_IDS, ...PREMIUM_PRIVATE_QUIZ_IDS] : OPEN_PRIVATE_QUIZ_IDS;
+    return playableIds.map((id) => {
       const definition = getQuizDefinition(id);
       if (!definition) {
         return null;
@@ -98,7 +108,7 @@ export default function PrivateScreen() {
       const lastResultTitle = completed ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
       return { id, definition, completed, lastResultTitle };
     }).filter((card): card is OpenQuizCard => card !== null);
-  }, [quizResults]);
+  }, [quizResults, isSubscriber]);
 
   const visibleQuizCards = useMemo(
     () => openQuizCards.filter((card) => selectedCategory === 'All' || card.definition.category === selectedCategory),
@@ -106,8 +116,8 @@ export default function PrivateScreen() {
   );
 
   const visibleLockedEntries = useMemo(
-    () => PRIVATE_LOCKED_CATALOG.filter((entry) => selectedCategory === 'All' || entry.category === selectedCategory),
-    [selectedCategory],
+    () => PRIVATE_LOCKED_CATALOG.filter((entry) => (!isSubscriber || !PREMIUM_PRIVATE_QUIZ_IDS.includes(entry.id)) && (selectedCategory === 'All' || entry.category === selectedCategory)),
+    [selectedCategory, isSubscriber],
   );
 
   return (
