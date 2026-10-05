@@ -2,9 +2,11 @@ import { getCurrentUserId } from './auth-service';
 import type { ProfileRow } from './types';
 import { supabase } from '@/lib/supabase';
 
-// Thin Supabase-facing layer over the `profiles` table. NOT wired into onboarding yet — see
-// src/data/onboarding.ts, which remains the authoritative local store for this sprint. These
-// functions exist for future wiring only (Sprint 1B+).
+// Thin Supabase-facing layer over the `profiles` table — the canonical server-side profile
+// store. Called from src/data/onboarding.ts (completeOnboarding, updateUserProfile,
+// hydrateUserProfile's server reconciliation) and src/services/profile-backfill-service.ts
+// (historical local-only profiles / failed-write retry). Local storage in onboarding.ts
+// remains the fast-path cache for instant UI; this is the source of truth.
 
 export const getProfile = async (): Promise<ProfileRow | null> => {
   if (!supabase) {
