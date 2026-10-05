@@ -122,7 +122,10 @@ function RelicGlyph({
   const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
   const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
   const isLocked = identity.base === null;
-  const bloomSize = wide ? 104 : 78;
+  // Build 12: ~1.8x Build 11's 104/78 -- the Relic needed to feel like a real collectible
+  // payoff, not a small icon beside the name. Still well under the Creature's 340/272
+  // (roughly half), so the Creature stays the unambiguous centerpiece.
+  const bloomSize = wide ? 188 : 140;
   const bloomInnerSize = bloomSize * 0.68;
 
   // Build 11 "Relic forms over time": the Relic is no longer all-or-nothing. The moment the
@@ -217,12 +220,16 @@ function IdentityHero({
   relicIdentity,
   creature,
   onGetYourRead,
+  onTapRelic,
 }: {
   isWide: boolean;
   resolvedRelicSlotCount: number;
   relicIdentity: ResolvedRelicIdentity;
   creature: VisibleCreature | null;
   onGetYourRead: (() => void) | null;
+  // Null in local/offline demo mode (isRemoteDailyEnabled === false) -- relic-read.tsx always
+  // reads the real remote evidence store, same reason onGetYourRead is null there too.
+  onTapRelic: (() => void) | null;
 }) {
   // Visual-redesign pass: substantially larger than Build 9's 248/204 -- the Creature is the
   // page's centerpiece, not an avatar-sized icon. placeholderSize stays modest and framed (see
@@ -265,7 +272,19 @@ function IdentityHero({
         ]}>
         {creature?.name ?? 'CHARACTER NAME'}
       </ThemedText>
-      <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} identity={relicIdentity} wide={isWide} />
+      {onTapRelic ? (
+        <Pressable
+          onPress={onTapRelic}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Open your Relic Read"
+          style={styles.relicTapTarget}>
+          <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} identity={relicIdentity} wide={isWide} />
+          <ThemedText style={styles.tapYourRelicLabel}>Tap your Relic</ThemedText>
+        </Pressable>
+      ) : (
+        <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} identity={relicIdentity} wide={isWide} />
+      )}
       {creature && onGetYourRead && (
         <Pressable style={styles.getYourReadButton} onPress={onGetYourRead} accessibilityRole="button">
           <ThemedText style={styles.getYourReadButtonText}>GET YOUR READ →</ThemedText>
@@ -809,6 +828,7 @@ export default function YouScreen() {
               relicIdentity={isRemoteDailyEnabled ? relicIdentity : localRelicIdentity}
               creature={isRemoteDailyEnabled ? visibleCreature : null}
               onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
+              onTapRelic={isRemoteDailyEnabled ? () => router.push('/relic-read') : null}
             />
 
             {isRemoteDailyEnabled && creaturePreRevealCopy && (
@@ -1034,7 +1054,7 @@ const styles = StyleSheet.create({
   // placeholder name wrap onto a second line rather than force horizontal overflow if a
   // future real character name is ever longer than this one. gap tightened (Spacing.two ->
   // Spacing.one) so name/Relic/CTA read as one connected stack, not separated modules.
-  relicGroup: { alignItems: 'center', gap: Spacing.one, flexShrink: 1, maxWidth: 200 },
+  relicGroup: { alignItems: 'center', gap: Spacing.one, flexShrink: 1, maxWidth: 240 },
   // On narrow, the group no longer sits beside the avatar in a row with its own flexShrink
   // context, so it gets a plain, centered, non-shrinking width instead.
   relicGroupNarrow: { maxWidth: 280 },
@@ -1066,17 +1086,19 @@ const styles = StyleSheet.create({
     // now-larger, richer-shadowed Creature hero.
     boxShadow: '0 10px 26px rgba(23, 21, 29, 0.16)',
   },
-  relicShapeWide: { width: 72, height: 72 },
-  relicShapeNarrow: { width: 52, height: 52 },
+  // Build 12: scaled with bloomSize's ~1.8x bump (72/52 -> 130/94) so the locked state grows
+  // in step with the resolved state instead of jumping in size the moment a signal qualifies.
+  relicShapeWide: { width: 130, height: 130 },
+  relicShapeNarrow: { width: 94, height: 94 },
   // Soft under-glow, scales with resolvedSlotCount (see RelicGlyph) -- what makes the locked
   // state read as "a gem with something glowing inside," not a flat pale square.
   relicShapeGlow: { borderRadius: Radius.sm, backgroundColor: Brand.gold },
-  relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold },
-  relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold },
-  relicLockedSparkle: { position: 'absolute', fontSize: 14, color: Brand.plum, opacity: 0.5 },
+  relicShapeInnerWide: { width: 50, height: 50, borderRadius: 11, backgroundColor: Brand.gold },
+  relicShapeInnerNarrow: { width: 36, height: 36, borderRadius: 9, backgroundColor: Brand.gold },
+  relicLockedSparkle: { position: 'absolute', fontSize: 20, color: Brand.plum, opacity: 0.5 },
   // A second, smaller/fainter sparkle, offset from the first -- final-polish pass, makes the
   // locked Relic feel like it has something quietly stirring inside rather than one static mark.
-  relicLockedSparkleSmall: { position: 'absolute', fontSize: 8, color: Brand.gold, opacity: 0.55, top: -10, right: -8 },
+  relicLockedSparkleSmall: { position: 'absolute', fontSize: 11, color: Brand.gold, opacity: 0.55, top: -14, right: -10 },
   // Centers the gem + its soft bloom together; sized exactly to the bloom (the largest layer),
   // so the whole glyph's footprint is fully predictable regardless of resolvedSlotCount.
   relicWrap: { alignItems: 'center', justifyContent: 'center' },
@@ -1084,6 +1106,18 @@ const styles = StyleSheet.create({
   // same "stepped, no hard edge" approach as AtmosphericGlow, scaled down to stay secondary.
   relicBloomOuter: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.10)' },
   relicBloomInner: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.16)' },
+  // Build 12: the Relic is now tappable (opens the dedicated Relic Read). The tap target wraps
+  // the glyph plus its own small affordance label -- no background/border, no button chrome --
+  // so it stays an elegant, secondary invitation rather than competing with GET YOUR READ's
+  // real CTA below it.
+  relicTapTarget: { alignItems: 'center', gap: 2 },
+  tapYourRelicLabel: {
+    color: Brand.inkSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    opacity: 0.65,
+  },
   getYourReadButton: {
     marginTop: Spacing.two,
     minHeight: 44,
