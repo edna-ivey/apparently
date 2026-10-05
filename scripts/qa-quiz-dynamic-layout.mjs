@@ -39,10 +39,27 @@ const VIEWPORTS = [
 // source text — copy them fresh from src/data/quizzes/*.ts if content ever changes; this
 // script intentionally does NOT import the quiz modules directly (they pull in RN-only
 // dependencies that don't resolve under plain Node).
+//
+// NOTE on independence: this hardcoded-copy approach is exactly what let Build 12's
+// love-soulmates-ready content-loss bug slip through undetected — the "expected" text here was
+// copied from the same runtime file being tested, never from the approved doc, so it could only
+// ever prove the UI renders ITS OWN input, not that the input is actually complete/correct.
+// Content correctness now has its own independent guarantee — see
+// scripts/validate-private-library-content-fidelity.ts, which parses docs/private-quizzes/*.md
+// directly for the whole approved Private library. This file's job is layout/reachability ONLY
+// (is the -- already content-verified -- text actually visible and unclipped), so reusing the
+// real production string here is appropriate; it is not this file's job to re-prove content
+// correctness.
 const TARGETS = [
   { quizId: 'life-match-dream-life', requiresBypass: true, lastPrompt: "Apparently offers you a deal. You can have a life that feels perfect to you... but from the outside? It's not particularly impressive. Nobody envies you. Nobody says, “I want your life.” Nobody is surprised by what you have. Deal?" },
   { quizId: 'private-private-trouble', requiresBypass: true, lastPrompt: 'Last one. The chemistry is ridiculous. The opportunity is there. Nobody is pressuring anybody. You want it. But tomorrow could get... complicated. Which voice usually wins?' },
   { quizId: 'career-ambition-how-bad', requiresBypass: true, lastPrompt: "Last one. Apparently is taking away the cute answer. You can have the thing you say you want. But it will take five years, nobody will be impressed while you’re building it, and there is no shortcut. Still want it?" },
+  // Added as part of the Build 12 content-fidelity fix — previously MISSING from this list
+  // entirely, which was itself part of why the bug shipped undetected. Full restored Q10
+  // prompt (now independently verified against the approved doc — see the fidelity validator
+  // above), including its \n\n-joined continuation lines, since that's exactly the taller,
+  // multi-line rendering this layout check needs to prove is still fully reachable/unclipped.
+  { quizId: 'love-soulmates-ready', requiresBypass: true, lastPrompt: 'Last one. 👀\n\nLove will occasionally cost you time, comfort, pride, freedom, or being right.\n\nStill want it?' },
   { quizId: 'be-so-serious', requiresBypass: false, lastPrompt: null }, // discovered dynamically below
 ];
 

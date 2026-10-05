@@ -63,7 +63,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
   questions: [
     {
       id: 'q1',
-      prompt: 'You finally meet somebody you REALLY like.',
+      prompt: "You finally meet somebody you REALLY like.\n\nThey're consistent. No games. Three months in, what's happening?",
       choices: [
         { id: 'a', label: "Suddenly I'm noticing flaws I didn't care about before they liked me back. 👀", resultWeights: {'walls': 2}, traitSignals: [{dimension: 'vulnerable_armored', value: -1}] },
         { id: 'b', label: "I'm enjoying it. Consistency is hot.", resultWeights: {'open': 2} },
@@ -73,7 +73,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q2',
-      prompt: 'Saturday was supposed to be YOUR day.',
+      prompt: "Saturday was supposed to be YOUR day.\n\nYour partner calls. They're having an awful day and need you.\n\nFirst thought?",
       choices: [
         { id: 'a', label: 'Define “need.” 😭', resultWeights: {'bae': 2}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -1}] },
         { id: 'b', label: "I'll go, but I'm already hoping this doesn't become a thing.", resultWeights: {'walls': 1}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -1}] },
@@ -83,7 +83,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q3',
-      prompt: 'Your partner says:',
+      prompt: "Your partner says:\n\n“When you're upset, you shut me out.”\n\nYour response?",
       choices: [
         { id: 'a', label: 'Why does everything need a conversation?', resultWeights: {'bae': 2}, traitSignals: [{dimension: 'vulnerable_armored', value: -1}] },
         { id: 'b', label: "I'll work on it, but I need space sometimes.", resultWeights: {'terms': 1}, traitSignals: [{dimension: 'independent_collaborative', value: 1}] },
@@ -93,7 +93,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q4',
-      prompt: 'Plot twist: you were WRONG wrong.',
+      prompt: 'Plot twist: you were WRONG wrong.\n\nNow what?',
       choices: [
         { id: 'a', label: 'I need time. Admitting it while defensive is HARD.', resultWeights: {'walls': 1}, traitSignals: [{dimension: 'accountability_defensiveness', value: -1}] },
         { id: 'b', label: 'I apologize. I hate it here. 😂', resultWeights: {'open': 3}, traitSignals: [{dimension: 'accountability_defensiveness', value: 2}] },
@@ -103,7 +103,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q5',
-      prompt: "Six months in, your life isn't completely yours anymore.",
+      prompt: "Six months in, your life isn't completely yours anymore.\n\nShared weekends. Family events. Joint decisions.\n\nReaction?",
       choices: [
         { id: 'a', label: 'Fine, but some parts of my life stay mine.', resultWeights: {'terms': 2}, traitSignals: [{dimension: 'independent_collaborative', value: 1}] },
         { id: 'b', label: 'Why does love come with this many obligations?', resultWeights: {'bae': 3}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -2}] },
@@ -113,7 +113,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q6',
-      prompt: 'Your partner is clearly off.',
+      prompt: "Your partner is clearly off.\n\nYou ask. They say, “I'm fine.”\n\nNow what?",
       choices: [
         { id: 'a', label: "I'm reviewing the last 72 hours for clues. 👀", resultWeights: {'walls': 2}, traitSignals: [{dimension: 'trust_verify', value: -1}] },
         { id: 'b', label: 'Fine? Great. Fine it is.', resultWeights: {'bae': 1} },
@@ -123,7 +123,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q7',
-      prompt: 'Someone you love really lets you down.',
+      prompt: 'Someone you love really lets you down.\n\nNot a dealbreaker. Just disappointing.\n\nYour brain says:',
       choices: [
         { id: 'a', label: "I wouldn't be dealing with this if I were single.", resultWeights: {'bae': 2}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -1}] },
         { id: 'b', label: "I'm hurt. We need to talk.", resultWeights: {'open': 3}, traitSignals: [{dimension: 'repair_punishing', value: 1}] },
@@ -133,7 +133,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q8',
-      prompt: 'Your partner gets their dream opportunity.',
+      prompt: 'Your partner gets their dream opportunity.\n\nIt requires you to compromise for a while.\n\nReaction?',
       choices: [
         { id: 'a', label: "What if I rearrange my life and we don't even last?", resultWeights: {'walls': 2}, traitSignals: [{dimension: 'vulnerable_armored', value: -1}] },
         { id: 'b', label: "Let's figure out how both our dreams still matter.", resultWeights: {'open': 3}, traitSignals: [{dimension: 'independent_collaborative', value: -1}] },
@@ -143,7 +143,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q9',
-      prompt: 'When somebody gets REALLY close to you...',
+      prompt: 'When somebody gets REALLY close to you...\n\nWhat usually happens?',
       choices: [
         { id: 'a', label: "I love it. Just keep reassuring me we're good. 😂", resultWeights: {'terms': 2}, traitSignals: [{dimension: 'self_secure_reassurance', value: -2}] },
         { id: 'b', label: "I like having a person. It's the expectations I could do without.", resultWeights: {'bae': 3}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -2}] },
@@ -153,7 +153,7 @@ export const LOVE_READY_QUIZ: ArchetypeQuizDefinition = {
     },
     {
       id: 'q10',
-      prompt: 'Last one. 👀',
+      prompt: 'Last one. 👀\n\nLove will occasionally cost you time, comfort, pride, freedom, or being right.\n\nStill want it?',
       choices: [
         { id: 'a', label: 'Yes... but that much vulnerability scares me.', resultWeights: {'walls': 3}, traitSignals: [{dimension: 'vulnerable_armored', value: -2}] },
         { id: 'b', label: 'Damn. Maybe I want somebody around more than I want an actual partnership.', resultWeights: {'bae': 3}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -2}] },
