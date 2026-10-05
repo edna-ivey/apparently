@@ -67,7 +67,7 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       choices: [
         { id: 'a', label: "I find one person I vibe with. That's enough.", resultWeights: {'hidden-feeling': 1}, traitSignals: [{dimension: 'private_open', value: 1}] },
         { id: 'b', label: 'Apparently my neutral face has already offended somebody. 😂', resultWeights: {'face': 2} },
-        { id: 'c', label: 'I seem totally fine. Internally, I would rather be anywhere else.', resultWeights: {'fine': 1}, traitSignals: [{dimension: 'private_open', value: 1}] },
+        { id: 'c', label: 'I seem totally fine. Internally, I would rather be anywhere else.', resultWeights: {'fine': 1}, traitSignals: [{dimension: 'private_open', value: 1}, {dimension: 'vulnerable_armored', value: -1}] },
         { id: 'd', label: "I'm clocking the entire room before I've said five words.", resultWeights: {'attention': 2}, traitSignals: [{dimension: 'social_attunement', value: 1}] },
       ],
     },
@@ -75,10 +75,10 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       id: 'q2',
       prompt: "Somebody you love asks, “Are you okay?” when you're very much NOT okay.",
       choices: [
-        { id: 'a', label: "“Yeah, I'm good.” Automatic.", resultWeights: {'fine': 2}, traitSignals: [{dimension: 'private_open', value: 1}] },
-        { id: 'b', label: 'I tell them. If you asked, buckle up. 😂', resultWeights: {'attention': 2}, traitSignals: [{dimension: 'private_open', value: -1}] },
+        { id: 'a', label: "“Yeah, I'm good.” Automatic.", resultWeights: {'fine': 2}, traitSignals: [{dimension: 'private_open', value: 1}, {dimension: 'vulnerable_armored', value: -1}] },
+        { id: 'b', label: 'I tell them. If you asked, buckle up. 😂', resultWeights: {'attention': 2}, traitSignals: [{dimension: 'private_open', value: -1}, {dimension: 'vulnerable_armored', value: 1}] },
         { id: 'c', label: '“Why? What did you notice?”', resultWeights: {'face': 1}, traitSignals: [{dimension: 'social_attunement', value: 1}] },
-        { id: 'd', label: "“I'm fine.” And I genuinely expect them to know I'm not.", resultWeights: {'hidden-feeling': 2}, traitSignals: [{dimension: 'private_open', value: 2}] },
+        { id: 'd', label: "“I'm fine.” And I genuinely expect them to know I'm not.", resultWeights: {'hidden-feeling': 2}, traitSignals: [{dimension: 'private_open', value: 2}, {dimension: 'vulnerable_armored', value: -1}] },
       ],
     },
     {
@@ -106,8 +106,8 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       prompt: "You're hurt by something somebody did. What's most like you?",
       choices: [
         { id: 'a', label: 'I address it. Possibly with exhibits. 😭', resultWeights: {'attention': 2}, traitSignals: [{dimension: 'direct_indirect', value: 2}] },
-        { id: 'b', label: "I handle it myself. I don't want to need anything from them.", resultWeights: {'face': 1}, traitSignals: [{dimension: 'independent_collaborative', value: 2}] },
-        { id: 'c', label: "I get quieter. If they know me, they'll notice.", resultWeights: {'hidden-feeling': 2}, traitSignals: [{dimension: 'direct_indirect', value: -2}] },
+        { id: 'b', label: "I handle it myself. I don't want to need anything from them.", resultWeights: {'face': 1}, traitSignals: [{dimension: 'independent_collaborative', value: 2}, {dimension: 'vulnerable_armored', value: -2}] },
+        { id: 'c', label: "I get quieter. If they know me, they'll notice.", resultWeights: {'hidden-feeling': 2}, traitSignals: [{dimension: 'direct_indirect', value: -2}, {dimension: 'vulnerable_armored', value: -1}] },
         { id: 'd', label: "I'll talk about it, but only after I've figured out exactly what I feel.", resultWeights: {'fine': 2}, traitSignals: [{dimension: 'reflective_reactive', value: 1}] },
       ],
     },
@@ -116,7 +116,7 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       prompt: "Someone tells you, “You're intimidating.”",
       choices: [
         { id: 'a', label: "“ME?!” I genuinely don't see it.", resultWeights: {'hidden-feeling': 1} },
-        { id: 'b', label: "I laugh. I've heard this before.", resultWeights: {'face': 2} },
+        { id: 'b', label: "I laugh. I've heard this before.", resultWeights: {'face': 2}, traitSignals: [{dimension: 'self_secure_reassurance', value: 1}] },
         { id: 'c', label: "Honestly, I'd rather be intimidating than easy to play with.", resultWeights: {'face': 2}, traitSignals: [{dimension: 'vulnerable_armored', value: -1}] },
         { id: 'd', label: 'I immediately wonder what I did that gave them that impression.', resultWeights: {'fine': 1}, traitSignals: [{dimension: 'perspective_taking_self_referencing', value: 1}] },
       ],
@@ -127,7 +127,7 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       choices: [
         { id: 'a', label: 'Everything. My face has already issued a press release. 😂', resultWeights: {'face': 1}, traitSignals: [{dimension: 'private_open', value: -1}] },
         { id: 'b', label: "Something's off, but probably not how bad it really is.", resultWeights: {'fine': 2}, traitSignals: [{dimension: 'private_open', value: 1}] },
-        { id: 'c', label: 'Almost nothing. Business as usual.', resultWeights: {'fine': 2}, traitSignals: [{dimension: 'private_open', value: 2}] },
+        { id: 'c', label: 'Almost nothing. Business as usual.', resultWeights: {'fine': 2}, traitSignals: [{dimension: 'private_open', value: 2}, {dimension: 'vulnerable_armored', value: -1}] },
         { id: 'd', label: 'Depends who they are. Very few people get the full version.', resultWeights: {'hidden-feeling': 2}, traitSignals: [{dimension: 'private_open', value: 1}] },
       ],
     },
@@ -145,8 +145,8 @@ export const HIDDEN_YOU_WRONG_QUIZ: ArchetypeQuizDefinition = {
       id: 'q9',
       prompt: 'Which misunderstanding annoys you the MOST?',
       choices: [
-        { id: 'a', label: "People assuming I'm okay because I'm handling it.", resultWeights: {'fine': 3} },
-        { id: 'b', label: "People assuming I don't care because I don't show everything.", resultWeights: {'hidden-feeling': 3} },
+        { id: 'a', label: "People assuming I'm okay because I'm handling it.", resultWeights: {'fine': 3}, traitSignals: [{dimension: 'vulnerable_armored', value: -2}] },
+        { id: 'b', label: "People assuming I don't care because I don't show everything.", resultWeights: {'hidden-feeling': 3}, traitSignals: [{dimension: 'vulnerable_armored', value: -2}] },
         { id: 'c', label: "People assuming I'm mean because I'm not overly warm.", resultWeights: {'face': 3} },
         { id: 'd', label: "People calling me dramatic when I'm pointing out something real.", resultWeights: {'attention': 3} },
       ],

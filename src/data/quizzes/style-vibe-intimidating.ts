@@ -103,8 +103,8 @@ export const STYLE_VIBE_INTIMIDATING_QUIZ: ArchetypeQuizDefinition = {
       id: 'q5',
       prompt: "You're annoyed with somebody, but you're trying NOT to make it a thing. How successful are you?",
       choices: [
-        { id: 'a', label: "Very. If I say we're good, we're good.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'control_allowing', value: -1}] },
-        { id: 'b', label: "My words say we're fine. My face has apparently released a separate statement.", resultWeights: {'face': 2} },
+        { id: 'a', label: "Very. If I say we're good, we're good.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'control_allowing', value: -1}, {dimension: 'vulnerable_armored', value: -1}] },
+        { id: 'b', label: "My words say we're fine. My face has apparently released a separate statement.", resultWeights: {'face': 2}, traitSignals: [{dimension: 'vulnerable_armored', value: 1}] },
         { id: 'c', label: "Why am I pretending we're good if we're not? We're talking about it.", resultWeights: {'intimidating': 2}, traitSignals: [{dimension: 'conflict_peacekeeping', value: 2}, {dimension: 'direct_indirect', value: 1}] },
         { id: 'd', label: "I can stay pleasant, but I'm definitely quieter until I've decided whether it matters.", resultWeights: {'evaluative': 1}, traitSignals: [{dimension: 'reflective_reactive', value: 1}] },
       ],
@@ -115,7 +115,7 @@ export const STYLE_VIBE_INTIMIDATING_QUIZ: ArchetypeQuizDefinition = {
       choices: [
         { id: 'a', label: 'Good. Tell me why.', resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'self_secure_reassurance', value: 2}, {dimension: 'independent_collaborative', value: -1}] },
         { id: 'b', label: 'I push back. If you disagree, come with an argument.', resultWeights: {'intimidating': 2}, traitSignals: [{dimension: 'supportive_challenging', value: -2}] },
-        { id: 'c', label: "I'll debate it, but I'm probably smiling or joking while we do it.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'playful_serious', value: 1}] },
+        { id: 'c', label: "I'll debate it, but I'm probably smiling or joking while we do it.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'playful_serious', value: 1}, {dimension: 'tactful_blunt', value: 1}] },
         { id: 'd', label: "Depends whether they actually know what they're talking about. 👀", resultWeights: {'evaluative': 2}, traitSignals: [{dimension: 'trust_verify', value: -1}, {dimension: 'supportive_challenging', value: -1}] },
       ],
     },
@@ -133,9 +133,9 @@ export const STYLE_VIBE_INTIMIDATING_QUIZ: ArchetypeQuizDefinition = {
       id: 'q8',
       prompt: 'Somebody makes a small mistake that affects you. Which reaction is closest?',
       choices: [
-        { id: 'a', label: "“It's fine. Just fix it.” And I genuinely move on.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'forgiving_receipts', value: 1}] },
+        { id: 'a', label: "“It's fine. Just fix it.” And I genuinely move on.", resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'forgiving_receipts', value: 1}, {dimension: 'repair_punishing', value: 1}] },
         { id: 'b', label: "I want to know how it happened so it doesn't happen again.", resultWeights: {'evaluative': 2}, traitSignals: [{dimension: 'trust_verify', value: -1}] },
-        { id: 'c', label: "I'm irritated, and they're probably going to know I'm irritated.", resultWeights: {'intimidating': 2}, traitSignals: [{dimension: 'direct_indirect', value: 1}] },
+        { id: 'c', label: "I'm irritated, and they're probably going to know I'm irritated.", resultWeights: {'intimidating': 2}, traitSignals: [{dimension: 'direct_indirect', value: 1}, {dimension: 'repair_punishing', value: -1}] },
         { id: 'd', label: "I joke about it unless it keeps happening. Then we're having a different conversation.", resultWeights: {'approachable': 1}, traitSignals: [{dimension: 'playful_serious', value: 1}] },
       ],
     },
@@ -154,7 +154,7 @@ export const STYLE_VIBE_INTIMIDATING_QUIZ: ArchetypeQuizDefinition = {
       prompt: 'Someone who knows you VERY well says: “Sometimes people are intimidated by you.” Which response sounds most like you?',
       choices: [
         { id: 'a', label: "“I know. I don't mean to be, but I've heard that my whole life.”", resultWeights: {'face': 2} },
-        { id: 'b', label: '“Intimidated by WHAT?!” 😂', resultWeights: {'approachable': 2} },
+        { id: 'b', label: '“Intimidated by WHAT?!” 😂', resultWeights: {'approachable': 2}, traitSignals: [{dimension: 'self_secure_reassurance', value: 1}] },
         { id: 'c', label: "“They're probably not intimidated. They just know I'm paying attention.”", resultWeights: {'evaluative': 2}, traitSignals: [{dimension: 'trust_verify', value: -1}] },
         { id: 'd', label: "“Okay. But do you ever feel like you can't tell me something?”", resultWeights: {'intimidating': 1, 'approachable': 1}, traitSignals: [{dimension: 'perspective_taking_self_referencing', value: 2}] },
       ],

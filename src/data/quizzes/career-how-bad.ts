@@ -64,9 +64,9 @@ export const CAREER_HOW_BAD_QUIZ: ArchetypeQuizDefinition = {
       prompt: 'Pick your poison. Your goal requires ONE of these for the next six months. Which one makes you hesitate most?',
       choices: [
         { id: 'a', label: 'Giving up a chunk of my free time', resultWeights: {'comfort-keeps-winning': 1}, traitSignals: [{dimension: 'adventure_comfort', value: -1}] },
-        { id: 'b', label: 'Being visibly bad at something before I get good', resultWeights: {'talk-great-game': 1}, traitSignals: [{dimension: 'boundary_holding_approval_seeking', value: -1}] },
+        { id: 'b', label: 'Being visibly bad at something before I get good', resultWeights: {'talk-great-game': 1}, traitSignals: [{dimension: 'boundary_holding_approval_seeking', value: -2}] },
         { id: 'c', label: 'Doing boring, repetitive work with no guarantee it pays off', resultWeights: {'comfort-keeps-winning': 1}, traitSignals: [{dimension: 'adventure_comfort', value: -1}] },
-        { id: 'd', label: 'Having people watch me try and possibly fail', resultWeights: {'talk-great-game': 1}, traitSignals: [{dimension: 'boundary_holding_approval_seeking', value: -1}] },
+        { id: 'd', label: 'Having people watch me try and possibly fail', resultWeights: {'talk-great-game': 1}, traitSignals: [{dimension: 'boundary_holding_approval_seeking', value: -2}] },
       ],
     },
     {
@@ -126,7 +126,7 @@ export const CAREER_HOW_BAD_QUIZ: ArchetypeQuizDefinition = {
         { id: 'a', label: '“Damn. Good for them. What are they doing that I’m not?”', resultWeights: {'want-it-for-real': 2}, traitSignals: [{dimension: 'accountability_defensiveness', value: 2}, {dimension: 'reflective_reactive', value: 1}, {dimension: 'practical_idealistic', value: 1}] },
         { id: 'b', label: '“Oh, now I’m pissed. Move.”', resultWeights: {'want-it-for-real': 2}, traitSignals: [{dimension: 'competitive_cooperative', value: 2}] },
         { id: 'c', label: '“Well, they had advantages I didn’t have.”', resultWeights: {'talk-great-game': 2}, traitSignals: [{dimension: 'accountability_defensiveness', value: -2}] },
-        { id: 'd', label: '“I’m happy for them.”  …followed approximately eight seconds later by emotional damage. 😭', resultWeights: {'want-it-for-real': 1} },
+        { id: 'd', label: '“I’m happy for them.”  …followed approximately eight seconds later by emotional damage. 😭', resultWeights: {'want-it-for-real': 1}, traitSignals: [{dimension: 'vulnerable_armored', value: -1}] },
       ],
     },
     {
@@ -155,7 +155,7 @@ export const CAREER_HOW_BAD_QUIZ: ArchetypeQuizDefinition = {
       choices: [
         { id: 'a', label: 'Yes. Five years is going to pass anyway.', resultWeights: {'want-it-for-real': 2}, traitSignals: [{dimension: 'patient_urgent', value: 2}, {dimension: 'ambitious_content', value: 2}] },
         { id: 'b', label: 'Yes… but that timeline definitely changes how hard I’m willing to push.', resultWeights: {'comfort-keeps-winning': 2}, traitSignals: [{dimension: 'adventure_comfort', value: -1}] },
-        { id: 'c', label: 'I need to think about whether I want that thing or just what I thought it would give me.', resultWeights: {'talk-great-game': 2}, traitSignals: [{dimension: 'reflective_reactive', value: 1}] },
+        { id: 'c', label: 'I need to think about whether I want that thing or just what I thought it would give me.', resultWeights: {'talk-great-game': 2}, traitSignals: [{dimension: 'reflective_reactive', value: 2}] },
         { id: 'd', label: 'Five years with no shortcut? Whew. We may need a new dream.', resultWeights: {'lazy-there-we-said-it': 2}, traitSignals: [{dimension: 'adventure_comfort', value: -2}] },
       ],
     },

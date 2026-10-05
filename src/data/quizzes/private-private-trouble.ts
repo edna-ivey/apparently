@@ -63,7 +63,7 @@ export const PRIVATE_PRIVATE_TROUBLE_QUIZ: ArchetypeQuizDefinition = {
       id: 'q1',
       prompt: "You're VERY attracted to somebody and you're pretty sure it's mutual. Who's most likely to make the first real move?",
       choices: [
-        { id: 'a', label: 'Probably them. I need a little confirmation before I start risking dignity. 😂', resultWeights: {'halo': 1}, traitSignals: [{dimension: 'self_secure_reassurance', value: -1}] },
+        { id: 'a', label: 'Probably them. I need a little confirmation before I start risking dignity. 😂', resultWeights: {'halo': 1}, traitSignals: [{dimension: 'self_secure_reassurance', value: -1}, {dimension: 'initiating_responsive', value: -1}] },
         { id: 'b', label: "Either of us. If the moment is right, I'm not scared.", resultWeights: {'unlocked': 1}, traitSignals: [{dimension: 'self_secure_reassurance', value: 1}] },
         { id: 'c', label: 'Me, potentially. Why are we wasting perfectly good chemistry?', resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'direct_indirect', value: 1}, {dimension: 'initiating_responsive', value: 2}] },
         { id: 'd', label: '“Real” move? No. But I may create several excellent opportunities. 👀', resultWeights: {'tension': 2}, traitSignals: [{dimension: 'direct_indirect', value: -1}, {dimension: 'playful_serious', value: 1}] },
@@ -94,9 +94,9 @@ export const PRIVATE_PRIVATE_TROUBLE_QUIZ: ArchetypeQuizDefinition = {
       prompt: "Somebody you're into leans in and quietly says: “You have no idea what you do to me.” Your most honest internal reaction?",
       choices: [
         { id: 'a', label: 'Oh, I have some idea. 😏', resultWeights: {'tension': 2}, traitSignals: [{dimension: 'playful_serious', value: 2}] },
-        { id: 'b', label: 'Welp. There goes the rest of my ability to behave normally.', resultWeights: {'unlocked': 2}, traitSignals: [{dimension: 'planner_spontaneous', value: -1}] },
+        { id: 'b', label: 'Welp. There goes the rest of my ability to behave normally.', resultWeights: {'unlocked': 2}, traitSignals: [{dimension: 'planner_spontaneous', value: -1}, {dimension: 'vulnerable_armored', value: 1}] },
         { id: 'c', label: "I like hearing it, but I'm still deciding what happens next.", resultWeights: {'halo': 1}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -1}] },
-        { id: 'd', label: '“Then tell me.” 👀', resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'direct_indirect', value: 2}] },
+        { id: 'd', label: '“Then tell me.” 👀', resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'direct_indirect', value: 2}, {dimension: 'tactful_blunt', value: -1}] },
       ],
     },
     {
@@ -106,7 +106,7 @@ export const PRIVATE_PRIVATE_TROUBLE_QUIZ: ArchetypeQuizDefinition = {
         { id: 'a', label: '“I had fun tonight 😊”', resultWeights: {'halo': 2}, traitSignals: [{dimension: 'tactful_blunt', value: 1}] },
         { id: 'b', label: "“So... are we just pretending that didn't happen?”", resultWeights: {'unlocked': 1}, traitSignals: [{dimension: 'direct_indirect', value: 1}] },
         { id: 'c', label: '“You need to stop.” (They do not need to stop.) 😭', resultWeights: {'tension': 2}, traitSignals: [{dimension: 'playful_serious', value: 2}, {dimension: 'direct_indirect', value: -1}] },
-        { id: 'd', label: '“Come over.”', resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'direct_indirect', value: 2}, {dimension: 'initiating_responsive', value: 2}] },
+        { id: 'd', label: '“Come over.”', resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'direct_indirect', value: 2}, {dimension: 'initiating_responsive', value: 2}, {dimension: 'tactful_blunt', value: -2}] },
       ],
     },
     {
@@ -143,10 +143,10 @@ export const PRIVATE_PRIVATE_TROUBLE_QUIZ: ArchetypeQuizDefinition = {
       id: 'q9',
       prompt: 'Be honest. Which sentence could Apparently MOST reasonably use against you?',
       choices: [
-        { id: 'a', label: '“You enjoy being wanted almost as much as you enjoy getting what you want.”', resultWeights: {'tension': 2} },
+        { id: 'a', label: '“You enjoy being wanted almost as much as you enjoy getting what you want.”', resultWeights: {'tension': 2}, traitSignals: [{dimension: 'self_secure_reassurance', value: -1}] },
         { id: 'b', label: '“People who only know your daytime personality are missing several chapters.”', resultWeights: {'unlocked': 2}, traitSignals: [{dimension: 'private_open', value: 2}] },
         { id: 'c', label: "“You have talked yourself OUT of things you absolutely wanted because the consequences weren't worth it.”", resultWeights: {'halo': 2}, traitSignals: [{dimension: 'duty_first_self_preserving', value: -2}] },
-        { id: 'd', label: "“Once you've decided you want something, your ability to produce excellent reasons for doing it becomes suspiciously impressive.” 😭", resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'planner_spontaneous', value: -1}] },
+        { id: 'd', label: "“Once you've decided you want something, your ability to produce excellent reasons for doing it becomes suspiciously impressive.” 😭", resultWeights: {'bad_decision': 2}, traitSignals: [{dimension: 'planner_spontaneous', value: -1}, {dimension: 'initiating_responsive', value: 1}] },
       ],
     },
     {
