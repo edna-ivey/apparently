@@ -1,10 +1,12 @@
-// Regression guard for the Build 10 "quiz questions cut off" bug: on native iOS, a
-// ScrollView needs an explicit bounded `style` (not just `contentContainerStyle`) to clip
-// to the screen and let overflow content scroll — without it, the ScrollView's own frame
-// can grow to match its content and long questions/answers render past the bottom edge
-// with no way to reach them. This never reproduced in the web preview, which is exactly why
-// it shipped undetected — so this check is static (reads the source directly) rather than
-// relying on a renderer that wouldn't catch the native-only failure mode either.
+// Fast static sanity check for the quiz question-cutoff bug class (Build 10 and Build 12).
+// IMPORTANT: this is a source-text check, not proof the layout actually works — Build 11
+// shipped with this exact validator passing while a real-device bug (the Build 12 report)
+// still clipped long questions, because the Build 12 bug depended on real multi-question
+// NAVIGATION + scroll state (a stale ScrollView offset carried over from the previous
+// question), something no static source check can ever simulate. The authoritative test is
+// scripts/qa-quiz-dynamic-layout.mjs, which drives a real browser through real navigation and
+// measures actual rendered geometry. Run that for real confidence; treat this file as a cheap
+// first-pass tripwire only.
 //
 // Run with: npx tsx scripts/validate-quiz-question-layout.ts
 import { QUIZ_REGISTRY } from '../src/data/quizzes';
@@ -44,7 +46,29 @@ if (!scrollViewMatch) {
   }
 }
 
-// 2. None of the text-truncation footguns the bug report explicitly called out should ever
+// 2. The real Build 12 fix: the ScrollView must carry a ref, and a scroll-to-top effect keyed
+// on the current step/question must exist. Without this, the ScrollView is never remounted
+// across questions and keeps whatever scroll offset the PREVIOUS question left it at — which
+// clips the TOP of the next question (the prompt itself) when it's reached from a screen the
+// user had scrolled down on. This is the actual root cause Michelle hit on her real iPhone;
+// the flex:1 bounding fix from Build 11 (checked above) was necessary but not sufficient.
+if (!/ref=\{scrollViewRef\}/.test(source)) {
+  fail('<ScrollView> has no ref={scrollViewRef} — the scroll-reset-on-navigation fix (Build 12) requires a ref to call scrollTo() on.');
+} else {
+  pass('<ScrollView> has ref={scrollViewRef}.');
+}
+if (!/scrollViewRef\.current\?\.scrollTo\(\{\s*y:\s*0/.test(source)) {
+  fail('No scrollViewRef.current?.scrollTo({ y: 0, ... }) call found — nothing resets scroll position when the question changes.');
+} else {
+  pass('A scrollTo({ y: 0, ... }) reset call exists.');
+}
+if (!/useEffect\(\(\) => \{\s*scrollViewRef\.current\?\.scrollTo/.test(source)) {
+  fail('The scrollTo reset does not appear to live inside a useEffect — it must run on every step change, not just once.');
+} else {
+  pass('The scroll reset runs inside a useEffect (fires on every step change).');
+}
+
+// 3. None of the text-truncation footguns the bug report explicitly called out should ever
 // reappear on the question/choice rendering path.
 const forbiddenPatterns: { name: string; pattern: RegExp }[] = [
   { name: 'numberOfLines', pattern: /numberOfLines/ },
@@ -59,7 +83,7 @@ for (const { name, pattern } of forbiddenPatterns) {
   }
 }
 
-// 3. Sanity ceiling on real approved copy length — not a hard limit (long copy is allowed
+// 4. Sanity ceiling on real approved copy length — not a hard limit (long copy is allowed
 // and expected to grow/scroll), just an early-warning marker so a drastic future outlier
 // gets a deliberate look rather than silently shipping.
 const PROMPT_SOFT_CEILING = 400;

@@ -29,6 +29,14 @@ export default function QuizScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const savedResult = useRef(false);
+  // Build 12 real-device fix: the ScrollView is never remounted across questions (only its
+  // children swap), and nothing was resetting its scroll offset on Next/Back. A user who
+  // scrolled even slightly to read a long question kept that same offset on the NEXT question
+  // too -- which visually clips the top of the new prompt (the question itself, not the
+  // answers) off the top edge, exactly matching "the question is cut off on some questions"
+  // and exactly the kind of bug a static/source-only validator can never catch, since it
+  // depends on real multi-question navigation + scroll state, not layout config alone.
+  const scrollViewRef = useRef<ScrollView>(null);
   // Tracks whether THIS FRESH completion's remote submission has landed — sharing must pin
   // the exact completion currently on screen, never an older one. 'synced' also covers the
   // ?view=result path (a saved result is, by definition, already a past completion whose own
@@ -43,6 +51,14 @@ export default function QuizScreen() {
   useEffect(() => {
     void hydrateUserProfile();
   }, []);
+  // Scroll to the top of the new step every time it changes (Next, Back, or landing on the
+  // very first question) so a question is never rendered starting mid-scroll from wherever the
+  // PREVIOUS question happened to leave the ScrollView -- see scrollViewRef's own comment above
+  // for why this was clipping the TOP of long questions specifically. animated:false is
+  // deliberate: this must already be in place before paint, never animate into view.
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, [stepIndex]);
   const sharerDisplayName = userProfile !== 'loading' && userProfile?.firstName?.trim() ? userProfile.firstName.trim() : null;
 
   // Called unconditionally (before the not-found early return below) to keep hook order
@@ -53,12 +69,10 @@ export default function QuizScreen() {
     void hydrateQuizResults();
   }, []);
 
-  // Readiness for a future real premium quiz (QuizAccess 'private') -- called unconditionally
-  // to keep hook order stable, same as the hooks above. No REGISTERED quiz uses 'private'
-  // access yet (only 'free' and 'private-preview' -- see QUIZ_REGISTRY), so this gate is
-  // currently unreachable dead weight for every existing quiz; it exists so the moment a real
-  // paid quiz is registered with access: 'private' in a future content sprint, it is
-  // automatically gated correctly with zero additional wiring here.
+  // Real RevenueCat entitlement -- called unconditionally to keep hook order stable, same as
+  // the hooks above. Gates the 7 registered premium Apparently Private quizzes (access:
+  // 'private' -- see QUIZ_REGISTRY) below; 'free' and 'private-preview' quizzes never consult
+  // this at all.
   const isPremium = useEffectivePremium();
 
   // Not thrown/notFound — a quiz route reached with an unknown id (a stale link, a typo)
@@ -68,8 +82,11 @@ export default function QuizScreen() {
   }
 
   // A registered 'private' (premium-gated) quiz that this device doesn't have entitlement
-  // for — send to the paywall rather than rendering any question/result content. Never
-  // reachable today (see the comment above); this is forward-readiness only.
+  // for — send to the paywall rather than rendering any question/result content. The 7
+  // premium Apparently Private quizzes (career-ambition-how-bad, career-ambition-proving,
+  // hidden-you-wrong, life-match-dream-life, love-soulmates-ready, private-private-trouble,
+  // style-vibe-intimidating) all use access: 'private' and hit this gate on web/unentitled
+  // devices today — see useEffectivePremium's own comment for how entitlement is determined.
   if (definition.access === 'private' && !isPremium) {
     return <Redirect href="/paywall" />;
   }
@@ -236,7 +253,11 @@ export default function QuizScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
           {step !== 'result' && (
             <View style={styles.topRow}>
               {step === 'intro' ? (
@@ -332,7 +353,7 @@ function QuestionStep({
   const canContinue = selected !== null;
 
   return (
-    <View style={[styles.stepGap, styles.growStep]}>
+    <View style={styles.stepGap}>
       <ThemedText type="title" style={styles.questionPrompt}>
         {question.prompt}
       </ThemedText>
@@ -355,7 +376,6 @@ function QuestionStep({
           );
         })}
       </View>
-      <View style={styles.spacer} />
       <Pressable disabled={!canContinue} onPress={onNext} style={[styles.cta, !canContinue && styles.ctaDisabled]}>
         <ThemedText style={styles.ctaText}>{isLastQuestion ? 'Read me →' : 'Next →'}</ThemedText>
       </Pressable>
@@ -609,12 +629,6 @@ const styles = StyleSheet.create({
   },
   stepGap: {
     gap: Spacing.four,
-  },
-  growStep: {
-    flexGrow: 1,
-  },
-  spacer: {
-    flexGrow: 1,
   },
   introGap: {
     gap: Spacing.two,
