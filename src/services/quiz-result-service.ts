@@ -2,6 +2,7 @@ import { getCurrentUserId } from './auth-service';
 import type { QuizResultRow } from './types';
 import { supabase } from '@/lib/supabase';
 import type { PersonalityEffect } from '@/data/personality';
+import { reportBackendFailure } from '@/services/observability';
 
 // Thin Supabase-facing layer over the append-only `quiz_results` table and the
 // submit_quiz_result RPC. Persists a result a screen has already computed via the existing
@@ -69,6 +70,10 @@ export const submitQuizResultRemote = async (payload: SubmitQuizResultPayload): 
 
   if (error) {
     console.warn('[quiz-result-service] submitQuizResultRemote failed:', error.message);
+    // Caller already queues this for retry (pending-quiz-submissions.ts) -- a known-recoverable
+    // path -- but a failure here can still mean a legitimate completion never becomes permanent
+    // identity evidence, so it's worth knowing about if it keeps happening.
+    reportBackendFailure({ operation: 'submit_quiz_result', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
 
@@ -115,6 +120,7 @@ export const getQuizResultsRemote = async (): Promise<GetQuizResultsResult> => {
 
   if (error) {
     console.warn('[quiz-result-service] getQuizResultsRemote failed:', error.message);
+    reportBackendFailure({ operation: 'get_my_quiz_results', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   return { ok: true, data: data ?? [] };

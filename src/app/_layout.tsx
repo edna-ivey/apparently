@@ -4,15 +4,22 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { hydrateOnboardingState } from '@/data/onboarding';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { initErrorReporting } from '@/services/observability';
 import { initializePurchases } from '@/services/purchases-service';
 import { syncLocalProfileToRemote } from '@/services/profile-backfill-service';
 
 SplashScreen.preventAutoHideAsync();
+// Work Package 2: same "call once, at module scope, before anything else" convention as
+// SplashScreen.preventAutoHideAsync() above — must run before any render, so a crash during
+// the FIRST paint is still reportable. No-ops safely with no DSN configured (see
+// observability.ts's own header comment).
+initErrorReporting();
 
 // This is the ONLY thing that decides which top-level branch of the route tree renders:
 // the (tabs) group (consumer screens, wrapped in AppTabs) or admin/* (internal editorial
@@ -88,7 +95,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

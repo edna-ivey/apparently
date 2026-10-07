@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 
 // V1 auth strategy: anonymous-first. A user gets a real, authenticated Supabase identity the
 // moment the app can reach Supabase — no email, no password, no login screen, no forced
@@ -60,11 +61,17 @@ export const ensureAnonymousSession = async (): Promise<Session | null> => {
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) {
         console.warn('[auth-service] signInAnonymously failed:', error.message);
+        // Foundational: nothing else in the app (identity, purchases, Compare, Daily) can
+        // work without a session, so a failure here is worth knowing about even though the
+        // app already degrades gracefully (every local/prototype flow keeps working with no
+        // session at all -- see this function's own header comment).
+        reportBackendFailure({ operation: 'ensure_anonymous_session' }, error);
         return null;
       }
       return data.session;
     } catch (error) {
       console.warn('[auth-service] ensureAnonymousSession threw:', error);
+      reportBackendFailure({ operation: 'ensure_anonymous_session' }, error);
       return null;
     } finally {
       ensureAnonymousSessionPromise = null;

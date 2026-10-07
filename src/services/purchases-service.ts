@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 
 import { ensureAnonymousSession, getCurrentUserId } from './auth-service';
 import { isPrivateDailyTesterAccessEnabled, supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 
 // The ONE place react-native-purchases is ever imported or called from. Every screen goes
 // through this module's exported functions/hooks -- never `import Purchases from
@@ -220,6 +221,7 @@ export const initializePurchases = async (): Promise<void> => {
       // eslint-disable-next-line no-console
       console.warn('[purchases-service] initializePurchases failed:', error);
     }
+    reportBackendFailure({ operation: 'initialize_purchases', recoverable: true }, error);
   }
 };
 
@@ -266,15 +268,22 @@ export const syncServerEntitlement = async (): Promise<void> => {
   }
   try {
     const { error } = await supabase.functions.invoke('sync-revenuecat-entitlement', { method: 'POST' });
-    if (error && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.warn('[purchases-service] syncServerEntitlement failed:', error);
+    if (error) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[purchases-service] syncServerEntitlement failed:', error);
+      }
+      // This is the single function that keeps the SERVER-side entitlement mirror current --
+      // see this file's header comment. A failure here is exactly the "silent, self-heals in
+      // 5 minutes, but we'd never know if it kept failing" case the Build 13 audit flagged.
+      reportBackendFailure({ operation: 'sync_revenuecat_entitlement', recoverable: true }, error);
     }
   } catch (error) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn('[purchases-service] syncServerEntitlement threw:', error);
     }
+    reportBackendFailure({ operation: 'sync_revenuecat_entitlement', recoverable: true }, error);
   } finally {
     lastServerSyncAt = Date.now();
   }
