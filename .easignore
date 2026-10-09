@@ -12,6 +12,17 @@
 # before/after archive size. assets/creatures-test/ is the current production asset tree
 # (used by CreatureAvatar for every real user) and is correctly never excluded here.
 #
+# Work Package 3, Phase B Stage 2: creature-test-assets.ts and relic-assets.ts now require()
+# the optimized .png siblings instead of the original .svg wrappers (same pixel content,
+# verified via strict RGBA pixel hash on all 80 files, see the Stage 2 commit). The original
+# .svg files are kept in git as recoverable sources per instruction, but are no longer
+# imported by any code, so they're excluded here to realize the actual archive-size win --
+# otherwise the PNGs would simply be added on top of the still-uploaded SVGs. Only the literal
+# .svg extension is matched, so assets/creatures-test/creature-config.json (the real production
+# calibration file, required by creature-test-config.ts) is untouched.
+assets/creatures-test/**/*.svg
+assets/relics/**/*.svg
+#
 # assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
 # (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
 # remaining thing the removed obsolete tree referenced. Excluded from the EAS upload here
@@ -42,3 +53,17 @@ supabase/
 # Standard non-build-artifact excludes.
 .git/
 .vscode/
+
+# SECURITY (Work Package 3, Phase B Stage 2): because .easignore exists at all, EAS Build
+# ignores .gitignore ENTIRELY for archive purposes (confirmed by reading eas-cli's own
+# Ignore class, vcs/local.js -- ".gitignore files are not used" once a project has an
+# .easignore). That means .gitignore's own `.env*` / `!.env.example` protection was NOT
+# actually in effect for the EAS upload -- every local env file, including .env.local
+# (which holds non-public credentials such as VERCEL_OIDC_TOKEN alongside EXPO_PUBLIC_*
+# values that are already meant to ship in the client bundle), was being uploaded in full
+# with every build. Mirrored here so local secrets never enter the archive again. Production
+# builds get their actual EXPO_PUBLIC_* / SENTRY_* config from EAS's own Environment
+# Variables system (`eas env:list`), not from this file, so excluding it does not remove any
+# configuration a real build needs.
+.env*
+!.env.example
