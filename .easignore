@@ -20,6 +20,13 @@
 # this local checkout.
 assets/creatures/
 
+# "assets/creatures copy/" (Work Package 3 audit): confirmed via SHA-1 checksum, file-for-file
+# identical to assets/creatures/ above (69/69 files, same relative paths, same hashes) --
+# an exact duplicate of the tree already excluded on the previous line. Also untracked, also
+# unreferenced by any src/ import. Excluded for the same reason and under the same no-delete
+# constraint as assets/creatures/.
+assets/creatures copy/
+
 # Documentation -- never imported by app code.
 docs/
 *.md
