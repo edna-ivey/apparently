@@ -12,16 +12,14 @@
 # before/after archive size. assets/creatures-test/ is the current production asset tree
 # (used by CreatureAvatar for every real user) and is correctly never excluded here.
 #
-# Work Package 3, Phase B Stage 2: creature-test-assets.ts and relic-assets.ts now require()
-# the optimized .png siblings instead of the original .svg wrappers (same pixel content,
-# verified via strict RGBA pixel hash on all 80 files, see the Stage 2 commit). The original
-# .svg files are kept in git as recoverable sources per instruction, but are no longer
-# imported by any code, so they're excluded here to realize the actual archive-size win --
-# otherwise the PNGs would simply be added on top of the still-uploaded SVGs. Only the literal
-# .svg extension is matched, so assets/creatures-test/creature-config.json (the real production
-# calibration file, required by creature-test-config.ts) is untouched.
-assets/creatures-test/**/*.svg
-assets/relics/**/*.svg
+# CORRECTIVE NOTE (Work Package 3, Phase B Stage 2 corrective commit): a Stage 2 attempt to
+# require() optimized .png siblings instead of the original .svg wrappers, and to exclude the
+# originals here, was proposed and committed but then EXPLICITLY WITHDRAWN -- the original
+# SVG artwork and rendering pipeline were previously approved and locked after extensive
+# calibration/rendering work, and changing their format was not authorized. Both the asset
+# references and this exclusion were reverted in the corrective commit. assets/creatures-test/
+# and assets/relics/ are LOCKED: do not exclude any file under them, do not change what
+# creature-test-assets.ts / relic-assets.ts require(), without explicit approval first.
 #
 # assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
 # (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
