@@ -1063,7 +1063,7 @@ export type ConsensusLanguage = {
   sentence: string;
 };
 
-export const getConsensusLanguage = (options: Array<{ percent: number }>, selectedIndex: number): ConsensusLanguage => {
+export const getConsensusLanguage = (options: { percent: number }[], selectedIndex: number): ConsensusLanguage => {
   const selected = options[selectedIndex];
   if (!selected) {
     throw new Error(`No answer option exists at index ${selectedIndex}.`);

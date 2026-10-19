@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, Text, TextInput, View } from 'react-native';
 
 // Minimal cross-platform slider (no @react-native-community/slider dependency -- not installed,
@@ -41,17 +41,23 @@ export function LabeledSlider({
 }) {
   const [trackWidth, setTrackWidth] = useState(0);
   const [textValue, setTextValue] = useState(String(round(value, step)));
+  const [prevValue, setPrevValue] = useState(value);
+  const [prevStep, setPrevStep] = useState(step);
   const trackWidthRef = useRef(0);
   const trackPageXRef = useRef(0);
   const trackRef = useRef<View>(null);
 
-  // Keeps the text field in sync whenever `value` changes from outside this component (see the
-  // file header comment above) -- never fires from the user's own typing, since typing alone
-  // never changes `value` (only onBlur/onSubmitEditing/the slider drag do, and those already
-  // set textValue themselves).
-  useEffect(() => {
+  // Keeps the text field in sync whenever `value`/`step` changes from outside this component
+  // (see the file header comment above) -- never fires from the user's own typing, since typing
+  // alone never changes `value` (only onBlur/onSubmitEditing/the slider drag do, and those
+  // already set textValue themselves). React's documented "adjusting state when a prop changes"
+  // pattern (calling setState during render, not in an effect) -- the prevValue/prevStep compare
+  // makes this a one-time bail-out-and-rerender per real change, never a render loop.
+  if (value !== prevValue || step !== prevStep) {
+    setPrevValue(value);
+    setPrevStep(step);
     setTextValue(String(round(value, step)));
-  }, [value, step]);
+  }
 
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const quantize = (n: number) => round(clamp(n), step);

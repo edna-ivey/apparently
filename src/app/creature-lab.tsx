@@ -204,7 +204,6 @@ function CreatureLabInner() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         void navigator.clipboard?.writeText(json).catch(() => {});
-        // eslint-disable-next-line no-alert
         window.alert('Downloaded creature-config.json (also copied to clipboard). Place it at assets/creatures-test/creature-config.json to persist -- it will auto-load next time Creature Lab opens.');
       } catch (err) {
         console.warn('Save calibration failed', err);
@@ -216,7 +215,6 @@ function CreatureLabInner() {
 
   async function handleExportPng() {
     if (Platform.OS !== 'web') {
-      // eslint-disable-next-line no-alert
       window?.alert?.('PNG export is implemented for the web build. Native export would need react-native-view-shot (not currently installed).');
       return;
     }
@@ -693,7 +691,6 @@ async function exportCreaturePngWeb(
           ? resolveEyeTransform(slotDefaults.eyes, getCorrection(assetCorrections, category, 'eyes'))
           : resolveTransform(slotDefaults[slot], getCorrection(assetCorrections, category, slot as NonBodySlot));
 
-    // eslint-disable-next-line no-await-in-loop
     const img = await loadImage(uri);
     const scaledSize = bodyCanvasPx * transform.scale;
     const baseLeft = bodyOffsetPx + (bodyCanvasPx - scaledSize) / 2;

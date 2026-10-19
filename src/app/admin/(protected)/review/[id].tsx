@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -113,6 +113,9 @@ export default function AdminReviewScreen() {
   }, [id]);
 
   useEffect(() => {
+    // Fetching data on mount is one of the canonical, documented uses of an effect -- there is
+    // no render-time equivalent for "go fetch this from the network." Scoped to this one line.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload();
   }, [reload]);
 

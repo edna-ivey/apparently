@@ -16,7 +16,6 @@ import {
   deleteDaily,
   getAdminDailyDistribution,
   getAdminQuizResultDistribution,
-  listDailyOptions,
   listDailyQuestions,
   moveToDraft,
   publishDaily,
@@ -107,6 +106,9 @@ export default function AdminDashboardScreen() {
 
   useEffect(() => {
     void getAdminRole().then(setRole);
+    // Fetching data on mount is one of the canonical, documented uses of an effect -- there is
+    // no render-time equivalent for "go fetch this from the network." Scoped to this one line.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload();
     void reloadQuizAnalytics();
   }, [reload, reloadQuizAnalytics]);

@@ -75,48 +75,29 @@ export default function QuizScreen() {
   // this at all.
   const isPremium = useEffectivePremium();
 
-  // Not thrown/notFound — a quiz route reached with an unknown id (a stale link, a typo)
-  // should land somewhere real rather than crash. Explore is the natural home.
-  if (!definition) {
-    return <Redirect href="/explore" />;
-  }
-
-  // A registered 'private' (premium-gated) quiz that this device doesn't have entitlement
-  // for — send to the paywall rather than rendering any question/result content. The 7
-  // premium Apparently Private quizzes (career-ambition-how-bad, career-ambition-proving,
-  // hidden-you-wrong, life-match-dream-life, love-soulmates-ready, private-private-trouble,
-  // style-vibe-intimidating) all use access: 'private' and hit this gate on web/unentitled
-  // devices today — see useEffectivePremium's own comment for how entitlement is determined.
-  if (definition.access === 'private' && !isPremium) {
-    return <Redirect href="/paywall" />;
-  }
-
+  // The following derived values and the submission effect below are computed BEFORE the
+  // !definition / premium-gate early returns (unlike the render-only values further down in
+  // this file) specifically because the submission effect is a HOOK (useEffect) and must be
+  // called unconditionally on every render per the Rules of Hooks -- it cannot sit after an
+  // early return, or this component's hook call order would differ between a render that
+  // redirects and one that doesn't. Each value below is null-safe for a missing `definition`
+  // so the effect's own internal `!liveResult` guard naturally no-ops in that case, exactly
+  // preserving this effect's old behavior of "does nothing when there's no real quiz."
   const wantsSavedResult = view === 'result';
   // The persisted record deliberately doesn't carry heroRead/body/kicker/mix titles (avoids
   // duplicated copy — see results.ts) — reconstructResultDisplay re-derives the full result
   // from resultId, for either scoring type. This is the "See result →" path from You.
   const savedResultDisplay: ResultDisplay | null =
-    wantsSavedResult && latestResult && latestResult !== 'loading'
+    definition && wantsSavedResult && latestResult && latestResult !== 'loading'
       ? reconstructResultDisplay(definition, latestResult)
       : null;
 
-  const stepOrder: string[] = ['intro', ...definition.questions.map((question) => question.id), 'result'];
+  const stepOrder: string[] = definition ? ['intro', ...definition.questions.map((question) => question.id), 'result'] : ['intro', 'result'];
   const step = savedResultDisplay ? 'result' : stepOrder[stepIndex] ?? 'intro';
-  const questionIndex = savedResultDisplay ? -1 : definition.questions.findIndex((question) => question.id === step);
-  const currentQuestion: QuizQuestion | null = questionIndex >= 0 ? definition.questions[questionIndex] : null;
-  const isLastQuestion = questionIndex === definition.questions.length - 1;
-
-  const goNext = () => setStepIndex((index) => Math.min(index + 1, stepOrder.length - 1));
-  const goBack = () => setStepIndex((index) => Math.max(index - 1, 0));
-
-  const selectAnswer = (questionId: string, choiceId: string) => {
-    setAnswers((previous) => ({ ...previous, [questionId]: choiceId }));
-  };
 
   // computeQuizResult is the ONE place scoringType branching happens for a fresh completion —
   // this screen never special-cases numericBand vs archetype itself.
-  const liveResult: ResultDisplay | null = !savedResultDisplay && step === 'result' ? computeQuizResult(definition, answers) : null;
-  const result: ResultDisplay | null = savedResultDisplay ?? liveResult;
+  const liveResult: ResultDisplay | null = definition && !savedResultDisplay && step === 'result' ? computeQuizResult(definition, answers) : null;
 
   // Persists exactly once per freshly-completed run — stepping into 'result' via the normal
   // quiz flow is the single moment a quiz is "done." Viewing an already-saved result
@@ -128,7 +109,7 @@ export default function QuizScreen() {
       savedResult.current = true;
       return;
     }
-    if (step !== 'result' || !liveResult || savedResult.current) {
+    if (step !== 'result' || !liveResult || !definition || savedResult.current) {
       return;
     }
     savedResult.current = true;
@@ -151,6 +132,11 @@ export default function QuizScreen() {
     });
 
     if (isRemoteDailyEnabled) {
+      // This marks the start of a real network submission this same effect is about to kick
+      // off a few lines below (submitQuizResultRemote) -- there is no render-time equivalent
+      // for "an imperative side effect just started," which is exactly what useEffect exists
+      // for. Scoped to this one line, not the rule or file.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRemoteSubmitState('pending');
       // Explicit code-level gate, independent of whether this result happens to author any
       // profileSignals: a quiz marked contributesToProfile: false (its You-profile mapping
@@ -195,6 +181,35 @@ export default function QuizScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, savedResultDisplay]);
+
+  // Not thrown/notFound — a quiz route reached with an unknown id (a stale link, a typo)
+  // should land somewhere real rather than crash. Explore is the natural home.
+  if (!definition) {
+    return <Redirect href="/explore" />;
+  }
+
+  // A registered 'private' (premium-gated) quiz that this device doesn't have entitlement
+  // for — send to the paywall rather than rendering any question/result content. The 7
+  // premium Apparently Private quizzes (career-ambition-how-bad, career-ambition-proving,
+  // hidden-you-wrong, life-match-dream-life, love-soulmates-ready, private-private-trouble,
+  // style-vibe-intimidating) all use access: 'private' and hit this gate on web/unentitled
+  // devices today — see useEffectivePremium's own comment for how entitlement is determined.
+  if (definition.access === 'private' && !isPremium) {
+    return <Redirect href="/paywall" />;
+  }
+
+  const questionIndex = savedResultDisplay ? -1 : definition.questions.findIndex((question) => question.id === step);
+  const currentQuestion: QuizQuestion | null = questionIndex >= 0 ? definition.questions[questionIndex] : null;
+  const isLastQuestion = questionIndex === definition.questions.length - 1;
+
+  const goNext = () => setStepIndex((index) => Math.min(index + 1, stepOrder.length - 1));
+  const goBack = () => setStepIndex((index) => Math.max(index - 1, 0));
+
+  const selectAnswer = (questionId: string, choiceId: string) => {
+    setAnswers((previous) => ({ ...previous, [questionId]: choiceId }));
+  };
+
+  const result: ResultDisplay | null = savedResultDisplay ?? liveResult;
 
   // Shared by handleShare and handleAskForNotes below — both need a share link pinned to
   // THIS exact completion (never an older one), so the "synced" gating and fallback are

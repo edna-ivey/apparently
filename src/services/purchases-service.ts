@@ -71,7 +71,6 @@ export const isRevenueCatConfigured = isRealConfiguredValue(revenueCatIosApiKey)
 export const isPurchasesPlatformSupported = Platform.OS === 'ios' || Platform.OS === 'android';
 
 if (__DEV__ && !isRevenueCatConfigured) {
-  // eslint-disable-next-line no-console
   console.warn(
     '[purchases-service] EXPO_PUBLIC_REVENUECAT_IOS_API_KEY is not set. Purchases are disabled; ' +
       'premium status will always resolve to "free" (tester override, if enabled, still applies). ' +
@@ -218,7 +217,6 @@ export const initializePurchases = async (): Promise<void> => {
     configuredOnce = false;
     setSnapshot({ status: 'error', message: 'Could not connect to Apparently Private right now.' });
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] initializePurchases failed:', error);
     }
     reportBackendFailure({ operation: 'initialize_purchases', recoverable: true }, error);
@@ -241,7 +239,6 @@ export const refreshCustomerInfo = async (): Promise<void> => {
   } catch (error) {
     setSnapshot({ status: 'error', message: 'Could not check your subscription status right now.' });
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] refreshCustomerInfo failed:', error);
     }
   }
@@ -270,7 +267,6 @@ export const syncServerEntitlement = async (): Promise<void> => {
     const { error } = await supabase.functions.invoke('sync-revenuecat-entitlement', { method: 'POST' });
     if (error) {
       if (__DEV__) {
-        // eslint-disable-next-line no-console
         console.warn('[purchases-service] syncServerEntitlement failed:', error);
       }
       // This is the single function that keeps the SERVER-side entitlement mirror current --
@@ -280,7 +276,6 @@ export const syncServerEntitlement = async (): Promise<void> => {
     }
   } catch (error) {
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] syncServerEntitlement threw:', error);
     }
     reportBackendFailure({ operation: 'sync_revenuecat_entitlement', recoverable: true }, error);
@@ -335,7 +330,6 @@ export const getMonthlyOffering = async (): Promise<MonthlyOfferingResult> => {
     return { ok: true, package: monthlyPackage };
   } catch (error) {
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] getMonthlyOffering failed:', error);
     }
     return { ok: false, reason: 'error', message: 'Could not load Apparently Private right now.' };
@@ -375,7 +369,6 @@ export const subscribeMonthly = async (pkg: PurchasesPackage): Promise<Subscribe
       return { ok: true, status: 'cancelled' };
     }
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] subscribeMonthly failed:', error);
     }
     return { ok: false, message: 'That didn’t go through. Please try again.' };
@@ -402,7 +395,6 @@ export const restorePurchases = async (): Promise<RestoreResult> => {
     return { ok: true, restored: Boolean(customerInfo.entitlements.active[APPARENTLY_PRIVATE_ENTITLEMENT_ID]?.isActive) };
   } catch (error) {
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[purchases-service] restorePurchases failed:', error);
     }
     return { ok: false, message: 'Restore didn’t go through. Please try again.' };

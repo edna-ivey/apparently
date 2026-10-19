@@ -126,7 +126,6 @@ type SavedCalibration = { slotDefaults?: Partial<SlotDefaults>; assetCorrections
 
 let saved: SavedCalibration = {};
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   saved = require('../../../assets/creatures-test/creature-config.json');
 } catch {
   saved = {};

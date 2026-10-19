@@ -15,6 +15,8 @@
 // and prefer importing column-sensitive shapes from that generated file once it exists,
 // rather than these hand-written ones.
 
+import type { PersonalityEffectValue, PersonalityEvidenceSourceType } from '@/data/personality';
+
 export type DailyStatusRemote =
   | 'Idea'
   | 'Draft'
@@ -102,7 +104,6 @@ export type QuizResultRow = {
 // PersonalityAnswerEvidence/DimensionEvidence, which also carry it -- re-exported here so
 // existing importers of this file are unaffected.
 export type { PersonalityEvidenceSourceType } from '@/data/personality';
-import type { PersonalityEffectValue, PersonalityEvidenceSourceType } from '@/data/personality';
 
 export type PersonalityEvidenceRow = {
   id: string;

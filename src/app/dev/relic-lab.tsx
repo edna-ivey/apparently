@@ -547,7 +547,7 @@ function RelicLabInner() {
               </Pressable>
             </View>
             <Text style={styles.modeHint}>
-              Layer default applies to every asset in that layer. "This asset only" adds a correction on top, for the one
+              Layer default applies to every asset in that layer. &quot;This asset only&quot; adds a correction on top, for the one
               currently selected -- use it when one specific Relic/color/effect needs its own nudge.
             </Text>
           </View>
@@ -613,7 +613,7 @@ function LayerControls({
 
       {hasCorrection && (
         <Pressable onPress={onClearCorrection} style={styles.clearCorrectionLink}>
-          <Text style={styles.clearCorrectionText}>Clear this asset's correction</Text>
+          <Text style={styles.clearCorrectionText}>Clear this asset&apos;s correction</Text>
         </Pressable>
       )}
     </Pressable>

@@ -51,6 +51,9 @@ export default function RelicReadScreen() {
   }, []);
 
   useEffect(() => {
+    // Fetching data on mount is one of the canonical, documented uses of an effect -- there is
+    // no render-time equivalent for "go fetch this from the network." Scoped to this one line.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

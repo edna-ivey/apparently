@@ -37,7 +37,6 @@ export function initErrorReporting(): void {
     // reportX function below degrades to a safe, silent (or dev-console-only) no-op; the app
     // must behave identically to today either way. Never throws, never blocks anything.
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.warn('[observability] EXPO_PUBLIC_SENTRY_DSN is not set -- error reporting is disabled (dev-console logging still works).');
     }
     return;
@@ -176,7 +175,6 @@ function buildSafeContext(ctx: BackendFailureContext): Record<string, string | b
 export function reportBackendFailure(ctx: BackendFailureContext, error: { message?: string } | unknown): void {
   const message = (error as { message?: string })?.message ?? String(error);
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.warn(`[observability] ${ctx.operation} failed:`, message, ctx.errorCode ? `(${ctx.errorCode})` : '');
   }
   if (!sentryReady) return;
@@ -198,7 +196,6 @@ export function reportBackendFailure(ctx: BackendFailureContext, error: { messag
 // app did something it was never supposed to do," not "a known backend call failed."
 export function reportUnexpectedError(error: unknown, context?: { screen?: string; boundary?: string }): void {
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.error('[observability] Unexpected error:', error, context);
   }
   if (!sentryReady) return;

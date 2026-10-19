@@ -39,12 +39,17 @@ export default function SettingsScreen() {
 
   const [firstNameDraft, setFirstNameDraft] = useState('');
   const [customGenderDraft, setCustomGenderDraft] = useState('');
-  useEffect(() => {
+  // React's documented "adjusting state when a prop changes" pattern (setState during render,
+  // not in an effect) -- same trigger condition the effect this replaced had ([userProfile]):
+  // reseed the drafts only when the userProfile snapshot reference actually changes.
+  const [prevUserProfile, setPrevUserProfile] = useState(userProfile);
+  if (userProfile !== prevUserProfile) {
+    setPrevUserProfile(userProfile);
     if (userProfile && userProfile !== 'loading') {
       setFirstNameDraft(userProfile.firstName);
       setCustomGenderDraft(userProfile.customGender ?? '');
     }
-  }, [userProfile]);
+  }
 
   const commitFirstName = () => {
     const trimmed = firstNameDraft.trim();

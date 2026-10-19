@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -174,13 +174,17 @@ export default function HomeScreen() {
 
   // A fresh local Daily always starts with these page-level flourishes reset — draft
   // selection itself is reset inside the hook. `prompt` stands in for "which local question
-  // is active" without this screen needing a raw local question id.
+  // is active" without this screen needing a raw local question id. React's documented
+  // "adjusting state when a prop changes" pattern (setState during render, not in an effect) --
+  // same trigger condition the effect this replaced had ([localQuestionKey]).
   const localQuestionKey = experience.source === 'local' ? experience.question.prompt : null;
-  useEffect(() => {
+  const [prevLocalQuestionKey, setPrevLocalQuestionKey] = useState(localQuestionKey);
+  if (localQuestionKey !== prevLocalQuestionKey) {
+    setPrevLocalQuestionKey(localQuestionKey);
     if (experience.source === 'local') {
       setActiveModal(null);
     }
-  }, [localQuestionKey]);
+  }
 
   const freePercentLine = consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label, totalAnswers) : null;
   const freeReadText = selectedChoice
