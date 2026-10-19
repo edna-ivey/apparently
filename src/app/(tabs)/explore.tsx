@@ -11,6 +11,7 @@ import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/c
 import { getQuizDefinition, type FreeQuizCategory } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { WHATS_YOUR_TYPE_DEFINITION } from '@/data/quizzes/whats-your-type-results';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 
 // FreeQuizCategory specifically — NOT the general QuizCategory union — so an Apparently
@@ -88,27 +89,44 @@ export default function ExploreScreen() {
     return map;
   }, [quizResults]);
 
-  const quizCards: QuizCard[] = useMemo(
-    () =>
-      QUIZ_CARD_STYLE.map((style) => {
-        const definition = getQuizDefinition(style.id)!;
-        const latest = latestResultByQuizId.get(style.id);
-        const lastResultTitle = latest ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
-        return {
-          id: style.id,
-          title: definition.title,
-          // Safe: QUIZ_CARD_STYLE only ever lists free-access quiz ids (asserted, not
-          // user input) — Apparently Private's secretly-love is deliberately excluded above.
-          category: definition.category as FreeQuizCategory,
-          meta: `${definition.questions.length} questions · ${definition.category}`,
-          color: style.color,
-          accent: style.accent,
-          completed: !!latest,
-          lastResultTitle,
-        };
-      }),
-    [latestResultByQuizId],
-  );
+  const quizCards: QuizCard[] = useMemo(() => {
+    const standardCards = QUIZ_CARD_STYLE.map((style) => {
+      const definition = getQuizDefinition(style.id)!;
+      const latest = latestResultByQuizId.get(style.id);
+      const lastResultTitle = latest ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
+      return {
+        id: style.id,
+        title: definition.title,
+        // Safe: QUIZ_CARD_STYLE only ever lists free-access quiz ids (asserted, not
+        // user input) — Apparently Private's secretly-love is deliberately excluded above.
+        category: definition.category as FreeQuizCategory,
+        meta: `${definition.questions.length} questions · ${definition.category}`,
+        color: style.color,
+        accent: style.accent,
+        completed: !!latest,
+        lastResultTitle,
+      };
+    });
+
+    // Built by hand, not via getQuizDefinition/QUIZ_CARD_STYLE above — this quiz is a
+    // DualDimensionQuizDefinition, deliberately kept out of the QuizDefinition union (see
+    // types.ts), so getQuizDefinition/resolveResultDisplayTitle don't know it. Its saved
+    // resultTitle is already the human-readable combination title (e.g. "The Green Flag With
+    // Jokes"), so no display-title resolution step is needed here.
+    const whatsYourTypeLatest = latestResultByQuizId.get(WHATS_YOUR_TYPE_DEFINITION.id);
+    const whatsYourTypeCard: QuizCard = {
+      id: WHATS_YOUR_TYPE_DEFINITION.id,
+      title: WHATS_YOUR_TYPE_DEFINITION.title,
+      category: WHATS_YOUR_TYPE_DEFINITION.category as FreeQuizCategory,
+      meta: `${WHATS_YOUR_TYPE_DEFINITION.questions.length} questions · ${WHATS_YOUR_TYPE_DEFINITION.category}`,
+      color: '#FFE1EC',
+      accent: '#C23B6B',
+      completed: !!whatsYourTypeLatest,
+      lastResultTitle: whatsYourTypeLatest?.resultTitle ?? null,
+    };
+
+    return [...standardCards, whatsYourTypeCard];
+  }, [latestResultByQuizId]);
 
   const featuredQuizId = FEATURED_QUIZ_ID[selectedCategory];
   const featuredQuiz = quizCards.find((quiz) => quiz.id === featuredQuizId)!;
