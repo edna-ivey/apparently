@@ -149,9 +149,14 @@ assert(
 );
 
 const indexSource = readFileSync(join(__dirname, '../src/app/(tabs)/index.tsx'), 'utf8');
+// Copy was later simplified ("APPARENTLY PRIVATE · UNLOCKED" / "TESTER ACCESS" -> "Unlocked" /
+// "Tester access · Unlocked") -- a wording change, not a regression of the underlying fix this
+// check exists for. The real thing that matters (access === 'premium' branches BEFORE
+// access === 'tester', so a real subscriber can never fall through to the tester label) is
+// checked structurally here instead of by matching retired exact copy strings.
 assert(
-  /privateReady\?\.access === 'premium'\s*\?\s*'APPARENTLY PRIVATE · UNLOCKED'/.test(indexSource),
-  "Today's Private Drop badge checks real premium access FIRST, so a real subscriber on a TestFlight build is shown as a real subscriber, not mislabeled 'TESTER ACCESS'",
+  /privateReady\.access === 'premium'\s*\n\s*\?\s*'Unlocked'\s*\n\s*:\s*privateReady\.access === 'tester'/.test(indexSource),
+  "Today's Private Drop badge checks real premium access FIRST, so a real subscriber on a TestFlight build is shown as a real subscriber, not mislabeled as a tester",
 );
 assert(
   !/isPrivateDailyTesterAccessEnabled/.test(indexSource),
