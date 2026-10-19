@@ -2432,3 +2432,7 @@ That is the bible. 🔥
 ## 59. APPROVED CHARACTER DAILY REVISIONS (2026-10-19)
 
 **EDITORIALLY APPROVED:** The exact five character-question revisions for Free #2, #7, #12, #14 and Private #4, including all six character/movie/show choices and their descriptions, are preserved verbatim in `docs/DAILY_APPROVED_CHARACTER_REVISIONS_2026-10-19.md`. They are approved as editorial content, **not yet evidence-mapped, scheduled, or published**. The owner also approved diversifying character formats: trust with secrets, swap lives for 24 hours, worst roommate, and villain reasoning. **PAUSE** additional Daily batches until Claude's result is reviewed. No production changes authorized.
+
+## 60. BUILD 16 DEPLOYMENT STATUS (2026-10-19)
+
+**DEPLOYED (database):** Claude Code's live Supabase checks confirmed the Scoring V2 schema, age-eligibility gate and 991 quiz-choice pole awards from three applied migrations. **BUILT (iOS):** EAS Build 16 completed successfully, ID `f1e45967-7b88-434e-9aac-fcf6dd9ab0a7`. **NOT VERIFIED / NOT AUTHORIZED:** TestFlight submission, on-device acceptance testing, and hardening of the 13-argument `submit_quiz_result` PUBLIC/anon EXECUTE grant. The older 12-argument overload also needs review. Full evidence and audit notes: `docs/BUILD16_DEPLOYMENT_REVIEW_2026-10-19.md`. No new Daily content or scoring mappings published. New Daily batch remains paused pending owner direction.
