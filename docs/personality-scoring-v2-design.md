@@ -216,3 +216,56 @@ rather than invent: when (if ever) does a real call site start reading V2's rank
 old engine's, and does that happen all at once or behind a flag? This document's answer (§1, §7)
 is the recommended default — a fully parallel accumulation with no automatic cutover — not a
 decision made unilaterally on the team's behalf.
+
+## 12. Rollback plan (required before any production activation)
+
+Nothing in this design has been applied to any database. If and when the product owner approves
+applying `20261018010000_personality_scoring_v2_schema.sql`, the rollback path is:
+
+**To undo the migration entirely** (before any real evidence has accumulated in the new tables):
+
+```sql
+drop trigger if exists daily_answers_after_insert_pole_evidence on public.daily_answers;
+drop function if exists public.handle_daily_answer_pole_evidence();
+drop function if exists public.submit_quiz_pole_evidence(text, uuid, jsonb);
+drop table if exists public.quiz_choice_pole_awards;
+drop table if exists public.personality_pole_evidence;
+alter table public.daily_options drop column if exists pole_personality_effects;
+```
+
+This is safe at any point because nothing else in the live app reads from or depends on these
+tables/columns/functions — confirmed by §11's own "explicitly not touched" list. Dropping them
+removes V2 cleanly with zero effect on `personality_evidence`, `daily_answers`,
+`submit_quiz_result`, or any screen.
+
+**If real V2 evidence has already accumulated** (users have answered quizzes/Daily after this
+shipped) and a rollback is still wanted: do **not** run the drops above, since that destroys real
+collected evidence. Instead, stop writing to it (drop just the trigger and leave
+`submit_quiz_pole_evidence` uncalled by any client) and leave the tables in place, inert, for a
+later decision — exactly how V2 already sits today relative to the OLD engine. Only run a
+destructive drop if the product owner explicitly confirms the accumulated V2 data itself (not
+just the write path) should be discarded.
+
+**Rollback requires no client changes** either way: no screen reads V2 data today (§11), so
+removing the server-side pieces above never breaks anything a user can see.
+
+## 13. Known coverage gaps requiring new approved content (not resolvable by recalibration)
+
+Per the post-fix coverage audit (`scripts/generate-personality-v2-coverage-report.ts`), three
+poles have **zero legitimate mappings anywhere** in the current 772-choice catalog, confirmed by
+direct re-examination (not just the original calibration pass) of every plausible candidate
+choice: **Serious** (`playful_serious:negative`), **Cooperative** (`competitive_cooperative:negative`),
+and **Gives freely** (`gives_freely_keeps_score:positive`). Two near-miss candidates were checked
+by hand and ruled out correctly by the original calibration: `be-so-serious.ts`'s "if this is
+serious, we handle it first" choice demonstrates practicality/patience, not a generally serious
+demeanor; `food-order.ts`'s "can the table split it?" demonstrates Collaborative (shared decision-
+making), not Cooperative (motivated by mutual benefit over competition) — these are genuinely
+different traits despite similar-sounding wording. No existing choice anywhere legitimately
+supports these three poles. Closing this gap requires new approved quiz or Daily content —
+engineering alone cannot resolve it, and per this task's own instruction, no such content has
+been invented to paper over the gap.
+
+Four additional poles (Thick-skinned, Rule-bending, Reactive, Responsive) have at least one
+mapping but depend on a single quiz each — a fragile, single-point-of-failure state worth
+reinforcing with additional scenarios when new content is next approved, though not a hard zero
+like the three above.
