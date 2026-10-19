@@ -2416,3 +2416,11 @@ That is the bible. 🔥
 **LOCKED: Durable decisions.** On each project work session with repo access, reconcile owner-approved decisions with this Bible, exact approved-content files, and Git. Record discrepancies and distinguish local code, committed code, pushed code, migrations applied, and live functionality. Preserve original approved versions. Do not assert that any update is saved or deployed without verifying it.
 
 **IMPLEMENTATION DISCREPANCY OPEN:** The current Daily editor/normalization code still imposes a three-effect cap. It conflicts with the owner decision and requires a tested code correction before new multi-trait mappings are published. The V2 schema's three-point-per-pole limit is compatible with this addendum.
+
+## 57. OWNER CREATIVE DIRECTION ADDENDUM: UNPREDICTABLE DAILY RANGE (2026-10-19)
+
+**LOCKED DIRECTION:** The Daily experience should be surprising in format and emotional register, not a predictable sequence of relationship or personality quizzes. Free Daily mixes playful, bizarre, soft, cinematic, musical, revealing and occasionally profound. Private Daily goes much farther than relationship drama: guilty pleasures, embarrassing admissions, private habits, pre-sleep thoughts, personal triggers, money, fears, ambitions, mortality, moral discomfort, taboo thoughts and relationships as just one area. Shady, bold and outrageous with softer moments interspersed.
+
+**LOCKED FORMAT:** A question explicitly labeled This or That has exactly **two** genuinely difficult choices. Character prompts use plain text only: **movie title, character name, explanation/role**. No pictures. Select recognizable characters across mainstream movies, Black cinema and hood classics, and varied genres. Music-based prompts may use **song title, artist, short description**, not lyrics. This format is requested for earlier Free Daily drafts #2, #7, #12 and #14, and Private Daily #4.
+
+**WORKING EXAMPLES, NOT APPROVED COPY:** See `docs/DAILY_CREATIVE_DIRECTION_2026-10-19.md` for user feedback, draft examples, and pending approval status. No exact new Daily content or evidence mappings are approved by this addendum.
