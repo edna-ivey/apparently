@@ -212,4 +212,62 @@ export type ArchetypeQuizDefinition = QuizBase & {
   countPrimaryMatchesTieBreak?: boolean;
 };
 
+// Two INDEPENDENTLY scored 6-way dimensions, resolved into one of (dimensionA.length x
+// dimensionB.length) paired combination results -- e.g. "What's Your Type?" (6 Attraction
+// archetypes x 6 Partner Energy archetypes = 36 combinations). Deliberately generic over
+// question/archetype COUNT rather than hardcoded to any one quiz's exact shape.
+//
+// ENGINEERING-ONLY as of this pass: this type and scoreDualDimensionQuiz (scoring.ts) are
+// real, tested, and ready to use, but NO quiz currently uses scoringType 'dualDimension' --
+// "What's Your Type?" was reported as fully approved, but its actual approved question/
+// answer/result copy could not be located in this repository, in docs/, or in any
+// conversation record accessible in this session (verified by direct search, including the
+// exact fragments supplied mid-session -- see the Build 16 completion report). Per explicit
+// instruction, this is reported as a content-transfer dependency rather than filled in with
+// invented or reconstructed copy. computeQuizResult/ResultDisplay/the quiz runner screen are
+// deliberately NOT yet wired to this scoringType -- there is no real content to verify that
+// wiring against, and touching the shared rendering pipeline for every other live quiz without
+// a real case to test against would be the wrong trade against "preserve working
+// functionality." That integration is the next step once real content exists.
+export type QuizDimensionArchetype = {
+  id: string;
+  title: string;
+};
+
+export type QuizCombinationResult = {
+  // "${dimensionAArchetypeId}:${dimensionBArchetypeId}" -- see resolveCombinationKey in scoring.ts.
+  id: string;
+  title: string;
+  heroRead?: string[];
+  body?: string;
+  kicker?: string;
+  traits?: string[];
+  profileSignals?: PersonalityEffect[];
+};
+
+// Deliberately NOT a member of QuizDefinition below -- every function that pattern-matches
+// over QuizDefinition (computeQuizResult, reconstructResultDisplay, resolveShareableResultContent,
+// resolveResultDisplayTitle, resolveStoredQuizProfileSignals, all in scoring.ts) assumes exactly
+// two variants today and branches with a plain `if (scoringType === 'archetype') {...} else
+// {...}` rather than an exhaustive switch. Adding a third member here would force real,
+// untested changes to every one of those functions for a scoring type nothing uses yet --
+// exactly the "touch the shared pipeline for all 21 live quizzes to support a feature with no
+// real content" risk this pass is trying to avoid. DualDimensionQuizDefinition stays
+// independent, with its own standalone scoring function (scoreDualDimensionQuiz in
+// scoring.ts), until real content exists and that integration can be done with something real
+// to verify it against.
+export type DualDimensionQuizDefinition = QuizBase & {
+  scoringType: 'dualDimension';
+  dimensionALabel: string;
+  dimensionBLabel: string;
+  dimensionAQuestionIds: string[];
+  dimensionBQuestionIds: string[];
+  dimensionAArchetypes: QuizDimensionArchetype[];
+  dimensionBArchetypes: QuizDimensionArchetype[];
+  // One entry per real combination. A quiz may be authored with fewer than the full cross-
+  // product while content is still being approved; scoreDualDimensionQuiz (scoring.ts)
+  // throws on a missing combination rather than fabricating filler copy.
+  combinations: Record<string, QuizCombinationResult>;
+};
+
 export type QuizDefinition = NumericBandQuizDefinition | ArchetypeQuizDefinition;

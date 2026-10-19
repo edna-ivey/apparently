@@ -3,9 +3,13 @@ import { applyPermanentQuizAwards } from '@/data/quiz-personality-awards';
 
 import type {
   ArchetypeQuizDefinition,
+  DualDimensionQuizDefinition,
   NumericBandQuizDefinition,
   QuizArchetype,
+  QuizCombinationResult,
   QuizDefinition,
+  QuizDimensionArchetype,
+  QuizQuestion,
   QuizResultBand,
   QuizStructuredRead,
 } from './types';
@@ -661,3 +665,96 @@ export const countExactMatches = (
   answersA: Record<string, string>,
   answersB: Record<string, string>,
 ): number => definition.questions.filter((q) => answersA[q.id] && answersA[q.id] === answersB[q.id]).length;
+
+// --- DUAL-DIMENSION SCORING (e.g. "What's Your Type?") -- see types.ts's DualDimensionQuizDefinition
+// for why this is engineering-only as of this pass: real, tested, not yet wired into
+// computeQuizResult/the quiz runner because no quiz currently uses it. -------------------------
+
+export type DualDimensionWinner = {
+  archetypeId: string;
+  totals: Record<string, number>;
+  percentages: Record<string, number>;
+};
+
+export const resolveCombinationKey = (dimensionAArchetypeId: string, dimensionBArchetypeId: string): string =>
+  `${dimensionAArchetypeId}:${dimensionBArchetypeId}`;
+
+// Resolves ONE dimension's winning archetype from only the questions that belong to it.
+// Deterministic tie-break: the most recent (within this dimension's own question order)
+// question whose single highest-weighted choice is in the tied set, else a fixed
+// archetypes-array-order fallback -- the same two-step shape pickPrimaryArchetypeGeneric above
+// already uses for the single-dimension ArchetypeQuizDefinition case, reimplemented here
+// scoped to one dimension's own question subset rather than refactored out of the existing,
+// already-shipping function (touching that function's generic path risks every one of the 9
+// live ArchetypeQuizDefinition quizzes for a feature with no real content yet to verify
+// against).
+const resolveDimensionWinner = (
+  archetypes: readonly QuizDimensionArchetype[],
+  dimensionQuestionIds: readonly string[],
+  allQuestions: readonly QuizQuestion[],
+  answers: Record<string, string>,
+): DualDimensionWinner => {
+  const archetypeIds = archetypes.map((a) => a.id);
+  const totals: Record<string, number> = {};
+  archetypeIds.forEach((id) => {
+    totals[id] = 0;
+  });
+
+  const perQuestionWinners: string[] = [];
+  for (const questionId of dimensionQuestionIds) {
+    const question = allQuestions.find((q) => q.id === questionId);
+    if (!question) continue;
+    const chosenId = answers[question.id];
+    const choice = question.choices.find((candidate) => candidate.id === chosenId);
+    const weights = choice?.resultWeights ?? {};
+    for (const [archetypeId, weight] of Object.entries(weights)) {
+      if (archetypeId in totals) {
+        totals[archetypeId] += weight;
+      }
+    }
+    const winner = primaryWeightEntry(weights);
+    if (winner && winner.archetypeId in totals) {
+      perQuestionWinners.push(winner.archetypeId);
+    }
+  }
+
+  const totalPoints = Object.values(totals).reduce((sum, value) => sum + value, 0);
+  const percentages: Record<string, number> = {};
+  archetypeIds.forEach((id) => {
+    percentages[id] = totalPoints > 0 ? Math.round((totals[id] / totalPoints) * 100) : 0;
+  });
+
+  const maxTotal = Math.max(...archetypeIds.map((id) => totals[id] ?? 0));
+  const tied = archetypeIds.filter((id) => (totals[id] ?? 0) === maxTotal);
+
+  let archetypeId: string;
+  if (tied.length === 1) {
+    archetypeId = tied[0];
+  } else {
+    const recentWinners = [...perQuestionWinners].reverse();
+    archetypeId = recentWinners.find((id) => tied.includes(id)) ?? tied.find((id) => archetypeIds.includes(id)) ?? archetypeIds[0];
+  }
+
+  return { archetypeId, totals, percentages };
+};
+
+export type DualDimensionScore = {
+  dimensionA: DualDimensionWinner;
+  dimensionB: DualDimensionWinner;
+  combination: QuizCombinationResult;
+};
+
+// Resolves both dimensions independently, then looks up the ONE authored combination result
+// for the resulting pair. Throws (never fabricates filler copy) if that exact combination has
+// no authored entry yet -- every one of the full cross-product's combinations must be approved
+// content before a quiz using this scoring type can be considered complete.
+export const scoreDualDimensionQuiz = (definition: DualDimensionQuizDefinition, answers: Record<string, string>): DualDimensionScore => {
+  const dimensionA = resolveDimensionWinner(definition.dimensionAArchetypes, definition.dimensionAQuestionIds, definition.questions, answers);
+  const dimensionB = resolveDimensionWinner(definition.dimensionBArchetypes, definition.dimensionBQuestionIds, definition.questions, answers);
+  const key = resolveCombinationKey(dimensionA.archetypeId, dimensionB.archetypeId);
+  const combination = definition.combinations[key];
+  if (!combination) {
+    throw new Error(`No authored combination result for "${key}" -- every combination in the dimensionA x dimensionB cross-product must have approved content.`);
+  }
+  return { dimensionA, dimensionB, combination };
+};
