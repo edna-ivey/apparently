@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ import { scorePersonalityProfile, type PersonalityProfile } from '@/data/persona
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { computeProfileActivityCounts, getMyPersonalityEvidence, getMyQuizResults, groupEvidenceIntoAnswers } from '@/services/personality-service';
+import { isSaveCreatureImageSupported, saveCreatureImageFromRef } from '@/services/save-creature-image';
 
 const AVATAR_SIZE = 180;
 const AVATAR_STAGE_SIZE = 240;
@@ -203,6 +204,7 @@ export default function CreatureReadScreen() {
               <ThemedText style={styles.pageIntro}>
                 Your Creature is still in its First Form — built entirely from the single pattern showing up strongest right now.
               </ThemedText>
+              <SaveCreatureButton name={readState.name} recipe={readState.recipe} />
               <ReadCard entry={readState.entry} />
             </>
           )}
@@ -213,6 +215,7 @@ export default function CreatureReadScreen() {
                 <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
                 <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
               </View>
+              <SaveCreatureButton name={readState.name} recipe={readState.recipe} />
               {/* Final-polish pass: the combined read is the editorial lede of this screen --
                   a real display-size name (not the small tracked-out eyebrow used elsewhere),
                   more breathing room, and a richer, more elevated surface than the five
@@ -256,7 +259,111 @@ function ReadCard({ entry, accent }: { entry: ReadEntry; accent?: string }) {
   );
 }
 
+// Save Creature as a Photo (Build 16). The capture target (exportCard below) is a dedicated,
+// self-contained card -- celestial background, the Creature's own calibrated avatar at its
+// real recipe, the Creature's name, a small brand mark -- never the screen itself, so the
+// saved image can never pick up navigation controls, the close button, or any other UI. What
+// the user sees here IS exactly what gets captured, so there's no surprise about what's about
+// to land in their Photos.
+type SaveState = { phase: 'idle' } | { phase: 'saving' } | { phase: 'done' } | { phase: 'error'; message: string };
+
+function SaveCreatureButton({ name, recipe }: { name: string; recipe: CreatureRecipe }) {
+  const exportCardRef = useRef<View>(null);
+  const [saveState, setSaveState] = useState<SaveState>({ phase: 'idle' });
+
+  const handleSave = async () => {
+    setSaveState({ phase: 'saving' });
+    const result = await saveCreatureImageFromRef(exportCardRef);
+    if (result.ok) {
+      setSaveState({ phase: 'done' });
+    } else {
+      setSaveState({ phase: 'error', message: result.message });
+    }
+  };
+
+  // Reverts "Saved ✓" back to the normal button after a moment -- a real timer, which has no
+  // render-time equivalent (synchronizing with the passage of time is exactly what an effect
+  // is for).
+  useEffect(() => {
+    if (saveState.phase !== 'done') {
+      return;
+    }
+    const timeout = setTimeout(() => setSaveState({ phase: 'idle' }), 2500);
+    return () => clearTimeout(timeout);
+  }, [saveState.phase]);
+
+  if (!isSaveCreatureImageSupported()) {
+    return null;
+  }
+
+  return (
+    <View style={styles.saveSection}>
+      <View ref={exportCardRef} collapsable={false} style={styles.exportCard}>
+        <View style={styles.exportGlowStage}>
+          <AtmosphericGlow size={220} />
+          <CreatureAvatar recipe={recipe} size={150} />
+        </View>
+        <ThemedText style={styles.exportName}>{name}</ThemedText>
+        <ThemedText style={styles.exportMark}>apparently you.</ThemedText>
+      </View>
+
+      <Pressable
+        style={[styles.saveButton, saveState.phase === 'saving' && styles.saveButtonDisabled]}
+        onPress={() => void handleSave()}
+        disabled={saveState.phase === 'saving'}
+        accessibilityRole="button"
+        accessibilityLabel="Save Creature to Photos"
+      >
+        <ThemedText style={styles.saveButtonText}>
+          {saveState.phase === 'saving' ? 'Saving…' : saveState.phase === 'done' ? 'Saved ✓' : 'Save to Photos'}
+        </ThemedText>
+      </Pressable>
+      {saveState.phase === 'error' && <ThemedText style={styles.saveErrorText}>{saveState.message}</ThemedText>}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  saveSection: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
+  // The exact capture target (react-native-view-shot) -- solid background (never relies on the
+  // screen's own PortalRings/CelestialWash decorations, which wouldn't be included in this
+  // narrow capture region), the Creature's real calibrated avatar, its name, a small brand
+  // mark. Nothing else -- no nav, no buttons, no debug UI.
+  exportCard: {
+    width: 300,
+    alignItems: 'center',
+    backgroundColor: Celestial.background,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    paddingVertical: Spacing.five,
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.one,
+  },
+  exportGlowStage: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  exportName: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: Celestial.textPrimary,
+    fontSize: 26,
+    lineHeight: 31,
+    textAlign: 'center',
+    marginTop: Spacing.one,
+  },
+  exportMark: { color: Celestial.textMuted, fontSize: 13, fontWeight: '800', letterSpacing: -0.2, marginTop: Spacing.one },
+  saveButton: {
+    backgroundColor: Brand.gold,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    minWidth: 160,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: { opacity: 0.6 },
+  saveButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  saveErrorText: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', maxWidth: 260 },
+
   container: { flex: 1, backgroundColor: '#17000F' },
   safeArea: {
     flex: 1,

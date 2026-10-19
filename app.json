@@ -42,7 +42,14 @@
           "imageWidth": 76
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "Apparently You uses this to save your Creature image to your photo library when you tap Save."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
