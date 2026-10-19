@@ -7,7 +7,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/design-system';
 import { Celestial, CelestialType, CelestialWash, PortalRings } from '@/components/today/celestial';
+import { isAdultEligible, setAgeEligibilityOnce, useAgeEligibility } from '@/data/age-eligibility';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
@@ -74,6 +76,13 @@ export default function QuizScreen() {
   // 'private' -- see QUIZ_REGISTRY) below; 'free' and 'private-preview' quizzes never consult
   // this at all.
   const isPremium = useEffectivePremium();
+
+  // Build 16: 18+ gate for the one 'Private Private. 😈' category quiz -- called
+  // unconditionally for the same Rules-of-Hooks reason as every hook above. Premium
+  // entitlement never substitutes for this: a subscriber who is 13-17 still needs to pass this
+  // check, enforced for real server-side in submit_quiz_result (see the staged migration) --
+  // this client-side check only controls what renders; it is never the actual authorization.
+  const ageEligibility = useAgeEligibility();
 
   // The following derived values and the submission effect below are computed BEFORE the
   // !definition / premium-gate early returns (unlike the render-only values further down in
@@ -196,6 +205,15 @@ export default function QuizScreen() {
   // devices today — see useEffectivePremium's own comment for how entitlement is determined.
   if (definition.access === 'private' && !isPremium) {
     return <Redirect href="/paywall" />;
+  }
+
+  // Build 16: the one 'Private Private. 😈' category quiz additionally requires 18+,
+  // independent of (and checked after) premium entitlement above. 'loading' briefly shows
+  // nothing extra -- the premium gate above has already resolved by the time this value is
+  // read, so this is a short, real loading window, not a stuck state. null (never asked, e.g.
+  // a pre-Build-16 account) gets a one-time confirmation prompt rather than a permanent block.
+  if (definition.id === 'private-private-trouble' && ageEligibility !== 'loading' && !isAdultEligible(ageEligibility)) {
+    return <AgeEligibilityGate status={ageEligibility} />;
   }
 
   const questionIndex = savedResultDisplay ? -1 : definition.questions.findIndex((question) => question.id === step);
@@ -563,6 +581,54 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
 // this is a taste, not a menu.
 const PRIVATE_CURIOSITY_IDS = ['shadow-side-blind-spot', 'love-soulmates-destined', 'career-ambition-made-for', 'life-match-city'];
 
+// Build 16: renders in place of the quiz for 'private-private-trouble' whenever the device
+// isn't confirmed 18+ -- see the age-gate check above. status === null (never asked, e.g. a
+// pre-Build-16 account) gets a one-time self-attestation prompt rather than a permanent
+// block; status === '13to17' gets a plain, honest "this needs 18+" message with no prompt
+// (a 13-17 answer is final -- see setAgeEligibilityOnce's set-once semantics). This is a
+// CLIENT-SIDE UX gate only -- the real authorization is is_adult_eligible() inside
+// submit_quiz_result (staged migration), which this screen's own answer selection can never
+// bypass even if someone patched this component out.
+function AgeEligibilityGate({ status }: { status: '13to17' | '18plus' | null }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+
+  const handleConfirmAdult = async () => {
+    setConfirming(true);
+    await setAgeEligibilityOnce('18plus');
+    setConfirming(false);
+  };
+  const handleDeclineAdult = async () => {
+    await setAgeEligibilityOnce('13to17');
+  };
+
+  return (
+    <ThemedView style={styles.ageGateContainer}>
+      <SafeAreaView style={styles.ageGateSafeArea}>
+        <View style={styles.ageGateContent}>
+          <ThemedText style={styles.ageGateEyebrow}>18+ ONLY</ThemedText>
+          {status === '13to17' ? (
+            <ThemedText style={styles.ageGateBody}>This content is for ages 18 and up.</ThemedText>
+          ) : (
+            <>
+              <ThemedText style={styles.ageGateBody}>Confirm you&apos;re 18 or older to continue.</ThemedText>
+              <Pressable style={styles.ageGateCta} onPress={() => void handleConfirmAdult()} disabled={confirming}>
+                <ThemedText style={styles.ageGateCtaText}>{confirming ? 'Confirming…' : "I'm 18 or older"}</ThemedText>
+              </Pressable>
+              <Pressable style={styles.ageGateSecondaryCta} onPress={() => void handleDeclineAdult()}>
+                <ThemedText style={styles.ageGateSecondaryCtaText}>I&apos;m under 18</ThemedText>
+              </Pressable>
+            </>
+          )}
+          <Pressable onPress={() => router.replace('/private')} style={styles.ageGateBackLink}>
+            <ThemedText style={styles.ageGateBackLinkText}>← Back to Private</ThemedText>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
 function PrivateCuriosityCard({ onBackToPrivate }: { onBackToPrivate: () => void }) {
   const sample = PRIVATE_LOCKED_CATALOG.filter((entry) => PRIVATE_CURIOSITY_IDS.includes(entry.id));
   return (
@@ -584,6 +650,18 @@ function PrivateCuriosityCard({ onBackToPrivate }: { onBackToPrivate: () => void
 }
 
 const styles = StyleSheet.create({
+  ageGateContainer: { flex: 1, backgroundColor: Celestial.background },
+  ageGateSafeArea: { flex: 1 },
+  ageGateContent: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.five, gap: Spacing.three },
+  ageGateEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.gold },
+  ageGateBody: { color: Celestial.textPrimary, fontSize: 16, lineHeight: 23, fontWeight: '600', textAlign: 'center', maxWidth: 320 },
+  ageGateCta: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.four, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  ageGateCtaText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  ageGateSecondaryCta: { paddingVertical: Spacing.one },
+  ageGateSecondaryCtaText: { color: Celestial.textSecondary, fontSize: 14, fontWeight: '700' },
+  ageGateBackLink: { marginTop: Spacing.four },
+  ageGateBackLinkText: { color: Celestial.textMuted, fontSize: 13, fontWeight: '600' },
+
   container: {
     flex: 1,
     backgroundColor: '#17000F',

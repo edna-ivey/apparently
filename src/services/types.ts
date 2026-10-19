@@ -40,6 +40,11 @@ export type ProfileRow = {
   gender: string | null;
   self_perception: Record<string, unknown> | null;
   onboarding_completed_at: string | null;
+  // Build 16: null until the user has gone through the age-eligibility onboarding gate (or,
+  // for an existing pre-Build-16 account, the retroactive confirmation prompt) -- treat null
+  // as NOT adult-eligible everywhere (fail closed). Immutable once set -- see
+  // upsertAgeEligibility's own comment and the staged migration's trigger.
+  age_eligibility: '13to17' | '18plus' | null;
   created_at: string;
   updated_at: string;
 };

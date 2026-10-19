@@ -7,6 +7,7 @@ import { Celestial, CelestialWash, PortalRings } from '@/components/today/celest
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Fonts, Spacing } from '@/constants/theme';
+import { setAgeEligibilityOnce, type AgeEligibility } from '@/data/age-eligibility';
 import {
   AGE_RANGES,
   completeOnboarding,
@@ -71,8 +72,14 @@ const QUESTIONS: QuestionDef[] = [
   },
 ];
 
-type Step = 'welcome' | 'basic' | 'transition' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'final';
-const STEP_ORDER: Step[] = ['welcome', 'basic', 'transition', 'q1', 'q2', 'q3', 'q4', 'q5', 'final'];
+// 'age-gate' is the first real question after Welcome, deliberately before any other data
+// collection -- a self-identified under-13 answer diverts to 'age-blocked' (handled as its
+// own standalone render branch, like 'welcome', never entering STEP_ORDER's forward
+// progression at all) rather than continuing onboarding. Apparently You is 13+; see
+// src/data/age-eligibility.ts for why this is tracked completely separately from the
+// demographic AgeRange field below (personalization, not a legal gate, and already 18+-only).
+type Step = 'welcome' | 'age-gate' | 'basic' | 'transition' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'final';
+const STEP_ORDER: Step[] = ['welcome', 'age-gate', 'basic', 'transition', 'q1', 'q2', 'q3', 'q4', 'q5', 'final'];
 // Every step after the standalone Welcome screen shares one chrome and one progress read —
 // basic info, the transition card, all five questions, and final all count as real forward
 // progress now (not just the 5 questions, which is all the old "N of M" text ever reflected).
@@ -104,6 +111,12 @@ export default function OnboardingScreen() {
   const [customGender, setCustomGender] = useState('');
   const [answers, setAnswers] = useState<Partial<SelfPerceptionAnswers>>({});
   const [submitting, setSubmitting] = useState(false);
+  // 'blocked' is a terminal state, never advanced past -- see the age-gate comment above.
+  // Deliberately NOT persisted anywhere: a self-identified under-13 answer never creates a
+  // session or writes any data (see handleAgeGateAnswer below), so there's nothing to recover
+  // on relaunch either -- the gate simply asks again, which is the correct, privacy-conscious
+  // behavior for an answer that was never supposed to leave this screen.
+  const [ageGateResult, setAgeGateResult] = useState<'answering' | 'blocked' | 'cleared'>('answering');
 
   // Mirrors the (tabs) layout's own gate in the opposite direction: a device that has
   // already completed onboarding but manually lands here again (a stale web bookmark, a
@@ -115,6 +128,20 @@ export default function OnboardingScreen() {
 
   const goNext = () => setStepIndex((index) => Math.min(index + 1, STEP_ORDER.length - 1));
   const goBack = () => setStepIndex((index) => Math.max(index - 1, 0));
+
+  // 'under13': block immediately, never call setAgeEligibilityOnce (which itself calls
+  // ensureAnonymousSession) -- no session, no profile row, no data retained for a
+  // self-identified minor, anywhere, ever. '13to17'/'18plus': persist (local + best-effort
+  // server sync) and continue into the rest of onboarding exactly as before this gate existed.
+  const handleAgeGateAnswer = (answer: 'under13' | AgeEligibility) => {
+    if (answer === 'under13') {
+      setAgeGateResult('blocked');
+      return;
+    }
+    setAgeGateResult('cleared');
+    void setAgeEligibilityOnce(answer);
+    goNext();
+  };
 
   const basicComplete = firstName.trim().length > 0 && ageRange !== null && gender !== null;
 
@@ -159,6 +186,10 @@ export default function OnboardingScreen() {
     return <WelcomeStep onContinue={goNext} />;
   }
 
+  if (ageGateResult === 'blocked') {
+    return <AgeBlockedStep />;
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
@@ -176,6 +207,8 @@ export default function OnboardingScreen() {
             <StepProgress current={stepIndex - 1} total={CHROME_STEPS} />
             <View style={styles.backButton} />
           </View>
+
+          {step === 'age-gate' && <AgeGateStep onAnswer={handleAgeGateAnswer} />}
 
           {step === 'basic' && (
             <BasicInfoStep
@@ -293,6 +326,58 @@ const welcomeStyles = StyleSheet.create({
     maxWidth: 360,
   },
 });
+
+// The 13+ eligibility gate -- deliberately the first real question, before any other data
+// collection. Three plain options, no birthdate, no exact age: the minimum information that
+// actually answers the two legally-relevant thresholds (13, 18) -- see
+// src/data/age-eligibility.ts's own header comment for why this is intentionally coarser than
+// the existing demographic AgeRange question later in the flow.
+function AgeGateStep({ onAnswer }: { onAnswer: (answer: 'under13' | AgeEligibility) => void }) {
+  return (
+    <View style={styles.stepGap}>
+      <View style={styles.brandRow}>
+        <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={styles.brandIcon} />
+        <ThemedText style={styles.brandWordmark}>apparently you.</ThemedText>
+      </View>
+      <View style={styles.introGap}>
+        <ThemedText type="title" style={styles.heading}>
+          Quick one first.
+        </ThemedText>
+        <ThemedText style={styles.subcopy}>Apparently You is for ages 13 and up. How old are you?</ThemedText>
+      </View>
+      <View style={styles.fieldGroup}>
+        <Pressable style={styles.pill} onPress={() => onAnswer('under13')}>
+          <ThemedText style={styles.pillText}>Under 13</ThemedText>
+        </Pressable>
+        <Pressable style={styles.pill} onPress={() => onAnswer('13to17')}>
+          <ThemedText style={styles.pillText}>13 to 17</ThemedText>
+        </Pressable>
+        <Pressable style={styles.pill} onPress={() => onAnswer('18plus')}>
+          <ThemedText style={styles.pillText}>18 or older</ThemedText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+// Terminal state -- never advanced past, matching the Welcome screen's own standalone render
+// pattern. No continue path, no data collected beyond this screen (see handleAgeGateAnswer).
+function AgeBlockedStep() {
+  return (
+    <View style={welcomeStyles.container}>
+      <SafeAreaView style={welcomeStyles.safeArea}>
+        <View style={welcomeStyles.content}>
+          <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={welcomeStyles.loop} />
+          <ThemedText style={welcomeStyles.wordmark}>apparently you.</ThemedText>
+          <ThemedText style={welcomeStyles.hero}>Apparently, you have to wait a bit.</ThemedText>
+          <ThemedText style={welcomeStyles.support}>
+            Apparently You is for ages 13 and up. Come back and see us once you&apos;re old enough — we&apos;ll be here.
+          </ThemedText>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
 
 type BasicInfoStepProps = {
   firstName: string;

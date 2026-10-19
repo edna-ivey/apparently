@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
 import { Radius } from '@/constants/design-system';
 import { Celestial, CelestialType, Panel } from '@/components/today/celestial';
+import { isAdultEligible, useAgeEligibility } from '@/data/age-eligibility';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
@@ -94,6 +95,14 @@ export default function PrivateScreen() {
   const premium = usePremiumStatus();
   const isSubscriber = premium.status === 'premium';
 
+  // Build 16: premium entitlement never substitutes for the 18+ gate on the one 'Private
+  // Private. 😈' category quiz -- a subscriber who isn't confirmed 18+ still doesn't get it
+  // listed as playable here (the quiz runner's own gate, backed by the server-side
+  // is_adult_eligible() check, is the real authorization either way -- this only controls
+  // what this screen shows).
+  const ageEligibility = useAgeEligibility();
+  const canAccessPrivatePrivate = isSubscriber && isAdultEligible(ageEligibility);
+
   // Same persisted quiz history Explore already reads from — no second completion system.
   // One useQuizResults() call (a hook, so it can't live inside the loop below) feeds every
   // open quiz card's own independent completion state; reactive, so finishing a preview and
@@ -104,7 +113,8 @@ export default function PrivateScreen() {
   }, []);
 
   const openQuizCards: OpenQuizCard[] = useMemo(() => {
-    const playableIds = isSubscriber ? [...OPEN_PRIVATE_QUIZ_IDS, ...PREMIUM_PRIVATE_QUIZ_IDS] : OPEN_PRIVATE_QUIZ_IDS;
+    const premiumIds = isSubscriber ? PREMIUM_PRIVATE_QUIZ_IDS.filter((id) => id !== 'private-private-trouble' || canAccessPrivatePrivate) : [];
+    const playableIds = [...OPEN_PRIVATE_QUIZ_IDS, ...premiumIds];
     return playableIds.map((id) => {
       const definition = getQuizDefinition(id);
       if (!definition) {
@@ -119,16 +129,33 @@ export default function PrivateScreen() {
       const lastResultTitle = completed ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
       return { id, definition, completed, lastResultTitle };
     }).filter((card): card is OpenQuizCard => card !== null);
-  }, [quizResults, isSubscriber]);
+  }, [quizResults, isSubscriber, canAccessPrivatePrivate]);
 
   const visibleQuizCards = useMemo(
     () => openQuizCards.filter((card) => selectedCategory === 'All' || card.definition.category === selectedCategory),
     [openQuizCards, selectedCategory],
   );
 
+  // Build 16: the "Private Private. 😈" filter pill itself never appears for a non-adult-
+  // eligible device -- a 13-17 year old shouldn't be able to discover the category even via
+  // its own filter chip once every entry inside it is already hidden above.
+  const visibleCategoryPills = useMemo(
+    () => CATEGORY_PILLS.filter((category) => category !== 'Private Private. 😈' || isAdultEligible(ageEligibility)),
+    [ageEligibility],
+  );
+
   const visibleLockedEntries = useMemo(
-    () => PRIVATE_LOCKED_CATALOG.filter((entry) => (!isSubscriber || !PREMIUM_PRIVATE_QUIZ_IDS.includes(entry.id)) && (selectedCategory === 'All' || entry.category === selectedCategory)),
-    [selectedCategory, isSubscriber],
+    () =>
+      PRIVATE_LOCKED_CATALOG.filter(
+        (entry) =>
+          (!isSubscriber || !PREMIUM_PRIVATE_QUIZ_IDS.includes(entry.id)) &&
+          // Build 16: every 'Private Private. 😈' teaser (not just the one real quiz behind
+          // it, 'private-private-trouble') is hidden from a non-adult-eligible device -- a
+          // 13-17 year old never sees so much as a locked tease for this category.
+          (entry.category !== 'Private Private. 😈' || isAdultEligible(ageEligibility)) &&
+          (selectedCategory === 'All' || entry.category === selectedCategory),
+      ),
+    [selectedCategory, isSubscriber, ageEligibility],
   );
 
   return (
@@ -157,7 +184,7 @@ export default function PrivateScreen() {
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
-            {CATEGORY_PILLS.map((category) => {
+            {visibleCategoryPills.map((category) => {
               const isActive = category === selectedCategory;
               return (
                 <Pressable

@@ -61,3 +61,28 @@ export const upsertProfile = async (input: UpsertProfileInput): Promise<ProfileR
   }
   return data;
 };
+
+// Deliberately separate from upsertProfile above -- age_eligibility is a one-time legal gate,
+// never a freely-editable preference (see src/data/age-eligibility.ts's own header comment).
+// This still goes through the same table-level RLS as every other profile write, but the
+// staged migration adds a BEFORE UPDATE trigger that makes this specific column immutable
+// once set, server-side -- a second call here (or a raw client PATCH bypassing this function
+// entirely) can set it ONCE from null, never change it after. Returns false (not a throw) on
+// any failure, including a rejected immutability-violation update, so a caller can treat "the
+// write didn't happen" as a normal, expected outcome rather than a crash.
+export const upsertAgeEligibility = async (ageEligibility: '13to17' | '18plus'): Promise<boolean> => {
+  if (!supabase) {
+    return false;
+  }
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return false;
+  }
+
+  const { error } = await supabase.from('profiles').upsert({ user_id: userId, age_eligibility: ageEligibility });
+  if (error) {
+    console.warn('[profile-service] upsertAgeEligibility failed:', error.message);
+    return false;
+  }
+  return true;
+};
