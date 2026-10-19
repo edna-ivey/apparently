@@ -217,18 +217,14 @@ export type ArchetypeQuizDefinition = QuizBase & {
 // archetypes x 6 Partner Energy archetypes = 36 combinations). Deliberately generic over
 // question/archetype COUNT rather than hardcoded to any one quiz's exact shape.
 //
-// ENGINEERING-ONLY as of this pass: this type and scoreDualDimensionQuiz (scoring.ts) are
-// real, tested, and ready to use, but NO quiz currently uses scoringType 'dualDimension' --
-// "What's Your Type?" was reported as fully approved, but its actual approved question/
-// answer/result copy could not be located in this repository, in docs/, or in any
-// conversation record accessible in this session (verified by direct search, including the
-// exact fragments supplied mid-session -- see the Build 16 completion report). Per explicit
-// instruction, this is reported as a content-transfer dependency rather than filled in with
-// invented or reconstructed copy. computeQuizResult/ResultDisplay/the quiz runner screen are
-// deliberately NOT yet wired to this scoringType -- there is no real content to verify that
-// wiring against, and touching the shared rendering pipeline for every other live quiz without
-// a real case to test against would be the wrong trade against "preserve working
-// functionality." That integration is the next step once real content exists.
+// "What's Your Type?" (src/data/quizzes/whats-your-type-content.ts / -results.ts) is the one
+// real quiz using scoringType 'dualDimension', with its own dedicated static route
+// (src/app/quiz/whats-your-type.tsx) rather than the generic [quizId] runner --
+// computeQuizResult/ResultDisplay/that runner screen are deliberately NOT wired to this
+// scoringType: every function that pattern-matches over QuizDefinition below assumes exactly
+// two variants and branches with a plain if/else rather than an exhaustive switch (see the next
+// comment), so a standalone route was the lower-risk integration path over touching that shared
+// pipeline for all 21 other live quizzes.
 export type QuizDimensionArchetype = {
   id: string;
   title: string;

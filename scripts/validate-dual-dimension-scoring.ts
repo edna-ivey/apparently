@@ -1,10 +1,10 @@
 // Validates the content-independent dual-dimension scoring engine (scoreDualDimensionQuiz,
-// src/data/quizzes/scoring.ts) -- built for "What's Your Type?" per the Build 16 brief, but
-// using entirely SYNTHETIC trait/question/choice ids throughout this file, never the real
-// approved archetype names or copy. That real content could not be located in this repository,
-// in docs/, or in any conversation record accessible in this session (confirmed by direct
-// search); this script proves the ENGINE is correct and ready, independent of that content
-// gap -- see the Build 16 completion report for the full content-transfer dependency note.
+// src/data/quizzes/scoring.ts) in isolation, using entirely SYNTHETIC trait/question/choice ids
+// throughout this file -- never the real "What's Your Type?" archetype names or copy. That real
+// content now exists and is registered -- see scripts/validate-whats-your-type-content.ts for
+// the content-specific coverage (60 answers, 12 individual results, 36 combinations, end-to-end
+// scoring against the real content). This script stays purely synthetic so the engine's own
+// correctness is never conflated with any one quiz's content.
 //
 // Run with: npx tsx scripts/validate-dual-dimension-scoring.ts
 
@@ -140,4 +140,4 @@ if (failures > 0) {
   process.exit(1);
 }
 console.log('\nALL dual-dimension scoring engine (independence, deterministic tie-break, missing-combination guard) VALIDATION CHECKS PASSED.');
-console.log('\nNOTE: this validates the ENGINE only, using synthetic fixtures. "What\'s Your Type?" itself remains unregistered -- its approved question/answer/result copy could not be located; see the Build 16 completion report\'s content-transfer dependency note.');
+console.log('\nNOTE: this validates the ENGINE only, using synthetic fixtures. "What\'s Your Type?" itself is implemented and registered as a real Free Explore quiz -- see scripts/validate-whats-your-type-content.ts for its own content validation.');
