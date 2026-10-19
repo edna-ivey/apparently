@@ -8,7 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
 import { Radius } from '@/constants/design-system';
 import { Celestial, CelestialType, Panel } from '@/components/today/celestial';
-import { isAdultEligible, useAgeEligibility } from '@/data/age-eligibility';
+import { isAdultEligible, setAgeEligibilityOnce, useAgeEligibility } from '@/data/age-eligibility';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
@@ -86,6 +86,11 @@ export default function PrivateScreen() {
   const topInset = useResponsiveTopInset();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
+  // Only for an account that predates the Build 16 age gate (onboarding's own age-gate step
+  // runs once at signup and sets this immediately — a device that has genuinely never been
+  // asked yet is the only way `ageEligibility` is still null here). Distinct from '13to17',
+  // which is a real, immutable answer — never re-prompted.
+  const [ageConfirmVisible, setAgeConfirmVisible] = useState(false);
 
   // Real RevenueCat entitlement truth only (never the client tester-access build flag — see
   // purchases-service.ts's useEffectivePremium correction). The pre-subscription sales pitch
@@ -136,13 +141,32 @@ export default function PrivateScreen() {
     [openQuizCards, selectedCategory],
   );
 
-  // Build 16: the "Private Private. 😈" filter pill itself never appears for a non-adult-
-  // eligible device -- a 13-17 year old shouldn't be able to discover the category even via
-  // its own filter chip once every entry inside it is already hidden above.
+  // Build 16: the "Private Private. 😈" filter pill never appears for a device confirmed
+  // 13-17 (a real, immutable answer) -- that device shouldn't be able to discover the category
+  // even via its own filter chip once every entry inside it is already hidden above. A device
+  // that predates the age gate entirely (ageEligibility still null -- never asked) still sees
+  // the pill, so it has a way to resolve that instead of being silently locked out forever;
+  // tapping it opens the retroactive confirmation modal below instead of selecting the category.
   const visibleCategoryPills = useMemo(
-    () => CATEGORY_PILLS.filter((category) => category !== 'Private Private. 😈' || isAdultEligible(ageEligibility)),
+    () => CATEGORY_PILLS.filter((category) => category !== 'Private Private. 😈' || isAdultEligible(ageEligibility) || ageEligibility === null),
     [ageEligibility],
   );
+
+  const handleCategoryPress = (category: CategoryFilter) => {
+    if (category === 'Private Private. 😈' && ageEligibility === null) {
+      setAgeConfirmVisible(true);
+      return;
+    }
+    setSelectedCategory(category);
+  };
+
+  const confirmRetroactiveAge = async (eligibility: '13to17' | '18plus') => {
+    setAgeConfirmVisible(false);
+    await setAgeEligibilityOnce(eligibility);
+    if (eligibility === '18plus') {
+      setSelectedCategory('Private Private. 😈');
+    }
+  };
 
   const visibleLockedEntries = useMemo(
     () =>
@@ -190,7 +214,7 @@ export default function PrivateScreen() {
                 <Pressable
                   key={category}
                   style={[styles.category, isActive && styles.categoryActive]}
-                  onPress={() => setSelectedCategory(category)}>
+                  onPress={() => handleCategoryPress(category)}>
                   <ThemedText style={[styles.categoryText, isActive && styles.categoryTextActive]}>{category}</ThemedText>
                 </Pressable>
               );
@@ -291,6 +315,24 @@ export default function PrivateScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={ageConfirmVisible} transparent animationType="fade" onRequestClose={() => setAgeConfirmVisible(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setAgeConfirmVisible(false)}>
+          <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
+            <ThemedText style={styles.modalEyebrow}>PRIVATE PRIVATE. 😈</ThemedText>
+            <ThemedText style={styles.modalTitle}>One quick thing.</ThemedText>
+            <ThemedText style={styles.modalBody}>This category is 18+. Are you 18 or older?</ThemedText>
+            <View style={styles.ageConfirmRow}>
+              <Pressable style={styles.modalCta} onPress={() => void confirmRetroactiveAge('18plus')}>
+                <ThemedText style={styles.modalCtaText}>Yes, I&apos;m 18+</ThemedText>
+              </Pressable>
+              <Pressable style={styles.ageConfirmSecondary} onPress={() => void confirmRetroactiveAge('13to17')}>
+                <ThemedText style={styles.ageConfirmSecondaryText}>No</ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
@@ -372,4 +414,7 @@ const styles = StyleSheet.create({
   modalBody: { color: 'rgba(255,249,245,0.75)', fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: Spacing.one },
   modalCta: { alignSelf: 'flex-start', backgroundColor: Brand.coral, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.three },
   modalCtaText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  ageConfirmRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three },
+  ageConfirmSecondary: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,249,245,0.08)', borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  ageConfirmSecondaryText: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '800' },
 });
