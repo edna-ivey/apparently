@@ -2436,3 +2436,7 @@ That is the bible. 🔥
 ## 60. BUILD 16 DEPLOYMENT STATUS (2026-10-19)
 
 **DEPLOYED (database):** Claude Code's live Supabase checks confirmed the Scoring V2 schema, age-eligibility gate and 991 quiz-choice pole awards from three applied migrations. **BUILT (iOS):** EAS Build 16 completed successfully, ID `f1e45967-7b88-434e-9aac-fcf6dd9ab0a7`. **NOT VERIFIED / NOT AUTHORIZED:** TestFlight submission, on-device acceptance testing, and hardening of the 13-argument `submit_quiz_result` PUBLIC/anon EXECUTE grant. The older 12-argument overload also needs review. Full evidence and audit notes: `docs/BUILD16_DEPLOYMENT_REVIEW_2026-10-19.md`. No new Daily content or scoring mappings published. New Daily batch remains paused pending owner direction.
+
+## 61. BUILD 16 PERMISSION HARDENING AND SUBMISSION (2026-10-19)
+
+**DEPLOYED:** Database migration `20261019020000_restrict_submit_quiz_result_execute.sql` restricted 13-argument quiz-submission RPC execution to authenticated and service roles. Live role checks confirmed anon=false and authenticated/service_role=true for both existing overloads. **SCHEDULED, NOT YET VERIFIED DISTRIBUTED:** Build 16 was submitted to the EAS iOS submission queue, ID `7df0ced8-8e1f-427c-a33b-733bf65f415a`. See `docs/BUILD16_DEPLOYMENT_REVIEW_2026-10-19.md`. No app logic, approved quiz copy, or Daily content changed.

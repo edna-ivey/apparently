@@ -21,3 +21,9 @@ Source: owner-provided Claude Code transcript, reviewed by Forge, plus direct EA
 - NOT VERIFIED: App Store Connect/TestFlight submission, device functional acceptance, security hardening.
 - NO AUTHORIZATION: Do not submit/distribute, alter live grants, change Daily production content, or modify app code without owner approval.
 - NEXT: inspect exact DB grant issue and submit path; request explicit authorization for security change or TestFlight submission. Maintain Daily batch pause.
+
+## Permission hardening and TestFlight submission, later 2026-10-19
+
+**DEPLOYED AND VERIFIED:** Migration `20261019020000_restrict_submit_quiz_result_execute.sql` revoked PUBLIC/anon EXECUTE on the 13-argument `submit_quiz_result` function, retaining authenticated and service_role access. Live `has_function_privilege` checks confirmed **anon=false, authenticated=true, service_role=true** for BOTH the 13-argument and preserved 12-argument signatures. This was a DB-only grant correction; no app recompilation required.
+
+**SUBMISSION SCHEDULED:** EAS `submit --platform ios --id f1e45967-7b88-434e-9aac-fcf6dd9ab0a7 --non-interactive --no-wait` successfully scheduled iOS submission of version 1.0.0 Build 16. Submission ID `7df0ced8-8e1f-427c-a33b-733bf65f415a`; dashboard: https://expo.dev/accounts/mekityus/projects/apparently-you/submissions/7df0ced8-8e1f-427c-a33b-733bf65f415a . **Not yet verified accepted by App Store Connect, processed, or distributed to testers.** No new Daily production content changed.
