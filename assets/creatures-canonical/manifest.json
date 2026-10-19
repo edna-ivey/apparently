@@ -1,0 +1,650 @@
+{
+  "schemaVersion": 1,
+  "canonicalVersion": "v0",
+  "authoritativeSource": "src/data/personality.ts",
+  "expectedCoreDimensions": 20,
+  "expectedCorePoles": 40,
+  "slots": [
+    "eyes",
+    "ears",
+    "wings",
+    "body",
+    "tail",
+    "headFeature",
+    "chestCrest"
+  ],
+  "canvas": {
+    "width": 1600,
+    "height": 1800,
+    "viewBox": "0 0 1600 1800",
+    "centerlineX": 798.7,
+    "pawBaselineY": 1732
+  },
+  "anchors": {
+    "leftEye": [
+      631.8,
+      408.9
+    ],
+    "rightEye": [
+      965.6,
+      408.9
+    ],
+    "noseMouth": [
+      798.7,
+      552.1
+    ],
+    "leftEarRoot": [
+      554.8,
+      205.4
+    ],
+    "rightEarRoot": [
+      1042.7,
+      205.4
+    ],
+    "leftWingRoot": [
+      636.9,
+      686.9
+    ],
+    "rightWingRoot": [
+      960.5,
+      686.9
+    ],
+    "tailRoot": [
+      426.4,
+      1476.5
+    ],
+    "headFeature": [
+      798.7,
+      115.5
+    ],
+    "chestCrest": [
+      798.7,
+      924.4
+    ]
+  },
+  "layerOrder": [
+    "tail",
+    "wings",
+    "body",
+    "ears",
+    "eyes",
+    "headFeature",
+    "chestCrest"
+  ],
+  "policy": {
+    "transparentBackground": true,
+    "runtimeTransforms": false,
+    "bodyEyesBakedIn": false,
+    "bodyEyeSockets": false,
+    "preserveSourceArt": true
+  },
+  "goldStandard": {
+    "trait": "Independent",
+    "slug": "independent",
+    "status": "canonical-existing-needs-validation",
+    "sourceVersion": "master-v2",
+    "geometry": "Registration Template v0"
+  },
+  "traits": [
+    {
+      "label": "Planner",
+      "slug": "planner",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Spontaneous",
+      "slug": "spontaneous",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Emotionally Intense",
+      "slug": "emotionally-intense",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Even-Keeled",
+      "slug": "even-keeled",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Direct",
+      "slug": "direct",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Indirect",
+      "slug": "indirect",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Vibe checker",
+      "slug": "vibe-checker",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Face value",
+      "slug": "face-value",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Protective",
+      "slug": "protective",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Hands-off",
+      "slug": "hands-off",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Adventurous",
+      "slug": "adventurous",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Comfort-seeking",
+      "slug": "comfort-seeking",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "body-only-v0",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Independent",
+      "slug": "independent",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Collaborative",
+      "slug": "collaborative",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Control",
+      "slug": "control",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Let it play out",
+      "slug": "let-it-play-out",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Practical",
+      "slug": "practical",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Idealistic",
+      "slug": "idealistic",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Sentimental",
+      "slug": "sentimental",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Thick-skinned",
+      "slug": "thick-skinned",
+      "status": "canonical-existing",
+      "slots": {
+        "eyes": "existing-v0",
+        "ears": "existing-v0",
+        "wings": "existing-v0",
+        "body": "existing-v0",
+        "tail": "existing-v0",
+        "headFeature": "existing-v0",
+        "chestCrest": "existing-v0"
+      }
+    },
+    {
+      "label": "Rule-oriented",
+      "slug": "rule-oriented",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Rule-bending",
+      "slug": "rule-bending",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Conflict-forward",
+      "slug": "conflict-forward",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Peacekeeping",
+      "slug": "peacekeeping",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Trust first",
+      "slug": "trust-first",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Verify first",
+      "slug": "verify-first",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Forgiving",
+      "slug": "forgiving",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Holds the Receipt",
+      "slug": "holds-the-receipt",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Playful",
+      "slug": "playful",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Serious",
+      "slug": "serious",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Competitive",
+      "slug": "competitive",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Cooperative",
+      "slug": "cooperative",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Curious",
+      "slug": "curious",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Decisive",
+      "slug": "decisive",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Private",
+      "slug": "private",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Open",
+      "slug": "open",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Patient",
+      "slug": "patient",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Urgent",
+      "slug": "urgent",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Ambitious",
+      "slug": "ambitious",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    },
+    {
+      "label": "Content",
+      "slug": "content",
+      "status": "pending",
+      "slots": {
+        "eyes": "missing",
+        "ears": "missing",
+        "wings": "missing",
+        "body": "missing",
+        "tail": "missing",
+        "headFeature": "missing",
+        "chestCrest": "missing"
+      }
+    }
+  ]
+}

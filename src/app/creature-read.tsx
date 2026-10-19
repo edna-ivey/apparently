@@ -3,13 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
+import { Celestial, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
+import { Brand, Fonts, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/design-system';
+import { buildCombinedCreatureReadByLabel, type CombinedCreatureRead } from '@/data/creature/creature-combined-read-copy';
 import { buildFirstFormIdentity, CREATURE_SLOT_BY_RANK, type CreatureRecipe } from '@/data/creature/creature-identity';
 import { getCreatureReadCopyByLabel, getCreatureReadPoleCopy } from '@/data/creature/creature-read-copy';
 import { loadCreatureEvolutionState, type CreatureEvolutionState } from '@/data/creature/creature-reveal-state';
@@ -21,6 +22,11 @@ import { computeProfileActivityCounts, getMyPersonalityEvidence, getMyQuizResult
 
 const AVATAR_SIZE = 180;
 const AVATAR_STAGE_SIZE = 240;
+
+// Celestial accent rotation for the mixed Creature's five part-cards — same role the old
+// PastelAccentRotation played (visually distinguish each of the five parts), rebuilt from the
+// real Brand tokens already used across the dark system rather than the light-only pastels.
+const CELESTIAL_ACCENT_ROTATION = [Brand.gold, Brand.coral, Brand.pink, Brand.violet, Brand.mint];
 
 const CREATURE_TEST_SLOT_LABEL: Record<(typeof CREATURE_SLOT_BY_RANK)[number], string> = {
   eyes: 'THE EYES',
@@ -43,19 +49,7 @@ type ReadState =
   // Genuinely no Creature yet (below First Form) -- an honest state, never a fabricated read.
   | { kind: 'not-yet' }
   | { kind: 'first-form'; name: string; recipe: CreatureRecipe; entry: ReadEntry }
-  | { kind: 'mixed'; name: string; recipe: CreatureRecipe; entries: ReadEntry[]; combinedRead: string };
-
-// Combines the top-two contributing families into one short synthesis line -- never a third-
-// trait claim, never a diagnosis. Each clause traces directly back to that pole's own Bible-
-// grounded explanation (see creature-read-copy.ts); this only joins two already-approved
-// sentences, it does not invent new meaning between them.
-const buildCombinedRead = (name: string, entries: ReadEntry[]): string => {
-  if (entries.length < 2) {
-    return `${name} is still coming together — check back as more of your answers settle in.`;
-  }
-  const [first, second] = entries;
-  return `${name} leads with ${first.traitName.toLowerCase()} and ${second.traitName.toLowerCase()} showing up the strongest — ${first.explanation[0].toLowerCase()}${first.explanation.slice(1)} And ${second.explanation[0].toLowerCase()}${second.explanation.slice(1)}`;
-};
+  | { kind: 'mixed'; name: string; recipe: CreatureRecipe; entries: ReadEntry[]; combinedRead: CombinedCreatureRead | null };
 
 export default function CreatureReadScreen() {
   const router = useRouter();
@@ -113,23 +107,30 @@ export default function CreatureReadScreen() {
 
     const mixedSnapshot = evolutionState.mixedSnapshot;
     if (mixedSnapshot) {
-      const entries: ReadEntry[] = [...mixedSnapshot.traits]
-        .sort((a, b) => a.rank - b.rank)
-        .map((trait) => {
-          const copy = getCreatureReadCopyByLabel(trait.traitName);
-          return {
-            slotLabel: CREATURE_TEST_SLOT_LABEL[trait.part],
-            traitName: trait.traitName,
-            explanation: copy.explanation,
-            apparentlyLine: copy.apparentlyLine,
-          };
-        });
+      const sortedTraits = [...mixedSnapshot.traits].sort((a, b) => a.rank - b.rank);
+      const entries: ReadEntry[] = sortedTraits.map((trait) => {
+        const copy = getCreatureReadCopyByLabel(trait.traitName);
+        return {
+          slotLabel: CREATURE_TEST_SLOT_LABEL[trait.part],
+          traitName: trait.traitName,
+          explanation: copy.explanation,
+          apparentlyLine: copy.apparentlyLine,
+        };
+      });
+      // The combined Read is authored per exact rank-1/rank-2 trait pair (creature-
+      // combined-read-copy.ts), never derived from the five part cards' explanation/
+      // apparentlyLine copy above. Only null if a mixed snapshot somehow has fewer than two
+      // ranked traits, which isComplete already guarantees cannot happen for a real snapshot.
+      const combinedRead =
+        sortedTraits.length >= 2
+          ? buildCombinedCreatureReadByLabel(sortedTraits[0].traitName, sortedTraits[1].traitName)
+          : null;
       return {
         kind: 'mixed',
         name: mixedSnapshot.name,
         recipe: mixedSnapshot.recipe,
         entries,
-        combinedRead: buildCombinedRead(mixedSnapshot.name, entries),
+        combinedRead,
       };
     }
 
@@ -155,9 +156,11 @@ export default function CreatureReadScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <BrandSignature variant="mark" />
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
             <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close" accessibilityRole="button" style={styles.closeButton}>
               <ThemedText style={styles.closeText}>×</ThemedText>
             </Pressable>
@@ -214,12 +217,16 @@ export default function CreatureReadScreen() {
                   as just the first card in the same list. */}
               <ThemedText style={styles.combinedEyebrow}>YOUR READ, COMBINED</ThemedText>
               <ThemedText style={styles.combinedName}>{readState.name}</ThemedText>
-              <View style={styles.combinedCard}>
-                <ThemedText style={styles.combinedReadText}>{readState.combinedRead}</ThemedText>
-              </View>
+              {readState.combinedRead && (
+                <View style={styles.combinedCard}>
+                  <ThemedText style={styles.combinedHeadline}>{readState.combinedRead.headline}</ThemedText>
+                  <ThemedText style={styles.combinedParagraph}>{readState.combinedRead.paragraph1}</ThemedText>
+                  <ThemedText style={styles.combinedParagraph}>{readState.combinedRead.paragraph2}</ThemedText>
+                </View>
+              )}
               <ThemedText style={styles.partsEyebrow}>THE FIVE PARTS</ThemedText>
               {readState.entries.map((entry, index) => (
-                <ReadCard key={entry.slotLabel} entry={entry} accent={PastelAccentRotation[index % PastelAccentRotation.length]} />
+                <ReadCard key={entry.slotLabel} entry={entry} accent={CELESTIAL_ACCENT_ROTATION[index % CELESTIAL_ACCENT_ROTATION.length]} />
               ))}
             </>
           )}
@@ -237,8 +244,8 @@ export default function CreatureReadScreen() {
 // distinguish it from.
 function ReadCard({ entry, accent }: { entry: ReadEntry; accent?: string }) {
   return (
-    <View style={[styles.readCard, accent ? { backgroundColor: accent, borderColor: 'transparent' } : null]}>
-      <ThemedText style={styles.readCardEyebrow}>{entry.slotLabel}</ThemedText>
+    <View style={[styles.readCard, accent ? { borderColor: `${accent}55` } : null]}>
+      <ThemedText style={[styles.readCardEyebrow, accent ? { color: accent } : null]}>{entry.slotLabel}</ThemedText>
       <ThemedText style={styles.readCardTraitName}>{entry.traitName}</ThemedText>
       <ThemedText style={styles.readCardExplanation}>{entry.explanation}</ThemedText>
       <ThemedText style={styles.readCardApparently}>{entry.apparentlyLine}</ThemedText>
@@ -247,17 +254,18 @@ function ReadCard({ entry, accent }: { entry: ReadEntry; accent?: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Surface.pageDeep },
+  container: { flex: 1, backgroundColor: '#17000F' },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
   },
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.three },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
-  closeText: { fontSize: 24, color: Brand.inkSecondary },
+  closeText: { fontSize: 26, lineHeight: 26, fontWeight: '600', color: Celestial.textSecondary },
 
   // Same atmospheric treatment as You's hero and the reveal overlay -- the Creature is the
   // editorial lede of this screen too, not a small thumbnail above a text block (the First
@@ -270,42 +278,86 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
   },
-  pageEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.one },
-  pageIntro: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', paddingHorizontal: Spacing.two },
+  pageEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+    color: Brand.gold,
+    textAlign: 'center',
+    marginTop: Spacing.one,
+  },
+  pageIntro: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', paddingHorizontal: Spacing.two },
 
   // Final-polish pass: the mixed Creature's combined-read name/card outrank the five part
-  // cards below -- a real display name (not the small tracked-out eyebrow pageEyebrow uses),
-  // a dedicated "YOUR READ, COMBINED" label, and a deeper, more elevated, more spacious card
-  // than CardStyle.base/the plain lavender tint this replaced.
-  combinedEyebrow: { ...Type.eyebrow, textAlign: 'center', marginTop: Spacing.one },
-  combinedName: { ...Type.display, fontSize: 32, lineHeight: 37, textAlign: 'center', marginTop: 2 },
+  // cards below -- a real serif display name, a dedicated "YOUR READ, COMBINED" label, and a
+  // deeper, more elevated, more spacious card than the five below it.
+  combinedEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.3,
+    color: Brand.gold,
+    textAlign: 'center',
+    marginTop: Spacing.one,
+  },
+  combinedName: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: Celestial.textPrimary,
+    fontSize: 32,
+    lineHeight: 37,
+    textAlign: 'center',
+    marginTop: 2,
+  },
   combinedCard: {
-    backgroundColor: Surface.lavender,
+    backgroundColor: 'rgba(121,100,232,0.12)',
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: '#EAE2FF',
+    borderColor: 'rgba(121,100,232,0.35)',
     padding: Spacing.five,
     marginTop: Spacing.one,
     marginBottom: Spacing.one,
-    boxShadow: '0 16px 36px rgba(121, 100, 232, 0.14)',
+    gap: Spacing.three,
   },
-  combinedReadText: { ...Type.body, color: Brand.ink, fontSize: 16, lineHeight: 24 },
+  combinedHeadline: { color: Celestial.textPrimary, fontSize: 17, lineHeight: 24, fontWeight: '700' },
+  combinedParagraph: { color: Celestial.textPrimary, fontSize: 16, lineHeight: 24, fontWeight: '400' },
   // A quiet divider label -- makes "the overall read" and "the five contributing parts" read
   // as two clearly separate sections rather than one continuous list of cards.
-  partsEyebrow: { ...Type.eyebrow, color: Brand.inkSecondary, marginTop: Spacing.two },
+  partsEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Celestial.textMuted, marginTop: Spacing.two },
 
   readCard: {
-    ...CardStyle.base,
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
     gap: Spacing.one,
   },
-  readCardEyebrow: { ...Type.eyebrow, color: Brand.pink },
-  readCardTraitName: { ...Type.displaySmall, marginTop: 2 },
-  readCardExplanation: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, marginTop: Spacing.one },
-  readCardApparently: { color: Brand.plum, fontSize: 14, lineHeight: 20, fontWeight: '700', marginTop: Spacing.one },
+  readCardEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.gold },
+  readCardTraitName: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: Celestial.textPrimary,
+    fontSize: 22,
+    lineHeight: 27,
+    marginTop: 2,
+  },
+  readCardExplanation: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, marginTop: Spacing.one },
+  readCardApparently: { color: Brand.gold, fontSize: 14, lineHeight: 20, fontWeight: '700', marginTop: Spacing.one },
 
-  stateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two, marginTop: Spacing.five },
-  stateText: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
-  eyebrow: { ...Type.eyebrow },
-  retryButton: { backgroundColor: Brand.pink, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  stateCard: {
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.five,
+  },
+  stateText: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.gold },
+  retryButton: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  retryButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
 });

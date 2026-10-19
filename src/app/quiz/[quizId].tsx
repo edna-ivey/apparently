@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { APP_URL } from '@/constants/app';
 import { Brand, Spacing } from '@/constants/theme';
+import { Celestial, CelestialType, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { getQuizDefinition, type QuizQuestion } from '@/data/quizzes';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
@@ -253,6 +253,8 @@ export default function QuizScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
@@ -316,7 +318,7 @@ export default function QuizScreen() {
 function QuizIntro({ definition, onStart }: { definition: NonNullable<ReturnType<typeof getQuizDefinition>>; onStart: () => void }) {
   return (
     <View style={styles.stepGap}>
-      <BrandSignature variant="mark" />
+      <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
       <View style={styles.introGap}>
         <ThemedText style={styles.eyebrow}>{definition.eyebrow}</ThemedText>
         <ThemedText type="title" style={styles.introTitle}>
@@ -441,6 +443,10 @@ function StandardResultCard({ result }: { result: ResultDisplay }) {
   return (
     <>
       <View style={styles.verdictCard}>
+        <View pointerEvents="none" style={styles.verdictGlow} />
+        <ThemedText style={styles.verdictSparkle} accessibilityElementsHidden importantForAccessibility="no">
+          ✦
+        </ThemedText>
         <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
         <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
         {result.resultSubtitle ? <ThemedText style={styles.verdictSubtitle}>{result.resultSubtitle}</ThemedText> : null}
@@ -476,6 +482,10 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
   const read = result.structuredRead!;
   return (
     <View style={styles.verdictCard}>
+      <View pointerEvents="none" style={styles.verdictGlow} />
+      <ThemedText style={styles.verdictSparkle} accessibilityElementsHidden importantForAccessibility="no">
+        ✦
+      </ThemedText>
       <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
       <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
 
@@ -561,18 +571,18 @@ function PrivateCuriosityCard({ onBackToPrivate }: { onBackToPrivate: () => void
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0E8DD',
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
         borderRadius: 28,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.35)',
         overflow: 'hidden',
       },
       default: {},
@@ -605,7 +615,7 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   backText: {
-    color: Brand.violet,
+    color: Brand.gold,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -617,56 +627,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 26,
     lineHeight: 26,
     fontWeight: '600',
   },
   progress: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 13,
     fontWeight: '700',
   },
   stepGap: {
     gap: Spacing.four,
   },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   introGap: {
     gap: Spacing.two,
   },
-  eyebrow: {
-    color: Brand.pink,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.3,
-  },
+  eyebrow: CelestialType.eyebrow,
+  // Build 15: unified type scale -- a quiz intro title is a witty editorial headline, same
+  // serif-italic treatment as Explore/Private's own page headlines, replacing the old 32px
+  // bold-sans heading that read as "generic oversized heading" out of step with the rest of
+  // the app.
   introTitle: {
-    color: Brand.ink,
-    fontSize: 32,
-    lineHeight: 37,
-    fontWeight: '800',
-    letterSpacing: -0.7,
+    ...CelestialType.editorialHeadline,
+    fontSize: 28,
+    lineHeight: 33,
   },
   subcopy: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '600',
   },
   meta: {
-    color: Brand.violet,
+    color: Brand.gold,
     fontSize: 13,
     fontWeight: '800',
     marginTop: Spacing.one,
   },
   introNote: {
-    color: Brand.inkSecondary,
+    color: Celestial.textMuted,
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
     marginTop: -Spacing.two,
   },
   cta: {
-    backgroundColor: Brand.pink,
+    backgroundColor: Brand.gold,
     borderRadius: 16,
     alignItems: 'center',
     paddingVertical: Spacing.three,
@@ -676,20 +684,20 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   ctaText: {
-    color: '#FFFFFF',
+    color: Brand.plum,
     fontSize: 16,
     fontWeight: '800',
   },
   secondaryCta: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Celestial.glassFill,
     borderRadius: 16,
     alignItems: 'center',
     paddingVertical: Spacing.three,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Celestial.glassBorder,
   },
   secondaryCtaText: {
-    color: Brand.violet,
+    color: Celestial.textPrimary,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -698,14 +706,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   tertiaryCtaText: {
-    color: Brand.inkSecondary,
+    color: Celestial.textMuted,
     fontSize: 14,
     fontWeight: '700',
   },
-  // The post-preview curiosity nudge — plum, distinct from the cream result cards above it,
-  // so it visibly reads as "a different room" the same way the Private portal card does.
+  // The post-preview curiosity nudge — a deeper, coral-bordered panel, distinct from the
+  // violet verdict cards above it, so it still reads as "a different room" on the dark ground.
   curiosityCard: {
-    backgroundColor: Brand.plum,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,121,95,0.3)',
     borderRadius: 24,
     padding: Spacing.four,
     gap: Spacing.two,
@@ -779,12 +789,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  // Build 15: same serif-italic question treatment Today's own Daily prompt uses -- a
+  // personality-driven question reads as personality-driven everywhere now, not bold-sans
+  // here and serif-italic there.
   questionPrompt: {
-    color: Brand.ink,
-    fontSize: 26,
-    lineHeight: 31,
-    fontWeight: '800',
-    letterSpacing: -0.6,
+    ...CelestialType.question,
+    fontSize: 24,
+    lineHeight: 30,
   },
   choiceList: {
     gap: Spacing.two,
@@ -797,13 +808,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Celestial.glassFill,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Celestial.glassBorder,
   },
   choiceCardSelected: {
-    backgroundColor: '#FFE5EF',
-    borderColor: Brand.pink,
+    backgroundColor: 'rgba(246,184,63,0.14)',
+    borderColor: Brand.gold,
   },
   choiceBadge: {
     width: 30,
@@ -811,57 +822,79 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F3FF',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   choiceBadgeSelected: {
-    backgroundColor: Brand.pink,
+    backgroundColor: Brand.gold,
   },
   choiceBadgeText: {
-    color: Brand.violet,
+    color: Celestial.textSecondary,
     fontSize: 12,
     fontWeight: '800',
   },
   choiceBadgeTextSelected: {
-    color: '#FFFFFF',
+    color: Brand.plum,
   },
   choiceText: {
     flex: 1,
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '700',
   },
   choiceCheck: {
-    color: Brand.pink,
+    color: Brand.gold,
     fontSize: 18,
     fontWeight: '800',
   },
   // The result "verdict" card is the screenshot-worthy moment — a deliberately different
   // treatment from Today's violet question card (same family, bigger occasion): violet base,
   // a large percent readout, generous padding.
+  // Build 15 "share-worthy result": kept the violet base (the app's established "big occasion"
+  // card), added a soft radial glow + a decorative sparkle so the card reads as a collectible
+  // reveal moment rather than a flat information card -- the one thing in the app a user should
+  // want to screenshot.
   verdictCard: {
+    position: 'relative',
+    overflow: 'hidden',
     backgroundColor: Brand.violet,
     borderRadius: 28,
     padding: Spacing.four,
     gap: Spacing.one,
     shadowColor: Brand.violet,
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
     elevation: 6,
+  },
+  verdictGlow: {
+    position: 'absolute',
+    top: -50,
+    right: -40,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  verdictSparkle: {
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.four,
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.55)',
   },
   verdictEyebrow: {
     color: '#DCD6FF',
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.3,
+    letterSpacing: 1.6,
   },
+  // Serif italic per the unified type scale -- the one true "verdict" moment in the app, now
+  // visually distinct from a bold-sans heading everywhere else.
   verdictTitle: {
-    color: '#FFFFFF',
-    fontSize: 30,
+    ...CelestialType.verdict,
+    fontSize: 29,
     lineHeight: 34,
-    fontWeight: '900',
-    letterSpacing: -0.6,
     marginTop: Spacing.one,
   },
   verdictSubtitle: {
@@ -917,15 +950,15 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   whyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Celestial.glassFill,
     borderRadius: 24,
     padding: Spacing.four,
     gap: Spacing.two,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Celestial.glassBorder,
   },
   whyBody: {
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
@@ -937,18 +970,18 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   traitPill: {
-    backgroundColor: '#F7F3FF',
+    backgroundColor: 'rgba(246,184,63,0.14)',
     borderRadius: 99,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
   },
   traitPillText: {
-    color: Brand.violet,
+    color: Brand.gold,
     fontSize: 13,
     fontWeight: '800',
   },
   kicker: {
-    color: Brand.inkSecondary,
+    color: Celestial.textMuted,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',

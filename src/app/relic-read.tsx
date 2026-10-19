@@ -3,12 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { RelicAvatar } from '@/components/relic/relic-avatar';
+import { Celestial, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Radius, Surface, Type } from '@/constants/design-system';
+import { Radius } from '@/constants/design-system';
 import { scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { selectRelicSlots, selectStrongestPrivateSignals } from '@/data/private-signals';
 import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
@@ -79,9 +79,11 @@ export default function RelicReadScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <BrandSignature variant="mark" />
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
             <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close" accessibilityRole="button" style={styles.closeButton}>
               <ThemedText style={styles.closeText}>×</ThemedText>
             </Pressable>
@@ -180,12 +182,13 @@ function WhySubsection({ kicker, fromLabel, body }: { kicker: string; fromLabel:
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Surface.pageDeep },
-  safeArea: { flex: 1, width: '100%', alignSelf: 'center', backgroundColor: Surface.page },
+  container: { flex: 1, backgroundColor: '#17000F' },
+  safeArea: { flex: 1, width: '100%', alignSelf: 'center', backgroundColor: Celestial.background },
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.three },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
-  closeText: { fontSize: 24, color: Brand.inkSecondary },
+  closeText: { fontSize: 26, lineHeight: 26, fontWeight: '600', color: Celestial.textSecondary },
 
   avatarStage: {
     width: RELIC_READ_AVATAR_SIZE,
@@ -195,34 +198,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
   },
-  formingNote: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', paddingHorizontal: Spacing.two },
+  formingNote: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', paddingHorizontal: Spacing.two },
 
-  sectionEyebrow: { ...Type.eyebrow, marginTop: Spacing.one },
+  sectionEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.gold, marginTop: Spacing.one },
   readCard: {
-    backgroundColor: Surface.lavender,
+    backgroundColor: 'rgba(121,100,232,0.12)',
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: '#EAE2FF',
+    borderColor: 'rgba(121,100,232,0.35)',
     padding: Spacing.five,
     gap: Spacing.two,
-    boxShadow: '0 16px 36px rgba(121, 100, 232, 0.14)',
   },
-  readLine: { ...Type.body, color: Brand.ink, fontSize: 16, lineHeight: 24 },
+  readLine: { color: Celestial.textPrimary, fontSize: 16, lineHeight: 24, fontWeight: '600' },
 
   whyGroup: { gap: Spacing.two },
-  whySubsection: { ...CardStyle.base, gap: 4 },
-  whyKicker: { ...Type.eyebrow, color: Brand.pink, fontSize: 11 },
-  whyFrom: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700', marginTop: 2 },
-  whyBody: { color: Brand.ink, fontSize: 14, lineHeight: 20, marginTop: Spacing.one },
+  whySubsection: {
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+    gap: 4,
+  },
+  whyKicker: { fontSize: 11, fontWeight: '800', letterSpacing: 1.1, color: Brand.gold },
+  whyFrom: { color: Celestial.textMuted, fontSize: 12, fontWeight: '700', marginTop: 2 },
+  whyBody: { color: Celestial.textPrimary, fontSize: 14, lineHeight: 20, marginTop: Spacing.one },
 
-  sectionCard: { ...CardStyle.base, gap: Spacing.one },
-  sectionBody: { color: Brand.ink, fontSize: 15, lineHeight: 22 },
-  shadeCard: { backgroundColor: Surface.sand },
-  tryThisCard: { backgroundColor: Surface.lavender, borderColor: '#EAE2FF' },
+  sectionCard: {
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+    gap: Spacing.one,
+  },
+  sectionBody: { color: Celestial.textPrimary, fontSize: 15, lineHeight: 22 },
+  shadeCard: { backgroundColor: 'rgba(255,121,95,0.1)', borderColor: 'rgba(255,121,95,0.3)' },
+  tryThisCard: { backgroundColor: 'rgba(121,100,232,0.12)', borderColor: 'rgba(121,100,232,0.35)' },
 
-  stateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two, marginTop: Spacing.five },
-  stateText: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
-  eyebrow: { ...Type.eyebrow },
-  retryButton: { backgroundColor: Brand.pink, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  stateCard: {
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.five,
+  },
+  stateText: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.gold },
+  retryButton: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  retryButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
 });

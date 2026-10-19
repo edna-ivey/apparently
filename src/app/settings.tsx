@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Elevation, Radius, Surface, Type } from '@/constants/design-system';
+import { Elevation, Radius, Type } from '@/constants/design-system';
+import { Celestial } from '@/components/today/celestial';
 import {
   AGE_RANGES,
   GENDER_IDENTITIES,
@@ -89,7 +89,7 @@ export default function SettingsScreen() {
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <BrandSignature variant="mark" />
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
             <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close" accessibilityRole="button" style={styles.closeButton}>
               <ThemedText style={styles.closeText}>×</ThemedText>
             </Pressable>
@@ -108,7 +108,7 @@ export default function SettingsScreen() {
                 onBlur={commitFirstName}
                 onSubmitEditing={commitFirstName}
                 placeholder="First name"
-                placeholderTextColor={Brand.inkSecondary}
+                placeholderTextColor={Celestial.textMuted}
                 style={styles.textInput}
                 autoCapitalize="words"
                 autoCorrect={false}
@@ -151,7 +151,7 @@ export default function SettingsScreen() {
                       onBlur={commitCustomGender}
                       onSubmitEditing={commitCustomGender}
                       placeholder="Optional — describe it your way"
-                      placeholderTextColor={Brand.inkSecondary}
+                      placeholderTextColor={Celestial.textMuted}
                       style={styles.textInput}
                       autoCorrect={false}
                       returnKeyType="done"
@@ -213,12 +213,12 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Surface.pageDeep },
+  container: { flex: 1, backgroundColor: '#17000F' },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: { marginVertical: 28, borderRadius: Radius.xl, boxShadow: Elevation.shell, overflow: 'hidden' },
       default: {},
@@ -226,39 +226,57 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.two },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
-  closeText: { color: Brand.inkSecondary, fontSize: 26, lineHeight: 26, fontWeight: '600' },
-  pageTitle: { ...Type.display, marginTop: Spacing.two, marginBottom: Spacing.two },
-  sectionEyebrow: { ...Type.eyebrow, marginTop: Spacing.three },
-  card: { ...CardStyle.base, gap: Spacing.three },
+  closeText: { color: Celestial.textSecondary, fontSize: 26, lineHeight: 26, fontWeight: '600' },
+  // Quiet/clean per the Bible's Settings direction — same celestial token family as every
+  // other screen (no PortalRings/CelestialWash decoration here; this surface doesn't need to
+  // compete visually), just dark glass cards instead of the old light Surface/CardStyle ones.
+  pageTitle: { ...Type.display, color: Celestial.textPrimary, marginTop: Spacing.two, marginBottom: Spacing.two },
+  sectionEyebrow: { ...Type.eyebrow, color: Brand.gold, marginTop: Spacing.three },
+  card: {
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+    gap: Spacing.three,
+  },
   fieldGroup: { gap: Spacing.two },
-  fieldLabel: { ...Type.caption, fontWeight: '700' },
+  fieldLabel: { ...Type.caption, color: Celestial.textSecondary, fontWeight: '700' },
   textInput: {
     borderWidth: 1,
-    borderColor: Surface.hairline,
+    borderColor: Celestial.glassBorder,
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.ink,
-    backgroundColor: Surface.page,
+    color: Celestial.textPrimary,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  pill: { borderRadius: Radius.pill, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, backgroundColor: Surface.page, borderWidth: 1, borderColor: Surface.hairline },
-  pillSelected: { backgroundColor: Brand.violet, borderColor: Brand.violet },
-  pillText: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
+  pill: {
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+  },
+  pillSelected: { backgroundColor: Brand.pink, borderColor: Brand.pink },
+  pillText: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '700' },
   pillTextSelected: { color: '#FFFFFF' },
   subscriptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two, flexWrap: 'wrap' },
-  subscriptionStatus: { ...Type.heading },
-  inlineCta: { backgroundColor: Brand.violet, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  inlineCtaText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  divider: { height: 1, backgroundColor: Surface.hairline },
-  restoreText: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
-  restoreMessage: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', marginTop: Spacing.one },
-  linkRow: { color: Brand.ink, fontSize: 15, fontWeight: '700' },
-  linkRowSecondary: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600', marginTop: Spacing.half },
+  subscriptionStatus: { ...Type.heading, color: Celestial.textPrimary },
+  inlineCta: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  inlineCtaText: { color: Brand.plum, fontSize: 13, fontWeight: '800' },
+  divider: { height: 1, backgroundColor: Celestial.glassBorder },
+  restoreText: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '700' },
+  restoreMessage: { color: Celestial.textMuted, fontSize: 12, fontWeight: '600', marginTop: Spacing.one },
+  linkRow: { color: Celestial.textPrimary, fontSize: 15, fontWeight: '700' },
+  linkRowSecondary: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '600', marginTop: Spacing.half },
   aboutRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  aboutLabel: { ...Type.body },
-  aboutValue: { color: Brand.ink, fontSize: 14, fontWeight: '700' },
+  aboutLabel: { ...Type.body, color: Celestial.textSecondary },
+  aboutValue: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '700' },
 });

@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
-import { Elevation, Radius, Surface } from '@/constants/design-system';
+import { Elevation, Radius } from '@/constants/design-system';
+import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/components/today/celestial';
 import { getQuizDefinition, type FreeQuizCategory } from '@/data/quizzes';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
@@ -135,8 +135,9 @@ export default function ExploreScreen() {
   const renderQuizCard = (quiz: QuizCard) => (
     <Pressable
       key={quiz.id}
-      style={[styles.quizCard, { backgroundColor: quiz.color }]}
+      style={[styles.quizCard, { borderColor: `${quiz.accent}55` }]}
       onPress={() => router.push(`/quiz/${quiz.id}`)}>
+      <View style={[styles.quizGlow, { backgroundColor: quiz.color }]} />
       <View style={styles.quizHeader}>
         <View style={[styles.quizDot, { backgroundColor: quiz.accent }]} />
         <View style={[styles.quizBadge, quiz.completed && styles.quizBadgeCompleted]}>
@@ -156,10 +157,15 @@ export default function ExploreScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="mark" />
+          {/* BrandSignature's 'mark' variant renders magnetic-loop.png, which has a baked-in
+              cream/white background (no alpha channel) -- a visible white square on this dark
+              celestial page. Plain wordmark text instead, matching Today/You's own fix. */}
+          <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
           <View style={styles.headingGroup}>
             <ThemedText style={styles.heading}>You weren&apos;t stopping at one.</ThemedText>
             <ThemedText style={styles.headingSupport}>Good. Neither were we.</ThemedText>
@@ -177,24 +183,26 @@ export default function ExploreScreen() {
               );
             })}
           </ScrollView>
-          <View style={styles.featured}>
+          <Pressable style={[Panel.shell, styles.featured]} onPress={() => router.push(`/quiz/${featuredQuizId}`)}>
+            <View style={[Panel.glow, styles.featuredGlow]} />
             <View style={styles.featuredHeader}>
-              <ThemedText style={styles.featuredEyebrow}>{featuredEyebrow}</ThemedText>
+              <ThemedText style={[Panel.eyebrow, styles.featuredEyebrow]}>{featuredEyebrow}</ThemedText>
               <View style={styles.featuredBadge}>
                 <ThemedText style={styles.featuredBadgeText}>{featuredQuiz.completed ? 'COMPLETED' : 'FREE'}</ThemedText>
               </View>
             </View>
-            <ThemedText style={styles.featuredTitle}>{featuredQuiz.title}</ThemedText>
+            <ThemedText style={styles.featuredTitle}>&ldquo;{featuredQuiz.title}&rdquo;</ThemedText>
             <ThemedText style={styles.featuredMeta}>{featuredDefinition.meta} · Personality · Free</ThemedText>
             {featuredQuiz.completed && featuredQuiz.lastResultTitle ? (
               <ThemedText style={styles.featuredLastResult}>Last result: {featuredQuiz.lastResultTitle}</ThemedText>
             ) : null}
-            <Pressable style={styles.startButton} onPress={() => router.push(`/quiz/${featuredQuizId}`)}>
+            <View style={styles.startButton}>
               <ThemedText style={styles.startText}>{featuredQuiz.completed ? 'Retake quiz →' : 'Take the quiz →'}</ThemedText>
-            </Pressable>
-          </View>
-          <Pressable style={styles.privatePortal} onPress={() => router.push('/private')}>
-            <ThemedText style={styles.privatePortalEyebrow}>APPARENTLY PRIVATE</ThemedText>
+            </View>
+          </Pressable>
+          <Pressable style={[Panel.shell, styles.privatePortal]} onPress={() => router.push('/private')}>
+            <View style={Panel.glow} />
+            <ThemedText style={[Panel.eyebrow, styles.privatePortalEyebrow]}>APPARENTLY PRIVATE</ThemedText>
             <ThemedText style={styles.privatePortalTitle}>The questions get a little more personal in here.</ThemedText>
             <ThemedText style={styles.privatePortalSupport}>One preview unlocked.</ThemedText>
             <View style={styles.privatePortalCta}>
@@ -228,16 +236,16 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Slightly deeper than the app's own cream so the app column reads as a deliberate
-    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
-    // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: '#F0E8DD',
+    // Same celestial-deeper-than-plum role index.tsx uses for its own container — a touch
+    // darker than Celestial.background so the app column reads as a deliberate object on wide
+    // web viewports. Invisible on native.
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
@@ -249,43 +257,81 @@ const styles = StyleSheet.create({
     }),
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
-  headingGroup: { gap: Spacing.one },
-  heading: { color: Brand.ink, fontSize: 35, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
-  headingSupport: { color: Brand.inkSecondary, fontSize: 15, fontWeight: '600' },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  // Build 15: the opening line is a witty editorial headline ("You weren't stopping at
+  // one.") -- serif italic per the unified type scale, noticeably smaller than the old
+  // 35px bold-sans heading so it reads as a considered voice, not a shouted banner.
+  headingGroup: { gap: 2 },
+  heading: CelestialType.editorialHeadline,
+  headingSupport: { ...CelestialType.body, marginTop: 2 },
   categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
-  category: { backgroundColor: Surface.card, borderRadius: Radius.pill, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: Surface.hairline },
+  category: {
+    backgroundColor: Celestial.glassFill,
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+  },
   categoryActive: { backgroundColor: Brand.pink, borderColor: Brand.pink },
-  categoryText: { color: Brand.ink, fontSize: 13, fontWeight: '800' },
+  categoryText: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '800' },
   categoryTextActive: { color: '#FFFFFF' },
-  featured: { backgroundColor: Brand.violet, borderRadius: 26, padding: Spacing.four, gap: Spacing.two },
+  // Build 15: replaces the old solid-violet rectangle -- the same dark-glass Panel shell every
+  // other celestial card uses, with violet as a soft accent glow rather than the whole fill.
+  // Still visually the most important card on the page (the Panel.glow + violet-tinted border
+  // give it real presence) without reading as a giant flat color slab.
+  featured: { gap: Spacing.two, borderColor: 'rgba(121,100,232,0.35)' },
+  featuredGlow: { backgroundColor: 'rgba(121,100,232,0.22)' },
   featuredHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
-  featuredEyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  featuredBadge: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
-  featuredBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  featuredTitle: { color: '#FFFFFF', fontSize: 25, lineHeight: 30, fontWeight: '800' },
-  featuredMeta: { color: '#DCD6FF', fontSize: 13, fontWeight: '600' },
+  featuredEyebrow: { color: '#C9BFFF' },
+  featuredBadge: { backgroundColor: 'rgba(121,100,232,0.22)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  featuredBadgeText: { color: '#C9BFFF', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  featuredTitle: { ...CelestialType.question, fontSize: 21, lineHeight: 27, marginTop: 2 },
+  featuredMeta: { ...CelestialType.caption, color: 'rgba(201,191,255,0.8)' },
   featuredLastResult: { color: '#F1EEFF', fontSize: 12, fontWeight: '700' },
-  startButton: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
-  startText: { color: Brand.violet, fontSize: 14, fontWeight: '800' },
+  startButton: { alignSelf: 'flex-start', backgroundColor: Brand.violet, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  startText: { ...CelestialType.button, color: '#FFFFFF' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.one },
-  sectionTitle: { color: Brand.ink, fontSize: 18, fontWeight: '800' },
+  sectionTitle: CelestialType.heading,
   quizList: { gap: Spacing.two },
-  quizCard: { minHeight: 116, borderRadius: 20, padding: Spacing.three, justifyContent: 'space-between' },
+  // Dark glass card, same language as every other celestial card — each quiz keeps its own
+  // identity via a low-opacity color wash (quizGlow) and a solid accent dot/border tint,
+  // rather than a solid pastel fill that would fight the dark ground.
+  quizCard: {
+    position: 'relative',
+    minHeight: 116,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: Spacing.three,
+    justifyContent: 'space-between',
+    backgroundColor: Celestial.glassFill,
+    overflow: 'hidden',
+  },
+  quizGlow: {
+    position: 'absolute',
+    top: -30,
+    right: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    opacity: 0.16,
+  },
   quizHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
   quizDot: { width: 12, height: 12, borderRadius: 6 },
-  quizBadge: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
-  quizBadgeCompleted: { backgroundColor: Brand.ink },
-  quizBadgeText: { color: '#1E1A26', fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
-  quizBadgeTextCompleted: { color: '#FFFFFF' },
-  quizTitle: { color: Brand.ink, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
-  quizMeta: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600' },
-  quizLastResult: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700' },
-  // The plum premium surface — visibly a different room from the pastel free cards around it.
-  // Placed between Featured and the free library, per spec — a portal, not a card in the list.
-  privatePortal: { backgroundColor: Brand.plum, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.one },
-  privatePortalEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  privatePortalTitle: { color: Brand.cream, fontSize: 19, lineHeight: 24, fontWeight: '800', marginTop: Spacing.one },
-  privatePortalSupport: { color: 'rgba(255,249,245,0.65)', fontSize: 13, fontWeight: '600' },
+  quizBadge: { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  quizBadgeCompleted: { backgroundColor: Brand.gold },
+  quizBadgeText: { color: Celestial.textSecondary, fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
+  quizBadgeTextCompleted: { color: Brand.plum },
+  quizTitle: { color: Celestial.textPrimary, fontSize: 18, lineHeight: 22, fontWeight: '800', maxWidth: 260 },
+  quizMeta: { color: Celestial.textSecondary, fontSize: 12, fontWeight: '600' },
+  quizLastResult: { color: Celestial.textMuted, fontSize: 12, fontWeight: '700' },
+  // The Private portal teaser — same Panel shell Today's Featured Quiz/Creature cards use, so
+  // it reads as a continuation of the same family rather than a different component, with its
+  // own coral accent (matching Private's own identity) instead of the shared gold.
+  privatePortal: { gap: Spacing.one, borderColor: 'rgba(255,121,95,0.3)' },
+  privatePortalEyebrow: { color: Brand.coral },
+  privatePortalTitle: { color: Celestial.textPrimary, fontSize: 19, lineHeight: 24, fontWeight: '800', marginTop: Spacing.one },
+  privatePortalSupport: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '600' },
   privatePortalCta: { alignSelf: 'flex-start', backgroundColor: Brand.coral, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
   privatePortalCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
 });

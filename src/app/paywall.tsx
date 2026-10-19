@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
+import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/components/today/celestial';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import {
   getMonthlyOffering,
@@ -84,21 +84,42 @@ export default function PaywallScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
             <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close" accessibilityRole="button" style={styles.closeButton}>
               <ThemedText style={styles.closeText}>×</ThemedText>
             </Pressable>
           </View>
 
-          <BrandSignature variant="mark" />
-
           <View style={styles.headingGroup}>
-            <ThemedText style={styles.heading}>apparently private.</ThemedText>
-            <ThemedText style={styles.headingSupport}>The questions stop being polite in here.</ThemedText>
+            <ThemedText style={styles.eyebrowTop}>👀 APPARENTLY PRIVATE</ThemedText>
+            <ThemedText style={styles.heading}>The questions stop being polite in here.</ThemedText>
             <ThemedText style={styles.headingNote}>
-              Some will gas you up. Some will clock you. Some might have you staring at the ceiling for a minute. {'\u{1F440}'}
+              Some will gas you up. Some will clock you. Some might have you staring at the ceiling for a minute.
             </ThemedText>
+          </View>
+
+          {/* Real, already-true value explanation — the actual things Private unlocks, not
+              invented marketing claims. Build 15 final copy correction: dropped the fixed
+              "Seven ... quizzes" count (Private is an evolving premium experience, not a
+              fixed bundle — a hardcoded number here would need editing every time the
+              catalog grows) in favor of benefit-driven phrasing. Still exactly matches real,
+              shipping functionality — nothing here promises unlimited content, a release
+              schedule, or a feature that doesn't exist yet. */}
+          <View style={styles.valueList}>
+            {[
+              ['👀', 'Exclusive Apparently Private quizzes, locked until you subscribe'],
+              ['🌙', 'A daily Private question, answerable only here'],
+              ['💎', 'Your Undercurrent and Relic — the identity layer Free never reaches'],
+            ].map(([icon, copy]) => (
+              <View key={copy} style={styles.valueRow}>
+                <ThemedText style={styles.valueIcon}>{icon}</ThemedText>
+                <ThemedText style={styles.valueText}>{copy}</ThemedText>
+              </View>
+            ))}
           </View>
 
           {premium.status === 'premium' && (
@@ -143,8 +164,9 @@ export default function PaywallScreen() {
               )}
 
               {offeringState.phase === 'ready' && (
-                <View style={styles.priceCard}>
-                  <ThemedText style={styles.priceEyebrow}>APPARENTLY PRIVATE</ThemedText>
+                <View style={[Panel.shell, styles.priceCard]}>
+                  <View style={[Panel.glow, styles.priceGlow]} />
+                  <ThemedText style={[Panel.eyebrow, styles.priceEyebrow]}>MONTHLY</ThemedText>
                   <View style={styles.priceRow}>
                     <ThemedText style={styles.priceValue}>{offeringState.offering.package.product.priceString}</ThemedText>
                     <ThemedText style={styles.priceUnit}>/month</ThemedText>
@@ -179,27 +201,38 @@ export default function PaywallScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Brand.plum },
+  // Already the approved dark celestial surface — unchanged value (Celestial.background ===
+  // Brand.plum), switched to the shared token for consistency only.
+  container: { flex: 1, backgroundColor: Celestial.background },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Brand.plum,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: { marginVertical: 28, borderRadius: 28, overflow: 'hidden' },
       default: {},
     }),
   },
-  content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.four },
-  topRow: { flexDirection: 'row', justifyContent: 'flex-end', minHeight: 28 },
+  content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.three },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
   closeText: { color: 'rgba(255,249,245,0.7)', fontSize: 26, lineHeight: 26, fontWeight: '600' },
-  headingGroup: { gap: Spacing.one },
-  heading: { color: Brand.cream, fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -0.7 },
-  headingSupport: { color: 'rgba(255,249,245,0.85)', fontSize: 16, lineHeight: 22, fontWeight: '700' },
-  headingNote: { color: 'rgba(255,249,245,0.65)', fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: Spacing.one },
-  priceCard: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)' },
-  priceEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  headingGroup: { gap: 4, marginTop: Spacing.two },
+  eyebrowTop: { ...CelestialType.eyebrow, color: Brand.coral },
+  // Build 15: serif italic editorial headline, same unified scale as every other page
+  // headline — "apparently private." (redundant with the eyebrow above it) dropped in favor
+  // of leading with the actual approved positioning line.
+  heading: { ...CelestialType.editorialHeadline, fontSize: 25, lineHeight: 31, marginTop: 4 },
+  headingNote: { ...CelestialType.body, marginTop: Spacing.one },
+  valueList: { gap: Spacing.two },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  valueIcon: { fontSize: 16 },
+  valueText: { ...CelestialType.body, flex: 1 },
+  priceCard: { gap: Spacing.two, borderColor: 'rgba(255,121,95,0.3)' },
+  priceGlow: { backgroundColor: 'rgba(255,121,95,0.2)' },
+  priceEyebrow: { color: Brand.coral },
   priceRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: Spacing.half },
   priceValue: { color: Brand.cream, fontSize: 36, lineHeight: 40, fontWeight: '900', letterSpacing: -0.5 },
   priceUnit: { color: 'rgba(255,249,245,0.6)', fontSize: 15, fontWeight: '700', marginBottom: 4 },
