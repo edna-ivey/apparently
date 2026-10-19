@@ -1,5 +1,6 @@
 import { familyForTraitLabel, effectForFamily } from './relic-production-config';
 import { resolveModifierStance, STANCE_BY_TRAIT, TRAIT_VOICE, type Stance } from './relic-read-content';
+import { ANCHOR_LOCKED_READ_V4 } from './relic-locked-reads';
 // Pure key/label metadata only (RELIC_TRAIT_META/COLOR_FAMILY_META/EFFECT_META) -- NOT
 // relic-assets.ts, which transitively require()'s SVG sources that only resolve inside a
 // Metro bundle. This module (and its pure-Node tests/scripts) never need the actual image
@@ -20,10 +21,14 @@ export type RelicReadSection = {
   whyBase: { objectLabel: string; traitLabel: string; body: string };
   whyColor: { familyLabel: string; traitLabel: string; body: string } | null;
   whyEffect: { effectLabel: string; traitLabel: string; body: string } | null;
-  theGift: string;
-  theShade: string;
-  theCost: string;
-  tryThis: string;
+  // null only for a locked override (see ANCHOR_LOCKED_READ_V4) whose approved copy was
+  // authored as one atomic headline + body, never decomposed into separate Gift/Shade/Cost/
+  // Try This boxes -- the renderer skips these sections entirely rather than inventing content
+  // to fill them.
+  theGift: string | null;
+  theShade: string | null;
+  theCost: string | null;
+  tryThis: string | null;
 };
 
 // Pure key -> label lookups built once from relic-trait-meta.ts's own metadata (never a second
@@ -147,6 +152,36 @@ export function synthesizeRelicRead(slots: RelicSlotAssignment): RelicReadSectio
   const colorVoice = colorKey ? TRAIT_VOICE[colorKey] : null;
   const effectVoice = effectKey ? TRAIT_VOICE[effectKey] : null;
 
+  // --- WHY YOUR RELIC LOOKS LIKE THIS -- computed identically whether or not a locked
+  // override applies below; this is the mechanical "why does it look like this" explainer,
+  // a different thing from the narrative Read, and the Creature combined-Read precedent keeps
+  // exactly this kind of per-part explanation alongside a locked combined narrative rather
+  // than replacing it. ------------------------------------------------------------------
+  const whyBase = { objectLabel: OBJECT_LABEL_BY_KEY[baseKey], traitLabel: baseVoice.label, body: baseVoice.asBase };
+  const whyColor = colorVoice && slots.colorTrait
+    ? { familyLabel: COLOR_FAMILY_LABEL_BY_KEY[familyKeyFor(colorVoice.key)], traitLabel: colorVoice.label, body: colorVoice.asColor }
+    : null;
+  const whyEffect = effectVoice && slots.effectTrait
+    ? { effectLabel: EFFECT_LABEL_BY_KEY[effectKeyFor(effectVoice.key)], traitLabel: effectVoice.label, body: effectVoice.asEffect }
+    : null;
+
+  // Locked override: approved copy authored as one atomic headline + body (see
+  // relic-locked-reads.ts), never decomposed into the combination-aware Gift/Shade/Cost/Try
+  // This shape every other trait uses -- applies whenever selfSecure (Anchor) resolves as
+  // Base, regardless of Color/Effect, and skips the rest of this function's synthesis.
+  if (baseKey === 'selfSecure') {
+    return {
+      theRead: [ANCHOR_LOCKED_READ_V4.headline, ...ANCHOR_LOCKED_READ_V4.body],
+      whyBase,
+      whyColor,
+      whyEffect,
+      theGift: null,
+      theShade: null,
+      theCost: null,
+      tryThis: null,
+    };
+  }
+
   // --- THE READ -------------------------------------------------------------------------
   const readLines: string[] = [];
   if (colorVoice) {
@@ -162,15 +197,6 @@ export function synthesizeRelicRead(slots: RelicSlotAssignment): RelicReadSectio
   }
   const modifierStance = colorKey ? resolveModifierStance(baseKey, colorKey, effectKey) : STANCE_BY_TRAIT[baseKey];
   readLines.push(`Your growth isn’t ${GROWTH_OPPOSITE_BY_STANCE[STANCE_BY_TRAIT[baseKey]]}. It’s this: ${GROWTH_ASK_BY_STANCE[modifierStance]}`);
-
-  // --- WHY YOUR RELIC LOOKS LIKE THIS -----------------------------------------------------
-  const whyBase = { objectLabel: OBJECT_LABEL_BY_KEY[baseKey], traitLabel: baseVoice.label, body: baseVoice.asBase };
-  const whyColor = colorVoice && slots.colorTrait
-    ? { familyLabel: COLOR_FAMILY_LABEL_BY_KEY[familyKeyFor(colorVoice.key)], traitLabel: colorVoice.label, body: colorVoice.asColor }
-    : null;
-  const whyEffect = effectVoice && slots.effectTrait
-    ? { effectLabel: EFFECT_LABEL_BY_KEY[effectKeyFor(effectVoice.key)], traitLabel: effectVoice.label, body: effectVoice.asEffect }
-    : null;
 
   // --- THE GIFT, THE SHADE, THE COST, TRY THIS (combination-aware) -----------------------
   let theGift = baseVoice.strength;

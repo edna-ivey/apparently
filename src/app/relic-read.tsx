@@ -151,25 +151,41 @@ function ResolvedRelicRead({ identity, read, slotCount }: { identity: ResolvedRe
         {read.whyEffect && <WhySubsection kicker={`EFFECT · ${read.whyEffect.effectLabel}`} fromLabel={read.whyEffect.traitLabel} body={read.whyEffect.body} />}
       </View>
 
-      <ThemedText style={styles.sectionEyebrow}>THE GIFT</ThemedText>
-      <View style={styles.sectionCard}>
-        <ThemedText style={styles.sectionBody}>{read.theGift}</ThemedText>
-      </View>
+      {read.theGift && (
+        <>
+          <ThemedText style={styles.sectionEyebrow}>THE GIFT</ThemedText>
+          <View style={styles.sectionCard}>
+            <ThemedText style={styles.sectionBody}>{read.theGift}</ThemedText>
+          </View>
+        </>
+      )}
 
-      <ThemedText style={styles.sectionEyebrow}>THE SHADE 😈</ThemedText>
-      <View style={[styles.sectionCard, styles.shadeCard]}>
-        <ThemedText style={styles.sectionBody}>{read.theShade}</ThemedText>
-      </View>
+      {read.theShade && (
+        <>
+          <ThemedText style={styles.sectionEyebrow}>THE SHADE 😈</ThemedText>
+          <View style={[styles.sectionCard, styles.shadeCard]}>
+            <ThemedText style={styles.sectionBody}>{read.theShade}</ThemedText>
+          </View>
+        </>
+      )}
 
-      <ThemedText style={styles.sectionEyebrow}>THE COST</ThemedText>
-      <View style={styles.sectionCard}>
-        <ThemedText style={styles.sectionBody}>{read.theCost}</ThemedText>
-      </View>
+      {read.theCost && (
+        <>
+          <ThemedText style={styles.sectionEyebrow}>THE COST</ThemedText>
+          <View style={styles.sectionCard}>
+            <ThemedText style={styles.sectionBody}>{read.theCost}</ThemedText>
+          </View>
+        </>
+      )}
 
-      <ThemedText style={styles.sectionEyebrow}>TRY THIS</ThemedText>
-      <View style={[styles.sectionCard, styles.tryThisCard]}>
-        <ThemedText style={styles.sectionBody}>{read.tryThis}</ThemedText>
-      </View>
+      {read.tryThis && (
+        <>
+          <ThemedText style={styles.sectionEyebrow}>TRY THIS</ThemedText>
+          <View style={[styles.sectionCard, styles.tryThisCard]}>
+            <ThemedText style={styles.sectionBody}>{read.tryThis}</ThemedText>
+          </View>
+        </>
+      )}
     </>
   );
 }
