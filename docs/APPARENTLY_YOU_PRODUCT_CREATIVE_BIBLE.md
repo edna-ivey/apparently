@@ -2397,3 +2397,22 @@ And Apparently Private adds:
 We don't have to be nice. We do have to be right.
 
 That is the bible. 🔥
+
+
+---
+
+## 56. OWNER DECISION ADDENDUM: DAILY FRESHNESS, SCORING AND CONTINUITY (2026-10-19)
+
+**Status: LOCKED where marked; WORKING where marked.** This later owner decision supersedes earlier conflicting per-answer scoring-cap language in this Bible. See `docs/APPARENTLY_YOU_CONTINUITY_PROTOCOL.md` for the detailed audit and backup procedure.
+
+**LOCKED: Evidence breadth.** A Daily or Private Daily answer may genuinely support any number of distinct traits/poles, without a maximum count of traits per answer. Each supported trait/pole receives at most **3 points** per answer, based on evidentiary strength. Ten genuinely supported poles may all receive awards. Never confuse the three-points-per-pole limit with a three-traits-per-answer limit. Do not fabricate mappings simply to increase coverage.
+
+**LOCKED: Freshness priority.** When newly approved Daily and Private Daily questions are published, schedule them ahead of previously scheduled repeat questions. Preserve history and rotation fallback. Implement and test priority safely before deploying new content.
+
+**WORKING: New editorial program.** Develop 90 new Free Daily and 90 new Private Daily questions, in approval batches of 15 per room. New, fun content first; subsequently audit the existing pools and retire boring, redundant or weak questions without erasing their history. Free Daily blends outrageous/funny, insightful, character-choice, this-or-that, would-you-rather, confessions and other varied formats. Private Daily must be substantially bolder, shadier, more provocative and surprising than generic relationship quizzes. Avoid overlap with existing quiz content.
+
+**NOT APPROVED:** The initial 15 Free and 15 Private Daily questions displayed in the 2026-10-19 conversation remain editorial drafts pending owner review. No publication or mapping approval is implied.
+
+**LOCKED: Durable decisions.** On each project work session with repo access, reconcile owner-approved decisions with this Bible, exact approved-content files, and Git. Record discrepancies and distinguish local code, committed code, pushed code, migrations applied, and live functionality. Preserve original approved versions. Do not assert that any update is saved or deployed without verifying it.
+
+**IMPLEMENTATION DISCREPANCY OPEN:** The current Daily editor/normalization code still imposes a three-effect cap. It conflicts with the owner decision and requires a tested code correction before new multi-trait mappings are published. The V2 schema's three-point-per-pole limit is compatible with this addendum.
