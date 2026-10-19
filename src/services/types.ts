@@ -125,6 +125,25 @@ export type PersonalityEvidenceRow = {
   created_at: string;
 };
 
+// Build 16: raw row shape of personality_pole_evidence (Scoring V2's parallel, positive-only
+// table -- see supabase/migrations/20261018010000_personality_scoring_v2_schema.sql and
+// docs/personality-scoring-v2-design.md). Snake_case DB columns, mapped to the engine's own
+// PoleEvidenceRow shape (src/data/personality-v2/scoring-engine.ts) by
+// src/services/personality-v2-service.ts -- never consumed directly by any screen.
+export type PersonalityPoleEvidenceRow = {
+  id: string;
+  user_id: string;
+  source_type: 'daily_answer' | 'quiz_result';
+  source_id: string;
+  question_stable_id: string;
+  choice_stable_id: string;
+  pole_id: string;
+  points_earned: number;
+  max_available: number;
+  scoring_version: string;
+  created_at: string;
+};
+
 // One row per daily_options row for the requested question — always all four, even at
 // answer_count 0. Returned by the get_daily_distribution(p_question_id) RPC; never derived
 // from raw per-user answer rows on the client.

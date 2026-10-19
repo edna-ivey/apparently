@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
+import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
 
 // A network failure while submitting a freshly-completed quiz must never block the result
 // screen (that already works off local state — see quiz/[quizId].tsx), but the profile
@@ -73,6 +74,14 @@ export const flushPendingQuizSubmissions = async (): Promise<void> => {
     const result = await submitQuizResultRemote(payload);
     if (!result.ok) {
       stillPending.push(payload);
+      continue;
+    }
+    // Build 16: Scoring V2 additive write, same as the primary submission path (quiz/[quizId].tsx,
+    // quiz/whats-your-type.tsx) -- a submission that failed and only succeeded on THIS later
+    // retry must still get its V2 pole evidence written, or it would be silently lost. A no-op
+    // for a quiz with no V2 calibration seeded.
+    if (payload.answers) {
+      void submitQuizPoleEvidence(payload.quizId, result.quizResultId, payload.answers);
     }
   }
 

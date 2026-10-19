@@ -38,6 +38,8 @@ import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { rankPoles, type RankedPole } from '@/data/personality-v2/scoring-engine';
+import { mergeCoreTraitsWithV2Gaps, mergePrivateSignalsWithV2Gaps } from '@/data/personality-v2/activation';
 import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
 import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
 import { RelicAvatar } from '@/components/relic/relic-avatar';
@@ -56,6 +58,7 @@ import {
   type MyCommonalityRow,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
+import { getMyPersonalityPoleEvidence, toEnginePoleEvidenceRows } from '@/services/personality-v2-service';
 
 // Celestial redesign (Option B, approved without spotlight rays): the real, approved
 // silhouette asset — same require() → Image path already established for Today's Creature
@@ -79,7 +82,13 @@ const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount:
 type RemoteYouState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
+  // Build 16: `profile` is V1's own PersonalityProfile with ONLY topTraits possibly extended
+  // by Scoring V2 gap-filling (see activation.ts) -- profile.dimensions stays pure V1, so
+  // every reader of .dimensions (selectStrongestPrivateSignals included) is completely
+  // unaffected by this. `v2Ranked` is kept alongside so the separate Private/Relic merge
+  // below (which operates on PrivateSignalTrait[], not .dimensions) can apply the same V2
+  // gap-fill rule without a second fetch.
+  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts; v2Ranked: RankedPole[] };
 
 type CommonalityState =
   | { status: 'loading' }
@@ -520,9 +529,19 @@ export default function YouScreen() {
       return;
     }
     const answers = groupEvidenceIntoAnswers(evidenceResult.data);
-    const profile = scorePersonalityProfile(answers);
+    const v1Profile = scorePersonalityProfile(answers);
     const counts = computeProfileActivityCounts(evidenceResult.data, quizResultsResult.data);
-    setRemoteState({ status: 'ready', profile, counts });
+
+    // Build 16: Scoring V2 gap-fill, additive only -- see activation.ts's own header comment.
+    // A V2 fetch failure (or simply zero V2 evidence yet) falls back to v1Profile completely
+    // unchanged -- never blocks or degrades the existing V1-only read.
+    const poleEvidenceResult = await getMyPersonalityPoleEvidence();
+    const v2Ranked = poleEvidenceResult.ok ? rankPoles(toEnginePoleEvidenceRows(poleEvidenceResult.data)) : [];
+    const profile: PersonalityProfile = poleEvidenceResult.ok
+      ? { ...v1Profile, topTraits: mergeCoreTraitsWithV2Gaps(v1Profile, v2Ranked) }
+      : v1Profile;
+
+    setRemoteState({ status: 'ready', profile, counts, v2Ranked });
   }, []);
 
   const loadCommonality = useCallback(async () => {
@@ -751,10 +770,15 @@ export default function YouScreen() {
   // approved Core mapping already contributes to profileCards above through the exact same
   // profile.dimensions — both layers read the same underlying evidence, filtered by dimension
   // type, never by source. See src/data/private-signals.ts.
-  const privateSignals = useMemo(
-    () => (remoteState.status === 'ready' ? selectStrongestPrivateSignals(remoteState.profile) : []),
-    [remoteState],
-  );
+  const privateSignals = useMemo(() => {
+    if (remoteState.status !== 'ready') {
+      return [];
+    }
+    const v1Signals = selectStrongestPrivateSignals(remoteState.profile);
+    // Build 16: same V2 gap-fill rule as profileCards/the Creature above, applied here to the
+    // simpler PrivateSignalTrait[] shape Relic's own slot selection reads -- see activation.ts.
+    return mergePrivateSignalsWithV2Gaps(v1Signals, remoteState.profile, remoteState.v2Ranked);
+  }, [remoteState]);
   const relicSlots: RelicSlotAssignment = useMemo(() => selectRelicSlots(privateSignals), [privateSignals]);
   const resolvedRelicSlotCount = [relicSlots.relicTrait, relicSlots.colorTrait, relicSlots.effectTrait].filter(Boolean).length;
   // Real Private -> Relic identity resolution (production consolidation pass) -- base object

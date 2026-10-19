@@ -15,6 +15,7 @@ import { resolveCombinationKey, scoreDualDimensionQuiz } from '@/data/quizzes/sc
 import { saveQuizResult } from '@/data/quizzes/results';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
+import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
 
 // A dedicated STATIC route (/quiz/whats-your-type) rather than a case inside the dynamic
 // [quizId].tsx runner -- Expo Router resolves a static route ahead of a same-prefix dynamic
@@ -97,7 +98,14 @@ export default function WhatsYourTypeScreen() {
       };
       void (async () => {
         const remoteResult = await submitQuizResultRemote(payload);
-        if (!remoteResult.ok) {
+        if (remoteResult.ok) {
+          // Build 16: Scoring V2 additive write -- same pattern as quiz/[quizId].tsx. This
+          // quiz's own coreAwards (whats-your-type-content.ts) are seeded into
+          // quiz_choice_pole_awards under quiz_id 'whats-your-type' (see
+          // scripts/generate-quiz-pole-award-seed-sql.ts), so this is a real write, not a
+          // no-op, once that seed migration is applied.
+          void submitQuizPoleEvidence(WHATS_YOUR_TYPE_DEFINITION.id, remoteResult.quizResultId, answers);
+        } else {
           await queuePendingQuizSubmission(payload);
         }
       })();

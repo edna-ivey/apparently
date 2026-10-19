@@ -20,6 +20,7 @@ import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width'
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { createQuizShare } from '@/services/quiz-share-service';
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
+import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
 import { useEffectivePremium } from '@/services/purchases-service';
 
 export default function QuizScreen() {
@@ -182,6 +183,15 @@ export default function QuizScreen() {
         const remoteResult = await submitQuizResultRemote(payload);
         if (remoteResult.ok) {
           setRemoteSubmitState('synced');
+          // Build 16: Scoring V2 additive write, alongside (never instead of) the
+          // submit_quiz_result completion above. Needs the real quiz_results row id that call
+          // just returned, so it can only run after that succeeds -- never blocks or affects
+          // remoteSubmitState, which already reflects the V1 completion that matters for
+          // sharing/history. A no-op for a quiz with no V2 calibration seeded; see
+          // personality-v2-service.ts.
+          if (remoteResult.quizResultId) {
+            void submitQuizPoleEvidence(definition.id, remoteResult.quizResultId, answers);
+          }
         } else {
           setRemoteSubmitState('failed');
           await queuePendingQuizSubmission(payload);

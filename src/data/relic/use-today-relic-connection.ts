@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import { getMyPersonalityEvidence, groupEvidenceIntoAnswers } from '@/services/personality-service';
+import { getMyPersonalityPoleEvidence, toEnginePoleEvidenceRows } from '@/services/personality-v2-service';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { scorePersonalityProfile } from '@/data/personality';
+import { rankPoles } from '@/data/personality-v2/scoring-engine';
+import { mergePrivateSignalsWithV2Gaps } from '@/data/personality-v2/activation';
 import { selectRelicSlots, selectStrongestPrivateSignals } from '@/data/private-signals';
 import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
 
@@ -41,7 +44,18 @@ export function useTodayRelicConnection(): TodayRelicConnection {
       }
       const answers = groupEvidenceIntoAnswers(evidenceResult.data);
       const profile = scorePersonalityProfile(answers);
-      const signals = selectStrongestPrivateSignals(profile);
+      const v1Signals = selectStrongestPrivateSignals(profile);
+      // Build 16: Scoring V2 gap-fill, additive only -- see activation.ts's own header comment
+      // for exactly what this does and doesn't change. A V2 fetch failure (or simply zero V2
+      // evidence yet, the common case right after this ships) falls back to v1Signals
+      // unchanged -- never blocks or degrades the existing V1-only Relic reveal.
+      const poleEvidenceResult = await getMyPersonalityPoleEvidence();
+      if (cancelled) {
+        return;
+      }
+      const signals = poleEvidenceResult.ok
+        ? mergePrivateSignalsWithV2Gaps(v1Signals, profile, rankPoles(toEnginePoleEvidenceRows(poleEvidenceResult.data)))
+        : v1Signals;
       const slots = selectRelicSlots(signals);
       const identity = resolveRelicIdentity(slots);
       setConnection(

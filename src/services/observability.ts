@@ -132,7 +132,9 @@ export type BackendOperation =
   | 'get_my_quiz_results'
   | 'submit_compare_response'
   | 'get_compare_result'
-  | 'ensure_anonymous_session';
+  | 'ensure_anonymous_session'
+  | 'get_my_personality_pole_evidence'
+  | 'submit_quiz_pole_evidence';
 
 export type BackendFailureContext = {
   operation: BackendOperation;
