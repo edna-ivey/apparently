@@ -52,3 +52,10 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 - 90-slot one-pass Daily workbook is a working review compilation, NOT approved release content. Preserve 428 proposed mappings and their review labels; do not publish without approval.
 - Two approved character collisions (Shuri, Cleo) remain unresolved. Daily multi-trait cap discrepancy remains open pending verified code correction.
 - No production app, database, content, or native build change was made in this documentation reconciliation.
+
+
+## Build 17 repository audit, 2026-10-20
+- Product-to-code audit saved as `docs/BUILD17_PRODUCT_CODE_AUDIT_2026-10-20.md` and linked from Bible §76.
+- Confirmed three-effect Daily cap and monthly-only purchase UI; annual/founder offer requires implementation and external store configuration review.
+- Targeted Settings check did not find account deletion. Physical-device and live-system checks remain open.
+- TypeScript and lint passed. No app code or production data changed in this audit.
