@@ -59,3 +59,10 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 - Confirmed three-effect Daily cap and monthly-only purchase UI; annual/founder offer requires implementation and external store configuration review.
 - Targeted Settings check did not find account deletion. Physical-device and live-system checks remain open.
 - TypeScript and lint passed. No app code or production data changed in this audit.
+
+
+## Owner approval and Build 18 scope, 2026-10-20
+- Owner reports Build 17 device tests completed and Build 17 fully approved. Preserve screenshot evidence when received; distinguish owner attestation from assistant-run device tests.
+- Build 18 removes three-trait/effect-count cap, retains 3 points per pole; includes approved Oct 20 editorial content only after owner review.
+- Claude handles implementation; owner handles mapping review; App Store prepublication documentation lives under `docs/app-store/`.
+- Policy/terms drafts are NOT live or final; external accounts and Apple submission remain separate verification steps.

@@ -2526,3 +2526,13 @@ That is the bible. 🔥
 ## 76. BUILD 17 PRODUCT-TO-CODE AUDIT (2026-10-20)
 
 **AUDIT ONLY, NO IMPLEMENTATION AUTHORIZATION.** Detailed findings and verification boundaries are in `docs/BUILD17_PRODUCT_CODE_AUDIT_2026-10-20.md`. Repository TypeScript and lint checks passed. Current code still truncates Daily evidence to three effects per answer, contrary to §56. Current paywall/purchase-service UI implements monthly subscription only; owner-approved annual and first-year Founding Member plans are not yet represented in that purchase flow. Account deletion control was not found in targeted Settings inspection. Build 17 physical-device checklist remains unchecked. Daily workbook remains draft-only and approved character collisions unresolved. Live Supabase, RevenueCat/App Store Connect and iPhone functionality were NOT verified in this code audit. Do not call these deployed or launch-ready without independent evidence.
+
+## 77. OWNER CONFIRMATION: BUILD 17 ACCEPTANCE AND BUILD 18 SCOPE (2026-10-20)
+
+**OWNER-REPORTED APPROVAL:** The owner states the Build 17 physical-device checklist was completed, verified, and that Build 17 is fully approved and working as expected. This supersedes the earlier `unchecked` / `not verified` status as a **reported acceptance decision**, pending attached screenshot/test evidence for the audit archive. Do not erase the original checklist or retroactively represent independent execution by the assistant.
+
+**LOCKED FOR BUILD 18:** Remove the limit of three personality traits/effects per Daily answer; retain the **maximum of three points per individual trait/pole** and only map evidence genuinely supported by the selected answer. Build 18 will include the October 20 Daily editorial work **only after the owner's mapping/copy approvals**. Draft workbook content is not automatically production approved.
+
+**BUILD 18 ENGINEERING FOCUS:** Fix Daily evidence-count limit across editors, normalization, persistence and tests; implement owner-approved monthly, annual and Founding Member first-year subscription offers with accurate renewal disclosure and Apple/RevenueCat eligibility; implement in-app account deletion with server-side data cleanup, subscription cancellation warning, and policy/terms/support links. Keep unrelated UI/identity/content unchanged. Owner will review mappings in parallel.
+
+**APP STORE DOCUMENTATION:** Pre-publication policy, terms, privacy worksheet, metadata, reviewer notes, owner action checklist and critical-path timeline are in `docs/app-store/`. These drafts are not published policies, final legal advice, or verified App Store Connect declarations. Finalize after service inventory and owner approval. Public App Store launch is a goal, not an assured date.
