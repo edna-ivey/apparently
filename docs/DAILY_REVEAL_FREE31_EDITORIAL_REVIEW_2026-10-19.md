@@ -43,3 +43,17 @@ Reveal title: Emotional Hostage Situation.
 Reveal body: They scheduled your anxiety and then missed their own appointment.
 
 **Editorial status:** A/B/E approved exact copy; C/D answers retained with reveals pending revision approval; F cut. Do not publish or change app content. Personality mappings not approved.
+
+## Subsequent owner approval of C and D revisions
+
+**OWNER APPROVED** both assistant-proposed replacements exactly as written, following presentation of C and D and the user's reply 'approve'. These approvals supersede the earlier REVISE / pending status above.
+
+**C final approved answer:** They kept correcting my grammar.
+**C final approved reveal title:** The Grammar Grudge.
+**C final approved reveal body:** Apparently, they're the grammar police, and you're a repeat offender. Nobody asked them to patrol your sentences.
+
+**D final approved answer:** Their fake humble-bragging was exhausting.
+**D final approved reveal title:** Congratulations, I Guess
+**D final approved reveal body:** We're all so proud of you. We were proud the first six times you mentioned it, too.
+
+**FINAL STATUS:** Free:31 A, B, C, D, E approved answers + reveals; F cut entirely. No production changes or mappings authorized.
