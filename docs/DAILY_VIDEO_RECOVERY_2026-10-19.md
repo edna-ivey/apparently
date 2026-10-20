@@ -88,3 +88,49 @@ Question: A mysterious button appears in your house. Which label makes you press
 - E: MEET YOUR ALTERNATE SELF
 - F: DO NOT PRESS
 Original editorial decision: check Batch 1 record.
+
+### Batch 1 Free #9 | 00:18
+Question: You're famous for exactly one thing. Pick your legacy.
+- A: An invention that changes lives.
+- B: A scandalously funny memoir.
+- C: Being the world's greatest host.
+- D: Solving a mystery nobody else could.
+- E: Creating something beautiful.
+- F: Saying the one thing everyone was thinking.
+
+### Batch 1 Free #10 | 00:20
+Question: Which social disaster could you survive with the most dignity?
+- A: Calling your boss 'Mom.'
+- B: Waving back at someone who wasn't waving at you.
+- C: Sending a screenshot to the person in it.
+- D: Laughing at a joke you didn't understand.
+- E: Forgetting someone's name mid-introduction.
+- F: Accidentally liking a photo from 2016.
+
+### Batch 1 Free #11 | 00:22
+Question: If your life were a sitcom, who are you?
+- A: The sarcastic one with perfect timing.
+- B: The responsible one keeping everyone alive.
+- C: The chaotic best friend.
+- D: The quiet one with the best one-liners.
+- E: The hopeless optimist.
+- F: The character who knows they're on a show.
+
+### Batch 1 Free #12 | 00:24
+Question: Which truth would you rather learn about yourself?
+- A: What people admire most about you.
+- B: What people misunderstand about you.
+- C: What habit is holding you back.
+- D: What you'd be amazing at if you tried.
+- E: Who you've influenced without realizing.
+- F: What future-you wishes you'd do today.
+Original interface tagged this six-answer draft Would You Rather. Preserve original as historical draft, not as a final binary question.
+
+### Batch 1 Free #14 | 00:26
+Question: What's your most unnecessary personal rule?
+- A: I must sit in my preferred spot.
+- B: Food on my plate should not touch.
+- C: I need subtitles even when I hear perfectly.
+- D: I read the menu before leaving home.
+- E: I can't start a show without knowing how many seasons.
+- F: I have a specific way the dishwasher should be loaded.
