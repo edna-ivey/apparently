@@ -28,8 +28,6 @@ import { canTransitionAdminStatus, DAILY_STATUS_LABELS } from '@/utils/admin-tra
 import { confirmAction } from '@/utils/confirm-action';
 import { formatDateTime } from '@/utils/format-date';
 
-const MAX_PERSONALITY_EFFECTS_PER_OPTION = 3;
-
 const MetaRow = ({ label, value }: { label: string; value: string }) => (
   <View style={styles.metaRow}>
     <ThemedText style={styles.metaLabel}>{label}</ThemedText>
@@ -253,9 +251,12 @@ export default function AdminReviewScreen() {
   // needed to reach +2. `direction` is the human pole she picked (1 = positive pole button,
   // -1 = negative pole button); the signed raw value stored is direction * strength, which is
   // the ONLY place a negative number gets produced — Michelle herself never chooses "-2".
+  // Build 18 (Bible §56/§77 LOCKED): no cap on how many distinct traits one answer can carry
+  // -- an answer may genuinely support any number of poles. Still exactly one effect PER
+  // dimension (never two awards for the same trait on one answer) -- that guard stays.
   const handleAddEffect = (option: DailyOptionRow, dimensionId: PersonalityDimensionId, direction: 1 | -1, strength: 1 | 2) => {
     const current = option.personality_effects ?? [];
-    if (current.length >= MAX_PERSONALITY_EFFECTS_PER_OPTION || current.some((effect) => effect.dimension === dimensionId)) {
+    if (current.some((effect) => effect.dimension === dimensionId)) {
       return;
     }
     const next = [...current, { dimension: dimensionId, value: (direction * strength) as -2 | -1 | 1 | 2 }];
@@ -330,7 +331,10 @@ export default function AdminReviewScreen() {
               </Pressable>
             );
           })}
-          {canEditContent && effects.length < MAX_PERSONALITY_EFFECTS_PER_OPTION && (
+          {/* Build 18: no arbitrary cap -- the only real ceiling is "every dimension already
+              has an effect," since handleAddEffect already refuses a second award for the
+              same dimension. */}
+          {canEditContent && effects.length < PERSONALITY_DIMENSIONS.length && (
             <Pressable style={styles.addTraitChip} onPress={() => openEffectPicker(option.id)}>
               <ThemedText style={styles.addTraitChipText}>{pickerOpen ? 'Close' : '+ Add signal'}</ThemedText>
             </Pressable>
@@ -446,7 +450,7 @@ export default function AdminReviewScreen() {
             ) : (
               <>
                 <ThemedText style={styles.effectPickerHint}>
-                  Choose a trait, then a direction and strength (up to {MAX_PERSONALITY_EFFECTS_PER_OPTION} per answer).
+                  Choose a trait, then a direction and strength. Map every trait this answer genuinely supports — no limit on how many.
                 </ThemedText>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.effectPickerScrollRow}>
                   {PERSONALITY_DIMENSIONS.map((dimension) => (
