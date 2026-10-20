@@ -77,7 +77,9 @@ const QUESTIONS: QuestionDef[] = [
 // own standalone render branch, like 'welcome', never entering STEP_ORDER's forward
 // progression at all) rather than continuing onboarding. Apparently You is 13+; see
 // src/data/age-eligibility.ts for why this is tracked completely separately from the
-// demographic AgeRange field below (personalization, not a legal gate, and already 18+-only).
+// demographic AgeRange field below (personalization only, never a legal gate -- a 13-17
+// eligible user needs an accurate bucket to pick here too, so AgeRange includes '13-17'
+// alongside the adult ranges; selecting it can never grant/deny access to anything on its own).
 type Step = 'welcome' | 'age-gate' | 'basic' | 'transition' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'final';
 const STEP_ORDER: Step[] = ['welcome', 'age-gate', 'basic', 'transition', 'q1', 'q2', 'q3', 'q4', 'q5', 'final'];
 // Every step after the standalone Welcome screen shares one chrome and one progress read —

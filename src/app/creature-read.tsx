@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
@@ -19,7 +19,12 @@ import { scorePersonalityProfile, type PersonalityProfile } from '@/data/persona
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { computeProfileActivityCounts, getMyPersonalityEvidence, getMyQuizResults, groupEvidenceIntoAnswers } from '@/services/personality-service';
-import { isSaveCreatureImageSupported, saveCreatureImageFromRef } from '@/services/save-creature-image';
+import {
+  isSaveCreatureImageSupported,
+  isShareCreatureImageSupported,
+  saveCreatureImageFromRef,
+  shareCreatureImageFromRef,
+} from '@/services/save-creature-image';
 
 const AVATAR_SIZE = 180;
 const AVATAR_STAGE_SIZE = 240;
@@ -59,6 +64,9 @@ export default function CreatureReadScreen() {
   const [profileAnswerCount, setProfileAnswerCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [evolutionState, setEvolutionState] = useState<CreatureEvolutionState | null>(null);
+  // One shared preview modal for both First Form and mixed Creatures -- opened by tapping the
+  // single primary avatar below, never a second always-visible Creature render.
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -196,26 +204,18 @@ export default function CreatureReadScreen() {
 
           {readState.kind === 'first-form' && (
             <>
-              <View style={styles.avatarStage}>
-                <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
-                <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
-              </View>
+              <TappableCreatureAvatar recipe={readState.recipe} onPress={() => setPreviewOpen(true)} />
               <ThemedText style={styles.pageEyebrow}>{readState.name.toUpperCase()}</ThemedText>
               <ThemedText style={styles.pageIntro}>
                 Your Creature is still in its First Form — built entirely from the single pattern showing up strongest right now.
               </ThemedText>
-              <SaveCreatureButton name={readState.name} recipe={readState.recipe} />
               <ReadCard entry={readState.entry} />
             </>
           )}
 
           {readState.kind === 'mixed' && (
             <>
-              <View style={styles.avatarStage}>
-                <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
-                <CreatureAvatar recipe={readState.recipe} size={AVATAR_SIZE} />
-              </View>
-              <SaveCreatureButton name={readState.name} recipe={readState.recipe} />
+              <TappableCreatureAvatar recipe={readState.recipe} onPress={() => setPreviewOpen(true)} />
               {/* Final-polish pass: the combined read is the editorial lede of this screen --
                   a real display-size name (not the small tracked-out eyebrow used elsewhere),
                   more breathing room, and a richer, more elevated surface than the five
@@ -238,7 +238,37 @@ export default function CreatureReadScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {(readState.kind === 'first-form' || readState.kind === 'mixed') && (
+        <CreaturePreviewModal
+          visible={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          name={readState.name}
+          recipe={readState.recipe}
+        />
+      )}
     </ThemedView>
+  );
+}
+
+// The ONE visible Creature on Your Read -- tappable, with a subtle cue. Opens the preview
+// modal rather than rendering a second avatar inline (the Build 16 duplicate-Creature bug came
+// from a second, always-visible export card rendered directly beneath this exact stage).
+function TappableCreatureAvatar({ recipe, onPress }: { recipe: CreatureRecipe; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="View your Creature"
+      hitSlop={8}
+      style={({ pressed }) => [styles.avatarTapTarget, pressed && styles.avatarTapTargetPressed]}
+    >
+      <View style={styles.avatarStage}>
+        <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
+        <CreatureAvatar recipe={recipe} size={AVATAR_SIZE} />
+      </View>
+      <ThemedText style={styles.tapCue}>Tap to view your Creature</ThemedText>
+    </Pressable>
   );
 }
 
@@ -259,76 +289,158 @@ function ReadCard({ entry, accent }: { entry: ReadEntry; accent?: string }) {
   );
 }
 
-// Save Creature as a Photo (Build 16). The capture target (exportCard below) is a dedicated,
-// self-contained card -- celestial background, the Creature's own calibrated avatar at its
-// real recipe, the Creature's name, a small brand mark -- never the screen itself, so the
-// saved image can never pick up navigation controls, the close button, or any other UI. What
-// the user sees here IS exactly what gets captured, so there's no surprise about what's about
-// to land in their Photos.
-type SaveState = { phase: 'idle' } | { phase: 'saving' } | { phase: 'done' } | { phase: 'error'; message: string };
+// Creature Preview (Build 17) -- an immersive, full-screen modal: dark plum celestial
+// background (matching this screen's own PortalRings/CelestialWash), the Creature large and
+// centered, its real name, a visible close button, and the two actions. The capture target
+// (exportCard below) is a dedicated, self-contained subtree -- celestial background, the
+// Creature's own calibrated avatar at its real recipe, its name, a small brand mark -- rendered
+// INSIDE this modal but never including the close button or the two action buttons (those live
+// as siblings, outside the ref'd view), so a saved/shared image can never pick up modal chrome.
+type ActionState =
+  | { phase: 'idle' }
+  | { phase: 'saving' }
+  | { phase: 'save-done' }
+  | { phase: 'save-error'; message: string }
+  | { phase: 'sharing' }
+  | { phase: 'share-error'; message: string };
 
-function SaveCreatureButton({ name, recipe }: { name: string; recipe: CreatureRecipe }) {
+function CreaturePreviewModal({
+  visible,
+  onClose,
+  name,
+  recipe,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  name: string;
+  recipe: CreatureRecipe;
+}) {
   const exportCardRef = useRef<View>(null);
-  const [saveState, setSaveState] = useState<SaveState>({ phase: 'idle' });
+  const [actionState, setActionState] = useState<ActionState>({ phase: 'idle' });
+  const { width, height } = useWindowDimensions();
 
-  const handleSave = async () => {
-    setSaveState({ phase: 'saving' });
-    const result = await saveCreatureImageFromRef(exportCardRef);
-    if (result.ok) {
-      setSaveState({ phase: 'done' });
-    } else {
-      setSaveState({ phase: 'error', message: result.message });
-    }
-  };
+  // Scales with the smaller iPhones in mind (e.g. SE-width ~375) while staying generous on
+  // larger screens -- never so large it risks clipping against the close button/action row.
+  const creatureSize = Math.min(Math.min(width, height) * 0.52, 260);
+  const glowSize = creatureSize * 1.3;
+
+  // React's documented "adjusting state when a prop changes" pattern (setState during render,
+  // not in an effect) -- a stale "Saved ✓"/error from a previous open must never greet the
+  // user on reopen, and this fires exactly once per real open/close transition.
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    setActionState({ phase: 'idle' });
+  }
 
   // Reverts "Saved ✓" back to the normal button after a moment -- a real timer, which has no
   // render-time equivalent (synchronizing with the passage of time is exactly what an effect
   // is for).
   useEffect(() => {
-    if (saveState.phase !== 'done') {
+    if (actionState.phase !== 'save-done') {
       return;
     }
-    const timeout = setTimeout(() => setSaveState({ phase: 'idle' }), 2500);
+    const timeout = setTimeout(() => setActionState({ phase: 'idle' }), 2500);
     return () => clearTimeout(timeout);
-  }, [saveState.phase]);
+  }, [actionState.phase]);
 
-  if (!isSaveCreatureImageSupported()) {
-    return null;
-  }
+  const busy = actionState.phase === 'saving' || actionState.phase === 'sharing';
+
+  const handleSave = async () => {
+    if (busy) {
+      return;
+    }
+    setActionState({ phase: 'saving' });
+    const result = await saveCreatureImageFromRef(exportCardRef);
+    setActionState(result.ok ? { phase: 'save-done' } : { phase: 'save-error', message: result.message });
+  };
+
+  const handleShare = async () => {
+    if (busy) {
+      return;
+    }
+    setActionState({ phase: 'sharing' });
+    const result = await shareCreatureImageFromRef(exportCardRef);
+    setActionState(result.ok ? { phase: 'idle' } : { phase: 'share-error', message: result.message });
+  };
 
   return (
-    <View style={styles.saveSection}>
-      <View ref={exportCardRef} collapsable={false} style={styles.exportCard}>
-        <View style={styles.exportGlowStage}>
-          <AtmosphericGlow size={220} />
-          <CreatureAvatar recipe={recipe} size={150} />
-        </View>
-        <ThemedText style={styles.exportName}>{name}</ThemedText>
-        <ThemedText style={styles.exportMark}>apparently you.</ThemedText>
-      </View>
+    <Modal visible={visible} animationType="fade" presentationStyle="overFullScreen" onRequestClose={onClose}>
+      <View style={styles.previewContainer}>
+        <SafeAreaView style={styles.previewSafeArea}>
+          <PortalRings />
+          <CelestialWash />
 
-      <Pressable
-        style={[styles.saveButton, saveState.phase === 'saving' && styles.saveButtonDisabled]}
-        onPress={() => void handleSave()}
-        disabled={saveState.phase === 'saving'}
-        accessibilityRole="button"
-        accessibilityLabel="Save Creature to Photos"
-      >
-        <ThemedText style={styles.saveButtonText}>
-          {saveState.phase === 'saving' ? 'Saving…' : saveState.phase === 'done' ? 'Saved ✓' : 'Save to Photos'}
-        </ThemedText>
-      </Pressable>
-      {saveState.phase === 'error' && <ThemedText style={styles.saveErrorText}>{saveState.message}</ThemedText>}
-    </View>
+          <View style={styles.previewTopRow}>
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityLabel="Close"
+              accessibilityRole="button"
+              style={styles.previewCloseButton}
+            >
+              <ThemedText style={styles.previewCloseText}>×</ThemedText>
+            </Pressable>
+          </View>
+
+          <View style={styles.previewCenter}>
+            <View ref={exportCardRef} collapsable={false} style={styles.exportCard}>
+              <View style={[styles.exportGlowStage, { width: glowSize, height: glowSize }]}>
+                <AtmosphericGlow size={glowSize} />
+                <CreatureAvatar recipe={recipe} size={creatureSize} />
+              </View>
+              <ThemedText style={styles.exportName}>{name}</ThemedText>
+              <ThemedText style={styles.exportMark}>apparently you.</ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.previewActionRow}>
+            {isShareCreatureImageSupported() && (
+              <View style={styles.previewActionColumn}>
+                <Pressable
+                  style={[styles.previewActionButton, styles.previewActionSecondary, busy && styles.previewActionDisabled]}
+                  onPress={() => void handleShare()}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share Creature"
+                >
+                  <ThemedText style={styles.previewActionSecondaryText}>
+                    {actionState.phase === 'sharing' ? 'Preparing…' : 'Share Creature'}
+                  </ThemedText>
+                </Pressable>
+                {actionState.phase === 'share-error' && <ThemedText style={styles.previewErrorText}>{actionState.message}</ThemedText>}
+              </View>
+            )}
+
+            {isSaveCreatureImageSupported() && (
+              <View style={styles.previewActionColumn}>
+                <Pressable
+                  style={[styles.previewActionButton, busy && styles.previewActionDisabled]}
+                  onPress={() => void handleSave()}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save Creature to Photos"
+                >
+                  <ThemedText style={styles.previewActionText}>
+                    {actionState.phase === 'saving' ? 'Saving…' : actionState.phase === 'save-done' ? 'Saved ✓' : 'Save to Photos'}
+                  </ThemedText>
+                </Pressable>
+                {actionState.phase === 'save-error' && <ThemedText style={styles.previewErrorText}>{actionState.message}</ThemedText>}
+              </View>
+            )}
+          </View>
+        </SafeAreaView>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  saveSection: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   // The exact capture target (react-native-view-shot) -- solid background (never relies on the
   // screen's own PortalRings/CelestialWash decorations, which wouldn't be included in this
   // narrow capture region), the Creature's real calibrated avatar, its name, a small brand
-  // mark. Nothing else -- no nav, no buttons, no debug UI.
+  // mark. Nothing else -- no nav, no buttons, no debug UI. Rendered inside CreaturePreviewModal
+  // only -- never a second, always-visible copy on the main scroll (that was the Build 16 bug).
   exportCard: {
     width: 300,
     alignItems: 'center',
@@ -340,7 +452,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.one,
   },
-  exportGlowStage: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  exportGlowStage: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   exportName: {
     fontFamily: Fonts?.serif,
     fontStyle: 'italic',
@@ -352,17 +464,45 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   exportMark: { color: Celestial.textMuted, fontSize: 13, fontWeight: '800', letterSpacing: -0.2, marginTop: Spacing.one },
-  saveButton: {
+
+  // Creature Preview modal -- full-bleed dark plum celestial background, matching this
+  // screen's own container/safeArea treatment exactly.
+  previewContainer: { flex: 1, backgroundColor: '#17000F' },
+  previewSafeArea: { flex: 1, backgroundColor: Celestial.background },
+  previewTopRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.four, paddingTop: Spacing.two, minHeight: 44 },
+  previewCloseButton: { minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  previewCloseText: { fontSize: 30, lineHeight: 30, fontWeight: '600', color: Celestial.textSecondary },
+  previewCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.four },
+  previewActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.five,
+  },
+  previewActionColumn: { alignItems: 'center', gap: Spacing.one, flex: 1, maxWidth: 200 },
+  previewActionButton: {
     backgroundColor: Brand.gold,
     borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    minWidth: 160,
+    width: '100%',
     alignItems: 'center',
   },
-  saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
-  saveErrorText: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', maxWidth: 260 },
+  // Share sits beside Save as a secondary (glass) action -- two equally-sized, non-overlapping
+  // buttons, Save kept visually primary (solid gold) since it's the more common action.
+  previewActionSecondary: { backgroundColor: 'rgba(255,249,245,0.1)', borderWidth: 1, borderColor: Celestial.glassBorder },
+  previewActionDisabled: { opacity: 0.6 },
+  previewActionText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  previewActionSecondaryText: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '800' },
+  previewErrorText: { color: Celestial.textSecondary, fontSize: 12, lineHeight: 16, textAlign: 'center' },
+
+  // The tappable primary avatar on Your Read -- a faint press feedback plus the "Tap to view"
+  // cue directly beneath it.
+  avatarTapTarget: { alignItems: 'center', gap: Spacing.one },
+  avatarTapTargetPressed: { opacity: 0.85 },
+  tapCue: { color: Celestial.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
 
   container: { flex: 1, backgroundColor: '#17000F' },
   safeArea: {
