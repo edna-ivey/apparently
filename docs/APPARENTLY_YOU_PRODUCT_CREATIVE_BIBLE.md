@@ -2495,4 +2495,14 @@ That is the bible. 🔥
 
 **13-17 AGE RANGE:** confirmed present and selectable in both onboarding and Settings via the single shared `AGE_RANGES` array (`src/data/onboarding.ts`) — the two screens read the same source, so they cannot drift apart. **CRITICAL BOUNDARY REVERIFIED:** this is a demographic field only. Settings does not import anything from the separate, immutable age-eligibility module and cannot reach it; selecting an age range writes only the `ageRange` profile field through the ordinary profile-update path. The 13+/18+ eligibility gate controlling Apparently Private remains entirely separate, set once at onboarding's age-gate step, and unaffected by any later age-range edit.
 
-**STATUS:** implemented and automated-validated locally (`scripts/validate-creature-preview-photo-and-age-range.ts`, full lint/typecheck/validator suite green). **NOT YET VERIFIED ON A PHYSICAL DEVICE** — see the Build 17 completion report for the exact device checklist. No EAS build, TestFlight submission, or production database change performed as part of this entry; awaiting owner review.
+**STATUS:** implemented and automated-validated locally (`scripts/validate-creature-preview-photo-and-age-range.ts`, full lint/typecheck/validator suite green). No production database change performed. No unrelated content (Daily, personality scoring, Creature identity, What's Your Type?, subscriptions/pricing) modified.
+
+## 74. BUILD 17 EAS BUILD AND TESTFLIGHT SUBMISSION (2026-10-20)
+
+**BUILT.** EAS iOS build `37749053-3eed-4173-816b-ed07ccdafb3e`, profile `testflight`, status FINISHED. Version 1.0.0, build number 17, from commit `8a42ace` (verified by matching `gitCommitHash` on the build record). Artifact: https://expo.dev/artifacts/eas/kHRzHuVYwUT3FPISWnLgVYcXgdjk8mjHdyMJuAFndcs.ipa. Build log: https://expo.dev/accounts/mekityus/projects/apparently-you/builds/37749053-3eed-4173-816b-ed07ccdafb3e.
+
+**SUBMITTED.** EAS submission `467363e7-f309-4438-9950-9ea96d4edfd7`, status FINISHED (EAS successfully handed the exact Build 17 artifact off to Apple — submitted by explicit build ID, not `--latest`, to remove any ambiguity). ASC App ID `6809013466`.
+
+**APPLE PROCESSING CONFIRMED** via `eas submit:status`: build **1.0.0 (17)** now appears in App Store Connect's TestFlight list — **internal: in beta testing** (internal testers can install now), **external: ready for beta submission** (external/public TestFlight distribution has NOT been submitted — that is a separate, not-yet-taken step). Build 16 (1.0.0 (16)) remains the most recent build previously fully distributed to both internal and external testers.
+
+**NOT DONE, NOT AUTHORIZED THIS PASS:** submitting Build 17 for external beta review/distribution. **NOT YET VERIFIED:** any physical-device testing of the three Build 17 fixes — see `docs/BUILD17_DEVICE_TEST_CHECKLIST_2026-10-19.md` (unchecked). No Daily content, personality scoring, Creature identity/evolution, What's Your Type?, subscriptions/pricing, or database migrations touched.
