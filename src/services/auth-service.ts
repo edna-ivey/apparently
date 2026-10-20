@@ -81,6 +81,23 @@ export const ensureAnonymousSession = async (): Promise<Session | null> => {
   return ensureAnonymousSessionPromise;
 };
 
+// Build 18: clears the LOCAL session cache after the account it belongs to has already been
+// deleted server-side (see account-deletion-service.ts) -- the anonymous JWT would fail on
+// its own next use anyway (the user row behind it is gone), but calling this explicitly
+// clears the SDK's own cached token/session immediately rather than leaving it to discover
+// that on its next network call. Kept here, not in account-deletion-service.ts, because this
+// module is the only place that talks to supabase.auth directly.
+export const clearLocalSession = async (): Promise<void> => {
+  if (!supabase) {
+    return;
+  }
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.warn('[auth-service] clearLocalSession threw:', error);
+  }
+};
+
 // Returns an unsubscribe function, always — a no-op one when Supabase isn't configured, so
 // callers never need to branch on whether Supabase is available before cleaning up.
 export const subscribeToAuthChanges = (callback: (session: Session | null) => void): (() => void) => {

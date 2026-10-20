@@ -134,7 +134,8 @@ export type BackendOperation =
   | 'get_compare_result'
   | 'ensure_anonymous_session'
   | 'get_my_personality_pole_evidence'
-  | 'submit_quiz_pole_evidence';
+  | 'submit_quiz_pole_evidence'
+  | 'delete_account';
 
 export type BackendFailureContext = {
   operation: BackendOperation;

@@ -20,6 +20,8 @@ import {
 } from '@/data/onboarding';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { getSubscriptionManagementUrl, restorePurchases, usePremiumStatus } from '@/services/purchases-service';
+import { deleteAccount } from '@/services/account-deletion-service';
+import { confirmAction } from '@/utils/confirm-action';
 
 const SUPPORT_EMAIL = 'edna.tyus@gmail.com';
 
@@ -88,6 +90,30 @@ export default function SettingsScreen() {
 
   const appVersion = Constants.expoConfig?.version ?? '—';
   const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? '—';
+
+  // Build 18: in-app account deletion. 'deleting'/'error' only -- there is no local success
+  // state to show, because a successful deletion immediately clears local data/session and
+  // the (tabs) layout's own existing onboarding-incomplete guard takes the user back to
+  // onboarding (see src/app/(tabs)/_layout.tsx) -- the navigation away IS the success state.
+  const [deleteState, setDeleteState] = useState<{ phase: 'idle' | 'deleting' | 'error'; message?: string }>({ phase: 'idle' });
+
+  const handleDeleteAccount = async () => {
+    setDeleteState({ phase: 'deleting' });
+    const result = await deleteAccount();
+    if (!result.ok) {
+      setDeleteState({ phase: 'error', message: result.message });
+      return;
+    }
+    router.replace('/');
+  };
+
+  const confirmDeleteAccount = () => {
+    confirmAction(
+      'This permanently deletes your Apparently account and everything saved to it — quiz results, Daily history, personality evidence, and your Creature and Relic progress. This cannot be undone.\n\nThis does NOT cancel an active Apple subscription. Manage or cancel that separately before or after deleting your account.',
+      () => void handleDeleteAccount(),
+      { title: 'Delete your account?', confirmLabel: 'Delete Account' },
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -197,6 +223,45 @@ export default function SettingsScreen() {
               <ThemedText style={styles.linkRow}>Contact Us</ThemedText>
               <ThemedText style={styles.linkRowSecondary}>{SUPPORT_EMAIL}</ThemedText>
             </Pressable>
+            <View style={styles.divider} />
+            <Pressable onPress={() => router.push('/privacy-policy')}>
+              <ThemedText style={styles.linkRow}>Privacy Policy</ThemedText>
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable onPress={() => router.push('/terms-of-use')}>
+              <ThemedText style={styles.linkRow}>Terms of Use</ThemedText>
+            </Pressable>
+          </View>
+
+          {/* --- ACCOUNT --- */}
+          <ThemedText style={styles.sectionEyebrow}>ACCOUNT</ThemedText>
+          <View style={styles.card}>
+            <ThemedText style={styles.dangerExplainer}>
+              Deleting your account permanently removes everything saved to it — quiz results, Daily history, personality evidence, and your
+              Creature and Relic progress. This can&apos;t be undone.
+            </ThemedText>
+            {premium.status === 'premium' && (
+              <ThemedText style={styles.dangerExplainer}>
+                Deleting your account does not cancel your Apple subscription.{' '}
+                {managementUrl && Platform.OS !== 'web' ? (
+                  <ThemedText style={styles.inlineLink} onPress={() => void Linking.openURL(managementUrl)}>
+                    Manage it here
+                  </ThemedText>
+                ) : (
+                  'Manage or cancel it in iOS Settings.'
+                )}
+                {' '}before or after deleting your account.
+              </ThemedText>
+            )}
+            <Pressable
+              disabled={deleteState.phase === 'deleting'}
+              onPress={confirmDeleteAccount}
+              style={[styles.dangerButton, deleteState.phase === 'deleting' && styles.dangerButtonDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Account">
+              <ThemedText style={styles.dangerButtonText}>{deleteState.phase === 'deleting' ? 'Deleting…' : 'Delete Account'}</ThemedText>
+            </Pressable>
+            {deleteState.phase === 'error' && deleteState.message && <ThemedText style={styles.errorText}>{deleteState.message}</ThemedText>}
           </View>
 
           {/* --- ABOUT --- */}
@@ -284,4 +349,18 @@ const styles = StyleSheet.create({
   aboutRow: { flexDirection: 'row', justifyContent: 'space-between' },
   aboutLabel: { ...Type.body, color: Celestial.textSecondary },
   aboutValue: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '700' },
+  dangerExplainer: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 19 },
+  inlineLink: { color: Brand.gold, fontWeight: '700' },
+  dangerButton: {
+    alignSelf: 'flex-start',
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: 'rgba(255,80,80,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,80,80,0.4)',
+  },
+  dangerButtonDisabled: { opacity: 0.6 },
+  dangerButtonText: { color: '#FF6B6B', fontSize: 14, fontWeight: '800' },
+  errorText: { color: '#FF6B6B', fontSize: 13, fontWeight: '600' },
 });

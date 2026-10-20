@@ -112,7 +112,13 @@ assert(
   'the Support Contact Us action uses the exact required temporary mailto address (edna.tyus@gmail.com)',
 );
 assert(/Constants\.expoConfig\?\.version/.test(settingsSource) && /Constants\.expoConfig\?\.ios\?\.buildNumber/.test(settingsSource), 'About shows the real app version and build number, never hardcoded');
-assert(!/Privacy Policy|Terms of Service|Terms & Conditions/i.test(settingsSource), 'no invented Privacy Policy/Terms text or dead legal links were added');
+// Build 18 correction: Privacy Policy/Terms of Use links were later explicitly requested and
+// added (Apple account-deletion/subscription-disclosure requirements) -- this Build 8 Pass 1
+// check originally guarded against an INVENTED/dead link existing before that was ever asked
+// for. Now that it has been, the real check is that the links are REAL in-app routes, never a
+// dead external URL -- see scripts/validate-account-deletion.ts for the full verification of
+// that (real route components, draft-status disclosed honestly).
+assert(/router\.push\('\/privacy-policy'\)/.test(settingsSource) && /router\.push\('\/terms-of-use'\)/.test(settingsSource), 'Privacy Policy/Terms of Use link to real in-app routes, not an invented or dead external URL');
 
 // ============================================================================================
 // 3. ONBOARDING STORE -- updateUserProfile writes the SAME storage/shape and stays reactive
