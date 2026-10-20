@@ -22,7 +22,8 @@ export async function saveCreatureImageFromRef(viewRef: React.RefObject<View | n
   let uri: string;
   try {
     uri = await captureRef(viewRef, { format: 'png', quality: 1 });
-  } catch {
+  } catch (error) {
+    console.error('[CreaturePhoto] capture failed', error);
     return { ok: false, reason: 'capture-failed', message: 'We couldn’t capture your Creature just now. Try again?' };
   }
 
@@ -41,7 +42,8 @@ export async function saveCreatureImageFromRef(viewRef: React.RefObject<View | n
 
   try {
     await MediaLibrary.saveToLibraryAsync(uri);
-  } catch {
+  } catch (error) {
+    console.error('[CreaturePhoto] photo library save failed', { uri, error });
     return { ok: false, reason: 'save-failed', message: 'That save didn’t go through. Try again?' };
   }
 

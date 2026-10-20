@@ -13,9 +13,9 @@ import { getProfile, upsertProfile } from '@/services/profile-service';
 // two ("YOU SAID: independent. APPARENTLY: your last 42 answers disagree.") but that
 // comparison doesn't exist yet — this module only stores the raw, original snapshots.
 
-export type AgeRange = '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+';
+export type AgeRange = '13-17' | '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+';
 
-export const AGE_RANGES: AgeRange[] = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+export const AGE_RANGES: AgeRange[] = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 export type GenderIdentity = 'Woman' | 'Man' | 'Nonbinary' | 'Another identity' | 'Prefer not to say';
 
