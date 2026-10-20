@@ -1,0 +1,234 @@
+{
+  "free:0": [
+    [
+      [
+        "boundary_holding_approval_seeking",
+        2,
+        "Would mute other people rather than endure unwanted interaction"
+      ],
+      [
+        "duty_first_self_preserving",
+        -1,
+        "Chooses personal relief from an interaction"
+      ]
+    ],
+    [
+      [
+        "trust_verify",
+        -3,
+        "Wants direct access to whether others are lying"
+      ],
+      [
+        "control_allowing",
+        1,
+        "Prefers certainty before deciding what to believe"
+      ]
+    ],
+    [
+      [
+        "adventure_comfort",
+        2,
+        "Chooses teleportation rather than staying in an awkward situation"
+      ],
+      [
+        "duty_first_self_preserving",
+        -2,
+        "Prioritizes escaping personal discomfort"
+      ]
+    ],
+    [
+      [
+        "social_attunement",
+        3,
+        "Wants to sense the emotional atmosphere before entering"
+      ],
+      [
+        "planner_spontaneous",
+        1,
+        "Prefers advance information before engaging"
+      ]
+    ],
+    [
+      [
+        "control_allowing",
+        2,
+        "Wants the power to undo a sentence"
+      ],
+      [
+        "reflective_reactive",
+        1,
+        "Recognizes past words may need reconsideration"
+      ]
+    ],
+    [
+      [
+        "direct_indirect",
+        2,
+        "Wants others confronted with how they sound"
+      ],
+      [
+        "supportive_challenging",
+        -2,
+        "Favors uncomfortable feedback over soothing agreement"
+      ]
+    ]
+  ],
+  "free:34": [
+    [
+      [
+        "private_open",
+        2,
+        "Deliberately keeps communication unread"
+      ],
+      [
+        "independent_collaborative",
+        1,
+        "Prefers to interact on their own schedule"
+      ],
+      [
+        "initiating_responsive",
+        -1,
+        "Waits to respond rather than initiating"
+      ]
+    ],
+    [
+      [
+        "direct_indirect",
+        -2,
+        "Pretends not to hear rather than saying no"
+      ],
+      [
+        "boundary_holding_approval_seeking",
+        1,
+        "Declines an unwanted interaction"
+      ]
+    ],
+    [
+      [
+        "forgiving_receipts",
+        -3,
+        "Explicitly keeps score despite saying it is over"
+      ],
+      [
+        "gives_freely_keeps_score",
+        -2,
+        "Tracks what others have done"
+      ]
+    ],
+    [
+      [
+        "patient_urgent",
+        -2,
+        "Interrupts before the other person finishes"
+      ],
+      [
+        "initiating_responsive",
+        2,
+        "Pushes own thought into the conversation"
+      ],
+      [
+        "perspective_taking_self_referencing",
+        -2,
+        "Centers own urgency over the speaker"
+      ]
+    ],
+    [
+      [
+        "supportive_challenging",
+        -2,
+        "Offers unsolicited correction or advice"
+      ],
+      [
+        "direct_indirect",
+        2,
+        "Says their view without being asked"
+      ],
+      [
+        "initiating_responsive",
+        2,
+        "Starts the advice exchange unprompted"
+      ]
+    ],
+    [
+      [
+        "accountability_defensiveness",
+        -2,
+        "Complains but avoids taking responsibility to fix the issue"
+      ],
+      [
+        "reflective_reactive",
+        -1,
+        "Expresses frustration without reflective follow-through"
+      ]
+    ]
+  ],
+  "private:32": [
+    [
+      [
+        "competitive_cooperative",
+        2,
+        "Feels relief at another person's setback"
+      ]
+    ],
+    [
+      [
+        "competitive_cooperative",
+        2,
+        "Explicitly envies a friend's achievement"
+      ],
+      [
+        "self_secure_reassurance",
+        -1,
+        "Their own standing is unsettled by comparison"
+      ]
+    ],
+    [
+      [
+        "forgiving_receipts",
+        -2,
+        "Still emotionally tracks how someone wronged them"
+      ],
+      [
+        "repair_punishing",
+        -2,
+        "Feels satisfaction at the other person's suffering"
+      ]
+    ],
+    [
+      [
+        "duty_first_self_preserving",
+        -2,
+        "Feels depleted by other people's needs"
+      ],
+      [
+        "boundary_holding_approval_seeking",
+        1,
+        "Recognizes need for personal limits"
+      ]
+    ],
+    [
+      [
+        "competitive_cooperative",
+        2,
+        "Internally ranks themselves above someone else"
+      ],
+      [
+        "perspective_taking_self_referencing",
+        -2,
+        "Centers their own status despite the other's trust"
+      ]
+    ],
+    [
+      [
+        "competitive_cooperative",
+        2,
+        "Dislikes seeing someone they underestimated succeed"
+      ],
+      [
+        "accountability_defensiveness",
+        -1,
+        "Has difficulty accepting being wrong about them"
+      ]
+    ]
+  ]
+}

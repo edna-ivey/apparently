@@ -158,6 +158,11 @@ def mapping(ans):
   # prioritize stronger explicit evidence; do not award both poles on the same dimension
   if dim not in out or abs(score)>abs(out[dim][0]):out[dim]=(score,m.group(0))
  return [(dim,score,ev) for dim,(score,ev) in out.items()]
+manual_mappings=json.loads((D/'DAILY_HAND_REVIEWED_MAPPING_EXAMPLES_2026-10-20.json').read_text())
+# Bespoke editorial reads supersede mechanical draft reads, but never owner-approved reveals.
+custom_reads={}
+for path in sorted(D.glob('DAILY_CUSTOM_REVEALS_*_2026-10-20.json')):
+ custom_reads.update(json.loads(path.read_text()))
 # Draft reads are NOT represented as recovered copy or approved copy.
 # Build distinct titles from answer-specific text, and give a short interpretation, with clear proposal label.
 def draft_read(q,ans,letter):
@@ -200,7 +205,7 @@ lines=[
 '- Character/song duplicates and draft quality must be audited before publication. Existing code limitations do not change the owner’s no-cap editorial mapping instruction.',
 '- KEEP refers to concept approval only. CUT means do not publish. This file does NOT authorize app, database, scoring, or scheduling changes.',
 '',
-'## Contents','- [Free Dailies](#free-dailies)','- [Apparently Private Dailies](#apparently-private-dailies)','',
+'## Your one-pass review priorities','1. **Check all Batch 2 answer choices** (Free #15–29, Private #15–29 excluding owner CUTs). Those 27 sets are fresh proposals because the original options were not visible in the recording or saved sources.','2. **Scan the reveal titles and bodies** for voice. Exactly 16 reveals (Free #30, #31, #34) are already owner-approved. Other reads are proposals.','3. **Scan the mapping evidence** for each answer. Three questions have individually reasoned mappings; the remaining mappings are explicitly rough candidates, and zero awards are shown where no confident evidence was found. No fixed trait-count limit applies.','4. **Resolve five character collisions** listed in DAILY_COLLISION_AUDIT_2026-10-20.md. Two conflicts involve only previously owner-approved options, so neither is silently changed.','5. **Flag by Daily ID and answer letter**. All four layers appear together, so no separate approval rounds are needed.','','## Contents','- [Free Dailies](#free-dailies)','- [Apparently Private Dailies](#apparently-private-dailies)','',
 ]
 for kind,heading in [('free','Free Dailies'),('private','Apparently Private Dailies')]:
  lines+=['## '+heading,'']
@@ -217,11 +222,13 @@ for kind,heading in [('free','Free Dailies'),('private','Apparently Private Dail
    continue
   for l,a in opts:
    ar=approved.get((n,l)) if kind=='free' else None
-   title,body=ar if ar else draft_read(q,a,l)
+   title,body=ar if ar else (tuple(custom_reads[f'{kind}:{n}']['ABCDEF'.index(l)]) if f'{kind}:{n}' in custom_reads else draft_read(q,a,l))
    lines += [f'#### {l}. {a}',f'**Reveal title:** {title}',f'**Reveal body:** {body}',f'**Reveal status:** {"EXACT OWNER APPROVAL" if ar else "NEW UNAPPROVED FORGE DRAFT"}']
-   ms=mapping(a)
+   hand=f'{kind}:{n}' in manual_mappings
+   ms=manual_mappings[f'{kind}:{n}']['ABCDEF'.index(l)] if hand else mapping(a)
    if ms:
-    lines += ['**Mapping [PROPOSED, NOT APPROVED]:** '+ '; '.join(f'**{dim} {score:+d}** (evidence: “{ev}”)' for dim,score,ev in ms)+'.']
+    level='HAND-REASONED PROPOSAL' if hand else 'ROUGH LEXICAL CANDIDATES, NEED HUMAN REVIEW'
+    lines += [f'**Mapping [{level}, NOT APPROVED]:** '+ '; '.join(f'**{dim} {score:+d}** (reason: {ev})' for dim,score,ev in ms)+'.']
    else:
     lines += ['**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.']
    lines+=['']
@@ -229,5 +236,6 @@ lines+=['## Pre-publication editorial blockers','- Owner must approve all new Ba
 out=D/'DAILY_ONE_PASS_FULL_WORKBOOK_2026-10-20.md'
 out.write_text('\n'.join(lines)+'\n')
 print('WROTE',out,'bytes',out.stat().st_size,'questions',len(prompts),'active answer options',sum(len(opts) for k,(q,opts,s) in prompts.items() if status.get(k)!='CUT'),'approved reveals',len(approved))
+print('BESPOKE READS',len(custom_reads),'QUESTION SETS;',sum(len(v) for v in custom_reads.values()),'REVEALS; FALLBACK QUESTIONS',[(k[0],k[1]) for k in prompts if status.get(k)!='CUT' and f'{k[0]}:{k[1]}' not in custom_reads and not (k[0]=='free' and k[1] in (30,31,34))])
 assert len(prompts)==90
 assert all(len(v[1])>=2 for k,v in prompts.items() if status.get(k)!='CUT')
