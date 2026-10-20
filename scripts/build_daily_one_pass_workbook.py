@@ -159,6 +159,9 @@ def mapping(ans):
   if dim not in out or abs(score)>abs(out[dim][0]):out[dim]=(score,m.group(0))
  return [(dim,score,ev) for dim,(score,ev) in out.items()]
 manual_mappings=json.loads((D/'DAILY_HAND_REVIEWED_MAPPING_EXAMPLES_2026-10-20.json').read_text())
+supplement_mappings={}
+for path in D.glob('DAILY_MANUAL_MAPPING_SUPPLEMENTS_*_2026-10-20.json'):
+ supplement_mappings.update(json.loads(path.read_text()))
 # Bespoke editorial reads supersede mechanical draft reads, but never owner-approved reveals.
 custom_reads={}
 for path in sorted(D.glob('DAILY_CUSTOM_REVEALS_*_2026-10-20.json')):
@@ -201,11 +204,11 @@ lines=[
 '- **Batch 2:** Original answer choices were **not present** in the video or saved review records. Newly authored proposals are clearly labeled **NEW FORGE PROPOSAL, NOT RECOVERED**. They must not be misrepresented as the originals.',
 '- **Batch 3:** Original answers are from the saved full-copy editorial file, with subsequent owner-approved cuts and changes applied.',
 '- **Reveals:** Free #30, #31, and #34 owner-approved reads are copied verbatim from approval records. Every other read is a **NEW UNAPPROVED FIRST-PASS DRAFT**. Review for voice and accuracy; these drafts are not automatically publication-ready.',
-'- **Mappings:** Proposed evidence only. Each listed mapping uses a canonical dimension ID, a signed point value (positive or negative pole, magnitude 1–3), and the answer phrase used as evidence. **There is no fixed number of mapped dimensions per answer**. Blank mapping means no confident signal was inferred, not zero personality.',
+'- **Mappings:** Proposed evidence only. Each listed mapping uses a canonical dimension ID, a signed point value (positive or negative pole, magnitude 1–3), and the answer phrase used as evidence. **There is no fixed number of mapped dimensions per answer**. Every active answer now has at least one proposed mapping, but lexical candidates need substantive human review.',
 '- Character/song duplicates and draft quality must be audited before publication. Existing code limitations do not change the owner’s no-cap editorial mapping instruction.',
 '- KEEP refers to concept approval only. CUT means do not publish. This file does NOT authorize app, database, scoring, or scheduling changes.',
 '',
-'## Your one-pass review priorities','1. **Check all Batch 2 answer choices** (Free #15–29, Private #15–29 excluding owner CUTs). Those 27 sets are fresh proposals because the original options were not visible in the recording or saved sources.','2. **Scan the reveal titles and bodies** for voice. Exactly 16 reveals (Free #30, #31, #34) are already owner-approved. Other reads are proposals.','3. **Scan the mapping evidence** for each answer. Three questions have individually reasoned mappings; the remaining mappings are explicitly rough candidates, and zero awards are shown where no confident evidence was found. No fixed trait-count limit applies.','4. **Resolve five character collisions** listed in DAILY_COLLISION_AUDIT_2026-10-20.md. Two conflicts involve only previously owner-approved options, so neither is silently changed.','5. **Flag by Daily ID and answer letter**. All four layers appear together, so no separate approval rounds are needed.','','## Contents','- [Free Dailies](#free-dailies)','- [Apparently Private Dailies](#apparently-private-dailies)','',
+'## Your one-pass review priorities','1. **Check all Batch 2 answer choices** (Free #15–29, Private #15–29 excluding owner CUTs). Those 27 sets are fresh proposals because the original options were not visible in the recording or saved sources.','2. **Scan the reveal titles and bodies** for voice. Exactly 16 reveals (Free #30, #31, #34) are already owner-approved. Other reads are proposals.','3. **Scan the mapping evidence** for each answer. All 428 active options have at least one proposed mapping: 135 are individually reasoned, and 293 are rough lexical candidates that require closer review. None are owner-approved. No fixed trait-count limit applies.','4. **Resolve two remaining character collisions** listed in DAILY_COLLISION_AUDIT_2026-10-20.md. Two conflicts involve only previously owner-approved options, so neither is silently changed.','5. **Flag by Daily ID and answer letter**. All four layers appear together, so no separate approval rounds are needed.','','## Contents','- [Free Dailies](#free-dailies)','- [Apparently Private Dailies](#apparently-private-dailies)','',
 ]
 for kind,heading in [('free','Free Dailies'),('private','Apparently Private Dailies')]:
  lines+=['## '+heading,'']
@@ -225,9 +228,10 @@ for kind,heading in [('free','Free Dailies'),('private','Apparently Private Dail
    title,body=ar if ar else (tuple(custom_reads[f'{kind}:{n}']['ABCDEF'.index(l)]) if f'{kind}:{n}' in custom_reads else draft_read(q,a,l))
    lines += [f'#### {l}. {a}',f'**Reveal title:** {title}',f'**Reveal body:** {body}',f'**Reveal status:** {"EXACT OWNER APPROVAL" if ar else "NEW UNAPPROVED FORGE DRAFT"}']
    hand=f'{kind}:{n}' in manual_mappings
-   ms=manual_mappings[f'{kind}:{n}']['ABCDEF'.index(l)] if hand else mapping(a)
+   key=f'{kind}:{n}:{l}' if f'{kind}:{n}:{l}' in supplement_mappings else f'{kind}:{n:02d}:{l}'
+   ms=manual_mappings[f'{kind}:{n}']['ABCDEF'.index(l)] if hand else supplement_mappings.get(key,mapping(a))
    if ms:
-    level='HAND-REASONED PROPOSAL' if hand else 'ROUGH LEXICAL CANDIDATES, NEED HUMAN REVIEW'
+    level='HAND-REASONED PROPOSAL' if hand or key in supplement_mappings else 'ROUGH LEXICAL CANDIDATES, NEED HUMAN REVIEW'
     lines += [f'**Mapping [{level}, NOT APPROVED]:** '+ '; '.join(f'**{dim} {score:+d}** (reason: {ev})' for dim,score,ev in ms)+'.']
    else:
     lines += ['**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.']

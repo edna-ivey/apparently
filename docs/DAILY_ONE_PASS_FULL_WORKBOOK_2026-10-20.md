@@ -8,15 +8,15 @@
 - **Batch 2:** Original answer choices were **not present** in the video or saved review records. Newly authored proposals are clearly labeled **NEW FORGE PROPOSAL, NOT RECOVERED**. They must not be misrepresented as the originals.
 - **Batch 3:** Original answers are from the saved full-copy editorial file, with subsequent owner-approved cuts and changes applied.
 - **Reveals:** Free #30, #31, and #34 owner-approved reads are copied verbatim from approval records. Every other read is a **NEW UNAPPROVED FIRST-PASS DRAFT**. Review for voice and accuracy; these drafts are not automatically publication-ready.
-- **Mappings:** Proposed evidence only. Each listed mapping uses a canonical dimension ID, a signed point value (positive or negative pole, magnitude 1–3), and the answer phrase used as evidence. **There is no fixed number of mapped dimensions per answer**. Blank mapping means no confident signal was inferred, not zero personality.
+- **Mappings:** Proposed evidence only. Each listed mapping uses a canonical dimension ID, a signed point value (positive or negative pole, magnitude 1–3), and the answer phrase used as evidence. **There is no fixed number of mapped dimensions per answer**. Every active answer now has at least one proposed mapping, but lexical candidates need substantive human review.
 - Character/song duplicates and draft quality must be audited before publication. Existing code limitations do not change the owner’s no-cap editorial mapping instruction.
 - KEEP refers to concept approval only. CUT means do not publish. This file does NOT authorize app, database, scoring, or scheduling changes.
 
 ## Your one-pass review priorities
 1. **Check all Batch 2 answer choices** (Free #15–29, Private #15–29 excluding owner CUTs). Those 27 sets are fresh proposals because the original options were not visible in the recording or saved sources.
 2. **Scan the reveal titles and bodies** for voice. Exactly 16 reveals (Free #30, #31, #34) are already owner-approved. Other reads are proposals.
-3. **Scan the mapping evidence** for each answer. Three questions have individually reasoned mappings; the remaining mappings are explicitly rough candidates, and zero awards are shown where no confident evidence was found. No fixed trait-count limit applies.
-4. **Resolve five character collisions** listed in DAILY_COLLISION_AUDIT_2026-10-20.md. Two conflicts involve only previously owner-approved options, so neither is silently changed.
+3. **Scan the mapping evidence** for each answer. All 428 active options have at least one proposed mapping: 135 are individually reasoned, and 293 are rough lexical candidates that require closer review. None are owner-approved. No fixed trait-count limit applies.
+4. **Resolve two remaining character collisions** listed in DAILY_COLLISION_AUDIT_2026-10-20.md. Two conflicts involve only previously owner-approved options, so neither is silently changed.
 5. **Flag by Daily ID and answer letter**. All four layers appear together, so no separate approval rounds are needed.
 
 ## Contents
@@ -91,13 +91,13 @@
 **Reveal title:** Smokey: The Casting Decision.
 **Reveal body:** The smooth talker. Somehow you're both the problem and the entertainment.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **playful_serious +2** (reason: Chooses an entertaining smooth-talker over a straight-laced role).
 
 #### E. The Italian Job: Stella Bridger | The specialist. You get the job done without needing the spotlight.
 **Reveal title:** Stella Bridger: The Casting Decision.
 **Reveal body:** The specialist. You get the job done without needing the spotlight.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **independent_collaborative +2** (reason: Prefers competent specialist work without the spotlight).
 
 #### F. The Dark Knight: The Joker | The chaos agent. Predictability is your worst enemy.
 **Reveal title:** The Joker: The Casting Decision.
@@ -125,13 +125,13 @@
 **Reveal title:** Thoughts on the Loudspeaker
 **Reveal body:** Your inside voice has been promoted to public announcement. Condolences.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **private_open -3** (reason: An inner monologue broadcast removes all privacy).
 
 #### D. Your worst haircut comes back every birthday.
 **Reveal title:** Annual Hair Crime
 **Reveal body:** The past is back, and unfortunately it brought that haircut.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **sentimental_thick_skinned -1** (reason: Would endure an embarrassing past look being revisited).
 
 #### E. You accidentally reply-all to one email a month.
 **Reveal title:** Reply-All Roulette
@@ -159,7 +159,7 @@
 **Reveal title:** Sunday Screen-Time Service
 **Reveal body:** Every week, your phone presents evidence against your productivity.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **private_open -2** (reason: Accepts weekly public exposure of private screen-time habits).
 
 #### C. Your family chooses your outfits for a month.
 **Reveal title:** Wardrobe Hostage
@@ -205,13 +205,13 @@
 **Reveal title:** The Home-Cooked Conspiracy
 **Reveal body:** You want comfort food without having to be the person who cooked it.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort -2** (reason: Values the familiar comfort of home-cooked taste).
 
 #### D. Perfect temperature everywhere.
 **Reveal title:** Climate Control Royalty
 **Reveal body:** Your ideal temperature is not a preference. Apparently, it's policy.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +2** (reason: Wants the ability to control the environment's temperature).
 
 #### E. An always-clean home.
 **Reveal title:** The Spotless Fantasy
@@ -303,7 +303,7 @@
 **Reveal title:** Elle Woods: The Casting Decision.
 **Reveal body:** The underestimated star. They laughed until you started winning.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Identifies with an underestimated person who proves others wrong).
 
 ### free:07 | KEEP
 **Question:** You can erase one everyday inconvenience forever. Which wins?
@@ -313,7 +313,7 @@
 **Reveal title:** The Missing-Key Amnesty
 **Reveal body:** Your keys have been playing hide-and-seek without your consent.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic +2** (reason: Chooses to remove a concrete everyday logistics problem).
 
 #### B. People walking slowly in front of you.
 **Reveal title:** Sidewalk Speed Enforcement
@@ -337,13 +337,13 @@
 **Reveal title:** The Skip-Button Liberation
 **Reveal body:** Thirty seconds of advertising feels personal when you're trying to watch a video.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **patient_urgent -2** (reason: Cannot tolerate being forced to wait through ads).
 
 #### F. Trying to decide what to eat.
 **Reveal title:** Dinner Decision Bankruptcy
 **Reveal body:** You're hungry, but choosing what to eat has become a second job.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +1** (reason: Wants to eliminate the uncertainty of choosing dinner).
 
 ### free:08 | KEEP
 **Question:** A mysterious button appears in your house. Which label makes you press it?
@@ -359,7 +359,7 @@
 **Reveal title:** Yesterday's Appeals Court
 **Reveal body:** You'd like to reopen a closed case called 'that thing I did.'
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +3** (reason: Wants to rewrite a past event).
 
 #### C. UNLOCK A SECRET
 **Reveal title:** The Secret Department
@@ -371,7 +371,7 @@
 **Reveal title:** Luck, But Make It Double
 **Reveal body:** You don't want a plan. You want the odds to start flirting with you.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic -1** (reason: Chooses fortune over a practical controllable outcome).
 
 #### E. MEET YOUR ALTERNATE SELF
 **Reveal title:** The Alternate-Me Interview
@@ -383,7 +383,7 @@
 **Reveal title:** The Forbidden Button
 **Reveal body:** It literally said don't press. Apparently, you took that as a dare.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending -2** (reason: Is tempted by a forbidden button).
 
 ### free:09 | KEEP
 **Question:** You're famous for exactly one thing. Pick your legacy.
@@ -433,13 +433,13 @@
 **Reveal title:** Accidental Family Reunion
 **Reveal body:** You called your boss Mom. Apparently, the workplace has become a little too comfortable.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **playful_serious +1** (reason: Selects a socially embarrassing verbal slip).
 
 #### B. Waving back at someone who wasn't waving at you.
 **Reveal title:** The Phantom Wave
 **Reveal body:** That wave wasn't for you. Your hand had already signed the contract.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **social_attunement +1** (reason: Notices the social awkwardness of a mistaken wave).
 
 #### C. Sending a screenshot to the person in it.
 **Reveal title:** Screenshot Treason
@@ -457,7 +457,7 @@
 **Reveal title:** The Name-Tag Emergency
 **Reveal body:** You know their face, their life story, and somehow not their name.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **social_attunement +1** (reason: Focuses on the social impact of forgetting a name).
 
 #### F. Accidentally liking a photo from 2016.
 **Reveal title:** The Archaeological Like
@@ -491,7 +491,7 @@
 **Reveal title:** Jim Halpert: The Casting Decision.
 **Reveal body:** The deadpan observer. Your facial expressions are doing all the talking.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **social_attunement +2** (reason: Identifies with a quiet observer who communicates through expressions).
 
 #### E. Abbott Elementary: Janine Teagues | The relentlessly hopeful fixer. Somebody has to believe this can work.
 **Reveal title:** Janine Teagues: The Casting Decision.
@@ -525,19 +525,19 @@
 **Reveal title:** The Habit Intervention
 **Reveal body:** You asked for the truth about your flaws. That's brave and deeply inconvenient.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive +3** (reason: Wants insight into a habit that limits growth).
 
 #### D. What you'd be amazing at if you tried.
 **Reveal title:** The Hidden Talent Search
 **Reveal body:** You suspect there's a better version of you waiting for a permission slip.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Wants to discover unrealized potential).
 
 #### E. Who you've influenced without realizing.
 **Reveal title:** The Invisible Ripple
 **Reveal body:** You want proof that you mattered even when nobody announced it.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **supportive_challenging +2** (reason: Wants to know the positive impact they've had on others).
 
 #### F. What future-you wishes you'd do today.
 **Reveal title:** Future-You's Voicemail
@@ -559,19 +559,19 @@
 **Reveal title:** Shuri: The Casting Decision.
 **Reveal body:** Wakanda, where innovation and tradition collide.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic -2** (reason: Chooses a world built around advanced innovation and imagination).
 
 #### C. The Matrix: Neo | A reality where nothing is what it seems.
 **Reveal title:** Neo: The Casting Decision.
 **Reveal body:** A reality where nothing is what it seems.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **curious_decisive +2** (reason: Is drawn to questioning the nature of reality).
 
 #### D. The Hunger Games: Katniss Everdeen | A dangerous world where survival requires courage and strategy.
 **Reveal title:** Katniss Everdeen: The Casting Decision.
 **Reveal body:** A dangerous world where survival requires courage and strategy.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **protective_hands_off +2** (reason: Identifies with a survival-focused protector).
 
 #### E. Barbie: Barbie | A picture-perfect world where you get to question the entire script.
 **Reveal title:** Barbie: The Casting Decision.
@@ -623,7 +623,7 @@
 **Reveal title:** Dishwasher Jurisdiction
 **Reveal body:** You have a system. Other people's loading techniques are apparently a threat to order.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +2** (reason: Has a preferred system for loading the dishwasher).
 
 ### free:15 | KEEP
 **Question:** Your patience has officially left the building. What's playing as you walk away?
@@ -633,13 +633,13 @@
 **Reveal title:** The Disco Exit
 **Reveal body:** You've been patient long enough. Gloria has the closing argument.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking +2** (reason: Chooses a soundtrack about surviving and moving forward).
 
 #### B. 'Irreplaceable' — Beyoncé
 **Reveal title:** The Beyoncé Eviction
 **Reveal body:** You are not explaining twice. Apparently, the replacement has already been interviewed.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking +3** (reason: Chooses a song about refusing to be treated as irreplaceable).
 
 #### C. 'Break My Soul' — Beyoncé
 **Reveal title:** The Soul Reclamation
@@ -651,7 +651,7 @@
 **Reveal title:** The Freedom Chorus
 **Reveal body:** You don't need the last word. You need the door to close behind you.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **independent_collaborative +2** (reason: Chooses a song celebrating freedom after a breakup).
 
 #### E. 'No Scrubs' — TLC
 **Reveal title:** The Scrub Screening
@@ -679,7 +679,7 @@
 **Reveal title:** The Selective Delete
 **Reveal body:** You want the power to put down what memory refuses to release.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +3** (reason: Wants direct control over which memories to keep).
 
 ### free:17 | KEEP
 **Question:** What's your most embarrassingly specific sign that you're officially comfortable somewhere?
@@ -713,7 +713,7 @@
 **Reveal title:** The Couch Adoption
 **Reveal body:** One nap and the furniture has accepted you into the family.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort -2** (reason: Comfort is expressed by falling asleep on someone's couch).
 
 #### F. I start giving the pets nicknames.
 **Reveal title:** Pet-Naming Rights
@@ -729,7 +729,7 @@
 **Reveal title:** The Lost-Object Oracle
 **Reveal body:** Your entire fortune would be spent eliminating the daily scavenger hunt.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic +2** (reason: Wants to solve the practical problem of lost objects).
 
 #### B. A machine that folds laundry perfectly.
 **Reveal title:** Laundry Liberation
@@ -759,7 +759,7 @@
 **Reveal title:** The Awkwardness Eraser
 **Reveal body:** You want a universal undo button for your social mistakes.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +3** (reason: Wants to erase socially uncomfortable moments).
 
 ### free:19 | KEEP
 **Question:** Which character would you trust with a secret that could ruin your reputation?
@@ -781,19 +781,19 @@
 **Reveal title:** The Attorney of Last Resort
 **Reveal body:** Annalise has heard worse. You'd still be nervous telling her.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify -2** (reason: Selects a trusted secret-keeper with legal and investigative experience).
 
 #### D. Wednesday Addams — Wednesday: Your secrets bore her more than they shock her.
 **Reveal title:** The Unshockable Witness
 **Reveal body:** Wednesday has no interest in judging you. She might judge the execution.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **private_open +2** (reason: Selects someone unlikely to expose personal secrets).
 
 #### E. Alfred Pennyworth — Batman: He has spent decades minding billionaire business.
 **Reveal title:** The Billionaire Butler Vault
 **Reveal body:** Alfred has seen enough secrets to make yours feel like a Tuesday.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify +2** (reason: Selects a discreet and proven confidant).
 
 #### F. Mulan — Mulan: She knows what a life-changing secret costs.
 **Reveal title:** The Cost of a Secret
@@ -825,19 +825,19 @@
 **Reveal title:** Luggage on Vacation Too
 **Reveal body:** You arrived. Your clothes are apparently enjoying a separate itinerary.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort +1** (reason: Willing to travel despite missing luggage).
 
 #### B. The hotel room is a disaster.
 **Reveal title:** The Hotel Catfish
 **Reveal body:** The photos promised luxury. The room delivered a plot twist.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort +1** (reason: Accepts imperfect accommodations to get the trip).
 
 #### C. It rains every single day.
 **Reveal title:** Monsoon With a View
 **Reveal body:** The trip is still free. Unfortunately, so is the rain.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort +1** (reason: Accepts persistent rain in exchange for a vacation).
 
 #### D. Your phone dies and there's no charger.
 **Reveal title:** The Chargerless Adventure
@@ -849,7 +849,7 @@
 **Reveal title:** The First-Night Betrayal
 **Reveal body:** You came for adventure. Your stomach has requested immediate evacuation.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort +1** (reason: Accepts a physically uncomfortable trip complication).
 
 #### F. Your travel companion becomes unbearable.
 **Reveal title:** The Companion Clause
@@ -905,13 +905,13 @@
 **Reveal title:** The Guilty-Viewing Premiere
 **Reveal body:** The remote belongs to you, and the volume is nobody else's concern.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **private_open +2** (reason: Uses solitude to enjoy entertainment without judgment).
 
 #### E. Dance like there's a security-camera blackout.
 **Reveal title:** The Living-Room Concert
 **Reveal body:** You are performing to a sold-out audience of zero.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **playful_serious +2** (reason: Uses private time for uninhibited dancing).
 
 #### F. Enjoy the silence without touching a chore.
 **Reveal title:** Silence, Uninterrupted
@@ -927,7 +927,7 @@
 **Reveal title:** The Bill Collector's Chorus
 **Reveal body:** Your relationship with money sounds like a payment reminder with harmonies.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic +3** (reason: Identifies with financial obligations and bills).
 
 #### B. 'Money' — Cardi B
 **Reveal title:** Money Talks Loudly
@@ -939,7 +939,7 @@
 **Reveal title:** The Rich-Girl Daydream
 **Reveal body:** Your financial plan begins with a fantasy and excellent styling.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Identifies with a song about being wealthy).
 
 #### D. 'For the Love of Money' — The O'Jays
 **Reveal title:** The Money Motive
@@ -957,7 +957,7 @@
 **Reveal title:** The Seven-Ring Philosophy
 **Reveal body:** Your spending style has a soundtrack and a suspiciously flexible budget.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Identifies with a song about conspicuous wealth and spending).
 
 ### free:26 | KEEP
 **Question:** Would you rather get a guaranteed answer to one question about your future or change one decision from your past?
@@ -985,29 +985,29 @@
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
 **Mapping [ROUGH LEXICAL CANDIDATES, NEED HUMAN REVIEW, NOT APPROVED]:** **curious_decisive -2** (reason: never).
 
-#### B. Regina George — Mean Girls: Your kitchen would become a social hierarchy.
-**Reveal title:** The Apartment Hierarchy
-**Reveal body:** Regina would turn your kitchen into a popularity contest.
+#### B. Dwight Schrute - The Office: He would schedule mandatory beet-farming chores.
+**Reveal title:** The Beet-Farm Lease
+**Reveal body:** Dwight has a chore chart, a bathroom policy, and absolutely no interest in your objections.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +2** (reason: Rejects a roommate who would control the household social hierarchy).
 
-#### C. The Joker — The Dark Knight: The security deposit is gone.
-**Reveal title:** Security Deposit Funeral
-**Reveal body:** The Joker would leave you with property damage and philosophical questions.
+#### C. Beetlejuice - Beetlejuice: Your apartment would become a supernatural hazard.
+**Reveal title:** The Haunted Deposit
+**Reveal body:** Beetlejuice would turn your apartment into a paranormal insurance claim.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending +2** (reason: Rejects a roommate associated with chaos and rule-breaking).
 
-#### D. Miranda Priestly — The Devil Wears Prada: Your towels would be judged.
-**Reveal title:** The Towel Performance Review
-**Reveal body:** Miranda has standards. Your bathroom apparently failed onboarding.
+#### D. Monica Geller - Friends: She would inspect your cleaning technique.
+**Reveal title:** The Cleaning Inspection
+**Reveal body:** Monica would judge your sponge before you even unpacked your boxes.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **control_allowing +2** (reason: Rejects a roommate who would impose exacting household standards).
 
 #### E. Ace Ventura — Ace Ventura: Pet Detective: There are animals in your bed.
 **Reveal title:** The Animal House
 **Reveal body:** Ace would bring an entire zoo into the lease agreement.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort -2** (reason: Rejects unpredictable animals and household chaos).
 
 #### F. Sheldon Cooper — The Big Bang Theory: There would be a bathroom schedule.
 **Reveal title:** The Bathroom Constitution
@@ -1113,7 +1113,7 @@
 **Reveal title:** The Chewing Tribunal.
 **Reveal body:** One loud bite and you've mentally filed for divorce. From a person you're not even dating.
 **Reveal status:** EXACT OWNER APPROVAL
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **patient_urgent -2** (reason: A chewing habit quickly exhausts patience).
 
 #### B. Their laugh. I couldn't do it anymore.
 **Reveal title:** Joy Has a Sound Limit.
@@ -1137,7 +1137,7 @@
 **Reveal title:** Originality Enforcement Officer.
 **Reveal body:** Inspiration is flattering. Watching somebody take credit? Straight to court.
 **Reveal status:** EXACT OWNER APPROVAL
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **forgiving_receipts -2** (reason: Resents someone copying their work and taking credit).
 
 ### free:32 | KEEP
 **Question:** Would you rather accidentally send a screenshot of someone's messages to that person or have your phone read your last ten texts aloud at a family dinner?
@@ -1169,7 +1169,7 @@
 **Reveal title:** Sidewalk Traffic Violation
 **Reveal body:** The walkway is not your personal parking space.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **patient_urgent -3** (reason: Cannot tolerate people blocking the walkway).
 
 #### C. Talking during the best part of a movie.
 **Reveal title:** Cinema Commentary Crime
@@ -1181,19 +1181,19 @@
 **Reveal title:** The Microwave Countdown Case
 **Reveal body:** One second left is an act of household disrespect.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending +2** (reason: Would criminalize a minor shared-household etiquette violation).
 
 #### E. Sending 'hey' and nothing else.
 **Reveal title:** The One-Word Text Offense
 **Reveal body:** 'Hey' is not a conversation. Please submit the rest of your application.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **direct_indirect +2** (reason: Wants more direct communication than a vague one-word greeting).
 
 #### F. Putting an empty container back in the refrigerator.
 **Reveal title:** Empty-Container Fraud
 **Reveal body:** You opened the fridge expecting food. Somebody left you a plastic alibi.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending +2** (reason: Would enforce a rule against leaving empty containers).
 
 ### free:34 | KEEP
 **Question:** What's your most toxic little everyday habit?
@@ -1259,7 +1259,7 @@
 **Reveal title:** The Sudden Illness
 **Reveal body:** Your symptoms started exactly when the invitation arrived. Remarkable timing.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **direct_indirect -2** (reason: Uses an illness excuse rather than declining plans directly).
 
 #### B. My car is acting funny.
 **Reveal title:** The Automotive Alibi
@@ -1277,7 +1277,7 @@
 **Reveal title:** The Five-Hour Nap
 **Reveal body:** You didn't avoid the event. You simply slept through the entire plot.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **direct_indirect -2** (reason: Uses a sleep excuse to avoid plans).
 
 #### E. I have to work early tomorrow.
 **Reveal title:** The Early Shift Defense
@@ -1299,7 +1299,7 @@
 **Reveal title:** The Leftover Betrayal
 **Reveal body:** You planned that meal all day. Somebody ate your entire emotional support system.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **forgiving_receipts -1** (reason: Resents a specific small household betrayal).
 
 #### B. My package gets marked delivered but isn't there.
 **Reveal title:** Delivered to Another Dimension
@@ -1323,7 +1323,7 @@
 **Reveal title:** The Meeting That Shouldn't Exist
 **Reveal body:** Forty minutes of your life could have been three sentences.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic +2** (reason: Prefers efficient communication over unnecessary meetings).
 
 #### F. My alarm goes off on my day off.
 **Reveal title:** Day-Off Alarm Treason
@@ -1355,13 +1355,13 @@
 **Reveal title:** Wedding Budget Skeptic
 **Reveal body:** You love the couple. You're less convinced by the $900 centerpiece.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic +2** (reason: Evaluates weddings through cost and value).
 
 #### B. Not every baby is cute. There, I said it.
 **Reveal title:** The Baby Honesty Committee
 **Reveal body:** You said the quiet part out loud. The parents have blocked you.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **tactful_blunt -3** (reason: Expresses an unfiltered socially unpopular opinion).
 
 #### C. Brunch is breakfast with a marketing budget.
 **Reveal title:** Brunch Rebranding Audit
@@ -1379,13 +1379,13 @@
 **Reveal title:** The Family Clause
 **Reveal body:** Sharing DNA does not automatically earn somebody unlimited access to your patience.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking +3** (reason: Does not grant family members automatic emotional access).
 
 #### F. Sometimes the villain was making excellent points.
 **Reveal title:** Villain Defense Attorney
 **Reveal body:** You aren't excusing the crimes. You're saying the villain had a presentation worth hearing.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **perspective_taking_self_referencing +2** (reason: Can consider a villain's perspective despite disapproval).
 
 ### free:40 | KEEP
 **Question:** A witch curses you with one harmless but humiliating inconvenience. Which can you tolerate?
@@ -1413,7 +1413,7 @@
 **Reveal title:** Flirting With Hiccups
 **Reveal body:** The chemistry was there. Your diaphragm demanded a speaking role.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored +1** (reason: Is willing to attempt flirting despite embarrassing hiccups).
 
 #### E. My shoes squeak whenever I'm trying to look important.
 **Reveal title:** The Squeaky Power Walk
@@ -1457,7 +1457,7 @@
 **Reveal title:** Spoiler Alert: You Told Me
 **Reveal body:** You are not sitting through the director's cut of a story you already know.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **patient_urgent -2** (reason: Wants to interrupt a repeated story).
 
 #### C. Pretend it's brand-new and perform surprise.
 **Reveal title:** The Surprise Performance
@@ -1497,7 +1497,7 @@
 **Reveal title:** Volume as Evidence
 **Reveal body:** You have no new facts, but the decibels are absolutely committed.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive -3** (reason: Responds to losing an argument by escalating volume).
 
 #### C. Start laughing because this is beneath me.
 **Reveal title:** The Laughing Defense
@@ -1539,13 +1539,13 @@
 **Reveal title:** Pretty Was Doing Overtime
 **Reveal body:** The looks were excellent. The actual relationship required additional qualifications.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **sentimental_thick_skinned -1** (reason: Admits appearance outweighed emotional compatibility).
 
 #### B. The chemistry was doing all the thinking.
 **Reveal title:** Chemistry Without Supervision
 **Reveal body:** Your brain called in sick, and the sparks took over management.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive -2** (reason: Allowed attraction to overrule deliberation).
 
 #### C. I liked being wanted.
 **Reveal title:** Wanted, Not Necessarily Loved
@@ -1569,7 +1569,7 @@
 **Reveal title:** The Imaginary Upgrade
 **Reveal body:** You fell for who they might become. Reality never signed that agreement.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic -2** (reason: Stayed for imagined potential rather than present reality).
 
 ### private:01 | KEEP
 **Question:** Your ex texts 'I miss us' at 11:47 p.m. What's the most dangerous part?
@@ -1585,7 +1585,7 @@
 **Reveal title:** Audacity With Benefits
 **Reveal body:** The nerve was offensive. The confidence was, unfortunately, a little attractive.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **playful_serious +1** (reason: Finds an ex's boldness entertaining despite misgivings).
 
 #### C. The memories I conveniently edited.
 **Reveal title:** Selective Memory Theater
@@ -1625,7 +1625,7 @@
 **Reveal title:** Affection on Layaway
 **Reveal body:** The love arrives in installments, and apparently you never know when.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify -1** (reason: Identifies inconsistency as a threat to dependable affection).
 
 #### C. Having chemistry with absolutely no compatibility.
 **Reveal title:** The Chemistry Trap
@@ -1699,19 +1699,19 @@
 **Reveal title:** The Desire Emergency
 **Reveal body:** You can handle a hard truth. Feeling unwanted is the one that cuts.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored +2** (reason: Would face a painful truth about feeling unwanted).
 
 #### B. I sometimes wonder about somebody else.
 **Reveal title:** The Third-Person Thought
 **Reveal body:** Nothing happened, but apparently someone else has rented space in their imagination.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify -2** (reason: Wants transparency about interest in another person).
 
 #### C. I've been pretending I'm okay.
 **Reveal title:** The Hidden Collapse
 **Reveal body:** You thought things were fine. They've been performing fine for months.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored -2** (reason: Acknowledges hidden distress behind an outward performance).
 
 #### D. I don't trust you with my feelings.
 **Reveal title:** The Unsafe Heart
@@ -1739,7 +1739,7 @@
 **Reveal title:** The Glow-Up Press Release
 **Reveal body:** You said you're healing. Your photo carousel says the audience is your ex.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **self_secure_reassurance -2** (reason: Wants an ex to see a visible post-breakup glow-up).
 
 #### B. Make sure they knew somebody wanted me.
 **Reveal title:** The Replacement Announcement
@@ -1831,13 +1831,13 @@
 **Reveal title:** Unavailable and Interesting
 **Reveal body:** Nothing says trouble like somebody who keeps flirting without being available.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking -2** (reason: Admits attraction to someone unavailable).
 
 #### D. A person who's terrible for you but knows you perfectly.
 **Reveal title:** The Familiar Disaster
 **Reveal body:** They know every soft spot, including the ones you promised to protect.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **sentimental_thick_skinned +2** (reason: Is drawn to someone who knows their personal history and vulnerabilities).
 
 #### E. A second chance with someone you never got over.
 **Reveal title:** The Sequel Nobody Requested
@@ -1849,7 +1849,7 @@
 **Reveal title:** Everything Except the Label
 **Reveal body:** They give you the experience and keep the commitment behind a locked door.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking -2** (reason: Accepts affection despite absent commitment).
 
 ### private:08 | KEEP
 **Question:** You're in a messy love triangle. What's your role?
@@ -1859,7 +1859,7 @@
 **Reveal title:** Didn'T Know Was Triangle.
 **Reveal body:** You picked The one who didn't know it was a triangle and committed to it. Apparently, this is the hill you're willing to stand on.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify -2** (reason: Was unaware of a competing relationship).
 
 #### B. The one who knew and thought they'd win.
 **Reveal title:** Knew Thought They'D Win.
@@ -1883,13 +1883,13 @@
 **Reveal title:** Asks Too Many Questions.
 **Reveal body:** You picked The one who asks too many questions and exposes everything and committed to it. Apparently, this is the hill you're willing to stand on.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **curious_decisive +3** (reason: Keeps questioning until hidden information is exposed).
 
 #### F. The one who insists it's complicated. Because it is.
 **Reveal title:** Insists It'S Complicated Because.
 **Reveal body:** You picked The one who insists it's complicated. Because it is and committed to it. Apparently, this is the hill you're willing to stand on.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive +1** (reason: Acknowledges complexity rather than offering a simple conclusion).
 
 ### private:09 | KEEP
 **Question:** Which thought have you had during an argument but wisely kept to yourself?
@@ -1917,7 +1917,7 @@
 **Reveal title:** The Ex Comparison Department
 **Reveal body:** You have questions about the person who survived this conversation before you.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **curious_decisive +2** (reason: Wonders about an ex-partner's past experience).
 
 #### E. I'm mentally rearranging my future without you.
 **Reveal title:** The Exit Floor Plan
@@ -1939,7 +1939,7 @@
 **Reveal title:** The Leaving Question
 **Reveal body:** You want to know whether their feet have ever pointed toward the door.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored +3** (reason: Would risk hearing whether a partner considered leaving).
 
 #### B. What do you pretend not to notice about me?
 **Reveal title:** The Unspoken Critique
@@ -1957,7 +1957,7 @@
 **Reveal title:** The Unasked Desire
 **Reveal body:** You're brave enough to hear what they want, even if it changes the rules.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored +2** (reason: Would invite disclosure of a partner's unspoken desire).
 
 #### E. When did you feel least loved by me?
 **Reveal title:** The Love Deficit
@@ -1991,7 +1991,7 @@
 **Reveal title:** Eye Contact With Consequences
 **Reveal body:** Nobody touched anybody. The entire room still noticed.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **emotional_intensity +2** (reason: Describes eye contact as unusually emotionally charged).
 
 #### C. The kind where they challenge everything you say.
 **Reveal title:** The Intellectual Sparring Match
@@ -2009,13 +2009,13 @@
 **Reveal title:** Bad Idea, Excellent Lighting
 **Reveal body:** You both know better. Unfortunately, knowing better isn't stopping the soundtrack.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending -2** (reason: Admits attraction to a knowingly bad idea).
 
 #### F. The kind where nothing happens, but EVERYTHING happens.
 **Reveal title:** Nothing Happened, Everything Happened
 **Reveal body:** Technically innocent. Emotionally, the jury has questions.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **emotional_intensity +3** (reason: Experiences strong emotional meaning without overt action).
 
 ### private:13 | KEEP
 **Question:** Your partner asks who your 'work spouse' is. What's the truth?
@@ -2037,7 +2037,7 @@
 **Reveal title:** The Suspicious Monday
 **Reveal body:** You are looking forward to work a little more than the paycheck explains.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking -1** (reason: Acknowledges looking forward to a coworker beyond ordinary work).
 
 #### D. I don't believe in work spouses. Boundaries exist.
 **Reveal title:** Boundary Policy Enforced
@@ -2065,25 +2065,25 @@
 **Reveal title:** I Saw the Signs
 **Reveal body:** The warning lights were flashing. Apparently, you kept driving anyway.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive -2** (reason: Recognizes warning signs but kept moving forward).
 
 #### B. The Chemistry Was Not a Character Reference.
 **Reveal title:** Chemistry Wasn't Character
 **Reveal body:** The attraction passed every test except the one that actually mattered.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive +2** (reason: Recognizes chemistry does not prove character).
 
 #### C. A Series of Very Attractive Mistakes.
 **Reveal title:** Beautifully Bad Decisions
 **Reveal body:** Your type had excellent cheekbones and several unresolved issues.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive -2** (reason: Recognizes a pattern of attraction-driven mistakes).
 
 #### D. Great Potential, Terrible Execution.
 **Reveal title:** Potential Never Showed Up
 **Reveal body:** You kept investing in a future that never made it past the trailer.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic -2** (reason: Was drawn to potential rather than execution).
 
 #### E. I Can Explain. Unfortunately.
 **Reveal title:** The Explanation Tour
@@ -2105,7 +2105,7 @@
 **Reveal title:** The Three-Year Replay
 **Reveal body:** The conversation ended years ago. Your brain just ordered the extended edition.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **forgiving_receipts -2** (reason: Continues mentally revisiting an old conversation).
 
 #### B. I'm waiting for a message I won't admit I want.
 **Reveal title:** The Midnight Notification Watch
@@ -2129,7 +2129,7 @@
 **Reveal title:** The Alternate-Life Screenplay
 **Reveal body:** You're awake imagining the life you could still choose.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **practical_idealistic -2** (reason: Imagines an alternative life rather than current constraints).
 
 #### F. I said I was going to sleep, then opened one more app.
 **Reveal title:** The One-More-Scroll Lie
@@ -2173,7 +2173,7 @@
 **Reveal title:** The Comfort-Show Confession
 **Reveal body:** Your public taste is curated. Your private queue is not.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **private_open +2** (reason: Keeps an embarrassing comfort-show preference private).
 
 #### D. I snoop on people I pretend not to care about.
 **Reveal title:** The Casual Investigation
@@ -2213,7 +2213,7 @@
 **Reveal title:** Needed Isn't Loved
 **Reveal body:** Being indispensable can feel safer than being truly known.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **self_secure_reassurance -2** (reason: Confuses external dependence with feeling loved).
 
 #### D. I hold grudges because they make me feel powerful.
 **Reveal title:** The Grudge Throne
@@ -2225,7 +2225,7 @@
 **Reveal title:** The Standards Exception
 **Reveal body:** You know what you deserve. You don't always insist on receiving it.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **boundary_holding_approval_seeking -2** (reason: Admits tolerating less than their stated standards).
 
 #### F. I'm more afraid of being ordinary than of being unhappy.
 **Reveal title:** The Ordinary Terror
@@ -2325,7 +2325,7 @@
 **Reveal title:** The Hidden Wrong
 **Reveal body:** You'd rather carry a private truth than face the public consequences.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **accountability_defensiveness -3** (reason: Prefers escaping consequences for an acknowledged wrong).
 
 #### B. Have everyone believe I did something terrible that I didn't.
 **Reveal title:** The False Accusation
@@ -2347,13 +2347,13 @@
 **Reveal title:** The Sentence Interruption
 **Reveal body:** You weren't finished. Apparently, neither was your irritation.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **patient_urgent -2** (reason: Is irritated by an interruption).
 
 #### C. A vague 'we need to talk' text.
 **Reveal title:** The Anxiety Appointment
 **Reveal body:** They scheduled your dread and forgot to include an agenda.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **social_attunement +1** (reason: Is sensitive to an ominous vague message).
 
 #### D. A slow walker blocking the entire sidewalk.
 **Reveal title:** The Sidewalk Bottleneck
@@ -2399,13 +2399,13 @@
 **Reveal title:** The Art of Nothing
 **Reveal body:** Your fantasy isn't luxury. It's having no demands at all.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **duty_first_self_preserving -3** (reason: Would use freedom to rest without obligations).
 
 #### E. Study something I was too scared to pursue.
 **Reveal title:** The Delayed Education
 **Reveal body:** You'd finally study what fear or practicality kept postponing.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Would pursue an educational ambition previously postponed by fear).
 
 #### F. Find out who I am without anyone else's expectations.
 **Reveal title:** The Expectation Detox
@@ -2449,13 +2449,13 @@
 **Reveal title:** The Canceled-Plans Confession
 **Reveal body:** You love your people. You also love when the calendar suddenly clears.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **duty_first_self_preserving -2** (reason: Feels relief when social obligations are canceled).
 
 #### D. Not every baby is cute.
 **Reveal title:** The Baby Beauty Committee
 **Reveal body:** You said the forbidden sentence. The family group chat has entered emergency mode.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **tactful_blunt -2** (reason: Is willing to voice an unflattering unpopular judgment).
 
 #### E. I don't want to hear every detail of your relationship.
 **Reveal title:** The Relationship Recap Limit
@@ -2483,7 +2483,7 @@
 **Reveal title:** The Forgotten Extraordinary
 **Reveal body:** You did something remarkable. You'd rather it mattered than be remembered for it.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +2** (reason: Values extraordinary achievement despite lack of recognition).
 
 ### private:30 | KEEP
 **Question:** You can send one anonymous message and nobody will ever know it was you. Who's getting it?
@@ -2505,7 +2505,7 @@
 **Reveal title:** The Reality Check Delivery
 **Reveal body:** You have feedback. Apparently, anonymity has removed the customer-service voice.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **supportive_challenging -2** (reason: Wants to confront someone with a reality check).
 
 #### D. Someone I secretly admire.
 **Reveal title:** Admiration Without a Signature
@@ -2539,7 +2539,7 @@
 **Reveal title:** The Unexpected Protector
 **Reveal body:** You might have to rethink someone you've written off. Your ego is nervous.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **perspective_taking_self_referencing +3** (reason: Can reconsider a disliked person's actions and accept being wrong).
 
 ### private:32 | KEEP
 **Question:** Which ugly feeling are you least proud of having?
@@ -2601,7 +2601,7 @@
 **Reveal title:** Anonymous Excess
 **Reveal body:** You want the outrageous life without anybody recognizing the person living it.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **adventure_comfort +3** (reason: Wants an extravagant anonymous new experience).
 
 #### D. Find out how people treat me without my reputation.
 **Reveal title:** The Reputation Reset
@@ -2709,7 +2709,7 @@
 **Reveal title:** The Ordinary Fear
 **Reveal body:** You're not just chasing success. You're running from being forgettable.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **ambitious_content +3** (reason: Fears ordinariness and is motivated to stand out).
 
 #### F. Because losing makes me question my worth.
 **Reveal title:** The Worthiness Scoreboard
@@ -2747,13 +2747,13 @@
 **Reveal title:** The Investigative Count
 **Reveal body:** You intend to return it. You just want to know how interesting the story is.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **curious_decisive +2** (reason: Wants to count the money before taking action).
 
 #### C. Look up the person before deciding.
 **Reveal title:** The Background Check
 **Reveal body:** You need to know whose money this is before deciding how safe the right thing feels.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **trust_verify -3** (reason: Wants to verify the owner's identity before deciding).
 
 #### D. Keep a little and return the rest. Yes, I said it.
 **Reveal title:** The Partial Return
@@ -2765,13 +2765,13 @@
 **Reveal title:** The Cash-Carrying Mystery
 **Reveal body:** Your first thought is not the money. It's what kind of story needs that much cash.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **curious_decisive +2** (reason: Wonders about the unknown person's circumstances).
 
 #### F. Take it. I have bills and a testimony.
 **Reveal title:** Bills and a Testimony
 **Reveal body:** You found a moral dilemma and immediately introduced your utility bill.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **rules_bending -3** (reason: Would keep cash despite an identifiable owner).
 
 ### private:39 | KEEP
 **Question:** Which kind of attention would be hardest for you to stop craving?
@@ -2793,7 +2793,7 @@
 **Reveal title:** The Unfinished Obsession
 **Reveal body:** You want to be the person somebody never quite gets over.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **self_secure_reassurance -3** (reason: Craves evidence that someone cannot move on from them).
 
 #### D. People envying the life I've built.
 **Reveal title:** The Envy Exhibit
@@ -2805,7 +2805,7 @@
 **Reveal title:** The Room's Main Attraction
 **Reveal body:** You want the room to notice. The mirror has already voted.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **self_secure_reassurance -3** (reason: Seeks validation of being the most attractive person present).
 
 #### F. Hearing that nobody could replace me.
 **Reveal title:** The Irreplaceable Clause
@@ -2837,7 +2837,7 @@
 **Reveal title:** The Good-Person Audit
 **Reveal body:** You don't want compliments. You want a verdict you can't negotiate.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **reflective_reactive +3** (reason: Invites a candid assessment of their own goodness).
 
 #### B. What am I most afraid to admit?
 **Reveal title:** The Confession Beneath the Confession
@@ -2877,7 +2877,7 @@
 **Reveal title:** The Friendship Ranking Leak
 **Reveal body:** The group chat is about to discover your private leaderboard.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **competitive_cooperative +2** (reason: Internally ranks friendships by preference).
 
 #### B. What I secretly think of their relationships.
 **Reveal title:** The Relationship Commentary
@@ -2895,7 +2895,7 @@
 **Reveal title:** The Congratulations Performance
 **Reveal body:** Your smile was convincing. The private feelings had a different script.
 **Reveal status:** NEW UNAPPROVED FORGE DRAFT
-**Mapping [PROPOSED]:** No defensible pole award identified from this answer alone.
+**Mapping [HAND-REASONED PROPOSAL, NOT APPROVED]:** **vulnerable_armored -2** (reason: Hides jealousy behind a performance of happiness).
 
 #### E. Who I would stop speaking to if there were no consequences.
 **Reveal title:** The Quiet Cutoff List
