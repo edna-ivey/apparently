@@ -2537,6 +2537,71 @@ That is the bible. 🔥
 
 **APP STORE DOCUMENTATION:** Pre-publication policy, terms, privacy worksheet, metadata, reviewer notes, owner action checklist and critical-path timeline are in `docs/app-store/`. These drafts are not published policies, final legal advice, or verified App Store Connect declarations. Finalize after service inventory and owner approval. Public App Store launch is a goal, not an assured date.
 
+## 78. BUILD 18 IMPLEMENTATION SPRINT (2026-10-20)
+
+**IMPLEMENTED, repository-verified (tsc/lint/39 validators green); NOT live-system-verified.**
+
+**WP1 Daily trait-count cap removed.** `src/data/daily-questions.ts` and
+`src/app/admin/(protected)/review/[id].tsx` no longer cap/slice the number of distinct
+trait poles one Daily answer can carry (the removed `MAX_PERSONALITY_EFFECTS_PER_OPTION = 3`
+conflated "points per pole" with "poles per answer" -- only the former is a real limit).
+Duplicate-dimension-per-answer prevention is preserved (client editor guard + a new
+`dedupeEffectsByDimension` dedup on load/save) and the real per-pole magnitude ceiling
+(`PersonalityEffectValue` = -3..3) is untouched. The live `handle_daily_answer_personality_
+evidence` trigger and `admin_update_daily_option` RPC were confirmed (by reading the actual
+migration SQL) to have never had a count cap server-side -- this was a client-only bug.
+**STAGED, NOT APPLIED:** `20261020010000_daily_option_effects_validation.sql` adds
+defense-in-depth server-side validation (dimension allow-list, -3..3 range, duplicate-
+dimension rejection) to `admin_update_daily_option`, explicitly with no count limit.
+Verified: `scripts/validate-daily-trait-count-removal.ts` (0/1/3/5/10/20-trait matrix).
+
+**WP2 Monthly + Annual + Founding Member subscription selection implemented.**
+`src/services/purchases-service.ts`: `getApparentlyPrivateOfferings` resolves both real
+packages from one live RevenueCat offering fetch; `checkApparentlyPrivateAnnualIntroEligibility`
+checks REAL Apple/StoreKit eligibility via `checkTrialOrIntroductoryPriceEligibility` (fails
+closed to "not eligible" on any error) -- Founding Member framing shows ONLY when a real
+`introPrice` exists on the product AND this customer is confirmed eligible; otherwise the
+plain annual price shows, never a false promise. **Verified Apple mechanism, not assumed:**
+Apple has no "first N users" targeting for introductory offers -- Founding Member is modeled
+as a real StoreKit Introductory Offer (Pay Up Front, 1 year, 1 cycle) on the annual product,
+auto-granted by Apple to any customer new to the subscription group. `src/app/paywall.tsx`
+shows both plans, always-visible renewal disclosure (real `product.priceString`, never
+hardcoded), Privacy/Terms links. **OWNER ACTION REQUIRED, documented exactly:**
+`docs/app-store/OWNER_APP_STORE_ACTIONS.md` item 2-3 now gives the precise App Store
+Connect + RevenueCat steps (create `apparently_private_annual`, attach the Introductory
+Offer, attach both products to the `apparently_private` entitlement, add annual to the
+`default` offering). No product id asserted to already exist. Verified:
+`scripts/validate-subscription-plans.ts`, including a regression guard that the tester
+override still never ORs into real premium gating.
+
+**WP3 In-app account deletion implemented.** New `supabase/functions/delete-account`
+(not yet deployed) derives identity ONLY from the caller's own verified JWT (no target-user
+parameter exists, which is what prevents one user from deleting another's data) and calls
+`auth.admin.deleteUser`, which cascades through every user-linked table -- verified directly
+against the real CREATE TABLE statements in every migration (`profiles`, `daily_answers`,
+`quiz_results`, `personality_evidence`, `personality_pole_evidence`, `user_entitlements`,
+`tester_access_grants`, `quiz_shares` via `sharer_user_id`, and `compare_responses` via
+`quiz_shares`'s own cascade -- the same chain that invalidates a deleted user's share tokens).
+`src/services/account-deletion-service.ts` clears local storage/session ONLY after the
+server confirms real deletion. Settings now has a Delete Account action (explicit confirm,
+explains what's removed, explicitly states this does NOT cancel an Apple subscription, links
+to Manage Subscription) plus real in-app Privacy Policy / Terms of Use pages (`/privacy-
+policy`, `/terms-of-use`) -- not external links to a page that may not exist yet; both
+screens honestly show a "pre-publication draft" banner rather than presenting unfinished
+legal text as final. Explicitly NOT deleted (documented in the Edge Function itself): the
+RevenueCat customer record/Apple subscription history, prior diagnostic events already sent
+to Sentry, and pre-deletion database backups until their own retention expires. Verified:
+`scripts/validate-account-deletion.ts`.
+
+**WP4 content boundary held.** No Daily question/answer/reveal content, mapping, or the
+Shuri/Cleo collision was touched -- confirmed by diff (only normalization/editor MECHANISM
+code changed in `daily-questions.ts`, zero content lines).
+
+**NOT DONE THIS PASS, explicitly:** no EAS build, no TestFlight submission, no database
+migration applied, no Supabase Edge Function deployed, no live RevenueCat/App Store Connect
+configuration performed or verified, no physical-device test executed. See the Build 18
+completion report for the full punch list and exact owner-action items.
+
 
 ## 78. APP STORE CONNECT OWNER SCREENSHOT RECONCILIATION (2026-10-20)
 Owner-supplied screenshots confirm active paid agreement, banking, W-9, DSA, one existing monthly subscription product, unstarted privacy disclosure, incomplete version 1.0 listing and pending updated Apple developer agreement. Build 17 visual evidence and owner acceptance recorded. Exact findings and action order: `docs/app-store/APP_STORE_CONNECT_SCREENSHOT_AUDIT_2026-10-20.md`. Apple account is displayed under an individual's name; SGV legal operation does not by itself change App Store seller display. Company exact legal name and support domain email to be confirmed. Claude is actively editing Build 18 trait-limit files; do not overwrite its working tree.
