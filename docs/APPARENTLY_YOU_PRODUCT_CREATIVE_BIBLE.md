@@ -2468,3 +2468,7 @@ That is the bible. 🔥
 ## 68. FREE DAILY #30 REVEALS OWNER APPROVED (2026-10-19)
 
 **EDITORIAL APPROVAL, NOT PUBLISHED.** Owner approved exact answer + reveal pairs for free:30 options **A, B, C, D, F**, and **CUT option E entirely** (scab picking answer and 'Leave It ALONE.' reveal). Five active approved choices remain; preserve original lettering in the audit record, with any display renumbering only upon authorized implementation. All approved exact titles, bodies, and answers plus cut historical copy are archived in `docs/DAILY_REVEAL_FREE30_APPROVED_2026-10-19.md`. The broader Batch 3 draft archive still includes the superseded E for historical reference, but §68 governs final editorial status. Other reveal questions from Round 1 remain unreviewed. No trait mappings, scoring, app code or production changes authorized.
+
+## 69. CORRECTION TO FREE DAILY #30 REVEAL DECISIONS (2026-10-19)
+
+**OWNER CORRECTION SUPERSEDES §68 WHERE CONFLICTING.** Free:30 **D (dandruff scratching) CUT answer and reveal**. **E (scab picking) KEEP answer, REVISE reveal**, rather than cutting the entire option. A, B, C, F remain fully approved. New E reveal proposal awaiting owner approval: **'The Healing Process Has Left the Chat.'** / 'Your body made a scab to protect the wound. You saw a tiny little edge and decided to start renovations.' Exact corrected statuses and original rejected reveal are preserved in `docs/DAILY_REVEAL_FREE30_CORRECTION_2026-10-19.md`. No production changes authorized.
