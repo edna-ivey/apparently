@@ -27,12 +27,18 @@ import { reportBackendFailure } from '@/services/observability';
 // degrades to an honest "unavailable" result rather than crashing or importing the native
 // module's side effects on an unsupported platform.
 import Purchases, {
+  INTRO_ELIGIBILITY_STATUS,
   LOG_LEVEL,
   PACKAGE_TYPE,
   type CustomerInfo,
   type PurchasesError,
   type PurchasesPackage,
 } from 'react-native-purchases';
+
+// Re-exported so the paywall can type its own PlanCard prop without importing
+// react-native-purchases directly -- this stays the ONE place that ever imports it (see this
+// file's own header comment); a type-only import is still an import of it.
+export type { PurchasesPackage } from 'react-native-purchases';
 
 // ---------------------------------------------------------------------------------------
 // Stable identifiers -- approved names, not invented here. Keep these three in sync with
@@ -44,6 +50,20 @@ import Purchases, {
 export const APPARENTLY_PRIVATE_ENTITLEMENT_ID = 'apparently_private';
 export const APPARENTLY_PRIVATE_OFFERING_ID = 'default';
 export const APPARENTLY_PRIVATE_MONTHLY_PRODUCT_ID = 'apparently_private_monthly';
+// Build 18 (owner-locked pricing: $3.99/mo, $29.99/yr standard, $19.99 first-year Founding
+// Member then $29.99/yr renewal -- see docs/app-store/OWNER_APP_STORE_ACTIONS.md). PROPOSED
+// id, matching the existing monthly id's naming convention -- NOT confirmed to exist in App
+// Store Connect/RevenueCat yet. There is no separate "founder" product id: Apple has no
+// mechanism to target a hand-picked cohort by id. "Founding Member" is realized as a real
+// StoreKit Introductory Offer (pay-up-front, 1 year, 1 cycle, $19.99) attached to THIS SAME
+// annual product -- Apple grants it automatically to any customer who has never subscribed to
+// this app's subscription group before, and RevenueCat/StoreKit report both the discounted
+// intro price and the real eligibility for it (see checkApparentlyPrivateAnnualIntroEligibility
+// below). A customer who already had this subscription (even if lapsed) sees the plain $29.99
+// annual price -- Apple decides this at the OS purchase-sheet level regardless of what this
+// app's own UI says, so the UI must check eligibility and disclose accurately rather than
+// promise the discount unconditionally.
+export const APPARENTLY_PRIVATE_ANNUAL_PRODUCT_ID = 'apparently_private_annual';
 
 // ---------------------------------------------------------------------------------------
 // Config detection -- same isXConfigured convention as isSupabaseConfigured
@@ -295,17 +315,27 @@ const syncServerEntitlementIfStale = async (): Promise<void> => {
 // Offering / package lookup
 // ---------------------------------------------------------------------------------------
 
-export type MonthlyOfferingResult =
-  | { ok: true; package: PurchasesPackage }
-  | { ok: false; reason: 'unsupported-platform' | 'not-configured' | 'offering-unavailable' | 'package-unavailable' | 'error'; message: string };
+export type OfferingsErrorReason = 'unsupported-platform' | 'not-configured' | 'offering-unavailable' | 'package-unavailable' | 'error';
 
-// Resolves the real monthly package to purchase, from the live RevenueCat offering --
-// NEVER a hardcoded price/product client-side. Looks up the configured "default" offering's
-// predefined `monthly` package slot first (the standard RevenueCat convention for a single
-// monthly plan), falling back to scanning availablePackages for PACKAGE_TYPE.MONTHLY or the
-// literal identifier "monthly" in case the dashboard attaches it as a custom package instead
-// -- either way, this never invents a package that doesn't really exist in the Store.
-export const getMonthlyOffering = async (): Promise<MonthlyOfferingResult> => {
+export type ApparentlyPrivateOfferings = {
+  monthly: PurchasesPackage | null;
+  // Null if no annual product is configured in the live offering yet (e.g. pending the owner
+  // creating it in App Store Connect/RevenueCat -- see docs/app-store/OWNER_APP_STORE_ACTIONS.md).
+  // Never fabricated; the paywall must handle this as "annual not offered right now," not an error.
+  annual: PurchasesPackage | null;
+};
+
+export type OfferingsResult = { ok: true; offerings: ApparentlyPrivateOfferings } | { ok: false; reason: OfferingsErrorReason; message: string };
+
+// Resolves the real monthly AND annual packages to purchase, from the ONE live RevenueCat
+// offering -- NEVER a hardcoded price/product client-side. Looks up the configured "default"
+// offering's predefined `monthly`/`annual` package slots first (the standard RevenueCat
+// convention), falling back to scanning availablePackages for the matching PACKAGE_TYPE or
+// literal identifier in case the dashboard attaches either as a custom package instead --
+// either way, this never invents a package that doesn't really exist in the Store. `annual`
+// resolving to null is a normal, non-error outcome (the plan simply isn't offered yet), not
+// "offering-unavailable" -- that reason is reserved for the whole offering being unreachable.
+export const getApparentlyPrivateOfferings = async (): Promise<OfferingsResult> => {
   if (!isPurchasesPlatformSupported) {
     return { ok: false, reason: 'unsupported-platform', message: 'Subscribing is only available in the iOS app.' };
   }
@@ -318,21 +348,54 @@ export const getMonthlyOffering = async (): Promise<MonthlyOfferingResult> => {
     if (!offering) {
       return { ok: false, reason: 'offering-unavailable', message: 'Apparently Private isn’t available right now.' };
     }
-    const monthlyPackage =
+    const monthly =
       offering.monthly ??
       offering.availablePackages.find(
         (candidate) => candidate.packageType === PACKAGE_TYPE.MONTHLY || candidate.identifier === 'monthly',
       ) ??
       null;
-    if (!monthlyPackage) {
+    const annual =
+      offering.annual ??
+      offering.availablePackages.find(
+        (candidate) => candidate.packageType === PACKAGE_TYPE.ANNUAL || candidate.identifier === 'annual',
+      ) ??
+      null;
+    if (!monthly && !annual) {
       return { ok: false, reason: 'package-unavailable', message: 'Apparently Private isn’t available right now.' };
     }
-    return { ok: true, package: monthlyPackage };
+    return { ok: true, offerings: { monthly, annual } };
   } catch (error) {
     if (__DEV__) {
-      console.warn('[purchases-service] getMonthlyOffering failed:', error);
+      console.warn('[purchases-service] getApparentlyPrivateOfferings failed:', error);
     }
     return { ok: false, reason: 'error', message: 'Could not load Apparently Private right now.' };
+  }
+};
+
+// ---------------------------------------------------------------------------------------
+// Introductory ("Founding Member") offer eligibility -- real StoreKit/RevenueCat truth only.
+// Apple's own rule: a customer is eligible for a product's introductory price only if they
+// have never been subscribed to ANY product in that product's subscription group before.
+// This is NOT something the app can target at a hand-picked cohort ("first 100 users") --
+// that mechanism does not exist for introductory offers. This function reports Apple's real
+// answer; it never assumes eligibility, and a false/unknown result must read as "show the
+// plain annual price," never "assume the discount applies."
+// ---------------------------------------------------------------------------------------
+
+export const checkApparentlyPrivateAnnualIntroEligibility = async (annualProductId: string): Promise<boolean> => {
+  if (!isPurchasesPlatformSupported || !isRevenueCatConfigured) {
+    return false;
+  }
+  try {
+    const result = await Purchases.checkTrialOrIntroductoryPriceEligibility([annualProductId]);
+    return result[annualProductId]?.status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[purchases-service] checkApparentlyPrivateAnnualIntroEligibility failed:', error);
+    }
+    // Fails closed to "not eligible" -- the paywall shows the plain annual price rather than
+    // promising a discount this function couldn't actually confirm.
+    return false;
   }
 };
 
@@ -344,14 +407,17 @@ export type SubscribeResult =
   | { ok: true; status: 'purchased' | 'cancelled' }
   | { ok: false; message: string };
 
-// Purchases whatever real monthly package getMonthlyOffering() resolved. Cancellation is a
-// clean, non-error outcome (the user stays free, no scary UI) -- distinguished via
-// PurchasesError.userCancelled, RevenueCat's own documented field for exactly this, never a
-// guess based on message text. A real failure gets a short, nontechnical message; premium
-// state is NEVER set locally here -- it's only ever derived from the CustomerInfo the SDK
-// itself returns (via the customerInfo update listener triggered by a real purchase), so a
-// successful local optimistic flip that later turns out to be wrong can never happen.
-export const subscribeMonthly = async (pkg: PurchasesPackage): Promise<SubscribeResult> => {
+// Purchases whichever real package the caller resolved (monthly or annual -- Purchases.
+// purchasePackage itself is package-agnostic; StoreKit/RevenueCat apply whatever price,
+// duration, and introductory offer are actually configured on that package's product, never
+// anything this app computes or asserts). Cancellation is a clean, non-error outcome (the
+// user stays free, no scary UI) -- distinguished via PurchasesError.userCancelled,
+// RevenueCat's own documented field for exactly this, never a guess based on message text. A
+// real failure gets a short, nontechnical message; premium state is NEVER set locally here --
+// it's only ever derived from the CustomerInfo the SDK itself returns (via the customerInfo
+// update listener triggered by a real purchase), so a successful local optimistic flip that
+// later turns out to be wrong can never happen.
+export const subscribeToPackage = async (pkg: PurchasesPackage): Promise<SubscribeResult> => {
   if (!isPurchasesPlatformSupported || !isRevenueCatConfigured) {
     return { ok: false, message: 'Subscribing is only available in the iOS app.' };
   }
@@ -369,7 +435,7 @@ export const subscribeMonthly = async (pkg: PurchasesPackage): Promise<Subscribe
       return { ok: true, status: 'cancelled' };
     }
     if (__DEV__) {
-      console.warn('[purchases-service] subscribeMonthly failed:', error);
+      console.warn('[purchases-service] subscribeToPackage failed:', error);
     }
     return { ok: false, message: 'That didn’t go through. Please try again.' };
   }
@@ -390,7 +456,7 @@ export const restorePurchases = async (): Promise<RestoreResult> => {
   try {
     const customerInfo = await Purchases.restorePurchases();
     setSnapshot(deriveSnapshotFromCustomerInfo(customerInfo));
-    // Same best-effort server-sync wait as subscribeMonthly above.
+    // Same best-effort server-sync wait as subscribeToPackage above.
     await syncServerEntitlement();
     return { ok: true, restored: Boolean(customerInfo.entitlements.active[APPARENTLY_PRIVATE_ENTITLEMENT_ID]?.isActive) };
   } catch (error) {

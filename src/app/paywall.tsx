@@ -9,21 +9,39 @@ import { Brand, Spacing } from '@/constants/theme';
 import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/components/today/celestial';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import {
-  getMonthlyOffering,
+  APPARENTLY_PRIVATE_ANNUAL_PRODUCT_ID,
+  checkApparentlyPrivateAnnualIntroEligibility,
+  getApparentlyPrivateOfferings,
   getSubscriptionManagementUrl,
   restorePurchases,
-  subscribeMonthly,
+  subscribeToPackage,
   usePremiumStatus,
-  type MonthlyOfferingResult,
+  type ApparentlyPrivateOfferings,
+  type PurchasesPackage,
 } from '@/services/purchases-service';
 
-// Apparently Private's real paywall -- the one place a monthly subscription can actually be
-// bought or restored. Approved copy only (heading/support/kicker below, transcribed exactly
-// as given); no invented discount/trial/urgency language. Price is ALWAYS read from the live
-// Store product (offering.package.product.priceString) -- $3.99 is the target, never the
-// authoritative displayed number. Never renders on web (see the unsupported-platform state) --
-// react-native-purchases' native purchase APIs are iOS/Android-build-only, see purchases-service.ts.
-type OfferingState = { phase: 'loading' } | { phase: 'ready'; offering: MonthlyOfferingResult & { ok: true } } | { phase: 'unavailable'; message: string };
+// Apparently Private's real paywall -- the one place a subscription can actually be bought or
+// restored. Approved copy only (heading/support/kicker below, transcribed exactly as given);
+// no invented discount/trial/urgency language. Every price shown is read from the live Store
+// product (package.product.priceString/introPrice) -- $3.99/$29.99/$19.99 are the owner-
+// locked TARGETS (see docs/app-store/OWNER_APP_STORE_ACTIONS.md), never the authoritative
+// displayed number; whatever StoreKit actually returns is what renders. Never renders on web
+// (see the unsupported-platform state) -- react-native-purchases' native purchase APIs are
+// iOS/Android-build-only, see purchases-service.ts.
+type PlanId = 'monthly' | 'annual';
+
+type OfferingState =
+  | { phase: 'loading' }
+  | {
+      phase: 'ready';
+      offerings: ApparentlyPrivateOfferings;
+      // Real Apple/StoreKit eligibility for the annual product's introductory ("Founding
+      // Member") price -- checked once per load, never assumed. False (never true) until a
+      // real SDK answer comes back; see checkApparentlyPrivateAnnualIntroEligibility's own
+      // fail-closed behavior.
+      annualIntroEligible: boolean;
+    }
+  | { phase: 'unavailable'; message: string };
 
 export default function PaywallScreen() {
   const router = useRouter();
@@ -31,14 +49,25 @@ export default function PaywallScreen() {
   const premium = usePremiumStatus();
 
   const [offeringState, setOfferingState] = useState<OfferingState>({ phase: 'loading' });
+  // Defaults to annual once it's known to exist (the better-value plan to lead with) --
+  // reset to whichever plans are actually available each time offerings load, never assumed
+  // ahead of that.
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [restoreState, setRestoreState] = useState<{ phase: 'idle' | 'restoring' | 'done'; message?: string }>({ phase: 'idle' });
 
   const loadOffering = async () => {
     setOfferingState({ phase: 'loading' });
-    const result = await getMonthlyOffering();
-    setOfferingState(result.ok ? { phase: 'ready', offering: result } : { phase: 'unavailable', message: result.message });
+    const result = await getApparentlyPrivateOfferings();
+    if (!result.ok) {
+      setOfferingState({ phase: 'unavailable', message: result.message });
+      return;
+    }
+    const annualProductId = result.offerings.annual?.product.identifier ?? APPARENTLY_PRIVATE_ANNUAL_PRODUCT_ID;
+    const annualIntroEligible = result.offerings.annual ? await checkApparentlyPrivateAnnualIntroEligibility(annualProductId) : false;
+    setOfferingState({ phase: 'ready', offerings: result.offerings, annualIntroEligible });
+    setSelectedPlan(result.offerings.annual ? 'annual' : 'monthly');
   };
 
   useEffect(() => {
@@ -48,13 +77,16 @@ export default function PaywallScreen() {
     void loadOffering();
   }, []);
 
+  const selectedPackage: PurchasesPackage | null =
+    offeringState.phase === 'ready' ? (selectedPlan === 'annual' ? offeringState.offerings.annual : offeringState.offerings.monthly) : null;
+
   const handleSubscribe = async () => {
-    if (offeringState.phase !== 'ready' || isPurchasing) {
+    if (!selectedPackage || isPurchasing) {
       return;
     }
     setIsPurchasing(true);
     setPurchaseError(null);
-    const result = await subscribeMonthly(offeringState.offering.package);
+    const result = await subscribeToPackage(selectedPackage);
     setIsPurchasing(false);
     if (!result.ok) {
       setPurchaseError(result.message);
@@ -167,17 +199,30 @@ export default function PaywallScreen() {
               )}
 
               {offeringState.phase === 'ready' && (
-                <View style={[Panel.shell, styles.priceCard]}>
-                  <View style={[Panel.glow, styles.priceGlow]} />
-                  <ThemedText style={[Panel.eyebrow, styles.priceEyebrow]}>MONTHLY</ThemedText>
-                  <View style={styles.priceRow}>
-                    <ThemedText style={styles.priceValue}>{offeringState.offering.package.product.priceString}</ThemedText>
-                    <ThemedText style={styles.priceUnit}>/month</ThemedText>
-                  </View>
+                <View style={styles.plansGroup}>
+                  {offeringState.offerings.annual && (
+                    <PlanCard
+                      pkg={offeringState.offerings.annual}
+                      eyebrow={offeringState.annualIntroEligible && offeringState.offerings.annual.product.introPrice ? 'FOUNDING MEMBER' : 'ANNUAL'}
+                      selected={selectedPlan === 'annual'}
+                      onPress={() => setSelectedPlan('annual')}
+                    />
+                  )}
+                  {offeringState.offerings.monthly && (
+                    <PlanCard
+                      pkg={offeringState.offerings.monthly}
+                      eyebrow="MONTHLY"
+                      selected={selectedPlan === 'monthly'}
+                      onPress={() => setSelectedPlan('monthly')}
+                    />
+                  )}
 
                   {purchaseError && <ThemedText style={styles.errorText}>{purchaseError}</ThemedText>}
 
-                  <Pressable disabled={isPurchasing} style={[styles.primaryCta, isPurchasing && styles.ctaDisabled]} onPress={() => void handleSubscribe()}>
+                  <Pressable
+                    disabled={isPurchasing || !selectedPackage}
+                    style={[styles.primaryCta, (isPurchasing || !selectedPackage) && styles.ctaDisabled]}
+                    onPress={() => void handleSubscribe()}>
                     <ThemedText style={styles.primaryCtaText}>{isPurchasing ? 'Subscribing…' : 'Subscribe →'}</ThemedText>
                   </Pressable>
                 </View>
@@ -195,11 +240,79 @@ export default function PaywallScreen() {
               <Pressable style={styles.tertiaryCta} onPress={() => router.back()}>
                 <ThemedText style={styles.tertiaryCtaText}>Not now</ThemedText>
               </Pressable>
+
+              <View style={styles.legalRow}>
+                <Pressable onPress={() => router.push('/privacy-policy')}>
+                  <ThemedText style={styles.legalLinkText}>Privacy Policy</ThemedText>
+                </Pressable>
+                <ThemedText style={styles.legalDivider}>·</ThemedText>
+                <Pressable onPress={() => router.push('/terms-of-use')}>
+                  <ThemedText style={styles.legalLinkText}>Terms of Use</ThemedText>
+                </Pressable>
+              </View>
             </>
           )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+// ISO 8601 duration ("P1Y"/"P1M"/"P1W") -> a plain unit word for display. Reads the real
+// product's own reported period rather than assuming "annual slot = year" -- if StoreKit ever
+// reports something unexpected, this degrades to the raw string rather than silently asserting
+// a wrong duration.
+const formatSubscriptionPeriodUnit = (period: string | null): string => {
+  switch (period) {
+    case 'P1Y':
+      return 'year';
+    case 'P1M':
+      return 'month';
+    case 'P1W':
+      return 'week';
+    default:
+      return period ?? '';
+  }
+};
+
+// One selectable plan -- real StoreKit price/duration only. The Founding Member framing is
+// ONLY ever shown when the caller has already confirmed (a) a real introductory price exists
+// on this product and (b) this specific customer is Apple-eligible for it right now --
+// PlanCard itself never decides eligibility, it only renders what it's told, so it can never
+// accidentally promise a discount that wasn't actually verified.
+function PlanCard({ pkg, eyebrow, selected, onPress }: { pkg: PurchasesPackage; eyebrow: string; selected: boolean; onPress: () => void }) {
+  const unit = formatSubscriptionPeriodUnit(pkg.product.subscriptionPeriod);
+  const isFoundingMember = eyebrow === 'FOUNDING MEMBER' && pkg.product.introPrice;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${eyebrow} plan, ${isFoundingMember ? pkg.product.introPrice?.priceString : pkg.product.priceString} per ${unit}`}
+      style={[Panel.shell, styles.priceCard, selected && styles.priceCardSelected]}>
+      <View style={[Panel.glow, styles.priceGlow]} />
+      <ThemedText style={[Panel.eyebrow, styles.priceEyebrow]}>{eyebrow}</ThemedText>
+      {isFoundingMember && pkg.product.introPrice ? (
+        <>
+          <View style={styles.priceRow}>
+            <ThemedText style={styles.priceValue}>{pkg.product.introPrice.priceString}</ThemedText>
+            <ThemedText style={styles.priceUnit}>for your first {unit}</ThemedText>
+          </View>
+          {/* Required upfront renewal disclosure -- the real StoreKit base price, not a
+              hardcoded number, shown right alongside the discounted price, never hidden in
+              fine print the user has to seek out. */}
+          <ThemedText style={styles.renewalNote}>
+            Then {pkg.product.priceString} per {unit}, billed automatically unless you cancel.
+          </ThemedText>
+        </>
+      ) : (
+        <View style={styles.priceRow}>
+          <ThemedText style={styles.priceValue}>{pkg.product.priceString}</ThemedText>
+          <ThemedText style={styles.priceUnit}>per {unit}</ThemedText>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -233,12 +346,18 @@ const styles = StyleSheet.create({
   valueRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   valueIcon: { fontSize: 16 },
   valueText: { ...CelestialType.body, flex: 1 },
-  priceCard: { gap: Spacing.two, borderColor: 'rgba(255,121,95,0.3)' },
+  // Two selectable plan cards stacked above one shared Subscribe button/error line.
+  plansGroup: { gap: Spacing.two },
+  priceCard: { gap: Spacing.one, borderColor: 'rgba(255,121,95,0.3)' },
+  priceCardSelected: { borderColor: Brand.coral, borderWidth: 2 },
   priceGlow: { backgroundColor: 'rgba(255,121,95,0.2)' },
   priceEyebrow: { color: Brand.coral },
   priceRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: Spacing.half },
   priceValue: { color: Brand.cream, fontSize: 36, lineHeight: 40, fontWeight: '900', letterSpacing: -0.5 },
   priceUnit: { color: 'rgba(255,249,245,0.6)', fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  // Required renewal disclosure for the Founding Member intro price -- always visible on the
+  // card itself, never hidden behind a tap or only shown after purchase.
+  renewalNote: { color: 'rgba(255,249,245,0.6)', fontSize: 13, fontWeight: '600' },
   errorText: { color: Brand.coral, fontSize: 13, lineHeight: 18, fontWeight: '600' },
   primaryCta: { backgroundColor: Brand.coral, borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three, marginTop: Spacing.one },
   primaryCtaText: { color: Brand.plum, fontSize: 16, fontWeight: '800' },
@@ -249,6 +368,9 @@ const styles = StyleSheet.create({
   restoreMessage: { color: 'rgba(255,249,245,0.65)', fontSize: 13, fontWeight: '600', textAlign: 'center' },
   tertiaryCta: { alignItems: 'center', paddingVertical: Spacing.two },
   tertiaryCtaText: { color: 'rgba(255,249,245,0.5)', fontSize: 14, fontWeight: '700' },
+  legalRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.one },
+  legalLinkText: { color: 'rgba(255,249,245,0.4)', fontSize: 12, fontWeight: '700' },
+  legalDivider: { color: 'rgba(255,249,245,0.3)', fontSize: 12 },
   stateCard: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)', alignItems: 'center' },
   stateText: { color: 'rgba(255,249,245,0.8)', fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
   activeCard: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)' },
