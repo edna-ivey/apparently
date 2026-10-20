@@ -43,3 +43,12 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 
 ## Audit trail
 2026-10-19: Continuity protocol established; Bible addendum written; no app code, live questions, migrations, or production data changed.
+
+
+## Repository and Bible reconciliation, 2026-10-20
+- Verified `feature/private-library-implementation` at `41afb2c` matches origin, working tree clean before documentation changes. `master` is older and not the authoritative latest branch for Build 17 follow-up work.
+- Build 17 artifact came from `8a42ace`; later branch commits are not necessarily included in the installed TestFlight binary.
+- Canonical Markdown Bible header updated to the October 20 governing edition, with dated §75 reconciliation. Historical v1.4 remains preserved.
+- 90-slot one-pass Daily workbook is a working review compilation, NOT approved release content. Preserve 428 proposed mappings and their review labels; do not publish without approval.
+- Two approved character collisions (Shuri, Cleo) remain unresolved. Daily multi-trait cap discrepancy remains open pending verified code correction.
+- No production app, database, content, or native build change was made in this documentation reconciliation.

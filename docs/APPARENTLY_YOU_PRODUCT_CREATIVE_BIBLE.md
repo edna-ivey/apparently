@@ -1,8 +1,8 @@
 # Apparently You Product + Creative Bible
 
-**Current governing version: v1.4**
+**Current governing edition: October 20, 2026 | Build 17 verified in internal TestFlight | original v1.4 retained as historical baseline**
 
-This document is the canonical implementation-readable repository copy of the Apparently You Product + Creative Bible.
+This document is the canonical implementation-readable repository copy of the Apparently You Product + Creative Bible. The original September 27 v1.4 remains below as historical baseline; later dated, owner-approved addenda supersede conflicts. Implementation and deployment status must be verified separately.
 
 When implementation behavior conflicts with this Bible, stop and surface the conflict for review rather than silently changing the product.
 
@@ -2506,3 +2506,19 @@ That is the bible. 🔥
 **APPLE PROCESSING CONFIRMED** via `eas submit:status`: build **1.0.0 (17)** now appears in App Store Connect's TestFlight list — **internal: in beta testing** (internal testers can install now), **external: ready for beta submission** (external/public TestFlight distribution has NOT been submitted — that is a separate, not-yet-taken step). Build 16 (1.0.0 (16)) remains the most recent build previously fully distributed to both internal and external testers.
 
 **NOT DONE, NOT AUTHORIZED THIS PASS:** submitting Build 17 for external beta review/distribution. **NOT YET VERIFIED:** any physical-device testing of the three Build 17 fixes — see `docs/BUILD17_DEVICE_TEST_CHECKLIST_2026-10-19.md` (unchecked). No Daily content, personality scoring, Creature identity/evolution, What's Your Type?, subscriptions/pricing, or database migrations touched.
+
+## 75. SOURCE-OF-TRUTH RECONCILIATION: BUILD 17 AND OCTOBER 20 EDITORIAL WORK (2026-10-20)
+
+**DOCUMENTATION UPDATE, NOT A NEW CREATIVE APPROVAL.** The canonical Markdown Bible is now indexed as the October 20 governing edition. The original v1.4 text remains preserved as historical baseline; later owner-approved addenda and exact approved-content files govern conflicting decisions. This entry records repository evidence, not a change to quiz copy, scoring, production data, or subscription behavior.
+
+**GIT VERIFIED:** Repository `edna-ivey/apparently`; current working branch `feature/private-library-implementation`, clean working tree, local HEAD `41afb2cb25f1e49e6cbdcfa434a263cf27b91ca1` equals `origin/feature/private-library-implementation`. The newer development and documentation work is pushed on this feature branch. **NOT YET MERGED TO MASTER:** the repository's `master` branch is behind the feature branch; reviewing only master gives an obsolete picture of product progress. Never claim that master is the latest implementation without comparing branches.
+
+**BUILD 17 TRACEABILITY:** §74 records EAS build 1.0.0 (17), built from commit `8a42ace`, submitted to Apple and processed for **internal TestFlight**. Later October 19–20 commits on the feature branch include editorial documents and asset maintenance that are **not automatically part of the Build 17 binary**. External TestFlight submission and physical-device acceptance of the Build 17 fixes remain unverified per §74 and `docs/BUILD17_DEVICE_TEST_CHECKLIST_2026-10-19.md`. Do not conflate latest repository HEAD with the build artifact.
+
+**OCTOBER 20 DAILY EDITORIAL WORKBOOK, WORKING ONLY:** `docs/DAILY_ONE_PASS_FULL_WORKBOOK_2026-10-20.md` now consolidates **90 original question slots** (Free and Private combined, including CUT archival entries) for one-pass owner review. It is **not** 90 approved or published new questions per room. It includes 428 active answer options with proposed evidence mappings, 135 individually reasoned and 293 rough lexical candidates needing substantive review. Batch 2 original answer choices were not recovered; 27 answer sets are newly authored proposals. Only the explicitly owner-approved reveals/character revisions within the workbook retain their approved status; the rest are drafts. No publication, database change, or evidence-scoring implementation is authorized by the workbook.
+
+**UNRESOLVED APPROVED-CONTENT COLLISIONS:** `docs/DAILY_COLLISION_AUDIT_2026-10-20.md` identifies Shuri (free:01 C / free:13 B) and Cleo (free:01 B / private:03 E) appearing twice in approved options. Do not silently replace either approved choice. Owner approval is needed to resolve. A full live-library duplication audit remains outstanding.
+
+**KNOWN SCORING CONFLICT STILL OPEN:** §56 and the continuity protocol record that Daily answer mappings may support unlimited genuinely justified trait poles, at most 3 evidence points per pole, while normalization/editor code has imposed a three-effect count cap. No fix is asserted by this documentation update; verify current code and tests before changing its status.
+
+**NEXT REQUIRED RECONCILIATION:** inspect current feature-branch implementation, live Supabase migrations/content, EAS/TestFlight acceptance, App Store Connect configuration, and owner-approved content registry. Mark each separately as APPROVED, IMPLEMENTED, DEPLOYED, TESTED, or OPEN. Reconcile outdated original sections through explicitly reviewed edits, not silent rewriting. Update this Bible and the continuity protocol in the same work cycle. No launch-ready assertion is made by this entry.
