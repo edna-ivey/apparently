@@ -134,3 +134,10 @@ Question: What's your most unnecessary personal rule?
 - D: I read the menu before leaving home.
 - E: I can't start a show without knowing how many seasons.
 - F: I have a specific way the dishwasher should be loaded.
+
+## October 20, 2026: Complete original Batch 1 answer-set transcription
+All 30 original Batch 1 question screens (Free #0–14, Private #0–14), including all six options each, have now been transcribed from the 239-second recording and saved in **DAILY_BATCH1_ORIGINAL_VIDEO_RECOVERED_2026-10-20.json**. The source video shows original **pre-revision** versions, not the later approved character substitutions. The owner-approved character substitutions are preserved separately in **DAILY_APPROVED_CHARACTER_REVISIONS_2026-10-19.md** and included in the working one-pass workbook.
+
+The screen recording does **not** show the original Batch 2 Free #15–29 and Private #15–29 answer-option screens. Those exact answer options cannot be honestly labeled recovered. The 27 surviving Batch 2 question concepts have a clearly labeled **NEW FORGE PROPOSAL** answer set in **DAILY_BATCH2_NEW_ANSWER_PROPOSALS_2026-10-20.json**. The three owner-CUT Batch 2 questions remain archived without replacement.
+
+The 90-slot integrated **DAILY_ONE_PASS_FULL_WORKBOOK_2026-10-20.md** is a WORKING DRAFT only. Most reveal copy and mapping candidates in it are mechanical scaffolding and **must be editorially rewritten and verified before asking the owner to approve the entire package**. Do not misrepresent this draft as finished creative work. Exact previously approved reveals remain protected.
