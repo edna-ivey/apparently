@@ -28,3 +28,63 @@ Original editorial decision: check Batch 1 review. Reveal copy and pole mapping 
 - The recording is a scroll-through of ChatGPT screens including original answer-choice cards and prior editorial discussion. Some frames are repeated. Preserve the exact question/answer text, later owner revisions, and the latest approval status.
 - This ledger is incomplete. Never label the whole 90-question set recovered until verified against source frame by frame.
 - Video itself is user supplied and remains available in the conversation. A 120-frame evidence archive was generated in this conversation, but that archive is NOT yet copied to the user's Mac.
+
+### Batch 1 Free #1 | 00:04
+Question: You're in a heist movie. What's your role?
+- A: The mastermind with seventeen backup plans.
+- B: The smooth talker getting us through security.
+- C: The getaway driver who has QUESTIONS.
+- D: The hacker who knows everybody's secrets.
+- E: The wildcard who wasn't supposed to touch anything.
+- F: The one who already negotiated immunity.
+Original editorial decision: REVISE. This is original pre-revision copy, NOT the later approved replacement.
+
+### Batch 1 Free #2 | 00:06
+Question: Pick your very inconvenient curse.
+- A: Every lie you tell appears as a subtitle.
+- B: Your search history becomes your autobiography.
+- C: Your inner monologue plays over the speakers once a week.
+- D: Your worst haircut comes back every birthday.
+- E: You accidentally reply-all to one email a month.
+- F: Every dramatic exit has an automatic replay.
+Original editorial decision: check Batch 1 record. This is a six-choice draft labeled Would You Rather in the original interface; the later two-choice rule must be applied only with owner approval.
+
+### Batch 1 Free #3 | 00:08
+Question: You're offered $10,000, but you have to accept one condition. Which one?
+- A: No social media for a year.
+- B: Your phone's screen time is publicly displayed every Sunday.
+- C: Your family chooses your outfits for a month.
+- D: No complaining for 90 days.
+- E: You must tell the truth whenever someone says 'be honest.'
+- F: Your most embarrassing moment becomes a national commercial.
+Original editorial decision: check Batch 1 record.
+
+### Batch 1 Free #5 | 00:12
+Question: Which harmless thing are you secretly judgmental about?
+- A: People who don't return shopping carts.
+- B: People who clap when the plane lands.
+- C: People who use speakerphone in public.
+- D: People who leave one second on the microwave.
+- E: People who say 'we should hang out' and never mean it.
+- F: People who don't read the instructions, then complain.
+Original editorial decision: check Batch 1 record.
+
+### Batch 1 Free #6 | 00:14
+Question: You're a reality-show contestant. What's your edit?
+- A: The fan favorite who minds their business.
+- B: The villain who insists they're misunderstood.
+- C: The one with all the confessionals.
+- D: The peacemaker who finally snaps.
+- E: The strategic player nobody saw coming.
+- F: The one who gets eliminated for telling the truth.
+Original editorial decision: check Batch 1 record.
+
+### Batch 1 Free #8 | 00:16
+Question: A mysterious button appears in your house. Which label makes you press it?
+- A: SEE THE FUTURE
+- B: REWRITE YESTERDAY
+- C: UNLOCK A SECRET
+- D: DOUBLE YOUR LUCK
+- E: MEET YOUR ALTERNATE SELF
+- F: DO NOT PRESS
+Original editorial decision: check Batch 1 record.
