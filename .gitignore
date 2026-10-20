@@ -49,5 +49,5 @@ example
 supabase/.temp/
 
 # Local Creature artwork source folders (kept on disk, not committed)
-/assets/creatures/
+/assets/creatures_old/
 /assets/creatures copy/

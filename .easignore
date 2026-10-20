@@ -9,7 +9,7 @@
 # scripts/creature-factory/, and the asset folders assets/creatures-canonical/,
 # assets/creatures-dev-registered/, assets/creatures-dev-prototype/ it alone referenced) had
 # zero real importers and has been git-rm'd entirely -- see the Build 9 correction report for
-# before/after archive size. assets/creatures-test/ is the current production asset tree
+# before/after archive size. assets/creatures/ is the current production asset tree
 # (used by CreatureAvatar for every real user) and is correctly never excluded here.
 #
 # CORRECTIVE NOTE (Work Package 3, Phase B Stage 2 corrective commit): a Stage 2 attempt to
@@ -17,23 +17,23 @@
 # originals here, was proposed and committed but then EXPLICITLY WITHDRAWN -- the original
 # SVG artwork and rendering pipeline were previously approved and locked after extensive
 # calibration/rendering work, and changing their format was not authorized. Both the asset
-# references and this exclusion were reverted in the corrective commit. assets/creatures-test/
+# references and this exclusion were reverted in the corrective commit. assets/creatures/
 # and assets/relics/ are LOCKED: do not exclude any file under them, do not change what
 # creature-test-assets.ts / relic-assets.ts require(), without explicit approval first.
 #
-# assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
+# assets/creatures_old/ below is DIFFERENT from all of the above: it was never git-tracked at all
 # (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
 # remaining thing the removed obsolete tree referenced. Excluded from the EAS upload here
 # (EAS Build includes untracked-but-not-gitignored files by default) rather than deleted from
 # disk, since it has no git history to recover it from -- that decision is left to whoever owns
 # this local checkout.
-assets/creatures/
+assets/creatures_old/
 
 # "assets/creatures copy/" (Work Package 3 audit): confirmed via SHA-1 checksum, file-for-file
-# identical to assets/creatures/ above (69/69 files, same relative paths, same hashes) --
+# identical to assets/creatures_old/ above (69/69 files, same relative paths, same hashes) --
 # an exact duplicate of the tree already excluded on the previous line. Also untracked, also
 # unreferenced by any src/ import. Excluded for the same reason and under the same no-delete
-# constraint as assets/creatures/.
+# constraint as assets/creatures_old/.
 assets/creatures copy/
 
 # Documentation -- never imported by app code.

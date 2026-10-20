@@ -1,6 +1,6 @@
 import type { CreatureTestCategory } from './creature-test-assets';
 
-// Calibration data ONLY -- never baked into the source SVGs (assets/creatures-test/ is never
+// Calibration data ONLY -- never baked into the source SVGs (assets/creatures/ is never
 // written to by this file or by the Creature Lab tool at runtime).
 //
 // Transform model (v2 -- slot-primary, per Michelle's direction):
@@ -53,7 +53,7 @@ export const BODY_CANVAS_INSET = (COMPOSITION_CANVAS_SIZE - BODY_CANVAS_SIZE) / 
 // set to the value chosen visually in the live tool. earsHorns: the value calibrated live in
 // the tool during this same session was never written to any file (Save Calibration downloads
 // to the browser's Downloads folder; nothing was placed back into
-// assets/creatures-test/creature-config.json), so it is NOT recoverable from disk -- rather
+// assets/creatures/creature-config.json), so it is NOT recoverable from disk -- rather
 // than guess a replacement, this starts at identity and is flagged in the Lab UI as
 // "needs recalibration" until someone sets it via SET AS SLOT DEFAULT.
 export const INITIAL_SLOT_DEFAULTS: SlotDefaults = {
@@ -126,7 +126,7 @@ type SavedCalibration = { slotDefaults?: Partial<SlotDefaults>; assetCorrections
 
 let saved: SavedCalibration = {};
 try {
-  saved = require('../../../assets/creatures-test/creature-config.json');
+  saved = require('../../../assets/creatures/creature-config.json');
 } catch {
   saved = {};
 }

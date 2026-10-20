@@ -36,7 +36,7 @@ import {
   type SlotDefaults,
 } from '@/data/creature-test/creature-test-config';
 
-// INTERNAL DEV-ONLY production calibration tool for assets/creatures-test/ (a fresh 5-slot x
+// INTERNAL DEV-ONLY production calibration tool for assets/creatures/ (a fresh 5-slot x
 // 8-category modular Creature asset set -- separate from src/app/dev/creature-lab.tsx, which
 // covers an earlier, different asset library under assets/creatures/). Not linked from any
 // navigation; reachable only at /creature-lab, and blanked outside __DEV__.
@@ -204,7 +204,7 @@ function CreatureLabInner() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         void navigator.clipboard?.writeText(json).catch(() => {});
-        window.alert('Downloaded creature-config.json (also copied to clipboard). Place it at assets/creatures-test/creature-config.json to persist -- it will auto-load next time Creature Lab opens.');
+        window.alert('Downloaded creature-config.json (also copied to clipboard). Place it at assets/creatures/creature-config.json to persist -- it will auto-load next time Creature Lab opens.');
       } catch (err) {
         console.warn('Save calibration failed', err);
       }
@@ -229,7 +229,7 @@ function CreatureLabInner() {
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Creature Lab</Text>
           <Text style={styles.subtitle}>
-            Internal calibration tool for assets/creatures-test/. Positioning, scale, rotation, and layering only -- no artwork is
+            Internal calibration tool for assets/creatures/. Positioning, scale, rotation, and layering only -- no artwork is
             edited, cropped, recolored, or regenerated.
           </Text>
 
@@ -248,7 +248,7 @@ function CreatureLabInner() {
             <Text style={styles.warningTitle}>Ears/Horns slot default not recovered</Text>
             <Text style={styles.warningText}>
               The Ears/Horns values you calibrated live before this pass were never written to a file (Save Calibration downloads to
-              your browser&apos;s Downloads folder; nothing had been placed back into assets/creatures-test/creature-config.json), so
+              your browser&apos;s Downloads folder; nothing had been placed back into assets/creatures/creature-config.json), so
               they could not be migrated into the new shared slot default -- it currently starts at identity (0, 0, 1x, 0°).
               Recalibrate Ears/Horns once and click &quot;SET AS SLOT DEFAULT&quot; -- from then on, Save Calibration persists it for
               real.

@@ -2,7 +2,7 @@ import type { ImageSourcePropType } from 'react-native';
 
 // Creature Lab (/creature-lab) asset registry -- production calibration tool, NOT the Core-
 // trait Creature system under src/data/creature-lab/ (a separate, earlier R&D pass on a
-// different asset library). This one points at assets/creatures-test/, a fresh 5-slot x
+// different asset library). This one points at assets/creatures/, a fresh 5-slot x
 // 8-category modular set. Static requires only -- Metro needs literal strings, so this table
 // cannot be generated from a loop at runtime.
 
@@ -53,60 +53,60 @@ export const CREATURE_TEST_KNOWN_ASSET_ISSUES: {
 
 export const CREATURE_TEST_ASSETS: Record<CreatureTestCategory, Record<CreatureTestSlot, ImageSourcePropType>> = {
   strong: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_strong_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_strong_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_strong_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_strong_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_strong_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_strong_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_strong_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_strong_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_strong_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_strong_eyes.svg'),
   },
   sentimental: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_sentimental_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_sentimental_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_sentimental_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_sentimental_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_sentimental_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_sentimental_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_sentimental_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_sentimental_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_sentimental_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_sentimental_eyes.svg'),
   },
   grounded: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_grounded_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_grounded_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_grounded_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_grounded_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_grounded_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_grounded_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_grounded_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_grounded_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_grounded_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_grounded_eyes.svg'),
   },
   curious: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_curious_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_curious_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_curious_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_curious_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_curious_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_curious_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_curious_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_curious_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_curious_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_curious_eyes.svg'),
   },
   playful: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_playful_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_playful_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_playful_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_playful_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_playful_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_playful_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_playful_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_playful_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_playful_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_playful_eyes.svg'),
   },
   visionary: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_visionary_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_visionary_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_visionary_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_visionary_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_visionary_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_visionary_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_visionary_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_visionary_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_visionary_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_visionary_eyes.svg'),
   },
   bold: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_bold_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_bold_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_bold_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_bold_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_bold_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_bold_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_bold_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_bold_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_bold_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_bold_eyes.svg'),
   },
   harmonious: {
-    body: require('../../../assets/creatures-test/apparently_you_8_base_bodies_svg/apparently_you_harmonious_base.svg'),
-    tail: require('../../../assets/creatures-test/apparently_you_8_tails_svg_v2/apparently_you_harmonious_tail_v2.svg'),
-    wings: require('../../../assets/creatures-test/apparently_you_8_wings_svg/apparently_you_harmonious_wings.svg'),
-    earsHorns: require('../../../assets/creatures-test/apparently_you_8_ears_horns_svg/apparently_you_harmonious_ears_horns.svg'),
-    eyes: require('../../../assets/creatures-test/apparently_you_8_eyes_svg/apparently_you_harmonious_eyes.svg'),
+    body: require('../../../assets/creatures/apparently_you_8_base_bodies_svg/apparently_you_harmonious_base.svg'),
+    tail: require('../../../assets/creatures/apparently_you_8_tails_svg_v2/apparently_you_harmonious_tail_v2.svg'),
+    wings: require('../../../assets/creatures/apparently_you_8_wings_svg/apparently_you_harmonious_wings.svg'),
+    earsHorns: require('../../../assets/creatures/apparently_you_8_ears_horns_svg/apparently_you_harmonious_ears_horns.svg'),
+    eyes: require('../../../assets/creatures/apparently_you_8_eyes_svg/apparently_you_harmonious_eyes.svg'),
   },
 };
 
