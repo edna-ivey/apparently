@@ -2963,3 +2963,33 @@ is deferred pending owner authorization.
 **Verification this pass:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39
 `scripts/validate-*.ts` green (including the newly-extended combined-Creature-Read
 validator).
+
+## 89. BUILD 19 CREATED AND DELIVERED TO TESTFLIGHT (2026-10-21)
+
+Owner authorized creating and submitting Build 19. Executed from commit `287c648` on
+`feature/private-library-implementation` (verified clean working tree, matching
+`origin/feature/private-library-implementation` before starting); `app.json` confirmed
+`version: "1.0.0"`, `ios.buildNumber: "19"`; `eas.json`'s `testflight` profile confirmed
+(`extends: "production"`, `autoIncrement: false`). `tsc`/`lint`/39 validators re-run clean
+immediately before building.
+
+- **EAS build:** `5fcfac77-a51e-46c5-beb8-8682255f37e1`, platform iOS, profile `testflight`,
+  status **FINISHED** (independently re-verified via `eas-cli build:view --json` after the
+  build queue command returned, not assumed from the queuing log). `appBuildVersion` 19,
+  `appVersion` 1.0.0, `gitCommitHash` `287c648ef9623bedd363c2ec8e0b7b4c8adaa14b` -- confirmed
+  identical to `HEAD` at submission time. Real `.ipa` artifact present
+  (`applicationArchiveUrl`).
+- **EAS submission:** `39604f4b-79dc-4aee-ac75-489b2a85b135`, submitted via explicit build id
+  (never `--latest`), status **FINISHED**, no error (`eas-cli submit:view --json`).
+- **Apple TestFlight status, confirmed via `eas-cli submit:status` (Apple's own App Store
+  Connect listing, not EAS's own "submission finished" signal):** `1.0.0 (19) -- internal: in
+  beta testing, external: ready for beta submission`. Internal testers (the owner's own
+  group) can install Build 19 now. External-group distribution needs the same separate,
+  manual App Store Connect step as every prior build -- expected, not an error. Build 18
+  (`1.0.0 (18)`) remains listed and installable; nothing about it changed.
+- No public App Store review/release action was taken at any point -- only the TestFlight
+  submission above. No subscription configuration, pricing, approved Creature Read copy, or
+  other feature was changed this pass -- only the build/submit commands and this
+  documentation were touched (the `app.json` buildNumber bump to `"19"` was already committed
+  in §88, before this authorization).
+- No step failed; no error was encountered at credentials, build, or submission.

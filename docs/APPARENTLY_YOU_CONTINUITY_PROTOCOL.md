@@ -123,3 +123,9 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 - Subscription readiness (Task 4) reconfirmed fresh: `settings.tsx`/`paywall.tsx`/`purchases-service.ts` confirmed unchanged via `git diff` this pass; View Plans, offering/package mapping, pricing, and Founding Member gating all still correct. Live RevenueCat dashboard config still unverifiable from this environment (no admin credential).
 - Build 19 preparation only (not creation): fresh `eas-cli build:list` reconfirmed buildNumber 18 is the latest real build; bumped `app.json` ios.buildNumber to `"19"` (required -- the testflight EAS profile has `autoIncrement: false`, so without this the next build would silently duplicate 18). `eas-cli config` confirms the resolved profile now shows buildNumber 19 correctly. No EAS build or submission started.
 - tsc/lint/39 validators green. Awaiting owner authorization before creating/submitting Build 19.
+
+## Build 19 created and delivered to TestFlight, 2026-10-21
+- Owner authorized creation/submission. Executed from commit `287c648`, verified clean and synced with origin before starting; app.json/eas.json confirmed (version 1.0.0, buildNumber 19, testflight profile). tsc/lint/39 validators re-run clean immediately before building.
+- EAS build `5fcfac77-a51e-46c5-beb8-8682255f37e1` -- FINISHED, commit `287c648` confirmed matching HEAD, real .ipa artifact. EAS submission `39604f4b-79dc-4aee-ac75-489b2a85b135` -- FINISHED, no error.
+- Apple TestFlight listing (via `eas-cli submit:status`, Apple's own data) confirms `1.0.0 (19) -- internal: in beta testing, external: ready for beta submission`. Internal testers can install now; external distribution needs the usual separate manual step.
+- No subscription config, pricing, Creature Read copy, or other feature changed this pass. No public App Store action taken. No step failed.
