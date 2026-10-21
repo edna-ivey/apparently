@@ -68,3 +68,24 @@ second tap past "You're already in." "Manage Subscription →" and "Restore Purc
 unchanged. `scripts/validate-subscription-plans.ts` section 9 covers this; tsc/lint/39
 validators all green. Item 7's "not yet confirmed on a real active-subscriber device" status
 above is unchanged by this addition -- still blocked on the same physical-device/sandbox gap.
+
+## Real on-device confirmation, 2026-10-21 (evening pass)
+
+First genuine on-device evidence this engagement that the live RevenueCat/StoreKit
+configuration actually works, not just that the code is structured correctly. Built and ran
+the real app on a real iOS Simulator (iPhone 17 Pro, iOS 26.4) and navigated to the real
+paywall. It rendered: **MONTHLY $3.99 per month**, and **FOUNDING MEMBER $19.99 for your
+first year, then $29.99 per year, billed automatically unless you cancel** -- both read from
+live StoreKit/RevenueCat data by the app's own existing code (never hardcoded), confirming
+this specific test account is genuinely eligible for the real introductory offer. Screenshot:
+`preview-screenshots/ios-simulator-paywall-live-founding-member.png`.
+
+This resolves item 1 (monthly selection), item 2 (annual selection), item 3 (correct package
+mapping), and item 9 (annual introductory-offer eligibility for a never-subscribed account)
+from the scenario matrix above from "code-complete, BLOCKED on sandbox/device" to genuinely
+device-confirmed for the eligible-account path. **Still blocked:** items 4/5 (an actual
+purchase/cancellation was not attempted -- this was a real price/eligibility read, not a
+completed transaction), item 6 (restore purchases outcome), item 7 (a real already-subscribed
+account's view, since this test account had no prior purchase), and the ineligible-account
+half of item 9 (a customer who already redeemed the offer seeing the plain $29.99 price was
+not tested this pass).
