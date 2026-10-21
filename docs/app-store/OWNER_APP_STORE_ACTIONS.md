@@ -1,7 +1,7 @@
 # Owner actions for App Store submission
 Status: ACTIONS REQUIRED. Detailed paths may vary with Apple UI.
 
-**First priority:** Check App Store Connect > Business/Agreements for the UPDATED Apple Developer Program License Agreement shown pending in the October 20 screenshot audit. Accept if still pending; paid apps/banking/W-9/DSA were already shown active. Do not confuse those completed items with the pending developer agreement.
+**COMPLETED, owner-confirmed October 20, 2026:** Updated Apple Developer Program License Agreement accepted. Do not ask owner to repeat this step. Paid apps/banking/W-9/DSA were already shown active in screenshots.
 
 **Engineering handoff:** Build 18 WP1–WP3 code is committed and 39 validators passed, but the migration and delete-account Edge Function are not deployed, no Build 18 binary is uploaded, and annual/founder products are not configured. See `LAUNCH_TIMELINE_ESTIMATE.md` for revised forward-looking schedule.
 

@@ -77,3 +77,5 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 2026-10-20 email milestone: owner confirmed Zoho send-as aliases/display names and incoming/outgoing tests complete for Apparently You and Super Great Ventures. Updated owner App Store actions and governing Bible §79; remaining launch gates unchanged.
 
 2026-10-20 post-Claude handoff: verified local Git at 01903f9 clean/synced, reconciled uploaded sprint report with Build 18 un-deployed status; updated owner action checklist, critical-path timeline and Bible §80. Apple updated developer agreement may still need acceptance.
+
+2026-10-20: Owner confirms updated Apple developer agreement accepted. Updated action checklist and timeline; created three-way Build 18 handoff doc; Bible §81 records status.

@@ -34,4 +34,4 @@ The four Build 18 engineering work packages reported in the October 20 sprint ar
 
 **Working target:** submission in 3–6 days from configuration start if no new blockers; Apple review 1–3+ additional days. Not a guaranteed release date. Daily editorial workbook approvals may proceed after initial release if unapproved content is excluded.
 
-**Known outstanding blocker:** screenshot audit shows updated Apple Developer Agreement pending acceptance; verify whether already accepted before proceeding. Email aliases and tests owner-confirmed complete, no extra mail subscription required.
+**Agreement update:** Owner confirmed the updated Apple Developer Program License Agreement accepted on October 20. This is no longer a known blocker; verify account status only at final submission if Apple raises a new notice. Email aliases and tests owner-confirmed complete, no extra mail subscription required.

@@ -2613,3 +2613,7 @@ Owner confirms Zoho Mail Lite domain aliases and send-as display names are confi
 
 ## 80. POST-CLAUDE BUILD 18 HANDOFF AND RELEASE PLAN (2026-10-20)
 Reviewed owner-provided Claude sprint transcript (WP1 scoring count cap, WP2 subscription selection/eligibility, WP3 deletion and draft legal screens). Claude reported tsc, lint and 39 validators passing, migration dry-run only, commits 19482f7/52af00a/ef2183f/dd60177 pushed. Local Git verified synchronized at 01903f9 including Zoho email milestone. No Build 18 binary, Supabase deployment, live Apple/RevenueCat annual setup or real-device acceptance yet. Screenshot audit also shows updated Apple Developer Program agreement pending acceptance; verify current state. Updated `docs/app-store/OWNER_APP_STORE_ACTIONS.md` and `docs/app-store/LAUNCH_TIMELINE_ESTIMATE.md` with role-specific priorities and 3–6-day submission working estimate plus variable Apple review. Preserve separation of IMPLEMENTED versus DEPLOYED/TESTED/APPROVED.
+
+
+## 81. APPLE AGREEMENT CONFIRMED AND THREE-WAY BUILD 18 HANDOFF (2026-10-20)
+Owner explicitly confirms updated Apple Developer Program License Agreement accepted. Mark complete, not pending. Owner instructions, Claude deployment/build responsibilities, and Forge product/privacy/launch review are tracked in `docs/app-store/BUILD18_OWNER_CLAUDE_FORGE_HANDOFF_2026-10-20.md`. Annual and Founding Member setup, Supabase migration/function deployment, live TestFlight Build 18, legal signoff, and App Store listing still OPEN until independently verified.
