@@ -26,6 +26,7 @@ const read = (relativePath: string): string => readFileSync(join(__dirname, rela
 
 const serviceSource = read('../src/services/purchases-service.ts');
 const paywallSource = read('../src/app/paywall.tsx');
+const settingsSource = read('../src/app/settings.tsx');
 
 // ============================================================================================
 // 1. REAL OFFERING LOOKUP -- both monthly and annual, from the live RevenueCat offering.
@@ -126,7 +127,17 @@ assert(
 //    and Restore Purchases available to an existing subscriber too (not just a free visitor).
 // ============================================================================================
 
-assert(/const \[viewingPlansWhileActive, setViewingPlansWhileActive\] = useState\(false\);/.test(paywallSource), '"View plans" is a real, explicit opt-in toggle for an already-active subscriber -- never shown unconditionally');
+// Build 19: initializes from Settings' "View Plans" deep link (?view=plans) too -- still a
+// real, explicit opt-in (either tapping "View plans" on this screen, or tapping "View Plans"
+// in Settings to get here), never shown just because the customer happens to be premium.
+assert(
+  /const \[viewingPlansWhileActive, setViewingPlansWhileActive\] = useState\(view === 'plans'\);/.test(paywallSource),
+  '"View plans" is a real, explicit opt-in toggle for an already-active subscriber (default state, or via Settings\' ?view=plans deep link) -- never shown unconditionally',
+);
+assert(
+  /const \{ view \} = useLocalSearchParams<\{ view\?: string \}>\(\);/.test(paywallSource),
+  'the view=plans deep-link param is read via useLocalSearchParams (the real route param), never a global/module-level flag',
+);
 assert(/View plans/.test(paywallSource) && /Hide plans/.test(paywallSource), 'the paywall offers a real "View plans" (and "Hide plans" to collapse it again) action for an active subscriber');
 assert(
   /const showPlans = premium\.status !== 'premium' \|\| viewingPlansWhileActive;/.test(paywallSource),
@@ -154,10 +165,35 @@ const nextTopLevelGateIndex = paywallSource.indexOf("{premium.status !== 'premiu
 const showPlansBlock = paywallSource.slice(showPlansBlockStart, nextTopLevelGateIndex);
 assert(/Restore Purchases/.test(showPlansBlock), 'Restore Purchases renders inside the showPlans block itself -- reachable for an existing subscriber viewing plans, not only a free visitor');
 
+// ============================================================================================
+// 9. SETTINGS NAVIGATION (Build 19): a real "View Plans" action reaching the real paywall for
+//    BOTH free and active subscribers -- the real gap this build fixes (Settings previously
+//    only offered Manage Subscription for an active subscriber, with no way to see plan
+//    pricing without leaving the app to Apple's management page).
+// ============================================================================================
+
+assert(
+  /onPress={\(\) => router\.push\(premium\.status === 'premium' \? '\/paywall\?view=plans' : '\/paywall'\)}/.test(settingsSource),
+  'Settings has a "View Plans" action that opens the real paywall for both free and active subscribers (pre-expanded via ?view=plans for an active subscriber)',
+);
+assert(/View Plans →/.test(settingsSource), 'the Settings action is labeled "View Plans", not a purchase-sounding label');
+assert(
+  /onPress={\(\) => void Linking\.openURL\(managementUrl\)}/.test(settingsSource) && /Manage Subscription →/.test(settingsSource),
+  'Settings still offers Manage Subscription (Apple\'s own management URL) for an active subscriber, unchanged',
+);
+assert(
+  /onPress={\(\) => void handleRestore\(\)}/.test(settingsSource) && /Restore Purchases/.test(settingsSource),
+  'Settings still offers a functional Restore Purchases action, unchanged',
+);
+assert(
+  !/deleteAccount|confirmAction/.test(settingsSource.slice(settingsSource.indexOf('APPARENTLY PRIVATE'), settingsSource.indexOf('SUPPORT'))),
+  'the Apparently Private section never requires cancelling/deleting anything to reach View Plans or Manage Subscription',
+);
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED.`);
   process.exit(1);
 }
 console.log(
-  '\nALL subscription plan selection (monthly/annual/Founding Member, real StoreKit pricing and eligibility, renewal disclosure, tester-override regression guard) VALIDATION CHECKS PASSED.',
+  '\nALL subscription plan selection (monthly/annual/Founding Member, real StoreKit pricing and eligibility, renewal disclosure, tester-override regression guard, Settings View Plans navigation) VALIDATION CHECKS PASSED.',
 );

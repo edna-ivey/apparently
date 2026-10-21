@@ -316,6 +316,62 @@ export type CombinedCreatureRead = {
 
 const lowercaseFirstLetter = (value: string): string => (value.length === 0 ? value : `${value[0].toLowerCase()}${value.slice(1)}`);
 
+// Splits on whitespace that follows a sentence-ending ./?/!, keeping the terminal punctuation
+// attached to each sentence -- e.g. "A shift in tone? Noticed." -> ["A shift in tone?",
+// "Noticed."]. Used only to find the FIRST/LAST sentence of a supportingCopy string so the
+// join logic below can touch just that boundary sentence, never the fragments in between.
+const SENTENCE_SPLIT_REGEX = /(?<=[.?!])\s+/;
+const splitSentences = (text: string): string[] =>
+  text.split(SENTENCE_SPLIT_REGEX).map((sentence) => sentence.trim()).filter(Boolean);
+
+// Only a sentence ending in "." is a complete declarative clause safe to fold into "and ...";
+// a sentence ending in "?"/"!" is a rhythm fragment (e.g. "A shift in tone?") that reads as
+// awkward, dangling grammar if forced after "and" -- those are left exactly as authored.
+const isJoinableSentence = (sentence: string): boolean => sentence.endsWith('.');
+const stripTrailingPeriod = (sentence: string): string => sentence.slice(0, -1);
+const startsWithApparently = (text: string): boolean => text.trim().toLowerCase().startsWith('apparently');
+
+// Paragraph 1: the brief calls for joining related sentences naturally with "and" rather than
+// always starting a new sentence -- e.g. Zorafox's "...make your point clear and you don't
+// make people decode your intention." This folds the opening fragment into supportingCopy's
+// FIRST sentence via "and" whenever that sentence is a real declarative clause (see
+// isJoinableSentence); any remaining supportingCopy sentences follow unchanged. A
+// non-joinable first sentence (a "?"/"!" rhythm fragment) falls back to the original
+// period-separated join instead of forcing an unnatural conjunction onto it -- this is the
+// guard against the "simplistic global string replacement" the brief explicitly warns against.
+// Exported for scripts/validate-combined-creature-read.ts -- the validator tests this exact
+// join/fallback logic directly against fixture components, rather than re-deriving the same
+// formula a second time (which would drift from the real implementation over time).
+export const buildParagraph1 = (first: CombinedReadComponents): string => {
+  const [firstSentence, ...restSentences] = splitSentences(first.supportingCopy);
+  if (!firstSentence || !isJoinableSentence(firstSentence)) {
+    return `You're ${first.openingFragment}. ${first.supportingCopy}`;
+  }
+  const joinedOpening = `You're ${first.openingFragment} and ${lowercaseFirstLetter(stripTrailingPeriod(firstSentence))}.`;
+  return restSentences.length > 0 ? `${joinedOpening} ${restSentences.join(' ')}` : joinedOpening;
+};
+
+// Paragraph 2: works "Apparently," into the closing thought per the brief, rather than only
+// ever appearing when an authored shade happens to already open with it. The "closing thought"
+// is supportingCopy's LAST sentence immediately followed by the shade (e.g. Zorafox's "...you
+// don't just listen to words. You read the room they're spoken in." is one connected beat).
+// "Apparently," is prepended there ONLY when the shade doesn't already start with it -- most
+// authored shades already do (e.g. "Apparently, not every good memory needs a reservation."),
+// in which case the shade already IS the closing thought and nothing is injected, avoiding a
+// doubled "Apparently, ... Apparently, ...". Same isJoinableSentence guard as paragraph 1:
+// never injects ahead of a "?"/"!" rhythm fragment.
+// Exported for the same reason as buildParagraph1 above.
+export const buildParagraph2 = (second: CombinedReadComponents): string => {
+  const sentences = splitSentences(second.supportingCopy);
+  const lastSentence = sentences.pop();
+  if (!lastSentence || !isJoinableSentence(lastSentence) || startsWithApparently(second.shade)) {
+    return `You're also ${second.openingFragment}. ${second.supportingCopy} ${second.shade}`;
+  }
+  const leadingCopy = sentences.length > 0 ? `${sentences.join(' ')} ` : '';
+  const closingThought = `Apparently, ${lowercaseFirstLetter(stripTrailingPeriod(lastSentence))}. ${second.shade}`;
+  return `You're also ${second.openingFragment}. ${leadingCopy}${closingThought}`;
+};
+
 // The one fixed assembly formula -- every ordered pair of distinct Core dimensions goes
 // through this exact shape. Paragraph 1 carries only the first trait's opening fragment and
 // supporting copy (its shade is deliberately dropped -- the brief is explicit that the first
@@ -324,8 +380,8 @@ const lowercaseFirstLetter = (value: string): string => (value.length === 0 ? va
 // final, personality-specific landing line.
 const assembleCombinedRead = (first: CombinedReadComponents, second: CombinedReadComponents): CombinedCreatureRead => ({
   headline: `${first.header}, and ${lowercaseFirstLetter(second.header)}.`,
-  paragraph1: `You're ${first.openingFragment}. ${first.supportingCopy}`,
-  paragraph2: `You're also ${second.openingFragment}. ${second.supportingCopy} ${second.shade}`,
+  paragraph1: buildParagraph1(first),
+  paragraph2: buildParagraph2(second),
 });
 
 // Resolves which pole's combined-Read components apply for a real, already-qualified trait --

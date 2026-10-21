@@ -53,3 +53,18 @@ The existing-subscriber "View plans" feature also directly solves the App Store 
 screenshot need (`docs/app-store/REVIEW_NOTES_DRAFT_2026-10-20.md`): the owner's own active
 monthly subscription can now be used to view both real plan cards without cancelling anything,
 to capture accurate subscription-review screenshots.
+
+## Build 19 addition, 2026-10-21: Settings navigation to View Plans
+
+Settings' Apparently Private card previously gave an active subscriber only "Manage
+Subscription →" (Apple's external page), with no path back into the app's own paywall --
+confirmed by code read that this was a pure app-code/navigation gap, not a RevenueCat/App
+Store Connect/StoreKit problem (the offering/package resolution in `purchases-service.ts` was
+already correct as of the pass above). Added a "View Plans →" action in `settings.tsx` for
+BOTH free and active subscribers; for an active subscriber it links to `/paywall?view=plans`,
+and `paywall.tsx` now reads that param (`useLocalSearchParams`) to initialize the existing
+"View plans" toggle to true, landing directly on the real plan cards rather than needing a
+second tap past "You're already in." "Manage Subscription →" and "Restore Purchases" are
+unchanged. `scripts/validate-subscription-plans.ts` section 9 covers this; tsc/lint/39
+validators all green. Item 7's "not yet confirmed on a real active-subscriber device" status
+above is unchanged by this addition -- still blocked on the same physical-device/sandbox gap.

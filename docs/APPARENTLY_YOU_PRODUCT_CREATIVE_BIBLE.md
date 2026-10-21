@@ -2701,3 +2701,78 @@ not the earlier queuing report.
 - No public App Store release action was taken or requested; only the TestFlight
   submission above was performed, consistent with the standing constraint against
   submitting for public review.
+
+## 85. BUILD 19: SETTINGS "VIEW PLANS" + CREATURE READ EDITORIAL POLISH (2026-10-21)
+
+**Diagnosis of the reported Settings bug:** NOT a RevenueCat/App Store Connect/StoreKit
+problem. Re-read `purchases-service.ts` and confirmed it already resolves monthly/annual
+packages from the live RevenueCat offering with no hardcoded price (unchanged since §83/§84).
+The real defect was pure app-code navigation: Settings' Apparently Private card gave an active
+subscriber only "Manage Subscription →" (Apple's external page) with no path back into the
+app's own paywall at all -- a free visitor already had a paywall link ("Subscribe →"), an
+active one did not.
+
+**Fix (`src/app/settings.tsx`, `src/app/paywall.tsx`):** added a real "View Plans →" action for
+BOTH free and active subscribers, alongside the unchanged "Manage Subscription →" (active
+only) and unchanged "Restore Purchases." For an active subscriber it links to
+`/paywall?view=plans`; the paywall now reads that param via `useLocalSearchParams` and
+initializes the existing "View plans" toggle (built in §83) to true, so the subscriber lands
+directly on the real monthly/annual plan cards instead of needing a second tap past "You're
+already in." Nothing requires cancelling or deleting anything first. Purchasing/eligibility/
+duplicate-purchase-prevention logic itself is untouched this pass -- `scripts/validate-
+subscription-plans.ts` extended with a new section 9 covering the Settings action; full 39/39
+validators, tsc, and lint all green.
+
+**Creature Read editorial pass (`src/data/creature/creature-combined-read-copy.ts`):**
+implemented the owner-approved Zorafox grammar rule as general assembly logic, not a
+hardcoded special case for Zorafox:
+- Paragraph 1 folds supportingCopy's first sentence into the opening fragment via "and"
+  whenever that sentence is a real declarative clause (ends in "."); a "?"/"!" rhythm fragment
+  (e.g. social_attunement.positive's "A shift in tone?") falls back to the original
+  period-separated join instead of forcing an unnatural conjunction onto it.
+- Paragraph 2 works "Apparently," into the closing thought (supportingCopy's last sentence,
+  immediately before the shade) ONLY when the shade doesn't already open with "Apparently"
+  itself. Most authored shades already do, so most Reads are textually unchanged by this pass;
+  it only activates for the two entries that lacked it (`direct_indirect.positive`,
+  `social_attunement.positive`).
+- Verified exactly, word for word, against the approved example: Zorafox (Direct + Vibe
+  checker) headline "You say what you mean, and you hear what everyone else doesn't.",
+  paragraph 1 "You're direct enough to make your point clear and you don't make people decode
+  your intention. When something needs to be said, you say it.", paragraph 2 "You're also
+  perceptive enough to catch what people leave unsaid. A shift in tone? Noticed. A change in
+  energy? Clocked. Apparently, you don't just listen to words. You read the room they're spoken
+  in."
+- No underlying `CREATURE_COMBINED_READ_COPY` content (header/openingFragment/supportingCopy/
+  shade strings) was rewritten -- only the assembly formula that joins them changed.
+- `buildParagraph1`/`buildParagraph2` exported for direct validator testing (not a public
+  product API). `scripts/validate-combined-creature-read.ts` extended with fixture-level
+  join/fallback/inject unit tests plus a full 1,520-ordered-combination sweep confirming zero
+  duplicated "Apparently," and zero double spaces anywhere in the output space.
+
+**Flagged for owner review, NOT silently rewritten (data unchanged):** across a representative
+sweep of all 40 trait poles used as the FIRST trait, four produce a long three-"and" compound
+sentence under the new join rule -- grammatically valid, no garbled or duplicated text, just
+longer than most: **Rule-bending**, **Private**, **Open**, **Patient**. Example (Open as
+first): "You're open enough to share your thoughts and feelings without hiding behind a perfect
+image and you connect through honest conversations and feel comfortable letting people see the
+experiences that have shaped you." Owner should review these four and decide whether to accept
+as-is, or tighten the underlying `supportingCopy` wording for those four entries in a separate,
+explicitly-approved content change.
+
+**Age range verification (item 3 of the Build 19 brief), verified not assumed:** confirmed by
+code read that Settings' demographic `ageRange` field (`onboarding.ts`/`updateUserProfile`) and
+the separate 18+ Private Private content gate `ageEligibility` (`age-eligibility.ts`/
+`upsertAgeEligibility`) are structurally independent -- different storage keys, different
+services, no shared code path, and neither touches RevenueCat/subscription state at all.
+Changing the Settings age-range selector cannot bypass the 18+ gate or alter subscription
+entitlement. No defect found; no code changed, per the brief's "no unrelated age-gating changes
+unless a genuine defect is found."
+
+**Verification performed this session:** `npx tsc --noEmit` clean, `npm run lint` clean, full
+39/39 `scripts/validate-*.ts` suite green (including both extended validators above).
+**NOT verified this session -- requires a physical iPhone or simulator, unavailable in this
+environment:** small-iPhone visual layout (clipping/overlap/control reachability) for the new
+Settings buttons and the Creature Read combined-card spacing; on-device purchase/restore/
+plan-switch flows (same open sandbox/device blockers as §83's test matrix, unchanged by this
+pass). Full test matrix: `docs/app-store/SUBSCRIPTION_TESTING_2026-10-20.md` (navigation
+addition noted there too).

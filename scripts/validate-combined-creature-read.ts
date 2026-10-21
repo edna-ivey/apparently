@@ -9,6 +9,8 @@
 import {
   buildCombinedCreatureRead,
   buildCombinedCreatureReadByLabel,
+  buildParagraph1,
+  buildParagraph2,
   CREATURE_COMBINED_READ_COPY,
   getCombinedReadComponents,
   type CombinedReadComponents,
@@ -163,17 +165,43 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
           const secondComponents = getCombinedReadComponents(second);
           const read = buildCombinedCreatureRead(first, second);
 
-          if (!read.paragraph1.includes(firstComponents.openingFragment) || !read.paragraph1.includes(firstComponents.supportingCopy)) {
+          // Build 19: paragraph 1 may now fold supportingCopy's first sentence into the
+          // opening fragment via "and" (see buildParagraph1's own comment), so it no longer
+          // always contains firstComponents.supportingCopy verbatim -- it must always equal
+          // buildParagraph1(firstComponents) exactly, which IS the real implementation (not a
+          // re-derivation of it), and must always contain the opening fragment.
+          if (!read.paragraph1.includes(firstComponents.openingFragment)) {
             failures += 1;
-            console.error(`FAIL: paragraph 1 for ${first.name}+${second.name} is missing the first trait's opening fragment or supporting copy`);
+            console.error(`FAIL: paragraph 1 for ${first.name}+${second.name} is missing the first trait's opening fragment`);
+          }
+          if (read.paragraph1 !== buildParagraph1(firstComponents)) {
+            failures += 1;
+            console.error(`FAIL: paragraph 1 for ${first.name}+${second.name} does not match buildParagraph1(firstComponents) exactly`);
           }
           if (read.paragraph1.includes(firstComponents.shade)) {
             failures += 1;
             console.error(`FAIL: paragraph 1 for ${first.name}+${second.name} leaks the FIRST trait's shade -- it must never appear`);
           }
-          if (!read.paragraph2.includes(secondComponents.openingFragment) || !read.paragraph2.includes(secondComponents.supportingCopy) || !read.paragraph2.includes(secondComponents.shade)) {
+          // Build 19: paragraph 2 may fold "Apparently," into supportingCopy's last sentence
+          // (see buildParagraph2's own comment) when the shade doesn't already open with it,
+          // so it no longer always contains secondComponents.supportingCopy verbatim either --
+          // same exact-match-against-the-real-formula approach as paragraph 1 above. The shade
+          // itself is never rewritten, so it must always still appear verbatim.
+          if (!read.paragraph2.includes(secondComponents.openingFragment) || !read.paragraph2.includes(secondComponents.shade)) {
             failures += 1;
-            console.error(`FAIL: paragraph 2 for ${first.name}+${second.name} is missing the second trait's opening fragment, supporting copy, or shade`);
+            console.error(`FAIL: paragraph 2 for ${first.name}+${second.name} is missing the second trait's opening fragment or shade`);
+          }
+          if (read.paragraph2 !== buildParagraph2(secondComponents)) {
+            failures += 1;
+            console.error(`FAIL: paragraph 2 for ${first.name}+${second.name} does not match buildParagraph2(secondComponents) exactly`);
+          }
+          if ((read.paragraph2.match(/Apparently,/g) ?? []).length > 1) {
+            failures += 1;
+            console.error(`FAIL: paragraph 2 for ${first.name}+${second.name} contains "Apparently," more than once`);
+          }
+          if (/ {2,}/.test(read.paragraph1) || / {2,}/.test(read.paragraph2)) {
+            failures += 1;
+            console.error(`FAIL: paragraph for ${first.name}+${second.name} contains a double space`);
           }
         }
       }
@@ -190,11 +218,120 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
 {
   const zorafoxRead = buildCombinedCreatureReadByLabel('Direct', 'Vibe checker');
   const expectedHeadline = "You say what you mean, and you hear what everyone else doesn't.";
-  const expectedParagraph1 = "You're direct enough to make your point clear. You don't make people decode your intention. When something needs to be said, you say it.";
-  const expectedParagraph2 = "You're also perceptive enough to catch what people leave unsaid. A shift in tone? Noticed. A change in energy? Clocked. You don't just listen to words. You read the room they're spoken in.";
+  // Build 19 editorial pass: paragraph 1 now folds supportingCopy's first sentence into the
+  // opening fragment via "and" (owner-approved example, task brief "Build 19 | Subscription
+  // Access + Creature Read Polish"); paragraph 2 now works "Apparently," into the closing
+  // thought since social_attunement's shade doesn't already open with it.
+  const expectedParagraph1 =
+    "You're direct enough to make your point clear and you don't make people decode your intention. When something needs to be said, you say it.";
+  const expectedParagraph2 =
+    "You're also perceptive enough to catch what people leave unsaid. A shift in tone? Noticed. A change in energy? Clocked. Apparently, you don't just listen to words. You read the room they're spoken in.";
   assert(zorafoxRead.headline === expectedHeadline, `Zorafox headline matches the approved copy exactly (got "${zorafoxRead.headline}")`);
   assert(zorafoxRead.paragraph1 === expectedParagraph1, `Zorafox paragraph 1 matches the approved copy exactly (got "${zorafoxRead.paragraph1}")`);
   assert(zorafoxRead.paragraph2 === expectedParagraph2, `Zorafox paragraph 2 matches the approved copy exactly (got "${zorafoxRead.paragraph2}")`);
+}
+
+// ============================================================================================
+// Build 19: dedicated fixture tests for buildParagraph1/buildParagraph2's join/fallback and
+// inject/no-inject branches, independent of which real dimensions happen to exercise them --
+// pins the actual grammar rule the brief asked for, not just today's data shape.
+// ============================================================================================
+
+{
+  // Joinable first sentence ("ends with .") folds into the opening fragment via "and".
+  const joinable: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'direct enough to make your point clear',
+    supportingCopy: "You don't make people decode your intention. When something needs to be said, you say it.",
+    shade: 'unused',
+  };
+  assert(
+    buildParagraph1(joinable) ===
+      "You're direct enough to make your point clear and you don't make people decode your intention. When something needs to be said, you say it.",
+    'buildParagraph1 folds a joinable (".")-ending first sentence into the opening fragment via "and", keeping remaining sentences unchanged',
+  );
+
+  // A first sentence ending in "?" (a rhythm fragment) is never forced after "and" -- falls
+  // back to the original period-separated join instead of producing dangling grammar.
+  const fragment: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'perceptive enough to catch what people leave unsaid',
+    supportingCopy: "A shift in tone? Noticed. A change in energy? Clocked. You don't just listen to words.",
+    shade: 'unused',
+  };
+  assert(
+    buildParagraph1(fragment) ===
+      "You're perceptive enough to catch what people leave unsaid. A shift in tone? Noticed. A change in energy? Clocked. You don't just listen to words.",
+    'buildParagraph1 never joins a "?"/"!" rhythm-fragment first sentence with "and" -- falls back to the plain period-separated join',
+  );
+
+  // Single-sentence supportingCopy: the whole sentence folds in via "and", with nothing left
+  // to append afterward.
+  const singleSentence: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'organized enough to make a plan before making a move',
+    supportingCopy: 'You think ahead and feel better when the important details are handled.',
+    shade: 'unused',
+  };
+  assert(
+    buildParagraph1(singleSentence) ===
+      "You're organized enough to make a plan before making a move and you think ahead and feel better when the important details are handled.",
+    'buildParagraph1 folds a single-sentence supportingCopy in fully via "and", with no leftover sentence',
+  );
+}
+
+{
+  // Shade already opens with "Apparently," -- the shade itself IS the closing thought, so
+  // nothing is injected into supportingCopy's last sentence (would otherwise double it).
+  const shadeHasApparently: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'organized enough to make a plan before making a move',
+    supportingCopy: 'You think ahead and feel better when the important details are handled.',
+    shade: "Apparently, 'we'll figure it out' is not the reassuring statement people think it is.",
+  };
+  assert(
+    buildParagraph2(shadeHasApparently) ===
+      "You're also organized enough to make a plan before making a move. You think ahead and feel better when the important details are handled. Apparently, 'we'll figure it out' is not the reassuring statement people think it is.",
+    'buildParagraph2 does not inject "Apparently," when the shade already opens with it',
+  );
+
+  // Shade does NOT open with "Apparently," -- it gets worked into supportingCopy's last
+  // ("."-ending) sentence instead, immediately before the shade.
+  const shadeLacksApparently: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'perceptive enough to catch what people leave unsaid',
+    supportingCopy: "A shift in tone? Noticed. A change in energy? Clocked. You don't just listen to words.",
+    shade: "You read the room they're spoken in.",
+  };
+  assert(
+    buildParagraph2(shadeLacksApparently) ===
+      "You're also perceptive enough to catch what people leave unsaid. A shift in tone? Noticed. A change in energy? Clocked. Apparently, you don't just listen to words. You read the room they're spoken in.",
+    'buildParagraph2 works "Apparently," into supportingCopy\'s last sentence when the shade does not already open with it',
+  );
+}
+
+// ============================================================================================
+// No combination anywhere ever produces a doubled "Apparently," or a double space -- swept
+// across the full 1,520-combination space (Build 19 regression guard for the injection logic).
+// ============================================================================================
+
+{
+  let doubleApparentlyCount = 0;
+  let doubleSpaceCount = 0;
+  for (const firstId of CORE_20) {
+    for (const secondId of CORE_20) {
+      if (firstId === secondId) continue;
+      for (const firstPole of ['positive', 'negative'] as const) {
+        for (const secondPole of ['positive', 'negative'] as const) {
+          const read = buildCombinedCreatureRead(traitFor(firstId, firstPole), traitFor(secondId, secondPole));
+          if ((read.paragraph2.match(/Apparently,/g) ?? []).length > 1) doubleApparentlyCount += 1;
+          if (/ {2,}/.test(read.paragraph1) || / {2,}/.test(read.paragraph2)) doubleSpaceCount += 1;
+        }
+      }
+    }
+  }
+  assert(doubleApparentlyCount === 0, `no combination doubles "Apparently," in paragraph 2 (found ${doubleApparentlyCount})`);
+  assert(doubleSpaceCount === 0, `no combination produces a double space in paragraph 1 or 2 (found ${doubleSpaceCount})`);
 }
 
 // ============================================================================================

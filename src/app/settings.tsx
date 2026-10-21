@@ -201,16 +201,25 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.subscriptionRow}>
               <ThemedText style={styles.subscriptionStatus}>{premium.status === 'premium' ? 'Active' : 'Free'}</ThemedText>
-              {premium.status === 'premium' && managementUrl && Platform.OS !== 'web' && (
-                <Pressable style={styles.inlineCta} onPress={() => void Linking.openURL(managementUrl)}>
-                  <ThemedText style={styles.inlineCtaText}>Manage Subscription →</ThemedText>
+              <View style={styles.subscriptionActions}>
+                {/* Active subscribers previously had no way to see plan pricing from Settings
+                    at all -- only Manage Subscription, which leaves the app entirely for
+                    Apple's management page. "View Plans" opens the SAME real paywall every
+                    visitor sees (now pre-expanded via ?view=plans -- see paywall.tsx) without
+                    requiring anyone to cancel or delete anything first. */}
+                {premium.status === 'premium' && managementUrl && Platform.OS !== 'web' && (
+                  <Pressable style={styles.inlineCta} onPress={() => void Linking.openURL(managementUrl)}>
+                    <ThemedText style={styles.inlineCtaText}>Manage Subscription →</ThemedText>
+                  </Pressable>
+                )}
+                <Pressable
+                  style={[styles.inlineCta, premium.status === 'premium' && styles.inlineCtaSecondary]}
+                  onPress={() => router.push(premium.status === 'premium' ? '/paywall?view=plans' : '/paywall')}>
+                  <ThemedText style={[styles.inlineCtaText, premium.status === 'premium' && styles.inlineCtaTextSecondary]}>
+                    View Plans →
+                  </ThemedText>
                 </Pressable>
-              )}
-              {premium.status !== 'premium' && (
-                <Pressable style={styles.inlineCta} onPress={() => router.push('/paywall')}>
-                  <ThemedText style={styles.inlineCtaText}>Subscribe →</ThemedText>
-                </Pressable>
-              )}
+              </View>
             </View>
             <View style={styles.divider} />
             <Pressable disabled={restoreState.phase === 'restoring'} onPress={() => void handleRestore()}>
@@ -342,8 +351,15 @@ const styles = StyleSheet.create({
   pillTextSelected: { color: '#FFFFFF' },
   subscriptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two, flexWrap: 'wrap' },
   subscriptionStatus: { ...Type.heading, color: Celestial.textPrimary },
+  subscriptionActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' },
   inlineCta: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   inlineCtaText: { color: Brand.plum, fontSize: 13, fontWeight: '800' },
+  // Active subscribers see Manage Subscription (the primary action) and View Plans side by
+  // side -- View Plans renders as the secondary/outline style here so it doesn't visually
+  // compete with Manage Subscription; a free visitor's single View Plans action stays the
+  // solid primary style above.
+  inlineCtaSecondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Brand.gold },
+  inlineCtaTextSecondary: { color: Brand.gold },
   divider: { height: 1, backgroundColor: Celestial.glassBorder },
   restoreText: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '700' },
   restoreMessage: { color: Celestial.textMuted, fontSize: 12, fontWeight: '600', marginTop: Spacing.one },

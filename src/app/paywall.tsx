@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,6 +48,12 @@ export default function PaywallScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const premium = usePremiumStatus();
+  // Settings' "View Plans" action (both free and active subscribers) links here with
+  // ?view=plans so an already-active subscriber lands directly on the real plan cards instead
+  // of an extra "You're already in" tap first -- see settings.tsx. Any other value/absence is
+  // the normal default (free visitors always see plans; active visitors see "You're already
+  // in" until they tap "View plans" themselves).
+  const { view } = useLocalSearchParams<{ view?: string }>();
 
   const [offeringState, setOfferingState] = useState<OfferingState>({ phase: 'loading' });
   // Defaults to annual once it's known to exist (the better-value plan to lead with) --
@@ -61,7 +67,9 @@ export default function PaywallScreen() {
   // paywall only ever rendered "You're already in"). Toggled by "View plans" below --
   // existing offerings are already being fetched in the background regardless of premium
   // status (loadOffering's effect runs unconditionally), so this never needs its own fetch.
-  const [viewingPlansWhileActive, setViewingPlansWhileActive] = useState(false);
+  // Initialized true when arriving via Settings' "View Plans" link (view === 'plans'), so that
+  // tap shows real plan cards immediately rather than requiring a second tap on this screen.
+  const [viewingPlansWhileActive, setViewingPlansWhileActive] = useState(view === 'plans');
 
   const loadOffering = async () => {
     setOfferingState({ phase: 'loading' });
