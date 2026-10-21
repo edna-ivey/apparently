@@ -1,6 +1,10 @@
 # Owner actions for App Store submission
 Status: ACTIONS REQUIRED. Detailed paths may vary with Apple UI.
 
+**First priority:** Check App Store Connect > Business/Agreements for the UPDATED Apple Developer Program License Agreement shown pending in the October 20 screenshot audit. Accept if still pending; paid apps/banking/W-9/DSA were already shown active. Do not confuse those completed items with the pending developer agreement.
+
+**Engineering handoff:** Build 18 WP1–WP3 code is committed and 39 validators passed, but the migration and delete-account Edge Function are not deployed, no Build 18 binary is uploaded, and annual/founder products are not configured. See `LAUNCH_TIMELINE_ESTIMATE.md` for revised forward-looking schedule.
+
 1. **EMAIL SETUP COMPLETE (owner-confirmed 2026-10-20):** Existing Zoho Mail Lite account has `hello@apparentlyyou.com`, `support@apparentlyyou.com`, `privacy@apparentlyyou.com`, and `hello@supergreatventures.com` as aliases to the existing mailbox; sender display names configured and owner reports tests complete. No Google Workspace required. **STILL OPEN:** Confirm exact legal operator name and any required business/legal address; approve privacy policy and terms after reviewing actual data practices.
 2. App Store Connect > Apps > Apparently You > Monetization > Subscriptions.
    a. Verify/create the existing subscription group contains BOTH a monthly product ($3.99/mo, already referenced in code as `apparently_private_monthly`) and a new annual product. Create the annual product with reference name "Apparently Private Annual" and product ID exactly `apparently_private_annual` (this exact id is what the app code looks for -- using a different id means the app will show "annual not available" until this is corrected, never a crash).
