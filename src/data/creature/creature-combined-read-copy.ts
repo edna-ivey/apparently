@@ -21,6 +21,15 @@ export type CombinedReadComponents = {
   openingFragment: string;
   supportingCopy: string;
   shade: string;
+  // Build 19 editorial pass: both OPTIONAL, default-false join-mechanism controls for
+  // buildParagraph1 below, used only for the handful of entries where the automatic join
+  // reads awkwardly as plain "openingFragment and firstSentence." -- see each flag's own
+  // comment on buildParagraph1. Neither affects paragraph 2 (buildParagraph2 never reads
+  // them) or the headline formula; both default to false/undefined for every entry that
+  // doesn't set them, which is exactly the Build 18 behavior the approved Zorafox fixture
+  // and the other 36 untouched entries still rely on.
+  commaJoin?: true;
+  skipOpeningJoin?: true;
 };
 
 export const CREATURE_COMBINED_READ_COPY: Partial<
@@ -176,8 +185,12 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
     negative: {
       header: 'You know when the rules need a little flexibility',
       openingFragment: 'resourceful enough to question a rule when it stops making sense',
-      supportingCopy: "You consider the situation before deciding whether the usual way is actually the best way. You're more interested in what works than blindly following instructions.",
+      // Owner-approved rewording, 2026-10-21 (Build 19 final editorial pass) -- replaces the
+      // earlier "You consider the situation before deciding whether the usual way is actually
+      // the best way." for tighter, more conversational phrasing; paired with commaJoin below.
+      supportingCopy: "You'd rather size up the situation than assume the usual way is the best way. You're more interested in what works than in blindly following instructions.",
       shade: "Apparently, you read the rules. You just didn't promise to agree with them.",
+      commaJoin: true,
     },
   },
   conflict_peacekeeping: {
@@ -267,23 +280,45 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
   private_open: {
     positive: {
       header: "You don't give everyone access to your personal life",
-      openingFragment: "selective enough to keep certain parts of yourself for people who've earned your trust",
-      supportingCopy: 'You value personal space and prefer choosing what to share rather than feeling obligated to explain everything about yourself.',
+      // Owner-approved rewording, 2026-10-21 (Build 19 final editorial pass) -- replaces the
+      // earlier "selective enough to keep certain parts of yourself for people who've earned
+      // your trust" / "You value personal space and prefer choosing what to share rather than
+      // feeling obligated to explain everything about yourself." pairing, paired with
+      // commaJoin below.
+      openingFragment: 'selective about who gets to know the real you',
+      supportingCopy:
+        "You don't feel the need to explain yourself to everybody. Some parts of your life are yours to share when you're ready, not because someone thinks they're entitled to know.",
       shade: "Apparently, your life isn't a public newsletter. Subscriptions are limited.",
+      commaJoin: true,
     },
     negative: {
       header: "You're not afraid to let people know the real you",
-      openingFragment: 'open enough to share your thoughts and feelings without hiding behind a perfect image',
-      supportingCopy: 'You connect through honest conversations and feel comfortable letting people see the experiences that have shaped you.',
+      // Owner-approved rewording, 2026-10-21 (Build 19 final editorial pass) -- replaces the
+      // earlier "open enough to share your thoughts and feelings without hiding behind a
+      // perfect image" / "You connect through honest conversations and feel comfortable
+      // letting people see the experiences that have shaped you." pairing, paired with
+      // commaJoin below.
+      openingFragment: 'comfortable letting people see who you really are',
+      supportingCopy:
+        "You don't feel the need to present some perfectly polished version of yourself. You connect through honest conversations because, to you, being real matters more than looking perfect.",
       shade: 'Apparently, your life comes with commentary, bonus scenes, and behind-the-scenes footage.',
+      commaJoin: true,
     },
   },
   patient_urgent: {
     positive: {
       header: 'You understand that good things take time',
       openingFragment: 'patient enough to give people and situations room to develop',
-      supportingCopy: "You can tolerate delays without immediately assuming something is going wrong. You'd rather allow things to unfold than force them before they're ready.",
+      // Owner-approved rewording, 2026-10-21 (Build 19 final editorial pass) -- merges the
+      // earlier two supportingCopy sentences ("You can tolerate delays without immediately
+      // assuming something is going wrong." / "You'd rather allow things to unfold than force
+      // them before they're ready.") into one via ", and" ("allow" -> "let"), paired with
+      // skipOpeningJoin below so the opening fragment's own "people and situations" never
+      // doubles up with a second "and" from the paragraph-1 join.
+      supportingCopy:
+        "You can tolerate delays without immediately assuming something is going wrong, and you'd rather let things unfold than force them before they're ready.",
       shade: 'Apparently, you got the memo that not everything needs to happen by Friday.',
+      skipOpeningJoin: true,
     },
     negative: {
       header: "You'd rather make a move than wait around",
@@ -342,12 +377,26 @@ const startsWithApparently = (text: string): boolean => text.trim().toLowerCase(
 // Exported for scripts/validate-combined-creature-read.ts -- the validator tests this exact
 // join/fallback logic directly against fixture components, rather than re-deriving the same
 // formula a second time (which would drift from the real implementation over time).
+// `skipOpeningJoin` (Build 19): an explicit per-entry escape hatch for the rare case where
+// joining the opening fragment into supportingCopy's first sentence reads as a pileup no
+// matter how it's punctuated (e.g. patient_urgent.positive, where the opening fragment
+// already has its own "and" -- "people AND situations" -- so a second "and" joining it to the
+// first sentence doubles up). Forces the plain period-separated fallback regardless of
+// joinability; owner-approved per entry, never applied automatically by a heuristic.
 export const buildParagraph1 = (first: CombinedReadComponents): string => {
+  if (first.skipOpeningJoin) {
+    return `You're ${first.openingFragment}. ${first.supportingCopy}`;
+  }
   const [firstSentence, ...restSentences] = splitSentences(first.supportingCopy);
   if (!firstSentence || !isJoinableSentence(firstSentence)) {
     return `You're ${first.openingFragment}. ${first.supportingCopy}`;
   }
-  const joinedOpening = `You're ${first.openingFragment} and ${lowercaseFirstLetter(stripTrailingPeriod(firstSentence))}.`;
+  // `commaJoin` (Build 19): some owner-approved joins read more naturally with a comma before
+  // "and" (a full, standalone-reading independent clause on each side) than Zorafox's plain
+  // "clear and you don't..." -- an editorial call per entry, not a universal rule (changing it
+  // globally would alter the locked Zorafox fixture). Defaults to the original no-comma join.
+  const connector = first.commaJoin ? ',' : '';
+  const joinedOpening = `You're ${first.openingFragment}${connector} and ${lowercaseFirstLetter(stripTrailingPeriod(firstSentence))}.`;
   return restSentences.length > 0 ? `${joinedOpening} ${restSentences.join(' ')}` : joinedOpening;
 };
 

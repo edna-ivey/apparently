@@ -2826,3 +2826,69 @@ exact original/proposed text pairs; awaiting the owner's approval before any is 
 **Task 3:** no genuine regression was found to fix (Task 1 was verification-only; Task 2's
 proposals are explicitly unapplied pending approval), so this pass commits documentation
 updates only -- see the Continuity Protocol entry for the same date.
+
+## 87. CREATURE READ FINAL EDITORIAL PASS: FOUR APPROVED REWRITES + FULL 40-TRAIT REVIEW (2026-10-21)
+
+**Owner approved the four §86 proposals verbatim; implemented exactly, mechanism documented
+below.** Investigated each before touching anything, per the brief's own instruction to
+determine whether an approved passage needs an assembly override, adjusted source fragments,
+or a more flexible formatter -- found that three (Rule-bending, Private, Open) need the
+existing opening-fragment-into-first-sentence join to use a COMMA before "and" (the approved
+text reads as two full independent clauses, unlike Zorafox's plain "clear and you don't..."),
+while one (Patient) needs the join SKIPPED entirely (its opening fragment already has its own
+"and" -- "people AND situations" -- so joining it to the first supportingCopy sentence would
+double up; the approved text instead joins supportingCopy's own two sentences together).
+
+**Mechanism chosen: two new optional fields on `CombinedReadComponents`** (`src/data/
+creature/creature-combined-read-copy.ts`), both default `undefined`/false so every other
+entry -- including the locked Zorafox fixture -- is provably unaffected:
+- `commaJoin?: true` -- `buildParagraph1` inserts a comma before "and" instead of the plain
+  space. Set on `rules_bending.negative`, `private_open.positive`, `private_open.negative`.
+- `skipOpeningJoin?: true` -- `buildParagraph1` always returns the plain period-separated
+  fallback, never attempting the opening-fragment join regardless of joinability. Set on
+  `patient_urgent.positive`.
+
+This was deliberately NOT done by hardcoding each trait's complete paragraph-1 string as a
+special case -- that would have duplicated the content the formula already assembles from
+`openingFragment`/`supportingCopy`, and the brief explicitly warned against replacing source
+text with complete paragraphs where doing so breaks how the same trait renders in a different
+position. Paragraph 2 (the SECOND-trait rendering) never reads either new flag -- confirmed
+all four entries still render naturally in the second position using the same, only
+content-level-updated `supportingCopy`/`shade` fields (spot-verified by hand and covered by
+the full-combination validator sweep).
+
+**Content updated exactly as approved** (`openingFragment`/`supportingCopy`, never `header`
+or `shade`, for all four): the exact final strings are in the Build 19 final editorial pass
+report. Verified programmatically against the owner's verbatim approved text for all four --
+exact match, zero deviation.
+
+**Validator:** `scripts/validate-combined-creature-read.ts` extended with (1) a pinned fixture
+for each of the four approved texts (same treatment as the Zorafox pin, so a future change
+can't silently regress them), and (2) dedicated `commaJoin`/`skipOpeningJoin` fixture tests
+independent of which real entries happen to use them. Full 1,520-combination sweep, Zorafox
+fixture, and all other existing checks re-verified green.
+
+**Full 40-trait (20 Core dimensions x 2 poles) review, paragraph 1 as first AND paragraph 2
+as second, read end to end against the brief's criteria (flow, "and"-repetition, generic/
+robotic phrasing, trait precision, voice, Zorafox preservation):** the four just-approved
+entries are the only ones with a genuine run-on or grammar problem. Six additional entries
+read slightly less smoothly than the rest -- not broken, but worth a look -- all fixable with
+the exact same zero-wording-change `commaJoin` mechanism (a comma only, no word changes):
+**Emotionally Intense, Conflict-forward** (a subordinate "and when..." clause reads a touch
+abrupt without a comma boundary), **Adventurous, Holds the Receipt** (the joined clause
+switches grammatical subject away from "you," which reads smoother with a comma marking the
+clause break), and **Face value, Protective** (an existing internal "and" plus the join "and"
+read slightly list-like). None of these were applied -- presented to the owner as proposals in
+the session report, exact original/with-comma text for each. Every other reviewed entry
+(including several with their own internal "and," e.g. Decisive's three-item list "gather...
+trust... and move forward") reads naturally as an ordinary compound sentence or list and needs
+no change.
+
+**Second-paragraph "Apparently," transitions and shade endings, reviewed separately:** all 40
+read naturally; the two existing short-fragment closers ("...You're just very emotionally
+invested. In everything." / "...Apparently, you know what you want. Period.") are intentional,
+pre-existing punchy stylistic choices consistent with the brand voice, not defects -- left
+unchanged.
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators green.
+Build 19 still NOT created or submitted, per explicit instruction.

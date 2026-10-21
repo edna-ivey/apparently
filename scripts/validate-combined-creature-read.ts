@@ -232,6 +232,47 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
 }
 
 // ============================================================================================
+// Build 19 final editorial pass (2026-10-21): the four owner-approved paragraph-1 rewrites
+// (Rule-bending, Private, Open, Patient), pinned exactly the same way Zorafox is pinned above
+// -- a future content or formula change must not silently regress these.
+// ============================================================================================
+
+{
+  const approvedFirstPassages: { label: string; first: string; expected: string }[] = [
+    {
+      label: 'Rule-bending',
+      first: 'Rule-bending',
+      expected:
+        "You're resourceful enough to question a rule when it stops making sense, and you'd rather size up the situation than assume the usual way is the best way. You're more interested in what works than in blindly following instructions.",
+    },
+    {
+      label: 'Private',
+      first: 'Private',
+      expected:
+        "You're selective about who gets to know the real you, and you don't feel the need to explain yourself to everybody. Some parts of your life are yours to share when you're ready, not because someone thinks they're entitled to know.",
+    },
+    {
+      label: 'Open',
+      first: 'Open',
+      expected:
+        "You're comfortable letting people see who you really are, and you don't feel the need to present some perfectly polished version of yourself. You connect through honest conversations because, to you, being real matters more than looking perfect.",
+    },
+    {
+      label: 'Patient',
+      first: 'Patient',
+      expected:
+        "You're patient enough to give people and situations room to develop. You can tolerate delays without immediately assuming something is going wrong, and you'd rather let things unfold than force them before they're ready.",
+    },
+  ];
+  // Any distinct second trait works -- paragraph 1 depends only on the first trait.
+  for (const { label, first, expected } of approvedFirstPassages) {
+    const second = first === 'Direct' ? 'Vibe checker' : 'Direct';
+    const read = buildCombinedCreatureReadByLabel(first, second);
+    assert(read.paragraph1 === expected, `${label}'s approved paragraph 1 matches exactly (got "${read.paragraph1}")`);
+  }
+}
+
+// ============================================================================================
 // Build 19: dedicated fixture tests for buildParagraph1/buildParagraph2's join/fallback and
 // inject/no-inject branches, independent of which real dimensions happen to exercise them --
 // pins the actual grammar rule the brief asked for, not just today's data shape.
@@ -277,6 +318,39 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
     buildParagraph1(singleSentence) ===
       "You're organized enough to make a plan before making a move and you think ahead and feel better when the important details are handled.",
     'buildParagraph1 folds a single-sentence supportingCopy in fully via "and", with no leftover sentence',
+  );
+
+  // Build 19 final editorial pass: commaJoin inserts a comma before "and" for an
+  // owner-approved entry whose join reads better as two full independent clauses -- default
+  // (false/undefined) stays the original no-comma join (pinned by the Zorafox fixture above).
+  const commaJoinFixture: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'resourceful enough to question a rule when it stops making sense',
+    supportingCopy: "You'd rather size up the situation than assume the usual way is the best way. You're more interested in what works than in blindly following instructions.",
+    shade: 'unused',
+    commaJoin: true,
+  };
+  assert(
+    buildParagraph1(commaJoinFixture) ===
+      "You're resourceful enough to question a rule when it stops making sense, and you'd rather size up the situation than assume the usual way is the best way. You're more interested in what works than in blindly following instructions.",
+    'buildParagraph1 inserts a comma before "and" when commaJoin is set, otherwise following the normal join/append shape',
+  );
+
+  // Build 19 final editorial pass: skipOpeningJoin forces the plain period-separated fallback
+  // even when the first sentence IS joinable -- used for the one entry whose opening fragment
+  // already has its own "and" (so a second "and" from the join would double up).
+  const skipJoinFixture: CombinedReadComponents = {
+    header: 'H',
+    openingFragment: 'patient enough to give people and situations room to develop',
+    supportingCopy:
+      "You can tolerate delays without immediately assuming something is going wrong, and you'd rather let things unfold than force them before they're ready.",
+    shade: 'unused',
+    skipOpeningJoin: true,
+  };
+  assert(
+    buildParagraph1(skipJoinFixture) ===
+      "You're patient enough to give people and situations room to develop. You can tolerate delays without immediately assuming something is going wrong, and you'd rather let things unfold than force them before they're ready.",
+    'buildParagraph1 never joins the opening fragment when skipOpeningJoin is set, regardless of the first sentence\'s joinability',
   );
 }
 
