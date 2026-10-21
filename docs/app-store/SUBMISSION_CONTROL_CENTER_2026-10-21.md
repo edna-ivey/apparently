@@ -1,5 +1,13 @@
 # Apparently You | App Store submission control center
-Updated October 21, 2026. Source: actual repository docs/code and owner-provided device screenshots. This is the authoritative checklist; older Build 18 references are historical.
+Updated October 21, 2026. Source: actual repository docs/code, live Supabase read-only inspection, HTTPS status checks from connected Mac, and owner-provided device screenshots. This is the authoritative checklist; older Build 18 references are historical.
+
+## Verified live October 21, 2026
+- Owner elects to submit using existing Individual Apple Developer membership now. D-U-N-S and organization conversion can occur later; do not block current submission for it.
+- `https://apparentlyyou.com/privacy`, `/terms`, and `/support` each returned HTTP 404 from the connected Mac. Public pages must be deployed and verified before submission.
+- Production Supabase project `rjslgjxlpsjljbrlxfet` migrations end at `20261019020000`. Both `20261020010000` and `20261021010000` are absent.
+- Production Supabase Edge Functions list only `sync-revenuecat-entitlement` and `revenuecat-webhook`; `delete-account` is absent. This is a confirmed production blocker.
+- Working tree has pre-existing uncommitted `src/app/creature-read.tsx` and preview artifacts. Do not overwrite or include them in unrelated App Store documentation commits.
+- Production migrations/Edge Function deployment require owner approval after risk and rollback review. No production changes were made in this verification.
 
 ## Prepared now
 - Product-page name, subtitle, promotional text, description, keyword proposal and screenshot story: APP_STORE_METADATA_DRAFT_2026-10-20.md.
