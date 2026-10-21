@@ -28,6 +28,14 @@ import {
 
 const AVATAR_SIZE = 180;
 const AVATAR_STAGE_SIZE = 240;
+// The combined Read's own premium frame (CombinedReadReveal below) is a more compact,
+// text-forward composition than the full-width First Form moment above -- the Creature sits
+// alongside a name, headline, and two paragraphs within one frame, so a slightly smaller
+// avatar keeps the whole frame comfortable on an SE-width phone without crowding the text that
+// follows it. Same CreatureAvatar/AtmosphericGlow components, same real calibrated recipe --
+// only the display size differs.
+const COMBINED_AVATAR_SIZE = 148;
+const COMBINED_AVATAR_STAGE_SIZE = 196;
 
 // Celestial accent rotation for the mixed Creature's five part-cards — same role the old
 // PastelAccentRotation played (visually distinguish each of the five parts), rebuilt from the
@@ -215,21 +223,17 @@ export default function CreatureReadScreen() {
 
           {readState.kind === 'mixed' && (
             <>
-              <TappableCreatureAvatar recipe={readState.recipe} onPress={() => setPreviewOpen(true)} />
-              {/* Final-polish pass: the combined read is the editorial lede of this screen --
-                  a real display-size name (not the small tracked-out eyebrow used elsewhere),
-                  more breathing room, and a richer, more elevated surface than the five
-                  individual cards below it, so it visually outranks them rather than reading
-                  as just the first card in the same list. */}
-              <ThemedText style={styles.combinedEyebrow}>YOUR READ, COMBINED</ThemedText>
-              <ThemedText style={styles.combinedName}>{readState.name}</ThemedText>
-              {readState.combinedRead && (
-                <View style={styles.combinedCard}>
-                  <ThemedText style={styles.combinedHeadline}>{readState.combinedRead.headline}</ThemedText>
-                  <ThemedText style={styles.combinedParagraph}>{readState.combinedRead.paragraph1}</ThemedText>
-                  <ThemedText style={styles.combinedParagraph}>{readState.combinedRead.paragraph2}</ThemedText>
-                </View>
-              )}
+              {/* Premium visual redesign (Build 19): the Creature, its name, and the combined
+                  Read now sit inside ONE framed reveal rather than a floating avatar above a
+                  separate text card -- see CombinedReadReveal below. Copy/wording, trait
+                  mapping, and the avatar's real calibrated recipe are all unchanged; only the
+                  presentation around them changed. */}
+              <CombinedReadReveal
+                name={readState.name}
+                recipe={readState.recipe}
+                combinedRead={readState.combinedRead}
+                onAvatarPress={() => setPreviewOpen(true)}
+              />
               <ThemedText style={styles.partsEyebrow}>THE FIVE PARTS</ThemedText>
               {readState.entries.map((entry, index) => (
                 <ReadCard key={entry.slotLabel} entry={entry} accent={CELESTIAL_ACCENT_ROTATION[index % CELESTIAL_ACCENT_ROTATION.length]} />
@@ -254,7 +258,21 @@ export default function CreatureReadScreen() {
 // The ONE visible Creature on Your Read -- tappable, with a subtle cue. Opens the preview
 // modal rather than rendering a second avatar inline (the Build 16 duplicate-Creature bug came
 // from a second, always-visible export card rendered directly beneath this exact stage).
-function TappableCreatureAvatar({ recipe, onPress }: { recipe: CreatureRecipe; onPress: () => void }) {
+// size/stageSize default to the First Form stage's own dimensions; CombinedReadReveal below
+// passes its own smaller sizes for its more compact, text-forward frame -- same
+// CreatureAvatar/AtmosphericGlow components and real calibrated recipe either way, only the
+// display size differs.
+function TappableCreatureAvatar({
+  recipe,
+  onPress,
+  size = AVATAR_SIZE,
+  stageSize = AVATAR_STAGE_SIZE,
+}: {
+  recipe: CreatureRecipe;
+  onPress: () => void;
+  size?: number;
+  stageSize?: number;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -263,12 +281,82 @@ function TappableCreatureAvatar({ recipe, onPress }: { recipe: CreatureRecipe; o
       hitSlop={8}
       style={({ pressed }) => [styles.avatarTapTarget, pressed && styles.avatarTapTargetPressed]}
     >
-      <View style={styles.avatarStage}>
-        <AtmosphericGlow size={AVATAR_STAGE_SIZE} />
-        <CreatureAvatar recipe={recipe} size={AVATAR_SIZE} />
+      <View style={[styles.avatarStage, { width: stageSize, height: stageSize }]}>
+        <AtmosphericGlow size={stageSize} />
+        <CreatureAvatar recipe={recipe} size={size} />
       </View>
       <ThemedText style={styles.tapCue}>Tap to view your Creature</ThemedText>
     </Pressable>
+  );
+}
+
+// Premium visual redesign (Build 19, "Option A" direction): the mixed Creature's name, its
+// real assembled avatar, and the combined Read's headline/paragraphs now present as ONE
+// framed editorial reveal -- a portrait, not a development-style text block. Built entirely
+// from existing tokens (Brand/Celestial/Radius/Fonts) and the same plain-View/rgba-layering
+// technique already used by PortalRings/CelestialWash/AtmosphericGlow elsewhere in this app
+// (see celestial.tsx's own header comment on why: no gradient/blur library, works identically
+// on native and web). No new copy, no changed trait mapping, no changed avatar calibration --
+// this component only arranges the same real data (name/recipe/combinedRead) differently.
+function CombinedReadReveal({
+  name,
+  recipe,
+  combinedRead,
+  onAvatarPress,
+}: {
+  name: string;
+  recipe: CreatureRecipe;
+  combinedRead: CombinedCreatureRead | null;
+  onAvatarPress: () => void;
+}) {
+  return (
+    <View style={styles.revealFrame}>
+      {/* Decorative corner washes only -- absolutely positioned, pointerEvents none, clipped
+          by the frame's own overflow:hidden. Violet echoes the page's own CelestialWash;
+          coral is a restrained second accent, never competing with the gold hairline frame. */}
+      <View pointerEvents="none" style={styles.revealGlowTopLeft} />
+      <View pointerEvents="none" style={styles.revealGlowBottomRight} />
+
+      <View style={styles.revealInner}>
+        <View style={styles.revealEyebrowRow}>
+          <ThemedText style={styles.revealSparkle} accessibilityElementsHidden importantForAccessibility="no">
+            ✦
+          </ThemedText>
+          <ThemedText style={styles.combinedEyebrow}>YOUR READ, COMBINED</ThemedText>
+          <ThemedText style={styles.revealSparkle} accessibilityElementsHidden importantForAccessibility="no">
+            ✦
+          </ThemedText>
+        </View>
+
+        <ThemedText style={styles.combinedName}>{name}</ThemedText>
+
+        <TappableCreatureAvatar
+          recipe={recipe}
+          onPress={onAvatarPress}
+          size={COMBINED_AVATAR_SIZE}
+          stageSize={COMBINED_AVATAR_STAGE_SIZE}
+        />
+
+        {combinedRead && (
+          <>
+            <View style={styles.revealDivider}>
+              <View style={styles.revealDividerLine} />
+              <ThemedText style={styles.revealSparkle} accessibilityElementsHidden importantForAccessibility="no">
+                ✦
+              </ThemedText>
+              <View style={styles.revealDividerLine} />
+            </View>
+
+            <ThemedText style={styles.combinedHeadline}>{combinedRead.headline}</ThemedText>
+
+            <View style={styles.combinedParagraphGroup}>
+              <ThemedText style={styles.combinedParagraph}>{combinedRead.paragraph1}</ThemedText>
+              <ThemedText style={styles.combinedParagraph}>{combinedRead.paragraph2}</ThemedText>
+            </View>
+          </>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -538,39 +626,95 @@ const styles = StyleSheet.create({
   },
   pageIntro: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', paddingHorizontal: Spacing.two },
 
-  // Final-polish pass: the mixed Creature's combined-read name/card outrank the five part
-  // cards below -- a real serif display name, a dedicated "YOUR READ, COMBINED" label, and a
-  // deeper, more elevated, more spacious card than the five below it.
+  // Build 19 premium visual redesign ("Option A"): the mixed Creature's name, its real
+  // avatar, and the combined Read now present as one framed editorial reveal -- a portrait,
+  // not a development-style text block. revealFrame is the outer card (soft violet/coral
+  // corner washes, a gold hairline edge); revealInner is a second, inset gold hairline a few
+  // pixels in from the outer edge, giving the "refined decorative border" a layered,
+  // foil-edge feel rather than a single flat outline. Both washes and both borders are built
+  // from existing Brand tokens only -- no gradient/blur library, no new dependency (same
+  // technique as PortalRings/CelestialWash/AtmosphericGlow above).
+  revealFrame: {
+    position: 'relative',
+    borderRadius: Radius.xl + 4,
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.32)',
+    backgroundColor: 'rgba(121,100,232,0.10)',
+    overflow: 'hidden',
+    marginTop: Spacing.two,
+    marginBottom: Spacing.one,
+  },
+  revealGlowTopLeft: {
+    position: 'absolute',
+    top: -70,
+    left: -70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(121,100,232,0.22)',
+  },
+  revealGlowBottomRight: {
+    position: 'absolute',
+    bottom: -80,
+    right: -60,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,121,95,0.12)',
+  },
+  revealInner: {
+    margin: 6,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.2)',
+    paddingVertical: Spacing.five,
+    paddingHorizontal: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  revealEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  // Restrained sparkle accents flanking the eyebrow and marking the avatar/text divider --
+  // static (no animation), low-key gold, same glyph AtmosphericGlow already uses elsewhere on
+  // this exact screen, never more than one at a time here.
+  revealSparkle: { color: 'rgba(246,184,63,0.55)', fontSize: 11 },
+  revealDivider: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, width: '55%', marginTop: Spacing.one },
+  revealDividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(246,184,63,0.25)' },
   combinedEyebrow: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
     color: Brand.gold,
     textAlign: 'center',
-    marginTop: Spacing.one,
   },
   combinedName: {
     fontFamily: Fonts?.serif,
     fontStyle: 'italic',
     fontWeight: '500',
     color: Celestial.textPrimary,
-    fontSize: 32,
-    lineHeight: 37,
+    fontSize: 30,
+    lineHeight: 35,
     textAlign: 'center',
-    marginTop: 2,
   },
-  combinedCard: {
-    backgroundColor: 'rgba(121,100,232,0.12)',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(121,100,232,0.35)',
-    padding: Spacing.five,
+  // The headline is the star of the card (per the design brief) -- elegant serif italic,
+  // noticeably larger and more considered than plain bold sans, echoing CelestialType's own
+  // "verdict" treatment used for other reveal moments across the app.
+  combinedHeadline: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    color: Celestial.textPrimary,
+    fontSize: 21,
+    lineHeight: 28,
+    letterSpacing: -0.2,
+    textAlign: 'center',
     marginTop: Spacing.one,
-    marginBottom: Spacing.one,
-    gap: Spacing.three,
+    paddingHorizontal: Spacing.one,
   },
-  combinedHeadline: { color: Celestial.textPrimary, fontSize: 17, lineHeight: 24, fontWeight: '700' },
-  combinedParagraph: { color: Celestial.textPrimary, fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  // Body copy deliberately smaller and quieter than the headline above it -- clear hierarchy,
+  // comfortable reading line-height, left-aligned (more readable for multi-line prose than
+  // centered), while the group itself still sits centered as a block within the frame.
+  combinedParagraphGroup: { alignSelf: 'stretch', gap: Spacing.two, marginTop: Spacing.one },
+  combinedParagraph: { color: Celestial.textSecondary, fontSize: 14.5, lineHeight: 22, fontWeight: '400', textAlign: 'left' },
   // A quiet divider label -- makes "the overall read" and "the five contributing parts" read
   // as two clearly separate sections rather than one continuous list of cards.
   partsEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Celestial.textMuted, marginTop: Spacing.two },

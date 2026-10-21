@@ -2993,3 +2993,53 @@ immediately before building.
   documentation were touched (the `app.json` buildNumber bump to `"19"` was already committed
   in §88, before this authorization).
 - No step failed; no error was encountered at credentials, build, or submission.
+
+## 90. CREATURE READ PREMIUM VISUAL REDESIGN, "OPTION A" (2026-10-21)
+
+Owner selected "Option A, the premium magical reveal" as the approved visual direction for
+the combined Creature Read -- a visual-only redesign; the approved copy is locked and
+unchanged. Implemented entirely in `src/app/creature-read.tsx`; no other file touched.
+
+**What changed:** the mixed Creature's "YOUR READ, COMBINED" eyebrow, its name, its real
+avatar, and the combined Read's headline/paragraphs previously rendered as a floating avatar
+stage above a separate flat text card (`combinedCard`: a single plum/violet rounded box, plain
+17px bold-sans headline, 16px body text). A new `CombinedReadReveal` component replaces that
+with ONE framed editorial reveal:
+- **Frame:** a two-layer bordered card (`revealFrame` + inset `revealInner`, a few pixels
+  apart) giving a "refined decorative border" / foil-edge feel, with two soft corner washes
+  (violet top-left, restrained coral bottom-right) clipped to the frame's own rounded corners
+  -- built entirely from existing `Brand` rgba tokens and the same plain-View layering
+  technique `PortalRings`/`CelestialWash`/`AtmosphericGlow` already use elsewhere in this app
+  (no gradient or blur library, no new dependency).
+- **Hierarchy, top to bottom inside the frame:** eyebrow (flanked by two static gold sparkle
+  glyphs, reusing `AtmosphericGlow`'s own restrained-sparkle convention) -> Creature name
+  (serif italic display) -> the real assembled Creature avatar (same `CreatureAvatar`/
+  `AtmosphericGlow` components, same calibrated recipe, just sized smaller --
+  `COMBINED_AVATAR_SIZE`/`COMBINED_AVATAR_STAGE_SIZE` -- for this more compact, text-forward
+  composition) -> a thin gold-hairline divider with a center sparkle -> the combined
+  headline, now serif italic and the visually largest/boldest text in the card (was plain
+  17px bold sans) -> the two paragraphs, now smaller and quieter (14.5px, `Celestial.
+  textSecondary`, left-aligned for readability) than the headline above them (was 16px,
+  `textPrimary`, same weight as everything else -- the "development-style text container"
+  the brief described).
+- `TappableCreatureAvatar` (the First Form moment's own avatar, and the preview-modal trigger
+  for both First Form and mixed) gained optional `size`/`stageSize` props, defaulting to its
+  existing First Form dimensions -- First Form's own presentation is completely unchanged;
+  only `CombinedReadReveal` passes the smaller combined-read sizes.
+- Tapping the avatar inside the new frame still opens the exact same `CreaturePreviewModal`
+  (save/share to Photos) as before -- unchanged functionality, just relocated visually into
+  the frame.
+- "THE FIVE PARTS" eyebrow and the five `ReadCard`s below the frame are completely unchanged
+  (content, styling, accent rotation) -- out of scope for this pass by design.
+- No animation added (static sparkles/washes only, consistent with "no unnecessary animation
+  or performance-heavy visual effects"). No new dependency. No change to trait scoring,
+  Creature assembly/calibration, Creature naming, approved Creature Read copy, subscription
+  functionality/pricing, or any other screen.
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators
+green. `git diff --stat` on `creature-combined-read-copy.ts` confirmed empty (untouched) --
+the Zorafox fixture and all ten owner-approved Creature Read passages are therefore
+byte-for-byte unchanged by construction, independently reconfirmed by re-running
+`scripts/validate-combined-creature-read.ts` (all pinned-fixture and 1,520-combination checks
+still green). No EAS build or TestFlight submission was initiated this pass, per explicit
+instruction -- awaiting screenshot review before any new build is authorized.
