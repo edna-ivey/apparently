@@ -1,7 +1,7 @@
 # Owner actions for App Store submission
 Status: ACTIONS REQUIRED. Detailed paths may vary with Apple UI.
 
-1. Confirm legal operator name, public support email and privacy contact email. Confirm business/legal address if counsel advises it must appear in public terms. Approve policy/terms after reviewing live data practices.
+1. **EMAIL SETUP COMPLETE (owner-confirmed 2026-10-20):** Existing Zoho Mail Lite account has `hello@apparentlyyou.com`, `support@apparentlyyou.com`, `privacy@apparentlyyou.com`, and `hello@supergreatventures.com` as aliases to the existing mailbox; sender display names configured and owner reports tests complete. No Google Workspace required. **STILL OPEN:** Confirm exact legal operator name and any required business/legal address; approve privacy policy and terms after reviewing actual data practices.
 2. App Store Connect > Apps > Apparently You > Monetization > Subscriptions.
    a. Verify/create the existing subscription group contains BOTH a monthly product ($3.99/mo, already referenced in code as `apparently_private_monthly`) and a new annual product. Create the annual product with reference name "Apparently Private Annual" and product ID exactly `apparently_private_annual` (this exact id is what the app code looks for -- using a different id means the app will show "annual not available" until this is corrected, never a crash).
    b. Set the annual product's base/standard price to $29.99/year.
