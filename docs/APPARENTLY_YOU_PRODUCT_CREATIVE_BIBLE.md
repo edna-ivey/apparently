@@ -2631,3 +2631,40 @@ Owner explicitly confirms updated Apple Developer Program License Agreement acce
 **Phase 5:** addressed the review-notes `[NEEDS CLAUDE]` item with the real, already-built, production-safe reviewer-access mechanism (`tester_access_grants`/`has_tester_access()`, additive to real entitlement checks, never a bypass) in `docs/app-store/REVIEW_NOTES_DRAFT_2026-10-20.md`. Verified the Sentry integration (`observability.ts`) actually matches the privacy draft's "we aim not to transmit quiz answer text" claim -- explicit allow-list event construction, `sendDefaultPii: false`, `attachScreenshot: false` -- no mismatch found. Updated Settings' temporary support email to the real, owner-confirmed `support@apparentlyyou.com` (the earlier `edna.tyus@gmail.com` placeholder predated the Zoho setup). Added a real `/support` in-app+web page and `vercel.json` rewrites for the public `/privacy`/`/terms` short paths to the existing real screens -- **prepared only; no `vercel` deploy command run, no change pushed to the live apparentlyyou.com site.**
 
 **STILL OPEN, unchanged:** annual/Founding Member StoreKit+RevenueCat configuration, both staged migrations applied, delete-account deployed and integration-tested, Build 18 EAS/TestFlight, legal entity/contact finalization, App Store Connect metadata/App Privacy/age rating. See the Build 18 deployment report for the full APPROVED/IMPLEMENTED/DEPLOYED/TESTED table and exact next actions per owner/Claude/Forge.
+
+## 83. SUBSCRIPTION IMPLEMENTATION COMPLETION: EXISTING-SUBSCRIBER "VIEW PLANS" (2026-10-20)
+
+**OWNER-STATED (not independently re-verified against the RevenueCat dashboard from this
+environment -- same credential limitation as §82):** RevenueCat now has entitlement
+`apparently_private`, offering `default`, packages `$rc_monthly`/`$rc_annual`, products
+`apparently_private_monthly`/`apparently_private_annual`, both attached to the one
+entitlement. Confirmed by direct code re-read that `getApparentlyPrivateOfferings()` already
+reads exactly these RevenueCat conventions (`offering.monthly`/`offering.annual`, which ARE
+the typed accessors for `$rc_monthly`/`$rc_annual`) -- **no code change was needed for this
+mapping; it was already correct.**
+
+**REAL GAP FOUND AND FIXED:** the owner's own active monthly subscription only ever showed
+"You're already in" on the paywall, with no way to see plan options at all -- which also
+meant no reliable way to capture App Store review screenshots of both plans without
+cancelling. Added a real **"View plans"** toggle to the existing-subscriber state in
+`src/app/paywall.tsx`:
+- Reveals the SAME real `PlanCard`s every free visitor sees (no second/fake purchase screen).
+- Marks whichever plan is the real active one with a **CURRENT PLAN** badge, read from
+  `CustomerInfo.entitlements.active[apparently_private].productIdentifier` -- never inferred
+  from UI selection.
+- The Subscribe/Switch button is disabled and labeled "Current Plan" when the selected plan
+  IS the real active one (no duplicate-purchase tap possible); labeled "Switch Plan →" for a
+  different plan while already a subscriber (Apple's own subscription-group upgrade/downgrade
+  proration applies automatically via the same `Purchases.purchasePackage` call already used
+  for a first subscription -- no separate switch code path was written, since both products
+  already share one Apple subscription group).
+- Restore Purchases is now reachable from this state too, not only the free-visitor state.
+- The paywall never writes to premium/entitlement state directly anywhere -- confirmed by
+  source check: it only reads `usePremiumStatus()` and calls the real
+  `subscribeToPackage`/`restorePurchases` functions, so a paid entitlement can never be
+  locally revoked, reset, or faked from this screen.
+
+Full test-scenario matrix (what's code-complete vs. what's blocked on a real sandbox/device)
+recorded in `docs/app-store/SUBSCRIPTION_TESTING_2026-10-20.md`. `scripts/validate-
+subscription-plans.ts` extended with 11 new checks for this change. Full suite (tsc, lint, 39
+validators) green.
