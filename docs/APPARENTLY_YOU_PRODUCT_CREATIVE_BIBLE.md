@@ -2892,3 +2892,74 @@ unchanged.
 
 **Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators green.
 Build 19 still NOT created or submitted, per explicit instruction.
+
+## 88. BUILD 19 COPY LOCK (TEN APPROVED REWRITES) + TESTFLIGHT PREP (2026-10-21)
+
+**Owner approved the remaining six §87 proposals verbatim; implemented exactly.** All ten
+Creature Read paragraph-1 rewrites across this and the prior two passes are now LOCKED,
+owner-approved content: Rule-bending, Private, Open, Patient (§87) plus Emotionally Intense,
+Conflict-forward, Adventurous, Holds the Receipt, Face value, Protective (this pass).
+
+- **Emotionally Intense, Conflict-forward, Adventurous, Holds the Receipt:** zero wording
+  change -- `openingFragment`/`supportingCopy` are exactly what they were before; only
+  `commaJoin: true` was added. The owner's approved text was already reachable by the
+  existing formula with a comma, confirming these four were genuinely just punctuation/flow
+  fixes, not content rewrites.
+- **Face value:** `openingFragment`/`supportingCopy` updated to the owner's exact wording
+  ("straightforward enough to take people at their word" / "You don't automatically assume
+  there's a hidden meaning behind every pause, glance, or comment."), `commaJoin: true`
+  added. **Shade updated** to the owner's proposed "Apparently, sometimes a sentence is just
+  a sentence." -- checked first against all 39 other shades in the table for duplication or
+  conflict (`scripts/validate-combined-creature-read.ts` now asserts this shade appears
+  exactly once across all 40 entries); none found, so the new shade was applied rather than
+  retained-with-a-reported-conflict. `header` unchanged ("You take people at their word" --
+  already consistent with the new opening fragment).
+- **Protective:** `openingFragment`/`supportingCopy` updated to the owner's exact wording
+  ("someone you love" / "You notice how people treat your people... feels off."),
+  `skipOpeningJoin: true` added (its own internal ", and" must not collide with a second
+  "and" from the paragraph-1 join -- the approved text keeps the opening fragment as its own
+  sentence). `header` and `shade` unchanged, per the brief's explicit "preserve existing
+  headers and shades except for the explicitly conditional Face value shade proposal."
+- No hardcoded full-paragraph overrides anywhere -- every one of the ten still derives from
+  `openingFragment`/`supportingCopy`/`shade` through the one general `assembleCombinedRead`
+  formula (`buildParagraph1`/`buildParagraph2`), using only the existing `commaJoin`/
+  `skipOpeningJoin` flags introduced in §87 (no new mechanism needed for any of the six).
+- Zorafox headline/paragraph1/paragraph2 and the four §87-approved texts re-verified
+  byte-for-byte unchanged this pass (confirmed via direct script execution, not assumed).
+- `scripts/validate-combined-creature-read.ts` extended: the approved-passage pin list now
+  covers all ten exact texts (was four); added a dedicated uniqueness/no-double-injection
+  check for Face value's new shade. Full 1,520-ordered-combination sweep, double-space check,
+  and double-"Apparently," check all re-run and green.
+- Both paragraph positions reviewed by hand for all ten (as first AND as second trait) --
+  no awkward transition, duplicate sentence, or misplaced shade found in any.
+
+**Subscription readiness reconfirmed (Task 4), fresh re-check, nothing reused from memory:**
+`settings.tsx`/`paywall.tsx`/`purchases-service.ts` are byte-for-byte unchanged since §86 --
+confirmed via `git diff` showing no delta. Settings' "View Plans" still links to
+`/paywall?view=plans` for an active subscriber; the paywall still reads that param to
+pre-expand the real plan cards. `getApparentlyPrivateOfferings()` still resolves
+`offering.monthly`/`offering.annual` from the live RevenueCat offering with no hardcoded
+price anywhere (re-confirmed by grep: the only `$`-prefixed numbers in these three files are
+in code comments documenting the locked targets). Founding Member framing still requires
+both a real `annualIntroEligible` answer and a real `product.introPrice` before rendering.
+**Still not independently verifiable from this environment:** the live RevenueCat dashboard
+configuration itself -- only the public iOS SDK key is present (`EXPO_PUBLIC_REVENUECAT_IOS_
+API_KEY`), re-confirmed via `env`/`.env.local` this pass; no dashboard/admin credential
+exists here. No on-device/sandbox test was performed (no physical iPhone or simulator
+available in this environment).
+
+**Build 19 preparation (Task 6), not creation:** fresh `eas-cli build:list --platform ios`
+confirms buildNumber 18 (`ff9c78bb-3066-426d-9c70-551120e8ca7d`) is genuinely still the latest
+real build, same as recorded in §84. `app.json`'s `ios.buildNumber` bumped from `"18"` to
+`"19"` -- required because the `testflight` EAS profile has `autoIncrement: false`, so without
+this bump the next build would have silently reused buildNumber 18 (a duplicate), not
+produced Build 19. `npx eas-cli config --platform ios --profile testflight` confirms the
+resolved config now shows `buildNumber: "19"` with the correct bundle identifier, plugins, and
+environment variables (production env + testflight's tester-access override). Branch is
+`feature/private-library-implementation`, working tree clean before this session's edits. No
+EAS build or submission was started -- per explicit instruction, Build 19 creation/submission
+is deferred pending owner authorization.
+
+**Verification this pass:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39
+`scripts/validate-*.ts` green (including the newly-extended combined-Creature-Read
+validator).

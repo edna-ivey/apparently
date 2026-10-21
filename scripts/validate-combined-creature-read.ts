@@ -232,9 +232,11 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
 }
 
 // ============================================================================================
-// Build 19 final editorial pass (2026-10-21): the four owner-approved paragraph-1 rewrites
-// (Rule-bending, Private, Open, Patient), pinned exactly the same way Zorafox is pinned above
-// -- a future content or formula change must not silently regress these.
+// Build 19 final editorial pass (2026-10-21): all TEN owner-approved paragraph-1 rewrites
+// (Rule-bending, Private, Open, Patient from the first pass; Emotionally Intense,
+// Conflict-forward, Adventurous, Holds the Receipt, Face value, Protective from the final copy
+// lock), pinned exactly the same way Zorafox is pinned above -- a future content or formula
+// change must not silently regress any of these.
 // ============================================================================================
 
 {
@@ -263,6 +265,42 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
       expected:
         "You're patient enough to give people and situations room to develop. You can tolerate delays without immediately assuming something is going wrong, and you'd rather let things unfold than force them before they're ready.",
     },
+    {
+      label: 'Emotionally Intense',
+      first: 'Emotionally Intense',
+      expected:
+        "You're passionate enough to experience emotions at full volume, and when something matters to you, it really matters. Your excitement, disappointment, and affection aren't things you experience halfway.",
+    },
+    {
+      label: 'Conflict-forward',
+      first: 'Conflict-forward',
+      expected:
+        "You're bold enough to face uncomfortable conversations instead of avoiding them, and when there's tension, you want to talk about what's happening and find out where everyone stands.",
+    },
+    {
+      label: 'Adventurous',
+      first: 'Adventurous',
+      expected:
+        "You're adventurous enough to step outside your usual routine, and new places, unfamiliar experiences, and a little uncertainty can make life more exciting for you.",
+    },
+    {
+      label: 'Holds the Receipt',
+      first: 'Holds the Receipt',
+      expected:
+        "You're observant enough to recall the details people conveniently forget, and past behavior matters to you, especially when someone promises they've changed but keeps doing the same thing.",
+    },
+    {
+      label: 'Face value',
+      first: 'Face value',
+      expected:
+        "You're straightforward enough to take people at their word, and you don't automatically assume there's a hidden meaning behind every pause, glance, or comment.",
+    },
+    {
+      label: 'Protective',
+      first: 'Protective',
+      expected:
+        "You're protective enough to step in when someone you love needs backup. You notice how people treat your people, and you're not afraid to speak up when something feels off.",
+    },
   ];
   // Any distinct second trait works -- paragraph 1 depends only on the first trait.
   for (const { label, first, expected } of approvedFirstPassages) {
@@ -270,6 +308,35 @@ console.log(`OK: all ${combinationCount} ordered combinations assembled without 
     const read = buildCombinedCreatureReadByLabel(first, second);
     assert(read.paragraph1 === expected, `${label}'s approved paragraph 1 matches exactly (got "${read.paragraph1}")`);
   }
+}
+
+// ============================================================================================
+// Build 19 final copy lock: Face value's updated shade ("Apparently, sometimes a sentence is
+// just a sentence.") must be unique across all 40 entries (no duplicate/conflict with any
+// other approved shade), and must still never leak into paragraph 1 or get double-injected in
+// paragraph 2.
+// ============================================================================================
+
+{
+  const allShades: string[] = [];
+  for (const id of CORE_20) {
+    const entry = CREATURE_COMBINED_READ_COPY[id];
+    if (!entry) continue;
+    allShades.push(entry.positive.shade, entry.negative.shade);
+  }
+  const faceValueShade = 'Apparently, sometimes a sentence is just a sentence.';
+  assert(allShades.includes(faceValueShade), 'Face value\'s updated shade is present in the copy table');
+  assert(
+    allShades.filter((shade) => shade === faceValueShade).length === 1,
+    'Face value\'s updated shade appears exactly once across all 40 entries (no duplicate)',
+  );
+  const faceValueRead = buildCombinedCreatureReadByLabel('Face value', 'Direct');
+  assert(!faceValueRead.paragraph1.includes(faceValueShade), 'Face value\'s shade never leaks into paragraph 1');
+  const faceValueAsSecond = buildCombinedCreatureReadByLabel('Direct', 'Face value');
+  assert(
+    (faceValueAsSecond.paragraph2.match(/Apparently,/g) ?? []).length === 1,
+    'Face value\'s shade appears exactly once ("Apparently," not doubled) when Face value is the second trait',
+  );
 }
 
 // ============================================================================================

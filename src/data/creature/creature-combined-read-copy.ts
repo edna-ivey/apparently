@@ -55,6 +55,9 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
       openingFragment: 'passionate enough to experience emotions at full volume',
       supportingCopy: "When something matters to you, it really matters. Your excitement, disappointment, and affection aren't things you experience halfway.",
       shade: "Apparently, you're not being dramatic. You're just very emotionally invested. In everything.",
+      // Owner-approved, 2026-10-21 (Build 19 final copy lock) -- the "and when..." join reads
+      // better with a comma boundary. No wording change at all, same supportingCopy as before.
+      commaJoin: true,
     },
     negative: {
       header: 'You know how to keep your cool',
@@ -86,17 +89,32 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
     },
     negative: {
       header: 'You take people at their word',
-      openingFragment: 'straightforward enough to hear what someone says without searching for a hidden meaning',
-      supportingCopy: "You prefer clear communication and don't automatically assume every pause, glance, or comment carries a secret message.",
-      shade: "Apparently, not every 'okay' requires a three-hour investigation.",
+      // Owner-approved rewording, 2026-10-21 (Build 19 final copy lock) -- replaces the
+      // earlier "straightforward enough to hear what someone says without searching for a
+      // hidden meaning" / "You prefer clear communication and don't automatically assume
+      // every pause, glance, or comment carries a secret message." pairing, paired with
+      // commaJoin below. Shade also updated this pass -- checked against all 39 other shades
+      // in this table for duplication/conflict (none found) before replacing; the new shade is
+      // a better thematic fit for this entry's updated content than the prior one.
+      openingFragment: 'straightforward enough to take people at their word',
+      supportingCopy: "You don't automatically assume there's a hidden meaning behind every pause, glance, or comment.",
+      shade: 'Apparently, sometimes a sentence is just a sentence.',
+      commaJoin: true,
     },
   },
   protective_hands_off: {
     positive: {
       header: "You don't play about the people you love",
-      openingFragment: 'protective enough to step in when someone you care about needs backup',
-      supportingCopy: "You pay attention to how people treat your loved ones, and you're not afraid to speak up when something feels wrong.",
+      // Owner-approved rewording, 2026-10-21 (Build 19 final copy lock) -- replaces the
+      // earlier "someone you care about" / "You pay attention to how people treat your loved
+      // ones... feels wrong" pairing. Paired with skipOpeningJoin below: the approved text
+      // keeps the opening fragment as its own sentence rather than joining it into
+      // supportingCopy's own internal ", and" clause. Shade unchanged (not part of the
+      // approved conditional shade change -- that was Face value only).
+      openingFragment: 'protective enough to step in when someone you love needs backup',
+      supportingCopy: "You notice how people treat your people, and you're not afraid to speak up when something feels off.",
       shade: 'Apparently, some people need a reminder that being nice and being easy to mess with are two different things.',
+      skipOpeningJoin: true,
     },
     negative: {
       header: 'You know when to let people handle their own business',
@@ -111,6 +129,10 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
       openingFragment: 'adventurous enough to step outside your usual routine',
       supportingCopy: 'New places, unfamiliar experiences, and a little uncertainty can make life more exciting for you.',
       shade: "Apparently, 'we've never done that before' sounds more like an invitation than a warning.",
+      // Owner-approved, 2026-10-21 (Build 19 final copy lock) -- the joined clause switches
+      // grammatical subject, which reads smoother with a comma marking the clause break. No
+      // wording change at all, same supportingCopy as before.
+      commaJoin: true,
     },
     negative: {
       header: "You know what you like, and you're good with it",
@@ -199,6 +221,9 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
       openingFragment: 'bold enough to face uncomfortable conversations instead of avoiding them',
       supportingCopy: "When there's tension, you want to talk about what's happening and find out where everyone stands.",
       shade: 'Apparently, you saw the elephant in the room and decided it was time for introductions.',
+      // Owner-approved, 2026-10-21 (Build 19 final copy lock) -- the "and when..." join reads
+      // better with a comma boundary. No wording change at all, same supportingCopy as before.
+      commaJoin: true,
     },
     negative: {
       header: 'You know how to keep things from escalating',
@@ -233,6 +258,10 @@ export const CREATURE_COMBINED_READ_COPY: Partial<
       openingFragment: 'observant enough to recall the details people conveniently forget',
       supportingCopy: "Past behavior matters to you, especially when someone promises they've changed but keeps doing the same thing.",
       shade: "Apparently, a new chapter doesn't erase the previous ones.",
+      // Owner-approved, 2026-10-21 (Build 19 final copy lock) -- the joined clause switches
+      // grammatical subject, which reads smoother with a comma marking the clause break. No
+      // wording change at all, same supportingCopy as before.
+      commaJoin: true,
     },
   },
   playful_serious: {
