@@ -2691,14 +2691,13 @@ not the earlier queuing report.
   ff9c78bb-3066-426d-9c70-551120e8ca7d` (explicit build id, not `--latest`). EAS submission
   `d3e30415-9a08-4828-a3d6-82136e7db9bc`, status **FINISHED** per `eas-cli submit:view
   --json`, no error.
-- **Apple-side TestFlight processing status at verification time: NOT YET LISTED.**
-  `eas-cli submit:status --platform ios` still showed build (17) as the most recent entry
-  in Apple's own TestFlight list; build (18) had not yet appeared. EAS "submission
-  FINISHED" means the binary was successfully delivered to App Store Connect -- it does
-  NOT mean Apple has finished its own asynchronous binary processing. Do not describe
-  Build 18 as "in TestFlight" or "delivered to testers" until `submit:status` lists
-  `1.0.0 (18)` with a processing/beta-testing state. A follow-up check recorded separately
-  once Apple's listing updates.
+- **Apple-side TestFlight processing, confirmed on a follow-up independent check
+  (~3 minutes after submission):** `eas-cli submit:status --platform ios` now lists
+  `1.0.0 (18) -- internal: in beta testing, external: ready for beta submission`. Internal
+  testers (the owner's own internal TestFlight group) can install Build 18 now. External
+  testing group distribution requires a separate, manual App Store Connect step (Apple's
+  normal external-beta-review submission) -- "ready for beta submission" is the expected
+  state before that manual step, not an error or stall.
 - No public App Store release action was taken or requested; only the TestFlight
   submission above was performed, consistent with the standing constraint against
   submitting for public review.
