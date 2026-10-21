@@ -1,8 +1,8 @@
 # Apparently You Privacy Policy | PRE-PUBLICATION DRAFT
 Last updated: October 20, 2026
-**STATUS: DRAFT. Do not publish as final until owner confirms legal business identity/contact and live service inventory, data retention, and deletion behavior.**
+**STATUS: DRAFT. Owner confirmed legal operator Super Great Ventures LLC and privacy@apparentlyyou.com. Do not publish as final until live service inventory, data retention, and deletion behavior are verified.**
 
-Apparently You is a personality and entertainment app operated by **[CONFIRM LEGAL BUSINESS ENTITY NAME]** ("we"). Contact: **[CONFIRM SUPPORT/PRIVACY EMAIL]**.
+Apparently You is a personality and entertainment app operated by **Super Great Ventures LLC** ("we"). Contact: **privacy@apparentlyyou.com**.
 
 ## Information we process
 - Profile information you choose to provide, which may include display name, age range, gender selection and optional custom gender.
@@ -42,4 +42,4 @@ We use authentication and access controls intended to limit unauthorized access.
 We may update this policy as the service changes. The effective date will be updated when material changes are made.
 
 ## Contact
-**[LEGAL ENTITY, BUSINESS ADDRESS IF REQUIRED, EMAIL, PRIVACY REQUEST URL]**
+**Super Great Ventures LLC** | privacy@apparentlyyou.com | Business mailing address: [CONFIRM IF REQUIRED]

@@ -11,7 +11,7 @@ Updated October 21, 2026. Source: actual repository docs/code and owner-provided
 - Apple Developer agreement owner-confirmed accepted October 20. Paid Apps, banking, W-9, DSA previously shown active in owner screenshots; refresh before submission.
 
 ## Submission blockers, no unsupported green checks
-1. Confirm **exact legal operator** and copyright holder, public business contact/address where required. Apple account is Individual; seller name will reflect individual legal name unless Apple account enrollment changes.
+1. Legal operator confirmed by owner: **Super Great Ventures LLC**. Verify LLC ownership of app IP and any required business mailing address. Apple account is Individual; seller name will reflect individual legal name unless Apple account enrollment changes.
 2. Audit Supabase, RevenueCat, Sentry, Expo and logs for data types, linkage, purposes, tracking, retention, deletion. Complete truthful App Privacy questionnaire. See APP_PRIVACY_DISCLOSURE_WORKSHEET.md.
 3. Finalize privacy and terms wording and update BOTH app screens (privacy-policy.tsx and terms-of-use.tsx) and public website. The current screens visibly say PRE-PUBLICATION DRAFT, which must be removed only when facts are verified.
 4. Verify production deployment and HTTPS responses for /support, /privacy, /terms. Source routes and Vercel rewrites exist; presence in git is not live proof.

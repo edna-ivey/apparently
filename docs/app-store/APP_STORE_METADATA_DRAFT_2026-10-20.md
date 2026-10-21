@@ -8,7 +8,7 @@ Primary category recommendation: Lifestyle
 Secondary category recommendation: Entertainment, if selectable and appropriate.
 Bundle ID: com.supergreatventures.apparently
 iOS version: 1.0.0
-Copyright: © 2026 [CONFIRM LEGAL COPYRIGHT HOLDER]. Do not publish a guessed legal name.
+Copyright: © 2026 Super Great Ventures LLC. Owner confirmed legal business name October 21, 2026; verify the LLC owns the app intellectual property before publication.
 Content rights: original app and licensed assets only; verify all music, imagery, and character assets are owned or licensed.
 Age rating: complete Apple's live questionnaire based on the actual Private/Private Private content. Do not assume 13+ or 17+ solely from the onboarding age choices.
 

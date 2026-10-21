@@ -1,6 +1,6 @@
 # Apparently You Terms of Use | PRE-PUBLICATION DRAFT
-Effective: **[CONFIRM DATE]**. Operator: **[LEGAL ENTITY]**. Contact: **[EMAIL]**.
-**NOT FINAL. Confirm legal terms, age restrictions, privacy policy, and subscriptions before publishing.**
+Effective: **[CONFIRM DATE]**. Operator: **Super Great Ventures LLC**. Contact: **support@apparentlyyou.com**.
+**NOT FINAL. Legal operator confirmed as Super Great Ventures LLC. Confirm remaining legal terms, age restrictions, privacy policy, and subscriptions before publishing.**
 
 Apparently You provides entertainment-oriented quizzes, personality reflections, comparisons and collectible visual identities. Results are interpretive, not medical, psychological, employment, legal or financial assessments, and should not be treated as factual diagnoses or guarantees.
 
@@ -19,4 +19,4 @@ See the Privacy Policy at **[PUBLIC URL TO VERIFY]**.
 **[DECIDE]** Use Apple's Standard Licensed Application End User License Agreement or provide custom EULA. Do not claim both without review.
 
 ### Contact
-**[LEGAL ENTITY, EMAIL]**
+**Super Great Ventures LLC | support@apparentlyyou.com**
