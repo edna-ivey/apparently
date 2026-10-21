@@ -10,6 +10,7 @@ import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/c
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import {
   APPARENTLY_PRIVATE_ANNUAL_PRODUCT_ID,
+  APPARENTLY_PRIVATE_ENTITLEMENT_ID,
   checkApparentlyPrivateAnnualIntroEligibility,
   getApparentlyPrivateOfferings,
   getSubscriptionManagementUrl,
@@ -56,6 +57,11 @@ export default function PaywallScreen() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [restoreState, setRestoreState] = useState<{ phase: 'idle' | 'restoring' | 'done'; message?: string }>({ phase: 'idle' });
+  // An already-active subscriber previously had no way to see the plan cards at all (the
+  // paywall only ever rendered "You're already in"). Toggled by "View plans" below --
+  // existing offerings are already being fetched in the background regardless of premium
+  // status (loadOffering's effect runs unconditionally), so this never needs its own fetch.
+  const [viewingPlansWhileActive, setViewingPlansWhileActive] = useState(false);
 
   const loadOffering = async () => {
     setOfferingState({ phase: 'loading' });
@@ -79,6 +85,16 @@ export default function PaywallScreen() {
 
   const selectedPackage: PurchasesPackage | null =
     offeringState.phase === 'ready' ? (selectedPlan === 'annual' ? offeringState.offerings.annual : offeringState.offerings.monthly) : null;
+
+  // The real product currently granting the entitlement, straight from RevenueCat's own
+  // CustomerInfo -- never inferred from which plan is merely SELECTED in this UI. Null for a
+  // free user, or if CustomerInfo hasn't loaded yet.
+  const currentProductId = premium.customerInfo?.entitlements.active[APPARENTLY_PRIVATE_ENTITLEMENT_ID]?.productIdentifier ?? null;
+  const isSelectedPlanCurrent = !!selectedPackage && !!currentProductId && selectedPackage.product.identifier === currentProductId;
+  // Plans render for a brand-new (free) visitor as before, OR for an already-active
+  // subscriber who explicitly asked to see them via "View plans" -- never a fake/duplicate
+  // purchase screen shown unconditionally to someone already subscribed.
+  const showPlans = premium.status !== 'premium' || viewingPlansWhileActive;
 
   const handleSubscribe = async () => {
     if (!selectedPackage || isPurchasing) {
@@ -166,9 +182,20 @@ export default function PaywallScreen() {
                   <ThemedText style={styles.manageCtaText}>Manage subscription →</ThemedText>
                 </Pressable>
               )}
-              <Pressable style={styles.primaryCta} onPress={() => router.back()}>
-                <ThemedText style={styles.primaryCtaText}>Back to Apparently →</ThemedText>
-              </Pressable>
+              {/* Lets an existing subscriber see real plan pricing (e.g. to compare monthly
+                  vs. annual, or just confirm what they're paying) without faking a second
+                  purchase screen -- the same real PlanCard/offering data every visitor sees,
+                  gated behind one explicit tap rather than shown unconditionally. */}
+              {Platform.OS !== 'web' && (
+                <Pressable style={styles.manageCta} onPress={() => setViewingPlansWhileActive((current) => !current)}>
+                  <ThemedText style={styles.manageCtaText}>{viewingPlansWhileActive ? 'Hide plans' : 'View plans →'}</ThemedText>
+                </Pressable>
+              )}
+              {!viewingPlansWhileActive && (
+                <Pressable style={styles.primaryCta} onPress={() => router.back()}>
+                  <ThemedText style={styles.primaryCtaText}>Back to Apparently →</ThemedText>
+                </Pressable>
+              )}
             </View>
           )}
 
@@ -181,7 +208,7 @@ export default function PaywallScreen() {
             </View>
           )}
 
-          {premium.status !== 'premium' && Platform.OS !== 'web' && (
+          {showPlans && Platform.OS !== 'web' && (
             <>
               {offeringState.phase === 'loading' && (
                 <View style={styles.stateCard}>
@@ -205,6 +232,7 @@ export default function PaywallScreen() {
                       pkg={offeringState.offerings.annual}
                       eyebrow={offeringState.annualIntroEligible && offeringState.offerings.annual.product.introPrice ? 'FOUNDING MEMBER' : 'ANNUAL'}
                       selected={selectedPlan === 'annual'}
+                      isCurrent={offeringState.offerings.annual.product.identifier === currentProductId}
                       onPress={() => setSelectedPlan('annual')}
                     />
                   )}
@@ -213,21 +241,37 @@ export default function PaywallScreen() {
                       pkg={offeringState.offerings.monthly}
                       eyebrow="MONTHLY"
                       selected={selectedPlan === 'monthly'}
+                      isCurrent={offeringState.offerings.monthly.product.identifier === currentProductId}
                       onPress={() => setSelectedPlan('monthly')}
                     />
                   )}
 
                   {purchaseError && <ThemedText style={styles.errorText}>{purchaseError}</ThemedText>}
 
+                  {/* Disabled when the selected plan is already the real active plan --
+                      never lets a tap attempt a duplicate purchase of what they already
+                      have. A DIFFERENT plan while already premium is a real plan switch:
+                      Purchases.purchasePackage itself (subscribeToPackage, unchanged) is
+                      what StoreKit/RevenueCat use to apply the subscription-group upgrade/
+                      downgrade -- both products already share one Apple subscription group
+                      (see docs/app-store/OWNER_APP_STORE_ACTIONS.md), so no separate
+                      switch-specific code path is needed here. */}
                   <Pressable
-                    disabled={isPurchasing || !selectedPackage}
-                    style={[styles.primaryCta, (isPurchasing || !selectedPackage) && styles.ctaDisabled]}
+                    disabled={isPurchasing || !selectedPackage || isSelectedPlanCurrent}
+                    style={[styles.primaryCta, (isPurchasing || !selectedPackage || isSelectedPlanCurrent) && styles.ctaDisabled]}
                     onPress={() => void handleSubscribe()}>
-                    <ThemedText style={styles.primaryCtaText}>{isPurchasing ? 'Subscribing…' : 'Subscribe →'}</ThemedText>
+                    <ThemedText style={styles.primaryCtaText}>
+                      {isPurchasing ? 'Subscribing…' : isSelectedPlanCurrent ? 'Current Plan' : premium.status === 'premium' ? 'Switch Plan →' : 'Subscribe →'}
+                    </ThemedText>
                   </Pressable>
                 </View>
               )}
 
+              {/* Restore Purchases is useful whenever plans are visible -- a free visitor
+                  who should already be subscribed (reinstalled app, lost local state), AND
+                  an already-active subscriber confirming restore still works for this
+                  device/account. Not gated on free-vs-premium, unlike "Not now"/legal below,
+                  which only make sense for someone actually deciding whether to subscribe. */}
               <View style={styles.restoreRow}>
                 <Pressable disabled={restoreState.phase === 'restoring'} onPress={() => void handleRestore()} style={styles.secondaryCta}>
                   <ThemedText style={styles.secondaryCtaText}>
@@ -236,7 +280,11 @@ export default function PaywallScreen() {
                 </Pressable>
                 {restoreState.phase === 'done' && restoreState.message && <ThemedText style={styles.restoreMessage}>{restoreState.message}</ThemedText>}
               </View>
+            </>
+          )}
 
+          {premium.status !== 'premium' && Platform.OS !== 'web' && (
+            <>
               <Pressable style={styles.tertiaryCta} onPress={() => router.back()}>
                 <ThemedText style={styles.tertiaryCtaText}>Not now</ThemedText>
               </Pressable>
@@ -280,7 +328,22 @@ const formatSubscriptionPeriodUnit = (period: string | null): string => {
 // on this product and (b) this specific customer is Apple-eligible for it right now --
 // PlanCard itself never decides eligibility, it only renders what it's told, so it can never
 // accidentally promise a discount that wasn't actually verified.
-function PlanCard({ pkg, eyebrow, selected, onPress }: { pkg: PurchasesPackage; eyebrow: string; selected: boolean; onPress: () => void }) {
+function PlanCard({
+  pkg,
+  eyebrow,
+  selected,
+  isCurrent,
+  onPress,
+}: {
+  pkg: PurchasesPackage;
+  eyebrow: string;
+  selected: boolean;
+  // Whether THIS package's product is the real, currently-active entitlement-granting
+  // product (from CustomerInfo, never inferred from UI selection) -- lets an existing
+  // subscriber immediately see which plan they're actually on.
+  isCurrent: boolean;
+  onPress: () => void;
+}) {
   const unit = formatSubscriptionPeriodUnit(pkg.product.subscriptionPeriod);
   const isFoundingMember = eyebrow === 'FOUNDING MEMBER' && pkg.product.introPrice;
 
@@ -289,10 +352,17 @@ function PlanCard({ pkg, eyebrow, selected, onPress }: { pkg: PurchasesPackage; 
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${eyebrow} plan, ${isFoundingMember ? pkg.product.introPrice?.priceString : pkg.product.priceString} per ${unit}`}
+      accessibilityLabel={`${eyebrow} plan, ${isFoundingMember ? pkg.product.introPrice?.priceString : pkg.product.priceString} per ${unit}${isCurrent ? ', your current plan' : ''}`}
       style={[Panel.shell, styles.priceCard, selected && styles.priceCardSelected]}>
       <View style={[Panel.glow, styles.priceGlow]} />
-      <ThemedText style={[Panel.eyebrow, styles.priceEyebrow]}>{eyebrow}</ThemedText>
+      <View style={styles.priceEyebrowRow}>
+        <ThemedText style={[Panel.eyebrow, styles.priceEyebrow]}>{eyebrow}</ThemedText>
+        {isCurrent && (
+          <View style={styles.currentPlanBadge}>
+            <ThemedText style={styles.currentPlanBadgeText}>CURRENT PLAN</ThemedText>
+          </View>
+        )}
+      </View>
       {isFoundingMember && pkg.product.introPrice ? (
         <>
           <View style={styles.priceRow}>
@@ -351,7 +421,10 @@ const styles = StyleSheet.create({
   priceCard: { gap: Spacing.one, borderColor: 'rgba(255,121,95,0.3)' },
   priceCardSelected: { borderColor: Brand.coral, borderWidth: 2 },
   priceGlow: { backgroundColor: 'rgba(255,121,95,0.2)' },
+  priceEyebrowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   priceEyebrow: { color: Brand.coral },
+  currentPlanBadge: { backgroundColor: 'rgba(255,121,95,0.18)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: 3 },
+  currentPlanBadgeText: { color: Brand.coral, fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
   priceRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: Spacing.half },
   priceValue: { color: Brand.cream, fontSize: 36, lineHeight: 40, fontWeight: '900', letterSpacing: -0.5 },
   priceUnit: { color: 'rgba(255,249,245,0.6)', fontSize: 15, fontWeight: '700', marginBottom: 4 },

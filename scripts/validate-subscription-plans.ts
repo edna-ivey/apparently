@@ -120,6 +120,40 @@ assert(
   'no code path ORs a tester/override flag into the real premium determination anywhere in this file',
 );
 
+// ============================================================================================
+// 8. EXISTING-SUBSCRIBER EXPERIENCE: "View plans" while already active, real current-plan
+//    detection from CustomerInfo (never from UI selection), duplicate-purchase prevention,
+//    and Restore Purchases available to an existing subscriber too (not just a free visitor).
+// ============================================================================================
+
+assert(/const \[viewingPlansWhileActive, setViewingPlansWhileActive\] = useState\(false\);/.test(paywallSource), '"View plans" is a real, explicit opt-in toggle for an already-active subscriber -- never shown unconditionally');
+assert(/View plans/.test(paywallSource) && /Hide plans/.test(paywallSource), 'the paywall offers a real "View plans" (and "Hide plans" to collapse it again) action for an active subscriber');
+assert(
+  /const showPlans = premium\.status !== 'premium' \|\| viewingPlansWhileActive;/.test(paywallSource),
+  'plans render for a free visitor OR an active subscriber who explicitly asked to see them -- never a fake/duplicate purchase screen shown unconditionally to someone already subscribed',
+);
+assert(
+  /const currentProductId = premium\.customerInfo\?\.entitlements\.active\[APPARENTLY_PRIVATE_ENTITLEMENT_ID\]\?\.productIdentifier \?\? null;/.test(paywallSource),
+  'the current plan is read from the REAL CustomerInfo entitlement productIdentifier, never inferred from which plan happens to be selected in the UI',
+);
+assert(/isCurrent=\{offeringState\.offerings\.annual\.product\.identifier === currentProductId\}/.test(paywallSource), 'the annual PlanCard is marked current only when its real product id matches the real active entitlement product');
+assert(/isCurrent=\{offeringState\.offerings\.monthly\.product\.identifier === currentProductId\}/.test(paywallSource), 'the monthly PlanCard is marked current only when its real product id matches the real active entitlement product');
+assert(
+  /disabled=\{isPurchasing \|\| !selectedPackage \|\| isSelectedPlanCurrent\}/.test(paywallSource),
+  'the Subscribe/Switch button is disabled when the selected plan is already the real active plan -- never lets a tap attempt a duplicate purchase of what the customer already has',
+);
+assert(/'Switch Plan →'/.test(paywallSource) && /'Current Plan'/.test(paywallSource), 'the button honestly distinguishes a first-time Subscribe, a plan Switch, and an already-Current selection -- never the same generic label for all three');
+assert(
+  !/entitlements\.active\[APPARENTLY_PRIVATE_ENTITLEMENT_ID\]\s*=/.test(paywallSource) && !/setSnapshot\(/.test(paywallSource),
+  'the paywall never writes to premium/entitlement state directly -- it only ever reads usePremiumStatus() and calls the real subscribeToPackage/restorePurchases functions, so a paid entitlement can never be locally revoked, reset, or faked from this screen',
+);
+// Restore Purchases must be reachable whenever plans are visible, not just for a free visitor
+// -- confirmed by checking it is NOT nested inside a premium.status !== 'premium' only gate.
+const showPlansBlockStart = paywallSource.indexOf("{showPlans && Platform.OS !== 'web' && (");
+const nextTopLevelGateIndex = paywallSource.indexOf("{premium.status !== 'premium' && Platform.OS !== 'web' && (", showPlansBlockStart);
+const showPlansBlock = paywallSource.slice(showPlansBlockStart, nextTopLevelGateIndex);
+assert(/Restore Purchases/.test(showPlansBlock), 'Restore Purchases renders inside the showPlans block itself -- reachable for an existing subscriber viewing plans, not only a free visitor');
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED.`);
   process.exit(1);
