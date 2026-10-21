@@ -2668,3 +2668,37 @@ Full test-scenario matrix (what's code-complete vs. what's blocked on a real san
 recorded in `docs/app-store/SUBSCRIPTION_TESTING_2026-10-20.md`. `scripts/validate-
 subscription-plans.ts` extended with 11 new checks for this change. Full suite (tsc, lint, 39
 validators) green.
+
+## 84. BUILD 18 EAS/TESTFLIGHT DEPLOYMENT, FRESHLY VERIFIED (2026-10-20/21)
+
+**Context:** a prior report described Build 18 as queuing; the owner relayed that Forge
+independently checked EAS and still saw Build 17 as the latest build. This section records
+only facts re-confirmed by direct, independent tool calls made after that correction --
+not the earlier queuing report.
+
+- EAS build `ff9c78bb-3066-426d-9c70-551120e8ca7d`, platform iOS, profile `testflight`,
+  `appBuildVersion` 18, `appVersion` 1.0.0, status **FINISHED** (verified via
+  `eas-cli build:view --json`, re-checked twice: first showed `IN_PROGRESS`, second
+  showed `FINISHED`). This is why Forge's independent check still showed Build 17 as
+  latest -- the archive upload had completed but Apple-side native compilation had not;
+  the build was never lost, failed, or silently abandoned. No restart was needed or
+  performed; `app.json`'s `ios.buildNumber` was NOT incremented again (still `"18"`).
+- `gitCommitHash` on the finished build is `e9a688e804f3bcfd4562a17093c29cbbba656044`,
+  confirmed equal to both local `HEAD` and `origin/feature/private-library-implementation`
+  at verification time (`git rev-parse` both, identical hash) -- the exact commit included
+  is this one, with no drift between the build and the pushed branch.
+- Submitted to TestFlight via `eas-cli submit --platform ios --profile testflight --id
+  ff9c78bb-3066-426d-9c70-551120e8ca7d` (explicit build id, not `--latest`). EAS submission
+  `d3e30415-9a08-4828-a3d6-82136e7db9bc`, status **FINISHED** per `eas-cli submit:view
+  --json`, no error.
+- **Apple-side TestFlight processing status at verification time: NOT YET LISTED.**
+  `eas-cli submit:status --platform ios` still showed build (17) as the most recent entry
+  in Apple's own TestFlight list; build (18) had not yet appeared. EAS "submission
+  FINISHED" means the binary was successfully delivered to App Store Connect -- it does
+  NOT mean Apple has finished its own asynchronous binary processing. Do not describe
+  Build 18 as "in TestFlight" or "delivered to testers" until `submit:status` lists
+  `1.0.0 (18)` with a processing/beta-testing state. A follow-up check recorded separately
+  once Apple's listing updates.
+- No public App Store release action was taken or requested; only the TestFlight
+  submission above was performed, consistent with the standing constraint against
+  submitting for public review.
