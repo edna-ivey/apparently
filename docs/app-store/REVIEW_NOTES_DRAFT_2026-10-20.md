@@ -15,10 +15,10 @@ Services: Supabase (anonymous authentication and application storage), RevenueCa
 
 Privacy Policy, Terms of Use, Restore Purchases, subscription management, and Delete Account are accessible from Settings. Deleting an account does not cancel an Apple subscription.
 
-Tested device/OS: [INSERT ACTUAL FINAL-BUILD DEVICE AND IOS VERSION].
+Tested device/OS: real iOS Simulator testing performed 2026-10-21 (iPhone 17 Pro and iPhone 17e, iOS 26.4) -- confirm the actual physical-device/OS combination used for final sign-off before submitting, if different.
 Region/availability: [CONFIRM REGIONS AND ANY FEATURE DIFFERENCES].
 Reviewer contact: [CONFIRM CONTACT NAME, PHONE, EMAIL].
-Backend readiness: [VERIFY MIGRATIONS AND DELETE ACCOUNT FUNCTION DEPLOYED AND TESTED].
-Subscription review screenshots: [ATTACH REAL PAYWALL SCREENSHOT IN SUBSCRIPTION REVIEW FIELDS].
+Backend readiness: VERIFIED 2026-10-21 -- both migrations applied (confirmed live via `supabase migration list`, zero local/remote mismatch), `delete-account` Edge Function deployed and ACTIVE (`verify_jwt=true`), and LIVE-TESTED end to end against production with a disposable account (`scripts/test-delete-account-integration.ts`, all checks passed, no existing user touched). See `docs/app-store/PRODUCTION_ACCOUNT_DELETION_DEPLOYMENT_2026-10-21.md`.
+Subscription review screenshots: a real, live on-device paywall screenshot showing the actual RevenueCat/StoreKit Founding Member offer and monthly price was captured 2026-10-21 -- `preview-screenshots/ios-simulator-paywall-live-founding-member.png`. Attach the equivalent captured from the actual submitted build in the Subscription Review fields before submission.
 
 Do not submit these notes as final until bracketed facts are verified.

@@ -48,6 +48,21 @@ scripts/
 # Supabase CLI; never part of the Expo client bundle.
 supabase/
 
+# Local native prebuild output (Build 20 incident, 2026-10-21): `npx expo run:ios` (used this
+# pass for real iOS Simulator testing -- see Bible §92) generates a full native `ios/` project
+# including CocoaPods' Pods/ tree, locally ~1.2GB. It's gitignored (.gitignore's own /ios,
+# /android), but this file's own header comment already documents that .easignore REPLACES
+# .gitignore for EAS archive purposes once .easignore exists -- so gitignored was not actually
+# excluded from the upload. A real build attempt this pass uploaded an 905MB archive (vs the
+# normal ~317MB) before this was caught and the build was canceled. Excluded explicitly here so
+# this can't recur: this app is managed-workflow (EAS runs its own prebuild), so a local
+# `ios/`/`android/` directory is never a real input to a production/TestFlight build.
+/ios/
+/android/
+
+# Local testing/documentation screenshots -- never imported by app code, not a build input.
+preview-screenshots/
+
 # Standard non-build-artifact excludes.
 .git/
 .vscode/
