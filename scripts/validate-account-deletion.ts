@@ -94,7 +94,11 @@ assert(/share_id uuid not null references public\.quiz_shares \(id\) on delete c
 //     would incorrectly delete the approved question/grant itself).
 // ============================================================================================
 
-const fkFixMigrationSource = read('../supabase/migrations/20261021010000_admin_attribution_fk_set_null_on_delete.sql');
+// Filename reconciled 2026-10-21: Supabase's migration API applied this SQL under remote
+// version 20261021133217, not the local 20261021010000 the file was originally authored
+// under -- renamed to match so local/remote migration history agree exactly (see
+// docs/app-store/PRODUCTION_ACCOUNT_DELETION_DEPLOYMENT_2026-10-21.md).
+const fkFixMigrationSource = read('../supabase/migrations/20261021133217_admin_attribution_fk_set_null_on_delete.sql');
 assert(/drop constraint daily_questions_approved_by_fkey/.test(fkFixMigrationSource) && /on delete set null/.test(fkFixMigrationSource), 'a staged migration fixes daily_questions.approved_by to ON DELETE SET NULL (never blocks, never cascades into deleting the question)');
 assert(/drop constraint tester_access_grants_granted_by_fkey/.test(fkFixMigrationSource), 'the same staged migration fixes tester_access_grants.granted_by to ON DELETE SET NULL');
 assert(!/approved_by.*on delete cascade|granted_by.*on delete cascade/i.test(fkFixMigrationSource), 'neither attribution fix uses CASCADE -- that would wrongly delete the approved question/tester grant itself, not just the stale admin reference');
@@ -132,21 +136,43 @@ const paywallSource = read('../src/app/paywall.tsx');
 assert(/router\.push\('\/privacy-policy'\)/.test(paywallSource) && /router\.push\('\/terms-of-use'\)/.test(paywallSource), 'the paywall also links to the real, in-app Privacy Policy and Terms of Use pages');
 
 // ============================================================================================
-// 7. LEGAL SCREENS THEMSELVES EXIST, ARE REAL (never a dead/external link), and are honest
-//    about their draft status rather than presented as finalized.
+// 7. LEGAL SCREENS THEMSELVES EXIST, ARE REAL (never a dead/external link). Build 19
+//    finalization (2026-10-21): both screens were genuinely verified against the live app/
+//    infrastructure and had their PRE-PUBLICATION DRAFT banner removed -- this section now
+//    asserts the OPPOSITE of the old check: no leftover draft/placeholder markers, the real
+//    operator identified, and a real "last updated"/"effective" date shown. If a future edit
+//    reintroduces an unresolved [VERIFY]/[CONFIRM] placeholder or the draft banner, this must
+//    fail again until it's genuinely resolved -- never silence this check instead.
 // ============================================================================================
 
 const privacyScreenSource = read('../src/app/privacy-policy.tsx');
 const termsScreenSource = read('../src/app/terms-of-use.tsx');
 assert(/export default function PrivacyPolicyScreen/.test(privacyScreenSource), 'a real Privacy Policy screen component exists (an actual in-app route, not an external link)');
 assert(/export default function TermsOfUseScreen/.test(termsScreenSource), 'a real Terms of Use screen component exists (an actual in-app route, not an external link)');
-assert(/Pre-publication draft/.test(privacyScreenSource) && /Pre-publication draft/.test(termsScreenSource), 'both legal screens honestly disclose their draft status rather than presenting unfinished text as final');
+assert(
+  !/Pre-publication draft/.test(privacyScreenSource) && !/Pre-publication draft/.test(termsScreenSource),
+  'neither legal screen still shows the PRE-PUBLICATION DRAFT banner (removed once genuinely verified -- see Bible for the finalization writeup)',
+);
+assert(
+  !/\[VERIFY|\[CONFIRM|\[DECIDE|\[REVIEW/.test(privacyScreenSource) && !/\[VERIFY|\[CONFIRM|\[DECIDE|\[REVIEW/.test(termsScreenSource),
+  'neither legal screen contains an unresolved [VERIFY]/[CONFIRM]/[DECIDE]/[REVIEW] placeholder',
+);
+assert(
+  /Super Great Ventures LLC/.test(privacyScreenSource) && /Super Great Ventures LLC/.test(termsScreenSource),
+  'both legal screens identify the real operator, Super Great Ventures LLC',
+);
+assert(
+  /Last updated:|Effective:/.test(privacyScreenSource) && /Last updated:|Effective:/.test(termsScreenSource),
+  'both legal screens show a real, visible last-updated/effective date instead of a draft banner',
+);
 
 // ============================================================================================
-// 8. SUPPORT PAGE + apparentlyyou.com SHORT URL PATHS (Phase 5) -- a real route, plus
-//    PREPARED (not deployed -- no vercel CLI invocation anywhere in this repo) rewrites so
-//    the public site's /privacy and /terms paths resolve to the same real screens once this
-//    repo is actually deployed to Vercel.
+// 8. SUPPORT PAGE + apparentlyyou.com SHORT URL PATHS (Phase 5) -- a real route, plus the
+//    rewrites so the public site's /privacy and /terms paths resolve to the same real
+//    screens. Source-level check only (this script can't make a live HTTPS request as part of
+//    the static validator suite) -- live production verification is done separately via
+//    direct curl checks against apparentlyyou.com, recorded in the Bible/Continuity Protocol,
+//    never assumed from this passing alone.
 // ============================================================================================
 
 const supportScreenSource = read('../src/app/support.tsx');

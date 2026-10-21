@@ -1,11 +1,15 @@
 // Build 18 WP3 integration smoke test -- NOT a static validator, a REAL end-to-end test
-// against the LIVE linked Supabase project. Do not run this until:
+// against the LIVE linked Supabase project. Run 2026-10-21 against production: all checks
+// passed (see docs/app-store/PRODUCTION_ACCOUNT_DELETION_DEPLOYMENT_2026-10-21.md and the
+// Continuity Protocol for the result). Prerequisites, now satisfied:
 //   1. The owner has explicitly approved deploying supabase/functions/delete-account, AND
 //   2. It has actually been deployed (npx supabase functions deploy delete-account), AND
-//   3. 20261020010000_daily_option_effects_validation.sql and
-//      20261021010000_admin_attribution_fk_set_null_on_delete.sql have been applied
-//      (not required for this specific test to pass, but keeps the project in the reviewed
-//      state before any live smoke test).
+//   3. Both staged migrations have been applied -- locally renamed to match the remote
+//      version numbers Supabase's migration API actually assigned them:
+//      20261021133214_daily_option_effects_validation.sql (was 20261020010000_...) and
+//      20261021133217_admin_attribution_fk_set_null_on_delete.sql (was 20261021010000_...).
+//      Not required for this specific test to pass, but keeps the project in the reviewed
+//      state before any live smoke test.
 //
 // Uses ONLY a disposable, throwaway anonymous account created by this script itself --
 // never touches a real user. Creates one, writes one real row it owns (a profiles row, via

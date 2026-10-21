@@ -231,6 +231,14 @@ export default function SettingsScreen() {
           {/* --- SUPPORT --- */}
           <ThemedText style={styles.sectionEyebrow}>SUPPORT</ThemedText>
           <View style={styles.card}>
+            {/* Build 19: links to the real /support page (troubleshooting, subscription
+                management, Restore Purchases, and account-deletion guidance -- see
+                support.tsx) -- previously Settings only offered a bare mailto link with none
+                of that. "Contact Us" below stays as a quick-email shortcut alongside it. */}
+            <Pressable onPress={() => router.push('/support')}>
+              <ThemedText style={styles.linkRow}>Help & Support</ThemedText>
+            </Pressable>
+            <View style={styles.divider} />
             <Pressable onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}>
               <ThemedText style={styles.linkRow}>Contact Us</ThemedText>
               <ThemedText style={styles.linkRowSecondary}>{SUPPORT_EMAIL}</ThemedText>

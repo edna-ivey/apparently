@@ -1,45 +1,66 @@
-# Apparently You Privacy Policy | PRE-PUBLICATION DRAFT
-Last updated: October 20, 2026
-**STATUS: DRAFT. Owner confirmed legal operator Super Great Ventures LLC and privacy@apparentlyyou.com. Do not publish as final until live service inventory, data retention, and deletion behavior are verified.**
+# Apparently You Privacy Policy
+Last updated: October 21, 2026
 
-Apparently You is a personality and entertainment app operated by **Super Great Ventures LLC** ("we"). Contact: **privacy@apparentlyyou.com**.
+Finalized 2026-10-21: owner-confirmed legal operator (Super Great Ventures LLC) and every
+data-practice claim below cross-checked directly against the live app and infrastructure --
+account deletion's real cascade behavior (`supabase/functions/delete-account/index.ts`),
+Sentry's actual production config (`src/services/observability.ts`), the full list of
+third-party services (cross-checked against `package.json` -- no analytics/tracking SDK
+exists), share-link revocation behavior (none; a share is only invalidated by the sharer's own
+account deletion), and the under-13 onboarding age gate. This is the canonical source kept in
+sync by hand with `src/app/privacy-policy.tsx`, which renders the same content in-app.
+Governing-law/dispute jurisdiction is intentionally not addressed here (privacy policies don't
+require one); see the Terms of Use for that note.
+
+Apparently You is a personality and entertainment app operated by **Super Great Ventures LLC**
+("we", "us"). Contact: **privacy@apparentlyyou.com** for any privacy question, or to request
+access, correction, or deletion of your data.
 
 ## Information we process
-- Profile information you choose to provide, which may include display name, age range, gender selection and optional custom gender.
-- Quiz and Daily responses, results, personality traits/evidence, Creature and Relic progression, and participation in comparison/sharing features.
-- Anonymous account identifiers used to associate saved responses, app state and purchases with an installation/account.
-- Subscription status and purchase entitlement records from Apple and RevenueCat. Payment details are processed by Apple, not entered into the app.
-- Technical diagnostic information when error monitoring is enabled, potentially including app version, device context and crash/error metadata. We aim not to transmit quiz answer text in diagnostic events.
-- **[VERIFY]** Any additional server logs, IP/device metadata, analytics, push tokens or data collected by third-party SDKs.
+- Profile information you choose to provide: display name, age range, gender selection and optional custom gender.
+- Quiz and Daily responses, results, personality traits and evidence, Creature and Relic progression, and content you choose to share through comparison/sharing features.
+- An anonymous account identifier (not tied to an email or phone number at signup) used to associate your saved responses, app state and purchases with your installation.
+- Subscription status and purchase entitlement records from Apple and RevenueCat. We never see or store your payment card details -- those are processed entirely by Apple.
+- Technical diagnostic information, only when our error-monitoring service (Sentry) is active: app version, build number, environment, which backend operation failed, a structural error code, and a stack trace. We do not transmit quiz answer text, personality results, screenshots, session recordings, or your raw device IP address in these events -- our Sentry configuration explicitly disables default PII collection, screenshot capture and session replay, and strips authorization headers and request bodies before anything is sent.
 
 ## Why we process it
-To provide the app, personalize your results, preserve progress, support comparison and sharing, enforce age restrictions and subscription access, troubleshoot errors, prevent abuse, and meet legal obligations.
+To provide the app, personalize your results, preserve your progress, support comparison and sharing, enforce age restrictions and subscription access, troubleshoot errors, prevent abuse, and meet legal obligations.
 
 ## Services and recipients
-- Supabase: account authentication and application data storage.
+- Supabase: account authentication and application data storage. Our Supabase project is hosted in the United States (US West).
 - Apple App Store: payments and subscription management.
-- RevenueCat: subscription status and entitlement synchronization.
-- Sentry: diagnostic/error monitoring **[VERIFY enabled production configuration and actual fields]**.
-- Expo/EAS and Vercel: build/deployment and website infrastructure, where applicable.
-- **[VERIFY]** Other service providers and whether data is transferred internationally.
+- RevenueCat: subscription status and entitlement synchronization. RevenueCat identifies you only by the same anonymous account identifier described above -- never your name or email.
+- Sentry: diagnostic/error monitoring, configured as described above, active in production builds.
+- Expo/EAS and Vercel: app build/deployment and website hosting infrastructure.
+- We do not use any advertising, analytics, or behavioral-tracking SDK. No other third party receives your data.
 
 ## Sharing and visibility
-When you explicitly share a comparison or Creature image, recipients may see the content you choose to share. **[VERIFY]** Whether public sharing tokens reveal responses, profile names, or other personal information, their expiry and revocation rules.
+When you explicitly create a share link for a comparison result, anyone with that link can view the comparison content you chose to share. A shared page does not display your profile name or other account details -- only the result content itself. There is currently no separate control to manually revoke a share link; a share link stops working once the account that created it is deleted (see "Retention and deletion" below).
 
 ## Retention and deletion
-We retain data while needed to provide the service and as required by law. You can request account deletion using the in-app Settings control **[NOT IMPLEMENTED/VERIFIED AS OF THIS DRAFT]**. Account deletion should remove account-associated personal data unless retention is legally required. **[VERIFY]** exact deletion propagation, backups, log retention, timeframes and any exemptions before publishing. Deleting an account does not cancel an Apple subscription; manage it in iOS Settings or https://apps.apple.com/account/subscriptions/.
+We retain your data while your account exists and as needed to provide the service. You can permanently delete your account at any time from Settings -> Delete Account.
+
+Deletion is immediate and permanent: it removes your authentication record and, through that, every row tied to your account -- your profile, Daily and quiz answers, personality evidence, Creature and Relic progress, tester-access records, and any share links you created. This cannot be undone.
+
+A few things are not controlled by this deletion, and we want to be upfront about them: your subscription and purchase history remain with Apple and RevenueCat as required for their own recordkeeping (deleting your Apparently You account does not cancel an Apple subscription -- manage or cancel it directly in iOS Settings or at apps.apple.com/account/subscriptions); any diagnostic error events already sent to Sentry before deletion persist under Sentry's own retention policy; and a routine database backup taken before your deletion may still contain your data until that backup itself ages out of our backup retention window.
 
 ## Your choices
-You can change some profile fields in Settings, manage Apple subscriptions, and request account deletion. **[VERIFY]** access/correction/contact procedure, local data reset, and available privacy rights by jurisdiction.
+You can change your profile fields in Settings, manage or cancel your Apple subscription at any time, restore a prior purchase, and request account deletion -- all from Settings. For any other request about your data, contact privacy@apparentlyyou.com.
 
 ## Age and children
-The app offers a 13–17 demographic choice and separate age-eligibility controls restricting adult-oriented Private experiences. **[VERIFY]** minimum age policy, treatment of minors' data, parental consent requirements where applicable, and App Store age rating before publication.
+Apparently You is not intended for children under 13. The app asks for an age confirmation during onboarding and never creates an account or collects further information from anyone who indicates they are under 13.
+
+Separately, the app offers a 13-17 demographic choice (for personalization only) and a distinct 18+ age-eligibility gate that restricts access to mature "Private Private" content regardless of the demographic choice above.
 
 ## Security
-We use authentication and access controls intended to limit unauthorized access. No service can guarantee absolute security. **[VERIFY]** live policies and incident contact process.
+We use authentication and access controls intended to limit unauthorized access to your data. No service can guarantee absolute security.
 
 ## Changes
-We may update this policy as the service changes. The effective date will be updated when material changes are made.
+We may update this policy as the service changes. The "Last updated" date above reflects the most recent material change.
 
 ## Contact
-**Super Great Ventures LLC** | privacy@apparentlyyou.com | Business mailing address: [CONFIRM IF REQUIRED]
+**Super Great Ventures LLC** | privacy@apparentlyyou.com
+
+## Open item (not a factual gap -- a business decision)
+A formal business mailing address is not included above. US privacy law does not require one for
+a policy like this; add one here and in-app if the owner wants it included.

@@ -111,7 +111,11 @@ assert(/export type PersonalityEffectValue = -3 \| -2 \| -1 \| 1 \| 2 \| 3;/.tes
 //    duplicate-dimension rejection), explicitly with NO array-length/count cap.
 // ============================================================================================
 
-const migrationSource = read('../supabase/migrations/20261020010000_daily_option_effects_validation.sql');
+// Filename reconciled 2026-10-21: Supabase's migration API applied this SQL under remote
+// version 20261021133214, not the local 20261020010000 the file was originally authored
+// under -- renamed to match so local/remote migration history agree exactly (see
+// docs/app-store/PRODUCTION_ACCOUNT_DELETION_DEPLOYMENT_2026-10-21.md).
+const migrationSource = read('../supabase/migrations/20261021133214_daily_option_effects_validation.sql');
 assert(/create or replace function public\.admin_update_daily_option/.test(migrationSource), 'the staged migration redefines admin_update_daily_option additively (create or replace, same signature)');
 assert(!/jsonb_array_length\(v_effects\)\s*>/.test(migrationSource), 'the staged migration never rejects based on array length -- no count cap is reintroduced server-side');
 assert(/if v_dimension = any\(v_seen_dimensions\) then/.test(migrationSource), 'the staged migration rejects a duplicate dimension within one answer, server-side');

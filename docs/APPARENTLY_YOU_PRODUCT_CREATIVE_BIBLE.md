@@ -3043,3 +3043,103 @@ byte-for-byte unchanged by construction, independently reconfirmed by re-running
 `scripts/validate-combined-creature-read.ts` (all pinned-fixture and 1,520-combination checks
 still green). No EAS build or TestFlight submission was initiated this pass, per explicit
 instruction -- awaiting screenshot review before any new build is authorized.
+
+## 91. CREATURE VIEWER CLOSE-BUTTON FIX + LEGAL/SUPPORT PAGES PUBLISHED (2026-10-21)
+
+**Close-button fix (`src/app/creature-read.tsx`):** owner reported the full-screen Creature
+viewer's × was positioned almost under the status bar/notch/Dynamic Island, hard to tap.
+Root-caused to a real, known class of bug: `useSafeAreaInsets()`/`<SafeAreaView>` called FROM
+INSIDE a React Native `<Modal>`'s own subtree (as the close button previously relied on
+exclusively) can read stale/zero insets on iOS depending on RN/safe-area-context version. Fix:
+insets are now measured ONCE on `CreatureReadScreen` (always mounted, never inside a Modal --
+reliably correct) and passed into `CreaturePreviewModal` as a plain `insets` prop; the modal's
+`<SafeAreaView>` now excludes the `top` edge (`edges={['left','right','bottom']}`) and the
+close button's row gets an EXPLICIT `paddingTop: insets.top + Spacing.three`, so the real
+top offset is never double-applied or silently dropped. Touch target enlarged 44x44 ->
+**48x48**; also fixed a real pre-existing centering bug (`alignItems:'flex-end'` on the button
+pushed the × glyph toward the button's own right edge instead of centering it -- now
+`alignItems:'center'`).
+
+**What was verified, and what was not:** web (Expo Web) always reports zero safe-area insets,
+so the exact pixel position on a notch/Dynamic-Island device could NOT be verified from this
+environment -- confirmed empirically, not just assumed (a `SafeAreaProvider initialMetrics`
+injection meant to fake a 59px Dynamic-Island inset was tried and confirmed NOT to take effect
+on web, which itself is useful evidence: web's measurement is real, just always zero). What
+WAS verified on web: the button renders at exactly `insets.top + topRowGap` for whatever inset
+value it's given (formula executes correctly), the × is now visibly centered, touch target is
+48x48 at all three required sizes, and 4 consecutive open/close/reopen cycles complete cleanly
+with no stale state. **The actual notch/Dynamic-Island device behavior remains unverified --
+no physical iPhone or simulator is available in this environment; the owner should specifically
+re-test this exact scenario before considering it fully resolved.** Screenshots:
+`preview-screenshots/close-button-{390x844,375x667,430x932}.png`.
+
+**Creature enlargement (prior uncommitted work) preserved and completed:** the responsive
+card-width/creature-size logic from the previous pass was kept as-is (not discarded), only the
+close-button-specific code around it changed. Full seven-layer composition, Save to Photos,
+and Share Creature all unaffected by this pass's changes.
+
+**Legal pages finalized and the DRAFT banner removed** (`privacy-policy.tsx`,
+`terms-of-use.tsx`, `support.tsx`) -- genuinely re-verified against the live app/
+infrastructure this pass, not republished unchanged:
+- Account deletion's real cascade behavior read directly from `supabase/functions/
+  delete-account/index.ts` and then LIVE-VERIFIED end to end: `scripts/test-delete-account-
+  integration.ts` run against production using a disposable account the script creates and
+  destroys itself (never an existing user) -- created a real account, wrote a real `profiles`
+  row, called the deployed `delete-account` function, independently confirmed via admin CLI
+  that both the `auth.users` row and the cascaded `profiles` row were gone, and confirmed a
+  second deletion attempt with the now-invalid token fails honestly. All checks passed.
+- Sentry's actual production config read from `src/services/observability.ts`
+  (`sendDefaultPii: false`, `attachScreenshot: false`, no session replay, scrubbed headers/
+  bodies) -- used to write the Privacy Policy's diagnostic-data section accurately instead of
+  `[VERIFY]`.
+- Full service inventory cross-checked against `package.json`: no analytics/advertising/
+  tracking SDK exists beyond Supabase, Apple, RevenueCat, Sentry, Expo/EAS, Vercel.
+- Share-link behavior checked against the real schema: no manual revoke exists; a share
+  resolves until the sharer's account is deleted (cascade); the shared page itself never
+  renders the sharer's profile name.
+- Minimum age confirmed via `onboarding.tsx`'s real age gate: under-13 is blocked immediately,
+  no profile/session ever created for that answer.
+- Operator identified throughout as Super Great Ventures LLC (owner-confirmed, carried over
+  from the prior pass). Governing-law/dispute-resolution jurisdiction deliberately left
+  unaddressed in Terms of Use -- naming one would require inventing the LLC's formation state,
+  which isn't evidenced anywhere in this repo; flagged as an explicit open item instead.
+  `docs/app-store/APP_PRIVACY_DISCLOSURE_WORKSHEET.md` updated with these same findings for
+  whoever enters the actual App Store Connect questionnaire.
+- `scripts/validate-account-deletion.ts` updated: the OLD assertion (both legal screens must
+  show "Pre-publication draft") is now the OPPOSITE -- asserts neither screen shows that
+  banner, neither contains a leftover `[VERIFY]`/`[CONFIRM]`/`[DECIDE]`/`[REVIEW]` placeholder,
+  both identify Super Great Ventures LLC, and both show a real last-updated/effective date.
+
+**Settings (`src/app/settings.tsx`):** added a "Help & Support" row linking to the real,
+expanded `/support` page (troubleshooting, subscription management, Restore Purchases,
+account-deletion guidance, and the explicit "deleting your account does not cancel an Apple
+subscription" disclosure) -- previously Settings only offered a bare mailto link with none of
+that. "Contact Us" mailto kept alongside it as a quick-email shortcut.
+
+**Migration history reconciled:** Supabase's migration API (per `docs/app-store/
+PRODUCTION_ACCOUNT_DELETION_DEPLOYMENT_2026-10-21.md`) applied the two staged migrations under
+NEW remote version numbers (`20261021133214`, `20261021133217`) rather than their original
+local filenames (`20261020010000`, `20261021010000`) -- confirmed live via fresh `supabase
+migration list` (showed the exact local/remote mismatch described in that report). Renamed the
+two local migration files to match the real remote versions exactly; `supabase migration list`
+now shows zero mismatches. Fixed the two validator scripts that hardcoded the old filenames
+(`validate-account-deletion.ts`, `validate-daily-trait-count-removal.ts`).
+
+**Website deployed and independently verified live, not assumed:** `npx vercel --prod --yes`
+from this repo (existing linked project `apparently-you`, already-authenticated CLI --
+confirmed via `vercel whoami`). Deployment `dpl_ETi2FoaZ2AiR6CbRq9JGunZgo5ZG`, aliased to
+`apparentlyyou.com`. Fresh `curl` HTTPS requests AFTER deployment (not a local preview)
+confirm all three required URLs return `HTTP/2 200` with the real finalized body content:
+`https://apparentlyyou.com/privacy` (contains "Super Great Ventures LLC", no draft banner),
+`https://apparentlyyou.com/terms` (contains the real Founding Member disclosure),
+`https://apparentlyyou.com/support` (contains the account-deletion/subscription-cancellation
+disclosure and Restore Purchases guidance). Homepage, the `www` -> apex redirect, and the
+`apple-app-site-association` file were also spot-checked afterward and still work -- no
+regression from this deploy.
+
+**Verification this pass:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39
+`scripts/validate-*.ts` green (two extended: `validate-account-deletion.ts`,
+`validate-daily-trait-count-removal.ts`). No EAS build or TestFlight submission was initiated,
+per explicit instruction. No production database change beyond the two already-owner-approved
+migrations from the prior pass (this pass only renamed their local files to match what's
+already live -- no new SQL was applied).

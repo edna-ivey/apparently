@@ -4,17 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { Elevation, Radius, Type } from '@/constants/design-system';
 import { Celestial } from '@/components/today/celestial';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 
-// Build 18: same rationale as privacy-policy.tsx -- a real, accessible in-app page rather
-// than a link to an external URL that may not exist yet. Content mirrors
-// docs/app-store/TERMS_OF_USE_DRAFT_2026-10-20.md, which is explicitly a PRE-PUBLICATION
-// DRAFT pending legal entity/contact confirmation and counsel review -- shown honestly here
-// via the same banner pattern, never presented as finalized terms.
+// Build 19 finalization (2026-10-21): pricing cross-checked against the real, locked values in
+// src/services/purchases-service.ts and the paywall (never hardcoded there either -- every
+// displayed price comes from the live StoreKit product); account-deletion/subscription
+// interaction cross-checked against supabase/functions/delete-account and settings.tsx.
+// Governing-law/dispute-resolution jurisdiction is deliberately not named -- that would require
+// inventing the LLC's formation state, which isn't evidenced anywhere in this repo; add a
+// specific clause once that's provided, rather than publish an invented one. Content mirrors
+// docs/app-store/TERMS_OF_USE_DRAFT_2026-10-20.md, kept in sync by hand.
 const SECTIONS: { heading: string; paragraphs: string[] }[] = [
+  {
+    heading: 'Who operates this app',
+    paragraphs: ['These Terms are between you and Super Great Ventures LLC ("we", "us"), the operator of Apparently You. Contact: support@apparentlyyou.com.'],
+  },
   {
     heading: 'What Apparently You is',
     paragraphs: [
@@ -30,8 +37,14 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
   {
     heading: 'Subscriptions',
     paragraphs: [
-      'Apparently Private may be offered at $3.99/month, $29.99/year, or a limited Founding Member introductory annual price of $19.99 for the first year, automatically renewing at $29.99/year thereafter. These are planned US prices, not a representation of live availability — the actual price and terms shown in the Apple purchase sheet always govern.',
-      'Payment is charged through your Apple account; subscriptions automatically renew unless canceled according to Apple’s rules. Manage or cancel at apps.apple.com/account/subscriptions. Deleting an Apparently You account does not automatically cancel an Apple subscription. Restore Purchases is available in Settings.',
+      'Apparently Private is offered at $3.99/month, $29.99/year, or a limited Founding Member introductory annual price of $19.99 for the first year, automatically renewing at $29.99/year thereafter. The Founding Member price is only ever shown when Apple confirms you are actually eligible for it; otherwise the standard annual price is shown. The price and terms shown in the Apple purchase sheet at the moment of purchase always govern.',
+      'Payment is charged through your Apple account; subscriptions automatically renew unless canceled according to Apple’s rules. Manage or cancel at apps.apple.com/account/subscriptions, or from Settings → Apparently Private → Manage Subscription. Deleting your Apparently You account does not automatically cancel an Apple subscription — cancel it separately through Apple. Restore Purchases is available in Settings and on the subscription screen.',
+    ],
+  },
+  {
+    heading: 'Account deletion',
+    paragraphs: [
+      'You may permanently delete your Apparently You account at any time from Settings → Delete Account. This immediately and permanently removes your account and the data tied to it, and cannot be undone. It does not cancel an active Apple subscription — see "Subscriptions" above.',
     ],
   },
   {
@@ -39,12 +52,22 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
     paragraphs: ['Features and content may change. We may suspend access for security or misuse, subject to applicable law.'],
   },
   {
+    heading: 'Disclaimer and limitation of liability',
+    paragraphs: [
+      'The app is provided "as is" and "as available," without warranties of any kind, to the fullest extent permitted by law. To the fullest extent permitted by law, we are not liable for indirect, incidental, or consequential damages arising from your use of the app. Nothing here limits any liability that cannot lawfully be limited.',
+    ],
+  },
+  {
     heading: 'Privacy',
     paragraphs: ['See the Privacy Policy, available in Settings.'],
   },
   {
     heading: 'Apple standard terms',
-    paragraphs: ['This app is also subject to Apple’s Standard Licensed Application End User License Agreement where applicable.'],
+    paragraphs: ['This app is also subject to Apple’s Standard Licensed Application End User License Agreement.'],
+  },
+  {
+    heading: 'Contact',
+    paragraphs: ['Super Great Ventures LLC — support@apparentlyyou.com'],
   },
 ];
 
@@ -64,11 +87,7 @@ export default function TermsOfUseScreen() {
           </View>
 
           <ThemedText style={styles.pageTitle}>Terms of Use</ThemedText>
-          <View style={styles.draftBanner}>
-            <ThemedText style={styles.draftBannerText}>
-              Pre-publication draft. Final legal entity, contact details and counsel review are pending owner confirmation.
-            </ThemedText>
-          </View>
+          <ThemedText style={styles.lastUpdated}>Effective: October 21, 2026</ThemedText>
 
           {SECTIONS.map((section) => (
             <View key={section.heading} style={styles.card}>
@@ -101,8 +120,7 @@ const styles = StyleSheet.create({
   closeButton: { minWidth: 44, minHeight: 32, justifyContent: 'center', alignItems: 'flex-end' },
   closeText: { color: Celestial.textSecondary, fontSize: 26, lineHeight: 26, fontWeight: '600' },
   pageTitle: { ...Type.display, color: Celestial.textPrimary, marginTop: Spacing.two },
-  draftBanner: { backgroundColor: 'rgba(246,184,63,0.12)', borderWidth: 1, borderColor: 'rgba(246,184,63,0.3)', borderRadius: Radius.sm, padding: Spacing.three },
-  draftBannerText: { color: Brand.gold, fontSize: 12, lineHeight: 17, fontWeight: '700' },
+  lastUpdated: { color: Celestial.textMuted, fontSize: 12, fontWeight: '700' },
   card: { backgroundColor: Celestial.glassFill, borderWidth: 1, borderColor: Celestial.glassBorder, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.two },
   sectionHeading: { ...Type.heading, color: Celestial.textPrimary },
   paragraph: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20 },

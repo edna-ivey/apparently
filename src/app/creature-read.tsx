@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 
 import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
@@ -68,6 +68,15 @@ type ReadState =
 export default function CreatureReadScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
+  // Measured here, OUTSIDE any <Modal> -- react-native-safe-area-context's automatic Modal
+  // handling is a known rough edge on iOS: a <SafeAreaView>/useSafeAreaInsets() call made
+  // FROM INSIDE a Modal's own subtree (as CreaturePreviewModal's close button previously
+  // relied on exclusively) can read stale or zero insets depending on RN/iOS version, which
+  // is exactly what put the close button almost under the status bar/notch/Dynamic Island.
+  // Insets measured on this always-mounted parent screen are reliably correct (this app is
+  // portrait-locked, so they don't change mid-session) and are passed down as a plain prop
+  // instead of trusting a second hook call inside the modal.
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<PersonalityProfile | null>(null);
   const [profileAnswerCount, setProfileAnswerCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -249,6 +258,7 @@ export default function CreatureReadScreen() {
           onClose={() => setPreviewOpen(false)}
           name={readState.name}
           recipe={readState.recipe}
+          insets={insets}
         />
       )}
     </ThemedView>
@@ -397,20 +407,64 @@ function CreaturePreviewModal({
   onClose,
   name,
   recipe,
+  insets,
 }: {
   visible: boolean;
   onClose: () => void;
   name: string;
   recipe: CreatureRecipe;
+  // Measured by the parent screen, outside this Modal -- see CreatureReadScreen's own comment
+  // on why this is passed in rather than calling useSafeAreaInsets()/relying on SafeAreaView
+  // again from inside the modal's own subtree.
+  insets: EdgeInsets;
 }) {
   const exportCardRef = useRef<View>(null);
   const [actionState, setActionState] = useState<ActionState>({ phase: 'idle' });
   const { width, height } = useWindowDimensions();
 
-  // Scales with the smaller iPhones in mind (e.g. SE-width ~375) while staying generous on
-  // larger screens -- never so large it risks clipping against the close button/action row.
-  const creatureSize = Math.min(Math.min(width, height) * 0.52, 260);
-  const glowSize = creatureSize * 1.3;
+  // Build 19 "make the Creature the star" pass: the card used to be a hardcoded 300px wide
+  // box regardless of screen size, with a 260px avatar cap inside it -- on a 390-430px-wide
+  // phone that left most of the width unused. The card now fills nearly the full available
+  // width (capped for tablet/web); the avatar is sized off that real card width instead of a
+  // flat multiplier.
+  //
+  // "85-90% of usable width" means the real VISIBLE Creature art, not CreatureAvatar's own
+  // `size` prop -- `size` is the full calibrated composition square, which includes the built-
+  // in safe margin for wide wings/ears/tail (creature-identity.ts's BODY_CANVAS_INSET). On the
+  // approved Zorafox fixture this was measured directly (a dedicated flat-background render,
+  // pixel-scanned for the real non-background bounding box): the wings alone already reach
+  // ~100-108% of the nominal square's width, 84% of its height. Targeting 85% of the card's
+  // inner width for `size` itself (not 85% of `size` for the art) keeps real headroom for any
+  // recipe's wingspan before it could ever approach the card's own border -- avoiding exactly
+  // the "clipping/stretching/distortion" the brief prohibits -- while still reliably landing
+  // the real visible artwork in the requested 85-90% range for a typical recipe.
+  const cardOuterMargin = Spacing.three;
+  const cardWidth = Math.min(width - cardOuterMargin * 2, 480);
+  const cardInnerPadding = Spacing.three;
+  const cardInnerWidth = cardWidth - cardInnerPadding * 2;
+  const creatureSizeByWidth = cardInnerWidth * 0.85;
+
+  // Close button fix: a 48x48 touch target (the brief's preferred size, up from the previous
+  // 44x44 minimum) with an EXPLICIT top offset of insets.top + a comfortable fixed gap --
+  // computed here once and reused both for this height math and the actual style below, so
+  // the two can never drift apart. See this component's own JSX comment on why the top offset
+  // is explicit rather than left to SafeAreaView alone.
+  const closeButtonSize = 48;
+  const topRowGap = Spacing.three;
+  const topRowHeight = insets.top + topRowGap + closeButtonSize;
+
+  // Also bounded by real available vertical space -- topRow (close button) + the card's own
+  // vertical padding/name/brand-mark text + the action row (Share/Save buttons) below, using
+  // this screen's own real style values, not a guess, plus the device's actual safe-area
+  // insets (smaller iPhones and devices with a different notch/home-indicator inset both covered).
+  const actionRowHeight = 36 + Spacing.five + 20; // button (~36) + paddingBottom(32) + room for an error line
+  const cardTextBlockHeight = 31 + Spacing.one + 18 + Spacing.one; // exportName + its marginTop + exportMark + its marginTop
+  const cardVerticalPadding = Spacing.five * 2; // exportCard's own paddingVertical, top+bottom
+  const availableHeight = height - topRowHeight - insets.bottom - actionRowHeight;
+  const creatureSizeByHeight = availableHeight - cardVerticalPadding - cardTextBlockHeight - Spacing.one * 2;
+
+  const creatureSize = Math.max(140, Math.min(creatureSizeByWidth, creatureSizeByHeight));
+  const glowSize = creatureSize * 1.15;
 
   // React's documented "adjusting state when a prop changes" pattern (setState during render,
   // not in an effect) -- a stale "Saved ✓"/error from a previous open must never greet the
@@ -455,24 +509,29 @@ function CreaturePreviewModal({
   return (
     <Modal visible={visible} animationType="fade" presentationStyle="overFullScreen" onRequestClose={onClose}>
       <View style={styles.previewContainer}>
-        <SafeAreaView style={styles.previewSafeArea}>
+        {/* edges excludes 'top': the real top inset is applied explicitly below via the
+            insets PROP (measured outside this Modal, see this component's own header
+            comment) rather than a second time by SafeAreaView's own top handling, which
+            would double it up. left/right/bottom still come from SafeAreaView normally --
+            nothing about the close-button bug concerned those edges. */}
+        <SafeAreaView style={styles.previewSafeArea} edges={['left', 'right', 'bottom']}>
           <PortalRings />
           <CelestialWash />
 
-          <View style={styles.previewTopRow}>
+          <View style={[styles.previewTopRow, { paddingTop: insets.top + topRowGap }]}>
             <Pressable
               onPress={onClose}
               hitSlop={12}
               accessibilityLabel="Close"
               accessibilityRole="button"
-              style={styles.previewCloseButton}
+              style={[styles.previewCloseButton, { width: closeButtonSize, height: closeButtonSize }]}
             >
               <ThemedText style={styles.previewCloseText}>×</ThemedText>
             </Pressable>
           </View>
 
           <View style={styles.previewCenter}>
-            <View ref={exportCardRef} collapsable={false} style={styles.exportCard}>
+            <View ref={exportCardRef} collapsable={false} style={[styles.exportCard, { width: cardWidth, paddingHorizontal: cardInnerPadding }]}>
               <View style={[styles.exportGlowStage, { width: glowSize, height: glowSize }]}>
                 <AtmosphericGlow size={glowSize} />
                 <CreatureAvatar recipe={recipe} size={creatureSize} />
@@ -529,15 +588,16 @@ const styles = StyleSheet.create({
   // narrow capture region), the Creature's real calibrated avatar, its name, a small brand
   // mark. Nothing else -- no nav, no buttons, no debug UI. Rendered inside CreaturePreviewModal
   // only -- never a second, always-visible copy on the main scroll (that was the Build 16 bug).
+  // width/paddingHorizontal are computed per-device in CreaturePreviewModal (real screen
+  // width, not a flat number) and passed as an inline override -- see that component's own
+  // comment on why a hardcoded 300px card left most of a 390-430px-wide phone unused.
   exportCard: {
-    width: 300,
     alignItems: 'center',
     backgroundColor: Celestial.background,
     borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Celestial.glassBorder,
     paddingVertical: Spacing.five,
-    paddingHorizontal: Spacing.four,
     gap: Spacing.one,
   },
   exportGlowStage: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
@@ -557,8 +617,14 @@ const styles = StyleSheet.create({
   // screen's own container/safeArea treatment exactly.
   previewContainer: { flex: 1, backgroundColor: '#17000F' },
   previewSafeArea: { flex: 1, backgroundColor: Celestial.background },
-  previewTopRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.four, paddingTop: Spacing.two, minHeight: 44 },
-  previewCloseButton: { minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  // paddingTop is applied inline (insets.top + topRowGap) -- see CreaturePreviewModal's own
+  // comment; no static fallback here since it's always provided.
+  previewTopRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.four },
+  // width/height are applied inline (closeButtonSize, 48) -- alignItems/justifyContent both
+  // 'center' so the × glyph sits in the exact middle of its touch target, not pushed to one
+  // edge (the previous alignItems:'flex-end' here was a bug: it visually offset the glyph
+  // toward the button's own right edge instead of centering it).
+  previewCloseButton: { alignItems: 'center', justifyContent: 'center' },
   previewCloseText: { fontSize: 30, lineHeight: 30, fontWeight: '600', color: Celestial.textSecondary },
   previewCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.four },
   previewActionRow: {
