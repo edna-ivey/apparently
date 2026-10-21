@@ -34,6 +34,15 @@
 //   pre-deletion backup would still contain the row until that backup itself ages out of
 //   retention. This is a standard, disclosed limitation of hard-deleting from a backed-up
 //   database, not something this function can control from inside one request.
+//
+// KNOWN EDGE CASE (found on Build 18 deployment-readiness re-inspection, fixed by a staged
+// migration -- 20261021010000_admin_attribution_fk_set_null_on_delete.sql): two ADMIN-
+// ATTRIBUTION columns (daily_questions.approved_by, tester_access_grants.granted_by) had no
+// ON DELETE behavior at all, which would block an ADMIN account's own self-deletion via this
+// function if that admin had ever approved a question or granted tester access (a safe
+// failure -- this function's existing error handling reports it honestly -- but not the
+// intended outcome). Irrelevant for a regular consumer deleting their own account, who never
+// appears in either column. Fixed with ON DELETE SET NULL once that migration is applied.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 

@@ -13,7 +13,9 @@
   ],
   "rewrites": [
     { "source": "/quiz/:quizId", "destination": "/quiz/%5BquizId%5D" },
-    { "source": "/s/:token", "destination": "/s/%5Btoken%5D" }
+    { "source": "/s/:token", "destination": "/s/%5Btoken%5D" },
+    { "source": "/privacy", "destination": "/privacy-policy" },
+    { "source": "/terms", "destination": "/terms-of-use" }
   ],
   "headers": [
     {

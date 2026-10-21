@@ -23,7 +23,10 @@ import { getSubscriptionManagementUrl, restorePurchases, usePremiumStatus } from
 import { deleteAccount } from '@/services/account-deletion-service';
 import { confirmAction } from '@/utils/confirm-action';
 
-const SUPPORT_EMAIL = 'edna.tyus@gmail.com';
+// Build 18: owner-confirmed real Zoho alias (docs/app-store/OWNER_APP_STORE_ACTIONS.md item 1)
+// -- replaces the earlier temporary edna.tyus@gmail.com placeholder now that the real
+// support@apparentlyyou.com mailbox is configured and tested.
+const SUPPORT_EMAIL = 'support@apparentlyyou.com';
 
 export default function SettingsScreen() {
   const router = useRouter();

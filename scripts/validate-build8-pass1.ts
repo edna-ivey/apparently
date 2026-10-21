@@ -107,9 +107,12 @@ assert(/AGE_RANGES/.test(settingsSource) && /GENDER_IDENTITIES/.test(settingsSou
 assert(/customGenderDraft/.test(settingsSource), "Settings supports editing custom gender when applicable");
 assert(/Restore Purchases/.test(settingsSource) && /restorePurchases/.test(settingsSource), 'Restore Purchases lives in Settings');
 assert(/Manage Subscription/.test(settingsSource) && /getSubscriptionManagementUrl/.test(settingsSource), 'Manage Subscription lives in Settings, shown when a real management URL exists');
+// Build 18: owner confirmed the real Zoho alias is configured/tested (OWNER_APP_STORE_
+// ACTIONS.md item 1) -- the earlier temporary edna.tyus@gmail.com placeholder was replaced
+// with the real support@apparentlyyou.com mailbox.
 assert(
-  /const SUPPORT_EMAIL = 'edna\.tyus@gmail\.com'/.test(settingsSource) && /mailto:\$\{SUPPORT_EMAIL\}/.test(settingsSource),
-  'the Support Contact Us action uses the exact required temporary mailto address (edna.tyus@gmail.com)',
+  /const SUPPORT_EMAIL = 'support@apparentlyyou\.com'/.test(settingsSource) && /mailto:\$\{SUPPORT_EMAIL\}/.test(settingsSource),
+  'the Support Contact Us action uses the real, owner-confirmed support@apparentlyyou.com mailbox',
 );
 assert(/Constants\.expoConfig\?\.version/.test(settingsSource) && /Constants\.expoConfig\?\.ios\?\.buildNumber/.test(settingsSource), 'About shows the real app version and build number, never hardcoded');
 // Build 18 correction: Privacy Policy/Terms of Use links were later explicitly requested and
