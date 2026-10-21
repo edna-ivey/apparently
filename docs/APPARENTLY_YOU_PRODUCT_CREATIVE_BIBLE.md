@@ -3143,3 +3143,83 @@ regression from this deploy.
 per explicit instruction. No production database change beyond the two already-owner-approved
 migrations from the prior pass (this pass only renamed their local files to match what's
 already live -- no new SQL was applied).
+
+## 92. REAL iOS SIMULATOR VERIFICATION + APP STORE PRIVACY/AGE-RATING ANSWER SHEETS + BUILD 20 (2026-10-21)
+
+**First real native iOS verification this entire engagement.** Every prior session's
+"close button fix" and "Creature enlargement" claims were web-preview-only, explicitly
+flagged as unverified on real iOS. This pass found Xcode and booted iOS Simulators actually
+available in this environment (previously assumed absent) and used them for real:
+- `npx expo run:ios` initially failed on a missing CocoaPods CLI (installed via `brew`, which
+  itself needed its full `/opt/homebrew/bin` path since it wasn't on this shell's PATH) and
+  then on a Sentry source-map upload step with no org configured (same known, pre-documented
+  gap as every prior session -- bypassed for LOCAL TESTING ONLY via Sentry's own documented
+  `SENTRY_DISABLE_AUTO_UPLOAD=true` escape hatch, never a production shortcut). The app itself
+  compiled and ran cleanly once past those two environment gaps.
+- Installed the SAME built `.app` on TWO real simulators with different safe-area profiles:
+  iPhone 17 Pro (Dynamic Island, iOS 26.4) and iPhone 17e (notch, no Dynamic Island, iOS
+  26.4). Used `idb` (Facebook's iOS Development Bridge, already installed via Homebrew/pip in
+  this environment) to send REAL taps at real point coordinates and `xcrun simctl io
+  screenshot` to capture REAL device screenshots -- not a web click simulation.
+- **Close button, Dynamic Island device:** measured the real rendered position (~101pt from
+  top) against the fix's own formula prediction (`insets.top`[59] + `topRowGap`[16] +
+  half the 48pt button ≈ 99pt) -- matched almost exactly. **5 consecutive single-tap closes,
+  5/5 success, first try every time**, via `idb ui tap` at the same fixed coordinate (no
+  retries needed to land the tap).
+- **Close button, notch device (no Dynamic Island):** same test, **1/1 single-tap close
+  succeeded on the first real attempt.**
+- **This is now genuinely, not theoretically, verified on real iOS**: comfortably below the
+  safe area on two different inset profiles, 48x48 touch target, centered icon, single tap
+  reliably dismisses, confirmed via actual device screenshots in `preview-screenshots/
+  ios-simulator-close-button-*.png`.
+- **Creature enlargement also visually reconfirmed natively** in the same screenshots -- full
+  real Zorafox artwork (wings/horns/ears/tail all present, no clipping), large and well-
+  proportioned inside the export card, exactly as the prior (web-only) pass intended.
+- **Unplanned but major finding: the real, live paywall was captured on-device**
+  (`preview-screenshots/ios-simulator-paywall-live-founding-member.png`) showing
+  **"FOUNDING MEMBER $19.99 for your first year, Then $29.99 per year" and "MONTHLY $3.99 per
+  month" actually rendering from live RevenueCat/StoreKit data** on this test account, which
+  is eligible for the real introductory offer. This is the FIRST time in this entire
+  engagement that the live RevenueCat/App Store Connect subscription configuration has been
+  independently confirmed working end-to-end from this environment, rather than only verified
+  at the code level with the live dashboard an acknowledged gap. Exact match to the task's
+  confirmed values (monthly $3.99, annual intro $19.99/renewal $29.99).
+- Used the same temporary, never-committed dev-harness-plus-temporary-export technique from
+  prior passes to reach `CreaturePreviewModal` directly via a real URL deep link
+  (`apparently://dev/...`), confirmed reverted byte-for-byte afterward (`diff` against the
+  last commit).
+
+**App Store Connect answer sheets created**, both evidence-based (Apple's current taxonomy
+fetched live from developer.apple.com before writing, not recalled from memory):
+- `docs/app-store/APP_PRIVACY_CONNECT_ANSWERS.md`: per-data-type recommended answers, each
+  cited to real evidence -- every third-party SDK's own Apple-mandated
+  `PrivacyInfo.xcprivacy` manifest (read directly from `ios/Pods/` after the real `pod
+  install` above generated them: RevenueCat, Sentry, expo-media-library, expo-device,
+  react-native-view-shot, async-storage, all confirm zero/minimal collection and
+  `NSPrivacyTracking: false`), cross-checked against this app's own code (confirmed Sentry
+  never receives a user identifier -- `grep -rln "Sentry\." src` returns exactly one file,
+  `observability.ts`, which contains no `setUser` call). Recommended tracking answer: No.
+- `docs/app-store/AGE_RATING_CONNECT_ANSWERS.md`: per-category recommendations from an actual
+  read of the live quiz corpus (profanity grep found only mild "damn"/"hell", zero alcohol/
+  drug/gambling/horror references, zero WebView/unrestricted-web-access). **Important finding,
+  not silently resolved:** `private-catalog.ts` lists four "Private Private. 😈" quiz titles,
+  but only one (`private-private-trouble`) has any real implemented content anywhere in this
+  repo -- the other three ("good in bed," "door closes," "sex... or proof") are catalog
+  placeholders only, per the file's own comment calling this "the future sex/intimacy
+  category." Today's rating recommendation (likely 9+/12+/13+) is scoped to live content
+  only and MUST be re-reviewed before those three ship. Also found the 18+ gate in
+  `quiz/[quizId].tsx` checks the quiz ID by exact string match, not the category generically
+  -- correct today, but a real risk for whoever implements those three quizzes next (recorded
+  so it isn't silently rediscovered).
+- `docs/app-store/APP_STORE_METADATA_DRAFT_2026-10-20.md` updated: Support/Marketing/Privacy/
+  Terms URLs re-confirmed live via fresh `curl` this pass (all HTTP 200), no longer marked
+  `[VERIFY LIVE]`.
+
+**Build 20 preparation (not yet created at the time of this doc update):** `app.json`
+`ios.buildNumber` bumped 19 -> 20 (Build 19's commit predates the Option A redesign, Creature
+enlargement, and close-button fix entirely -- confirmed via `eas-cli build:list`, Build 19's
+`gitCommitHash` is `287c648`, three commits behind current `HEAD`). Actual build/submission
+results recorded separately, once genuinely attempted and independently re-verified -- see the
+Continuity Protocol for the real outcome, never assumed from a queuing log alone.
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators green.

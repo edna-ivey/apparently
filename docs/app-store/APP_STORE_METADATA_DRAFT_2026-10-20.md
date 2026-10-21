@@ -10,7 +10,7 @@ Bundle ID: com.supergreatventures.apparently
 iOS version: 1.0.0
 Copyright: © 2026 Super Great Ventures LLC. Owner confirmed legal business name October 21, 2026; verify the LLC owns the app intellectual property before publication.
 Content rights: original app and licensed assets only; verify all music, imagery, and character assets are owned or licensed.
-Age rating: complete Apple's live questionnaire based on the actual Private/Private Private content. Do not assume 13+ or 17+ solely from the onboarding age choices.
+Age rating: complete Apple's live questionnaire based on the actual Private/Private Private content. Do not assume 13+ or 17+ solely from the onboarding age choices. See `AGE_RATING_CONNECT_ANSWERS.md` (2026-10-21) for per-category recommended answers with code evidence -- likely 9+/12+13+ range based on current live content only; re-review required before the three unimplemented, more explicit Private Private quiz titles ship.
 
 ## Product Page
 Promotional text:
@@ -43,10 +43,10 @@ Keywords:
 personality,quiz,quizzes,self discovery,traits,identity,questions,compatibility,avatar,fun
 (Review keyword byte count and remove any duplicates before entry; Apple limit 100 bytes.)
 
-Support URL: https://apparentlyyou.com/support [VERIFY LIVE]
-Marketing URL: https://apparentlyyou.com [VERIFY LIVE]
-Privacy Policy URL: https://apparentlyyou.com/privacy [VERIFY LIVE]
-Terms URL: https://apparentlyyou.com/terms [VERIFY LIVE]
+Support URL: https://apparentlyyou.com/support -- **LIVE, verified 2026-10-21** (fresh `curl` returned HTTP 200 with real page content, re-confirmed again this pass).
+Marketing URL: https://apparentlyyou.com -- **LIVE, verified 2026-10-21** (HTTP 200).
+Privacy Policy URL: https://apparentlyyou.com/privacy -- **LIVE, verified 2026-10-21** (HTTP 200, finalized content, no draft banner).
+Terms URL: https://apparentlyyou.com/terms -- **LIVE, verified 2026-10-21** (HTTP 200, finalized content, no draft banner).
 Release: Manually release this version after App Review approval (recommended).
 
 ## Subscription product localization suggestions (verify ASC's actual field limits)
