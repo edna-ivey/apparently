@@ -2776,3 +2776,53 @@ Settings buttons and the Creature Read combined-card spacing; on-device purchase
 plan-switch flows (same open sandbox/device blockers as §83's test matrix, unchanged by this
 pass). Full test matrix: `docs/app-store/SUBSCRIPTION_TESTING_2026-10-20.md` (navigation
 addition noted there too).
+
+## 86. BUILD 19 CLEANUP PASS: RE-VERIFICATION + CREATURE READ EDITORIAL PROPOSALS (2026-10-21)
+
+**Task 1 re-verification (code-level only, fresh re-read, nothing assumed from §85):**
+- `purchases-service.ts` confirmed unchanged and correct: entitlement id is exactly
+  `apparently_private`, offering id exactly `default`, `getApparentlyPrivateOfferings()`
+  resolves `offering.monthly`/`offering.annual` (RevenueCat's own typed accessors for the
+  `$rc_monthly`/`$rc_annual` predefined package slots) with a documented fallback scan by
+  `PACKAGE_TYPE`/literal identifier, and returns `{monthly: null}`/`{annual: null}` as a
+  normal non-error state rather than inventing a package.
+- **What is NOT verifiable from this environment:** whether the LIVE RevenueCat `default`
+  offering actually has `$rc_monthly`/`$rc_annual` attached to `apparently_private_monthly`/
+  `apparently_private_annual` right now. Only the public iOS SDK key
+  (`EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`) is present in this environment -- no RevenueCat
+  dashboard/admin API credential exists here (same gap as every prior pass). This requires
+  either RevenueCat dashboard access or a live device/sandbox fetch; the code is verified
+  ready to read whatever is actually configured there, nothing more.
+- Pricing preservation reconfirmed by grep: no literal `$3.99`/`$29.99`/`$19.99` string
+  appears anywhere in rendered code paths (`paywall.tsx`, `settings.tsx`,
+  `purchases-service.ts`) -- only in code comments documenting the owner-locked targets.
+  Every displayed price is still `product.priceString`/`product.introPrice.priceString`.
+- Founding Member gating reconfirmed unchanged: the "FOUNDING MEMBER" eyebrow/price only
+  renders when BOTH `annualIntroEligible` (a real `checkTrialOrIntroductoryPriceEligibility`
+  answer) AND `product.introPrice` (a real StoreKit-reported intro price) are truthy; any
+  other case renders the plain "ANNUAL" framing with the plain `priceString`.
+- Settings → View Plans reconfirmed intact: an active subscriber's "View Plans →" still links
+  to `/paywall?view=plans`, which still initializes the "View plans" toggle to true on arrival
+  -- no cancellation/deletion required anywhere in the path. Still code-verified only; the
+  actual rendered navigation has not been exercised on a device this pass either (no
+  simulator/physical iPhone in this environment, unchanged from §85).
+- `npx tsc --noEmit`, `npm run lint`, and the full 39/39 `scripts/validate-*.ts` suite re-run
+  fresh this pass: all clean, zero regressions (no code changed this pass -- verification
+  only; see §87 note below on why no commit-worthy code change resulted from Task 1).
+
+**Task 2: Creature Read editorial review of the four flagged first-trait passages.** On
+close inspection, there is no single general assembly-logic rule that explains all four, nor
+one that would fix exactly these four without also silently changing ~25 other currently-fine
+combinations that share the same "openingFragment or supportingCopy already contains its own
+'and'" shape (e.g. "Decisive," "Face value," "Idealistic," "Forgiving," "Content" all join an
+opening fragment into a first sentence that already has its own "and," and none of those were
+flagged or read as broken) -- a blanket formula change would be exactly the "simplistic
+global... awkward grammar" risk the original brief warned against, just inverted. These four
+are genuinely individual editorial judgment calls, not a code defect, which is why they are
+presented below as PROPOSALS ONLY -- nothing in `creature-combined-read-copy.ts` was changed
+this pass, and none of the four have been applied. See the Build 19 cleanup report for the
+exact original/proposed text pairs; awaiting the owner's approval before any is applied.
+
+**Task 3:** no genuine regression was found to fix (Task 1 was verification-only; Task 2's
+proposals are explicitly unapplied pending approval), so this pass commits documentation
+updates only -- see the Continuity Protocol entry for the same date.
