@@ -1,13 +1,14 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { CompareResultPanel } from '@/components/compare-result-panel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
-import { Elevation, Radius, Surface } from '@/constants/design-system';
+import { Elevation, Radius } from '@/constants/design-system';
+import { Celestial, CelestialType, CelestialWash, Panel, PortalRings } from '@/components/today/celestial';
 import { getQuizDefinition } from '@/data/quizzes';
 import type { ArchetypeQuizDefinition } from '@/data/quizzes/types';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
@@ -40,6 +41,7 @@ type QuizGroup = {
 type ListState = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready'; groups: QuizGroup[] };
 
 export default function CompareScreen() {
+  const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
   const [listState, setListState] = useState<ListState>({ phase: 'loading' });
@@ -84,6 +86,9 @@ export default function CompareScreen() {
   }, []);
 
   useEffect(() => {
+    // Fetching data on mount is one of the canonical, documented uses of an effect -- there is
+    // no render-time equivalent for "go fetch this from the network." Scoped to this one line.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadList();
   }, [loadList]);
 
@@ -113,6 +118,8 @@ export default function CompareScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+          <PortalRings />
+          <CelestialWash />
           <ScrollView contentContainerStyle={[styles.content, { paddingTop: topInset }]} showsVerticalScrollIndicator={false}>
             <Pressable onPress={closeResponse} hitSlop={12} style={styles.backButton}>
               <ThemedText style={styles.backText}>← Back</ThemedText>
@@ -155,8 +162,10 @@ export default function CompareScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView contentContainerStyle={[styles.content, { paddingTop: topInset }]} showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="mark" />
+          <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
           <ThemedText style={styles.heading}>Find out where you two line up.</ThemedText>
 
           {listState.phase === 'loading' && (
@@ -175,12 +184,38 @@ export default function CompareScreen() {
           )}
 
           {listState.phase === 'ready' && allResponses.length === 0 && (
-            <View style={styles.hero}>
+            <View style={[Panel.shell, styles.hero]}>
+              <View style={[Panel.glow, styles.heroGlow]} />
               <ThemedText style={styles.heroEmoji}>✦ + ✦</ThemedText>
-              <ThemedText style={styles.heroTitle}>No notes yet.</ThemedText>
+              <ThemedText style={styles.heroTitle}>Find out who agrees with you.</ThemedText>
               <ThemedText style={styles.heroCopy}>
                 Finish a Private quiz, share your result, and ask someone who knows too much to give their version.
+                We&apos;ll tell you exactly where you line up — and where you really don&apos;t.
               </ThemedText>
+              <Pressable style={styles.heroCta} onPress={() => router.push('/private')} accessibilityRole="button">
+                <ThemedText style={styles.heroCtaText}>Take a Private quiz →</ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Real, functional "how it works" — fills the page intentionally for a new user
+              without inventing any comparisons/friends/activity. Three real steps, the exact
+              flow this screen's own CTA above and the quiz runner's share sheet already do. */}
+          {listState.phase === 'ready' && allResponses.length === 0 && (
+            <View style={styles.howItWorks}>
+              <ThemedText style={styles.howItWorksTitle}>How it works</ThemedText>
+              {[
+                ['1', 'Take a Private quiz and get your real result.'],
+                ['2', 'Share it — the link opens straight to your result.'],
+                ['3', 'They give their own version. We show you both, side by side.'],
+              ].map(([num, copy]) => (
+                <View key={num} style={styles.howItWorksRow}>
+                  <View style={styles.howItWorksNum}>
+                    <ThemedText style={styles.howItWorksNumText}>{num}</ThemedText>
+                  </View>
+                  <ThemedText style={styles.howItWorksCopy}>{copy}</ThemedText>
+                </View>
+              ))}
             </View>
           )}
 
@@ -250,16 +285,13 @@ export default function CompareScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Slightly deeper than the app's own cream so the app column reads as a deliberate
-    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
-    // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: Surface.pageDeep,
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
@@ -271,53 +303,80 @@ const styles = StyleSheet.create({
     }),
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
-  heading: { color: Brand.ink, fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
-  hero: { backgroundColor: Brand.coral, borderRadius: Radius.xl, padding: Spacing.four, gap: Spacing.two, marginTop: Spacing.three },
-  heroEmoji: { color: '#FFFFFF', fontSize: 28, fontWeight: '800' },
-  heroTitle: { color: '#FFFFFF', fontSize: 24, lineHeight: 29, fontWeight: '800' },
-  heroCopy: { color: 'rgba(255,255,255,0.84)', fontSize: 15, lineHeight: 22 },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  heading: CelestialType.editorialHeadline,
+  // Build 15: replaces the old solid-coral rectangle with the shared dark-glass Panel shell —
+  // coral stays as an accent glow, not the whole fill — plus a real functional CTA (this was
+  // previously a dead-end empty state with no next step at all).
+  hero: { gap: Spacing.two, marginTop: Spacing.two, borderColor: 'rgba(255,121,95,0.35)' },
+  heroGlow: { backgroundColor: 'rgba(255,121,95,0.22)' },
+  heroEmoji: { color: Brand.coral, fontSize: 22, fontWeight: '800' },
+  heroTitle: { ...CelestialType.question, fontSize: 21, lineHeight: 27, marginTop: 2 },
+  heroCopy: { ...CelestialType.body, marginTop: 2 },
+  heroCta: {
+    alignSelf: 'flex-start',
+    backgroundColor: Brand.coral,
+    borderRadius: 14,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  heroCtaText: { ...CelestialType.button, color: Brand.plum },
+  howItWorks: { gap: Spacing.three, marginTop: Spacing.two, paddingHorizontal: Spacing.one },
+  howItWorksTitle: CelestialType.heading,
+  howItWorksRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
+  howItWorksNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,121,95,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  howItWorksNumText: { color: Brand.coral, fontSize: 12, fontWeight: '800' },
+  howItWorksCopy: { ...CelestialType.body, flex: 1, marginTop: 4 },
   stateCard: {
-    backgroundColor: Surface.card,
+    backgroundColor: Celestial.glassFill,
     borderRadius: Radius.lg,
     padding: Spacing.four,
     gap: Spacing.two,
     borderWidth: 1,
-    borderColor: Surface.hairline,
+    borderColor: Celestial.glassBorder,
     alignItems: 'center',
   },
-  stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  stateText: { color: Celestial.textSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   cta: { backgroundColor: Brand.pink, borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three, alignSelf: 'stretch' },
   ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   backButton: { paddingVertical: Spacing.two },
-  backText: { color: Brand.violet, fontSize: 14, fontWeight: '700' },
+  backText: { color: Brand.pink, fontSize: 14, fontWeight: '700' },
   unreadCard: { backgroundColor: Brand.pink, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.half, marginTop: Spacing.two },
   unreadEyebrow: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   unreadBody: { color: '#FFE5EF', fontSize: 15, fontWeight: '700' },
   unreadCtaText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
   quizSection: { gap: Spacing.two, marginTop: Spacing.three },
-  quizTitleHeading: { color: Brand.ink, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  quizTitleHeading: { color: Celestial.textPrimary, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
   notesEyebrow: { color: Brand.pink, fontSize: 12, fontWeight: '800', letterSpacing: 0.6 },
-  notesCount: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600' },
+  notesCount: { color: Celestial.textSecondary, fontSize: 14, fontWeight: '600' },
   responseList: { gap: Spacing.two },
   responseRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: Surface.card,
+    backgroundColor: Celestial.glassFill,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Surface.hairline,
+    borderColor: Celestial.glassBorder,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
   responseRowText: { flex: 1, gap: Spacing.half },
-  responseName: { color: Brand.ink, fontSize: 15, fontWeight: '800' },
-  responseResult: { color: Brand.violet, fontSize: 13, fontWeight: '700' },
-  responseMatch: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
+  responseName: { color: Celestial.textPrimary, fontSize: 15, fontWeight: '800' },
+  responseResult: { color: Brand.gold, fontSize: 13, fontWeight: '700' },
+  responseMatch: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '700' },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.pink },
-  thingCard: { backgroundColor: Brand.plum, borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.one, marginTop: Spacing.one },
+  thingCard: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,121,95,0.3)', borderRadius: Radius.lg, padding: Spacing.four, gap: Spacing.one, marginTop: Spacing.one },
   thingEyebrow: { color: Brand.coral, fontSize: 12, fontWeight: '800', letterSpacing: 0.4 },
-  thingBody: { color: Brand.cream, fontSize: 15, lineHeight: 21, fontWeight: '700' },
+  thingBody: { color: Celestial.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '700' },
   thingResult: { color: '#FFFFFF', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
-  thingSub: { color: 'rgba(255,249,245,0.75)', fontSize: 13, lineHeight: 19, fontWeight: '600' },
+  thingSub: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
 });

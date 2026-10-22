@@ -1,27 +1,117 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, BottomTabInset, Spacing } from '@/constants/theme';
-import { Elevation, Radius, Surface } from '@/constants/design-system';
+import { Celestial, CelestialType, CelestialWash, PortalRings } from '@/components/today/celestial';
+import { CreatureProgressCard } from '@/components/today/CreatureProgressCard';
+import { CreatureStage } from '@/components/today/CreatureStage';
+import { FeaturedQuizCard } from '@/components/today/FeaturedQuizCard';
+import { ReadModal } from '@/components/today/ReadModal';
+import { RelicStage } from '@/components/today/RelicStage';
+import { RoomDistribution } from '@/components/today/RoomDistribution';
+import { TodayWelcomeModal } from '@/components/today/TodayWelcomeModal';
+import { Brand, BottomTabInset, Fonts, Spacing } from '@/constants/theme';
+import { Elevation, Radius } from '@/constants/design-system';
+import { useTodayCreatureConnection } from '@/data/creature/use-today-creature-connection';
+import { useTodayRelicConnection } from '@/data/relic/use-today-relic-connection';
 import { useConsumerDailyExperience } from '@/data/consumer-daily';
 import { usePrivateDailyExperience } from '@/data/consumer-private-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
-import {
-  getDemoPersonalityAnswers,
-  getDemoPersonalityProfile,
-  getConsensusLanguage,
-  getEffectDisplayLabel,
-  getPercentLanguage,
-  getPersonalitySignalCopy,
-  scorePersonalityProfile,
-  stripApparentlyPrefix,
-} from '@/data/personality';
+import { getConsensusLanguage, getPercentLanguage, stripApparentlyPrefix } from '@/data/personality';
+
+// A single floating answer tile — shared shape for both Free (gold/pink accent) and Private
+// (coral/pink accent) Daily. No card chrome of its own; the 2x2 grid floats directly on the
+// page's celestial atmosphere, per the approved "no more rectangles" direction.
+function OptionTile({
+  letter,
+  label,
+  selected,
+  locked,
+  accentColor,
+  onPress,
+}: {
+  letter: string;
+  label: string;
+  selected: boolean;
+  locked: boolean;
+  accentColor: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected, disabled: locked }}
+      disabled={locked}
+      onPress={onPress}
+      style={({ pressed }) => [
+        tileStyles.tile,
+        selected && [tileStyles.tileSelected, { borderColor: accentColor, shadowColor: accentColor }],
+        locked && tileStyles.tileLocked,
+        pressed && tileStyles.tilePressed,
+      ]}>
+      <View style={[tileStyles.badge, selected && { backgroundColor: accentColor }]}>
+        <ThemedText style={[tileStyles.badgeText, selected && tileStyles.badgeTextSelected]}>{letter}</ThemedText>
+      </View>
+      <ThemedText style={[tileStyles.label, selected && tileStyles.labelSelected]}>{label}</ThemedText>
+    </Pressable>
+  );
+}
+
+const tileStyles = StyleSheet.create({
+  tile: {
+    width: '47.5%',
+    minHeight: 104,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  tileSelected: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1.5,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
+  },
+  tileLocked: {
+    opacity: 0.4,
+  },
+  tilePressed: {
+    opacity: 0.85,
+  },
+  badge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: 'rgba(255,249,245,0.85)',
+  },
+  badgeTextSelected: {
+    color: Brand.plum,
+  },
+  label: {
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: 'rgba(255,249,245,0.9)',
+  },
+  labelSelected: {
+    color: '#FFFFFF',
+  },
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -40,9 +130,17 @@ export default function HomeScreen() {
   const privateDisplayedOption = privateReady ? privateReady.committedIndex ?? privateDaily.draftIndex : null;
   const privateSelectedChoice = privateReady ? privateReady.question.options[privateDisplayedOption ?? 0] ?? null : null;
 
-  const [answeredCount, setAnsweredCount] = useState(43);
-  const [worldExpanded, setWorldExpanded] = useState(false);
-  const [privateRoomExpanded, setPrivateRoomExpanded] = useState(false);
+  // Which Read modal (if any) is open. Holds no answer/commit state of its own — closing and
+  // reopening it can never duplicate evidence or touch persistence, it only toggles what's on
+  // screen. Replaces the old inline worldExpanded/privateRoomExpanded toggles now that the Room
+  // always lives inside the modal rather than an inline expand/collapse section.
+  const [activeModal, setActiveModal] = useState<'free' | 'private' | null>(null);
+
+  // Real, non-fabricated Creature/Relic connections for both the panel cards and the Read
+  // modals — see each hook's own header comment for exactly what "revealed" does and does not
+  // mean, and why these intentionally do not duplicate you.tsx's own state machine.
+  const creatureConnection = useTodayCreatureConnection();
+  const relicConnection = useTodayRelicConnection();
 
   // Narrows the 5-variant experience union down to "there is a question to show" — true for
   // 'local' always, and for 'remote' only once phase is 'ready'. Every render below that
@@ -53,7 +151,6 @@ export default function HomeScreen() {
   const isCommitted = ready !== null && ready.committedIndex !== null;
   const displayedOption = ready ? ready.committedIndex ?? draftIndex : null;
   const selectedChoice = ready ? ready.question.options[displayedOption ?? 0] ?? ready.question.options[0] : null;
-  const selectedTraitLine = selectedChoice ? selectedChoice.personalityEffects.map(getEffectDisplayLabel).join(' · ') : '';
   // A vote can be locked in while its distribution is still loading or has failed — that must
   // never be presented as a real percentage. `selectedPercent` (and `consensus` below) stay
   // null unless distribution has ACTUALLY loaded; nothing here ever falls back to 0.
@@ -65,42 +162,6 @@ export default function HomeScreen() {
   // this is the real server-reported value 1, never a guess.
   const totalAnswers = distribution?.status === 'ready' ? distribution.totalAnswers : null;
 
-  // Demo personality/consensus flourishes stay LOCAL-only, exactly as before this sprint —
-  // Sprint 1B-A does not replace or extend the existing profile scoring system, and a remote
-  // (possibly TEST-ONLY) answer must never feed the local demo profile.
-  const localReady = experience.source === 'local' ? experience : null;
-  const baselineProfile = useMemo(() => getDemoPersonalityProfile(43), []);
-  const selectedProfile = useMemo(() => {
-    if (!localReady || localReady.committedIndex === null) {
-      return baselineProfile;
-    }
-    const choice = localReady.question.options[localReady.committedIndex];
-    if (!choice || choice.personalityEffects.length === 0) {
-      return baselineProfile;
-    }
-    return scorePersonalityProfile([
-      ...getDemoPersonalityAnswers(43),
-      {
-        question: localReady.question.prompt,
-        category: localReady.question.category,
-        chosenAnswer: choice.label,
-        effects: choice.personalityEffects,
-      },
-    ]);
-  }, [localReady, baselineProfile]);
-  const selectedSignal = useMemo(() => {
-    if (!localReady || !selectedChoice) {
-      return null;
-    }
-    const effect = selectedChoice.personalityEffects[0];
-    return effect ? selectedProfile.dimensions.find((dimension) => dimension.dimension === effect.dimension) ?? null : null;
-  }, [localReady, selectedChoice, selectedProfile]);
-  const signalCopy = localReady
-    ? selectedSignal
-      ? getPersonalitySignalCopy(selectedSignal.evidenceCount)
-      : 'Still taking notes.'
-    : null;
-
   const consensus = useMemo(() => {
     if (!ready || displayedOption === null || ready.distribution.status !== 'ready') {
       return null;
@@ -111,364 +172,286 @@ export default function HomeScreen() {
     );
   }, [ready, displayedOption]);
 
-  // Local-only: mirrors the exact prior behavior of bumping this demo counter once per
-  // successful LOCAL commit. Remote (including Sprint 1B-A's TEST-ONLY integration content)
-  // deliberately never touches this — it's a local prototype flourish, not real progress.
-  const previousLocalCommittedIndexRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (experience.source !== 'local') {
-      return;
-    }
-    if (experience.committedIndex !== null && previousLocalCommittedIndexRef.current === null) {
-      setAnsweredCount((count) => count + 1);
-    }
-    previousLocalCommittedIndexRef.current = experience.committedIndex;
-  }, [experience]);
-
   // A fresh local Daily always starts with these page-level flourishes reset — draft
   // selection itself is reset inside the hook. `prompt` stands in for "which local question
-  // is active" without this screen needing a raw local question id.
+  // is active" without this screen needing a raw local question id. React's documented
+  // "adjusting state when a prop changes" pattern (setState during render, not in an effect) --
+  // same trigger condition the effect this replaced had ([localQuestionKey]).
   const localQuestionKey = experience.source === 'local' ? experience.question.prompt : null;
-  useEffect(() => {
+  const [prevLocalQuestionKey, setPrevLocalQuestionKey] = useState(localQuestionKey);
+  if (localQuestionKey !== prevLocalQuestionKey) {
+    setPrevLocalQuestionKey(localQuestionKey);
     if (experience.source === 'local') {
-      setAnsweredCount(43);
-      setWorldExpanded(false);
+      setActiveModal(null);
     }
-  }, [localQuestionKey]);
+  }
+
+  const freePercentLine = consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label, totalAnswers) : null;
+  const freeReadText = selectedChoice
+    ? stripApparentlyPrefix(selectedChoice.apparentlyFeedback ?? 'You gave us something to think about.')
+    : '';
+  const freeConnectText =
+    creatureConnection.status === 'revealed'
+      ? `${creatureConnection.name} is taking shape with every answer — today's choice is part of the pattern now.`
+      : 'Every answer adds to the pattern. Your Creature is still listening.';
+
+  const privateReadText = privateSelectedChoice ? stripApparentlyPrefix(privateSelectedChoice.apparentlyFeedback ?? 'Noted.') : '';
+  const PRIVATE_CONNECT_TEXT =
+    'Some truths stay beneath the surface. Every private answer reveals more of your Undercurrent and brings your Relic into focus.';
+
+  const freeRoomSlot =
+    ready && ready.distribution.status === 'ready' ? (
+      <RoomDistribution
+        options={ready.question.options}
+        percentages={ready.distribution.percentages}
+        selectedIndex={displayedOption}
+        feedbackText={null}
+        totalAnswers={ready.distribution.totalAnswers}
+        variant="free"
+      />
+    ) : ready && (ready.distribution.status === 'loading' || ready.distribution.status === 'idle') ? (
+      <ThemedText style={styles.roomStatusText}>Tallying the room…</ThemedText>
+    ) : ready && ready.distribution.status === 'error' ? (
+      <View style={styles.roomStatusBlock}>
+        <ThemedText style={styles.roomStatusText}>The Room is having a moment.</ThemedText>
+        <Pressable onPress={retryDistribution} accessibilityRole="button">
+          <ThemedText style={styles.roomRetry}>Try again →</ThemedText>
+        </Pressable>
+      </View>
+    ) : null;
+
+  const privateRoomSlot =
+    privateReady && privateReady.distribution.status === 'ready' ? (
+      <RoomDistribution
+        options={privateReady.question.options}
+        percentages={privateReady.distribution.percentages}
+        selectedIndex={privateDisplayedOption}
+        feedbackText={null}
+        totalAnswers={privateReady.distribution.totalAnswers}
+        variant="private"
+      />
+    ) : privateReady && (privateReady.distribution.status === 'loading' || privateReady.distribution.status === 'idle') ? (
+      <ThemedText style={styles.roomStatusText}>Tallying the room…</ThemedText>
+    ) : privateReady && privateReady.distribution.status === 'error' ? (
+      <View style={styles.roomStatusBlock}>
+        <ThemedText style={styles.roomStatusText}>The Room is having a moment.</ThemedText>
+        <Pressable onPress={privateDaily.retryDistribution} accessibilityRole="button">
+          <ThemedText style={styles.roomRetry}>Try again →</ThemedText>
+        </Pressable>
+      </View>
+    ) : null;
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="full" />
-          <View style={styles.intro}>
-            <View style={styles.metaRow}>
-              <ThemedText style={styles.eyebrow}>TODAY'S DROP</ThemedText>
-              {/* Prototype streak — real remote users have no real streak yet (see the
-                  upcoming "Make You Real" work), so this must never render as if it were
-                  real user data. Local prototype mode is completely unaffected. */}
-              {experience.source === 'local' && (
-                <View style={styles.streak}>
-                  <ThemedText style={styles.fire}>✦</ThemedText>
-                  <ThemedText style={styles.streakText}>7</ThemedText>
-                </View>
-              )}
-            </View>
-            <ThemedText style={styles.introSupport}>One question. Choose carefully.</ThemedText>
+          <View style={styles.topBar}>
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
+            <Pressable
+              onPress={() => router.push('/settings')}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              style={styles.settingsButton}>
+              <ThemedText style={styles.settingsIcon}>⚙</ThemedText>
+            </Pressable>
           </View>
+
+          <ThemedText style={styles.eyebrow}>Today&apos;s Drop</ThemedText>
 
           {experience.source === 'remote' && experience.phase === 'loading' && (
             <View style={styles.questionCard}>
-              <ThemedText style={styles.prompt}>Loading today's drop…</ThemedText>
+              <ThemedText style={styles.prompt}>Loading today&apos;s drop…</ThemedText>
             </View>
           )}
 
           {experience.source === 'remote' && experience.phase === 'no-live-daily' && (
-            <View style={styles.revealCard}>
-              <ThemedText style={styles.revealEyebrow}>TODAY'S DROP</ThemedText>
+            <View style={styles.questionCard}>
               <ThemedText style={styles.observation}>No live Daily right now.</ThemedText>
             </View>
           )}
 
           {experience.source === 'remote' && experience.phase === 'error' && (
-            <View style={styles.revealCard}>
-              <ThemedText style={styles.revealEyebrow}>TODAY'S DROP</ThemedText>
-              <ThemedText style={styles.observation}>Today's Drop is having a moment.</ThemedText>
+            <View style={styles.questionCard}>
+              <ThemedText style={styles.observation}>Today&apos;s Drop is having a moment.</ThemedText>
               <Pressable style={styles.worldButton} onPress={retry}>
                 <ThemedText style={styles.worldButtonText}>Try again →</ThemedText>
               </Pressable>
             </View>
           )}
 
-          {ready && (
-            <View style={styles.questionCard}>
+          {ready && !isCommitted && (
+            <View style={styles.stage}>
               <ThemedText style={styles.prompt}>{ready.question.prompt}</ThemedText>
-              <View style={styles.options}>
+              <View style={styles.optionsGrid}>
                 {ready.question.options.map((option, index) => {
                   const isSelected = displayedOption === index;
-                  // Once committed, a Daily choice is final: unselected options become
-                  // inert (not just visually muted) so the committed answer can never be
-                  // swapped out after the reveal has been seen. Before commit, nothing is
-                  // locked — any option can be re-tapped to change the draft selection.
-                  const isLocked = isCommitted && !isSelected;
                   return (
-                    <Pressable
+                    <OptionTile
                       key={`option-${index}`}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: isSelected, disabled: isLocked }}
-                      disabled={isLocked}
+                      letter={String.fromCharCode(65 + index)}
+                      label={option.label}
+                      selected={isSelected}
+                      locked={false}
+                      accentColor={Brand.gold}
                       onPress={() => selectDraftOption(index)}
-                      style={({ pressed }) => [
-                        styles.option,
-                        isSelected && styles.optionSelected,
-                        isLocked && styles.optionLocked,
-                        pressed && styles.pressed,
-                      ]}>
-                      <View style={[styles.optionNumber, isSelected && styles.optionNumberSelected]}>
-                        <ThemedText style={[styles.numberText, isSelected && styles.selectedText]}>
-                          {String.fromCharCode(65 + index)}
-                        </ThemedText>
-                      </View>
-                      <ThemedText style={[styles.optionText, isSelected && styles.selectedText]}>
-                        {option.label}
-                      </ThemedText>
-                      {isSelected && <ThemedText style={styles.check}>✓</ThemedText>}
-                    </Pressable>
+                    />
                   );
                 })}
               </View>
-              {!isCommitted && draftIndex === null && (
+              {draftIndex === null && (
                 <ThemedText style={styles.microcopy} themeColor="textSecondary">
                   Pick first. Then we&apos;ll show you the room.
                 </ThemedText>
               )}
-              {!isCommitted && (
-                <>
-                  <Pressable
-                    disabled={draftIndex === null || isCommitting}
-                    onPress={confirmAnswer}
-                    style={[styles.confirmButton, (draftIndex === null || isCommitting) && styles.confirmButtonDisabled]}>
-                    <ThemedText style={styles.confirmButtonText}>
-                      {isCommitting ? 'Locking it in…' : 'Lock it in →'}
-                    </ThemedText>
-                  </Pressable>
-                  {commitError && (
-                    <ThemedText style={styles.microcopy} themeColor="textSecondary">
-                      {commitError}
-                    </ThemedText>
-                  )}
-                </>
-              )}
-            </View>
-          )}
-
-          {isCommitted && ready && selectedChoice && (
-            <View style={styles.revealCard}>
-              <ThemedText style={styles.revealEyebrow}>THE READ</ThemedText>
-              <ThemedText style={styles.observation}>
-                {stripApparentlyPrefix(selectedChoice.apparentlyFeedback ?? 'You gave us something to think about.')}
-              </ThemedText>
-
-              <ThemedText style={styles.revealPercentLine}>
-                {consensus && selectedPercent !== null ? getPercentLanguage(selectedPercent, consensus.label, totalAnswers) : ''}
-              </ThemedText>
-
-              {selectedTraitLine.length > 0 && (
-                <View style={styles.signalLine}>
-                  <ThemedText style={styles.signalEyebrow}>WE&apos;RE NOTICING</ThemedText>
-                  <ThemedText style={styles.signalChips}>{selectedTraitLine}</ThemedText>
-                  {signalCopy && <ThemedText style={styles.signalCopy}>{signalCopy}</ThemedText>}
-                </View>
-              )}
-
-              <Pressable style={styles.worldToggle} onPress={() => setWorldExpanded((value) => !value)}>
-                <ThemedText style={styles.worldToggleText}>
-                  {worldExpanded ? 'Close the room ↑' : 'See the room ↓'}
+              <Pressable
+                disabled={draftIndex === null || isCommitting}
+                onPress={confirmAnswer}
+                style={[styles.confirmButton, (draftIndex === null || isCommitting) && styles.confirmButtonDisabled]}>
+                <ThemedText style={styles.confirmButtonText}>{isCommitting ? 'Locking it in…' : 'Lock it in →'}</ThemedText>
+              </Pressable>
+              {commitError && (
+                <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                  {commitError}
                 </ThemedText>
+              )}
+            </View>
+          )}
+
+          {ready && isCommitted && selectedChoice && (
+            <View style={styles.completedCard}>
+              <View style={styles.completedBadge}>
+                <ThemedText style={styles.completedBadgeText}>✓ Answered today</ThemedText>
+              </View>
+              <ThemedText style={styles.completedQuestion}>&ldquo;{ready.question.prompt}&rdquo;</ThemedText>
+              <Pressable
+                style={({ pressed }) => [styles.viewReadBtn, pressed && styles.pressed]}
+                onPress={() => setActiveModal('free')}
+                accessibilityRole="button">
+                <ThemedText style={styles.viewReadBtnText}>View Your Read →</ThemedText>
               </Pressable>
+            </View>
+          )}
 
-              {worldExpanded && ready.distribution.status === 'ready' && (
-                <View style={styles.worldDistribution}>
-                  {ready.question.options.map((option, index) => {
-                    const isSelected = index === displayedOption;
-                    // ready.distribution.status is narrowed to 'ready' by the guard above —
-                    // percentages is always real, server-derived data here, never a fallback.
-                    const percent = ready.distribution.status === 'ready' ? ready.distribution.percentages[index] : null;
-                    return (
-                      <View
-                        key={`option-${index}`}
-                        style={[styles.distributionRow, isSelected && styles.distributionRowSelected]}>
-                        <ThemedText
-                          style={[styles.distributionLabel, isSelected && styles.distributionLabelSelected]}
-                          numberOfLines={1}>
-                          {String.fromCharCode(65 + index)}. {option.label}
-                        </ThemedText>
-                        <ThemedText
-                          style={[styles.distributionPercent, isSelected && styles.distributionPercentSelected]}>
-                          {percent}%
-                        </ThemedText>
-                      </View>
-                    );
-                  })}
+          {/* Apparently Private's Daily zone — remote-only, renders independently of Free
+              Daily completion (Build 15 correction: an earlier pass gated this behind
+              `isCommitted`, meaning Private Daily was invisible until Free Daily was answered;
+              that dependency has been removed — both Dailies must be visible from first load).
+              Five real states: an intentional loading state, a retry affordance on a genuine
+              load failure, locked teaser (prompt only, no choices/Room/response), unlocked-but-
+              unanswered (real choices, answer-before-Room), and answered (real reaction, Room
+              now lives in the shared Read modal). 'no-live-private' intentionally renders
+              nothing — there is genuinely no Private Daily today, not an error. */}
+          {isRemoteDailyEnabled && privateDaily.experience.phase !== 'no-live-private' && (
+            <View style={styles.privateZone}>
+              <View style={styles.privateDivider} />
+              <ThemedText style={styles.privateEyebrow}>👀 Apparently Private</ThemedText>
+
+              {privateDaily.experience.phase === 'loading' && (
+                <View style={styles.privateLockedCard}>
+                  <ThemedText style={styles.privateDropCopy}>Loading today&apos;s Private question…</ThemedText>
                 </View>
               )}
 
-              {/* The vote itself may already be locked in while The Room's tally is still
-                  loading or failed to load — that must never be shown as invented percentages.
-                  A network/RPC failure is a small, retryable state, never a fabricated
-                  0/0/0/0 result. */}
-              {worldExpanded && (ready.distribution.status === 'loading' || ready.distribution.status === 'idle') && (
-                <View style={styles.worldDistribution}>
-                  <ThemedText style={styles.distributionLabel}>Tallying the room…</ThemedText>
-                </View>
-              )}
-
-              {worldExpanded && ready.distribution.status === 'error' && (
-                <View style={styles.worldDistribution}>
-                  <ThemedText style={styles.distributionLabel}>The Room is having a moment.</ThemedText>
-                  <Pressable style={styles.worldToggle} onPress={retryDistribution}>
-                    <ThemedText style={styles.worldToggleText}>Try again →</ThemedText>
+              {privateDaily.experience.phase === 'error' && (
+                <View style={styles.privateLockedCard}>
+                  <ThemedText style={styles.privateDropCopy}>We couldn&apos;t load today&apos;s Private question.</ThemedText>
+                  <Pressable style={styles.privateOutlineButton} onPress={privateDaily.retry} accessibilityRole="button">
+                    <ThemedText style={styles.privateOutlineButtonText}>Retry →</ThemedText>
                   </Pressable>
                 </View>
               )}
 
-              <Pressable style={styles.worldButton} onPress={() => router.push('/explore')}>
-                <ThemedText style={styles.worldButtonText}>Keep going →</ThemedText>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Apparently Private's Daily card — remote-only, shown once the Public Daily is
-              committed (mirroring the "answer-first" reveal rhythm the rest of Today already
-              uses). Five real states: an intentional loading state (never a silent blank
-              area while the first request is actually in flight), a retry affordance on a
-              genuine load failure (Build 9 Part B — this card used to render NOTHING at all
-              for 'loading'/'error'/'no-live-private', which is exactly what made a transient
-              first-request hiccup look like "the choices never showed up"; usePrivateDailyExperience
-              now also retries this automatically a couple of times, so this state should be
-              rare in practice), locked teaser (prompt only, no choices/Room/response — never
-              fake pricing, never a dead CTA), unlocked-but-unanswered (free-unlock or
-              TestFlight tester access — real choices, answer-before-Room), and answered (real
-              reaction + real Room, same shape as Public). 'no-live-private' intentionally
-              renders nothing — there is genuinely no Private Daily today, not an error. */}
-          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'loading' && (
-            <View style={styles.privateDropCard}>
-              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
-              <ThemedText style={styles.privateDropCopy}>Loading today’s Private question…</ThemedText>
-            </View>
-          )}
-
-          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'error' && (
-            <View style={styles.privateDropCard}>
-              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
-              <ThemedText style={styles.privateDropCopy}>We couldn’t load today’s Private question.</ThemedText>
-              <Pressable style={styles.privateDropUnlockButton} onPress={privateDaily.retry}>
-                <ThemedText style={styles.privateDropUnlockButtonText}>Retry →</ThemedText>
-              </Pressable>
-            </View>
-          )}
-
-          {isCommitted && isRemoteDailyEnabled && privateDaily.experience.phase === 'locked' && (
-            <View style={styles.privateDropCard}>
-              <ThemedText style={styles.privateDropEyebrow}>APPARENTLY PRIVATE 👀</ThemedText>
-              <ThemedText style={styles.privateDropTitle}>{privateDaily.experience.prompt}</ThemedText>
-              <ThemedText style={styles.privateDropCopy}>Today’s question lives in Private.</ThemedText>
-              <Pressable style={styles.privateDropUnlockButton} onPress={() => router.push('/private')}>
-                <ThemedText style={styles.privateDropUnlockButtonText}>Enter Private →</ThemedText>
-              </Pressable>
-              {/* Real, testable entitlement path — Apparently Private genuinely unlocks
-                  today's actual Daily content (unlike the still-empty locked catalog cards on
-                  /private itself), so offering it here is truthful, not a promise about
-                  content that doesn't exist yet. */}
-              <Pressable style={styles.privateDropSubscribeButton} onPress={() => router.push('/paywall')}>
-                <ThemedText style={styles.privateDropSubscribeButtonText}>Get Apparently Private →</ThemedText>
-              </Pressable>
-            </View>
-          )}
-
-          {isCommitted && isRemoteDailyEnabled && privateReady && (
-            <View style={styles.privateDropCard}>
-              <ThemedText style={styles.privateDropEyebrow}>
-                {privateReady?.access === 'premium'
-                  ? 'APPARENTLY PRIVATE · UNLOCKED'
-                  : privateReady?.access === 'tester'
-                    ? 'TESTER ACCESS · PRIVATE UNLOCKED'
-                    : 'PRIVATE DOOR OPEN 👀'}
-              </ThemedText>
-              {!privateIsCommitted && (
-                <ThemedText style={styles.privateDropCopy}>Today’s Private Drop is unlocked.</ThemedText>
+              {/* Build 15: the real Private Daily prompt, given the same visual weight as Free
+                  Daily's own question (serif italic, full card presence) rather than a small
+                  text line — this is "a prominent, beautifully designed Daily question card,"
+                  per spec. Only the prompt is server-sent for a locked user (see
+                  consumer-private-daily.ts: 'locked' never carries options) — the four answer
+                  choices themselves are never exposed, by construction, not by a UI omission.
+                  A lock glyph + explicit "requires Apparently Private" line replaces the terse
+                  "Today's question lives in Private." so the ask is unambiguous. */}
+              {privateDaily.experience.phase === 'locked' && (
+                <View style={styles.privateLockedCard}>
+                  <View style={styles.privateLockBadge}>
+                    <ThemedText style={styles.privateLockBadgeText}>🔒 PREMIUM PREVIEW</ThemedText>
+                  </View>
+                  <ThemedText style={styles.privateDropTitle}>{privateDaily.experience.prompt}</ThemedText>
+                  <ThemedText style={styles.privateDropCopy}>
+                    Answering today&apos;s Private question requires Apparently Private.
+                  </ThemedText>
+                  <View style={styles.privateButtonRow}>
+                    <Pressable style={styles.privateOutlineButton} onPress={() => router.push('/private')} accessibilityRole="button">
+                      <ThemedText style={styles.privateOutlineButtonText}>Enter Private →</ThemedText>
+                    </Pressable>
+                    <Pressable style={styles.privateSolidButton} onPress={() => router.push('/paywall')} accessibilityRole="button">
+                      <ThemedText style={styles.privateSolidButtonText}>Unlock Apparently Private →</ThemedText>
+                    </Pressable>
+                  </View>
+                </View>
               )}
-              <ThemedText style={styles.privateDropTitle}>{privateReady.question.prompt}</ThemedText>
 
-              {!privateIsCommitted && (
-                <View style={styles.privateOptions}>
-                  {privateReady.question.options.map((option, index) => {
-                    const isSelected = privateDisplayedOption === index;
-                    return (
+              {privateReady && (
+                <>
+                  <ThemedText style={styles.privateStatusLine}>
+                    {privateReady.access === 'premium'
+                      ? 'Unlocked'
+                      : privateReady.access === 'tester'
+                        ? 'Tester access · Unlocked'
+                        : 'Door open today'}
+                  </ThemedText>
+                  <ThemedText style={styles.privateDropTitle}>{privateReady.question.prompt}</ThemedText>
+
+                  {!privateIsCommitted && (
+                    <>
+                      <View style={styles.optionsGrid}>
+                        {privateReady.question.options.map((option, index) => {
+                          const isSelected = privateDisplayedOption === index;
+                          return (
+                            <OptionTile
+                              key={`private-option-${index}`}
+                              letter={String.fromCharCode(65 + index)}
+                              label={option.label}
+                              selected={isSelected}
+                              locked={false}
+                              accentColor={Brand.coral}
+                              onPress={() => privateDaily.selectDraftOption(index)}
+                            />
+                          );
+                        })}
+                      </View>
                       <Pressable
-                        key={`private-option-${index}`}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected: isSelected }}
-                        onPress={() => privateDaily.selectDraftOption(index)}
-                        style={[styles.privateOption, isSelected && styles.privateOptionSelected]}>
-                        <ThemedText style={[styles.privateOptionText, isSelected && styles.privateOptionTextSelected]}>
-                          {String.fromCharCode(65 + index)}. {option.label}
+                        disabled={privateDaily.draftIndex === null || privateDaily.isCommitting}
+                        onPress={privateDaily.confirmAnswer}
+                        style={[
+                          styles.privateConfirmButton,
+                          (privateDaily.draftIndex === null || privateDaily.isCommitting) && styles.confirmButtonDisabled,
+                        ]}>
+                        <ThemedText style={styles.privateConfirmButtonText}>
+                          {privateDaily.isCommitting ? 'Locking it in…' : 'Lock it in →'}
                         </ThemedText>
                       </Pressable>
-                    );
-                  })}
-                  <Pressable
-                    disabled={privateDaily.draftIndex === null || privateDaily.isCommitting}
-                    onPress={privateDaily.confirmAnswer}
-                    style={[
-                      styles.privateDropUnlockButton,
-                      (privateDaily.draftIndex === null || privateDaily.isCommitting) && styles.confirmButtonDisabled,
-                    ]}>
-                    <ThemedText style={styles.privateDropUnlockButtonText}>
-                      {privateDaily.isCommitting ? 'Locking it in…' : 'Lock it in →'}
-                    </ThemedText>
-                  </Pressable>
-                  {privateDaily.commitError && (
-                    <ThemedText style={styles.microcopy} themeColor="textSecondary">
-                      {privateDaily.commitError}
-                    </ThemedText>
-                  )}
-                </View>
-              )}
-
-              {privateIsCommitted && privateSelectedChoice && (
-                <>
-                  <ThemedText style={styles.privateReadEyebrow}>THE READ</ThemedText>
-                  <ThemedText style={styles.privateDropCopy}>
-                    {stripApparentlyPrefix(privateSelectedChoice.apparentlyFeedback ?? 'Noted.')}
-                  </ThemedText>
-
-                  <Pressable style={styles.worldToggle} onPress={() => setPrivateRoomExpanded((value) => !value)}>
-                    <ThemedText style={styles.privateWorldToggleText}>
-                      {privateRoomExpanded ? 'Close the room ↑' : 'See the room ↓'}
-                    </ThemedText>
-                  </Pressable>
-
-                  {privateRoomExpanded && privateReady && privateReady.distribution.status === 'ready' && (
-                    <View style={styles.worldDistribution}>
-                      {privateReady.question.options.map((option, index) => {
-                        const isSelected = index === privateDisplayedOption;
-                        const percent =
-                          privateReady.distribution.status === 'ready' ? privateReady.distribution.percentages[index] : null;
-                        return (
-                          <View
-                            key={`private-room-option-${index}`}
-                            style={[styles.privateDistributionRow, isSelected && styles.privateDistributionRowSelected]}>
-                            <ThemedText
-                              style={[styles.privateDistributionLabel, isSelected && styles.privateDistributionLabelSelected]}
-                              numberOfLines={1}>
-                              {String.fromCharCode(65 + index)}. {option.label}
-                            </ThemedText>
-                            <ThemedText
-                              style={[styles.privateDistributionPercent, isSelected && styles.privateDistributionPercentSelected]}>
-                              {percent}%
-                            </ThemedText>
-                          </View>
-                        );
-                      })}
-                    </View>
+                      {privateDaily.commitError && (
+                        <ThemedText style={styles.microcopy} themeColor="textSecondary">
+                          {privateDaily.commitError}
+                        </ThemedText>
+                      )}
+                    </>
                   )}
 
-                  {privateRoomExpanded &&
-                    privateReady &&
-                    (privateReady.distribution.status === 'loading' || privateReady.distribution.status === 'idle') && (
-                      <View style={styles.worldDistribution}>
-                        <ThemedText style={styles.privateDistributionLabel}>Tallying the room…</ThemedText>
+                  {privateIsCommitted && privateSelectedChoice && (
+                    <View style={styles.completedCardPrivate}>
+                      <View style={styles.completedBadgePrivate}>
+                        <ThemedText style={styles.completedBadgePrivateText}>✓ Answered today</ThemedText>
                       </View>
-                    )}
-
-                  {privateRoomExpanded && privateReady && privateReady.distribution.status === 'error' && (
-                    <View style={styles.worldDistribution}>
-                      <ThemedText style={styles.privateDistributionLabel}>The Room is having a moment.</ThemedText>
-                      <Pressable style={styles.worldToggle} onPress={privateDaily.retryDistribution}>
-                        <ThemedText style={styles.privateWorldToggleText}>Try again →</ThemedText>
+                      <Pressable
+                        style={({ pressed }) => [styles.viewReadBtnPrivate, pressed && styles.pressed]}
+                        onPress={() => setActiveModal('private')}
+                        accessibilityRole="button">
+                        <ThemedText style={styles.viewReadBtnText}>View Your Read →</ThemedText>
                       </Pressable>
                     </View>
                   )}
@@ -477,16 +460,56 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Build 9 correction: removed. This block was never real data for any user --
-              "37%"/"06 rare picks" were hardcoded demo literals (only ever visible in local-
-              prototype mode in the first place), and the "YOUR 7 ... X / 50" progress bar is
-              the exact retired milestone-bar concept Bible v1.4 §23 says does not belong on
-              You ("completed '57/50' milestone bars"), let alone on Today. Real aggregate
-              Commonality now lives on You instead (CommonalitySection, real
-              get_my_commonality() data -- see that file's own header comment); Today keeps
-              only the real per-question room distribution for today's specific question,
-              rendered elsewhere on this screen. */}
+          <View style={styles.panelRow}>
+            <FeaturedQuizCard />
+            <CreatureProgressCard />
+          </View>
         </ScrollView>
+
+        {/* Mounted alongside (not inside) the scroll content -- its own visibility is purely
+            the persisted dismissed-flag, so it never gates or delays Today's real content
+            (both Dailies) from loading and rendering underneath it. */}
+        <TodayWelcomeModal />
+
+        <ReadModal
+          visible={activeModal === 'free'}
+          onClose={() => setActiveModal(null)}
+          variant="free"
+          readText={freeReadText}
+          percentLine={freePercentLine}
+          connectText={freeConnectText}
+          stage={<CreatureStage connection={creatureConnection} size={150} />}
+          roomTitle="See the Room"
+          room={freeRoomSlot}
+          ctaLabel="Explore Your Identity →"
+          onCta={() => {
+            setActiveModal(null);
+            router.push('/explore');
+          }}
+        />
+
+        <ReadModal
+          visible={activeModal === 'private'}
+          onClose={() => setActiveModal(null)}
+          variant="private"
+          readText={privateReadText}
+          connectText={PRIVATE_CONNECT_TEXT}
+          stage={<RelicStage connection={relicConnection} size={120} />}
+          roomTitle="See the Room · Private"
+          room={privateRoomSlot}
+          ctaLabel="Enter Private →"
+          onCta={() => {
+            setActiveModal(null);
+            router.push('/private');
+          }}
+        />
+
+        {/* We're Noticing / personality-signal flourish (local demo only) and the old
+            "YOUR 7 ... X/50" milestone bar were both removed in earlier passes — see git
+            history for this file. Real aggregate Commonality lives on You
+            (CommonalitySection, real get_my_commonality() data); Today keeps only the real
+            per-question Room distribution for today's specific question(s), now inside the
+            Read modal above. */}
       </SafeAreaView>
     </ThemedView>
   );
@@ -495,16 +518,17 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Slightly deeper than the app's own cream so the app column reads as a deliberate
-    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
-    // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: '#F0E8DD',
+    // Celestial direction (approved Living Portal preview rounds) — a touch deeper than
+    // Brand.plum so the app column reads as a deliberate object sitting on a page on wide
+    // web viewports, same role the previous cream tone played. Invisible on native, where
+    // safeArea always fills the container exactly.
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
@@ -515,382 +539,312 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  // Build 15: tightened from Spacing.four -- the permanent welcome card (now a one-time modal,
+  // see TodayWelcomeModal) previously absorbed some of the visual weight between sections;
+  // without it, the old four-section gap read as too much empty space.
   content: {
     paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.five,
-    gap: Spacing.four,
+    gap: Spacing.three,
   },
-  streak: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-    backgroundColor: '#FFF0D2',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 99,
-  },
-  fire: {
-    color: Brand.gold,
-    fontSize: 18,
-  },
-  streakText: {
-    color: '#9B6812',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  intro: {
-    gap: Spacing.two,
-  },
-  metaRow: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: Spacing.two,
   },
-  eyebrow: {
-    color: Brand.pink,
-    fontSize: 11,
+  wordmark: {
+    color: Celestial.textPrimary,
+    fontSize: 19,
     fontWeight: '800',
-    letterSpacing: 1.3,
+    letterSpacing: -0.3,
   },
-  introSupport: {
-    color: Brand.inkSecondary,
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
-  },
-  questionCard: {
-    backgroundColor: Brand.violet,
-    borderRadius: 28,
-    padding: Spacing.four,
-    gap: Spacing.three,
-    shadowColor: Brand.violet,
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 5,
-  },
-  prompt: {
-    color: '#FFFFFF',
-    fontSize: 25,
-    lineHeight: 31,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  options: {
-    gap: Spacing.two,
-  },
-  option: {
-    minHeight: 58,
+  settingsButton: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  optionSelected: {
-    backgroundColor: '#FFFFFF',
-  },
-  optionLocked: {
-    opacity: 0.45,
-  },
-  optionNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.22)',
   },
-  optionNumberSelected: {
-    backgroundColor: Brand.pink,
-  },
-  numberText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  optionText: {
-    color: '#FFFFFF',
-    flex: 1,
+  settingsIcon: {
+    color: Celestial.textSecondary,
     fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '700',
   },
-  selectedText: {
-    color: '#17151D',
+  eyebrow: {
+    ...CelestialType.eyebrow,
+    textAlign: 'center',
   },
-  check: {
-    color: Brand.pink,
-    fontSize: 20,
-    fontWeight: '800',
+  // Loading/empty/error states for the Free Daily — kept as a soft glass card (these are
+  // transient/edge states, not part of the core answer flow the floating-tile redesign
+  // targets).
+  questionCard: {
+    backgroundColor: Celestial.glassFill,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    padding: Spacing.four,
+    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  // The floating stage — no card background, question sits directly on the portal atmosphere
+  // (PortalRings/CelestialWash behind it), per the approved "no more rectangles" direction.
+  stage: {
+    gap: Spacing.three,
+    alignItems: 'center',
+  },
+  prompt: {
+    ...CelestialType.question,
+    fontSize: 23,
+    lineHeight: 29,
+    textAlign: 'center',
+  },
+  observation: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    color: Celestial.textPrimary,
+    fontSize: 18,
+    lineHeight: 25,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    width: '100%',
   },
   microcopy: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
   },
   // The one and only path to commitDailyAnswer — pink like every other primary CTA in the
   // app (onboarding's ctaText included), so it reads as the deliberate confirmation step it
   // is rather than a secondary action.
   confirmButton: {
     backgroundColor: Brand.pink,
-    borderRadius: 16,
+    borderRadius: 999,
     alignItems: 'center',
     paddingVertical: Spacing.three,
-    marginTop: Spacing.one,
+    paddingHorizontal: Spacing.six,
+    alignSelf: 'center',
   },
   confirmButtonDisabled: {
     opacity: 0.35,
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
   pressed: {
-    opacity: 0.82,
-  },
-  // The reveal is one card, hero-first: the Read is the payoff, everything else (percentage,
-  // personality nudge, full breakdown) is deliberately smaller/secondary so it doesn't
-  // compete with it — see Part 2 of the visual QA correction.
-  revealCard: {
-    backgroundColor: Surface.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Surface.hairline,
-    padding: Spacing.four,
-    gap: Spacing.two,
-  },
-  revealEyebrow: {
-    color: Brand.pink,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.3,
-  },
-  observation: {
-    color: Brand.ink,
-    fontSize: 20,
-    lineHeight: 27,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  revealPercentLine: {
-    color: Brand.inkSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600',
-  },
-  signalLine: {
-    marginTop: Spacing.one,
-    gap: 2,
-  },
-  signalEyebrow: {
-    color: Brand.violet,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-  },
-  signalChips: {
-    color: Brand.violet,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  signalCopy: {
-    color: Brand.inkSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '600',
-    fontStyle: 'italic',
-  },
-  worldToggle: {
-    alignSelf: 'flex-start',
-    marginTop: Spacing.one,
-  },
-  worldToggleText: {
-    color: Brand.violet,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  worldDistribution: {
-    gap: 6,
-    marginTop: Spacing.one,
-  },
-  distributionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.two,
-  },
-  distributionRowSelected: {
-    backgroundColor: '#F7F3FF',
-  },
-  distributionLabel: {
-    flex: 1,
-    color: Brand.inkSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  distributionLabelSelected: {
-    color: Brand.violet,
-    fontWeight: '800',
-  },
-  distributionPercent: {
-    color: Brand.inkSecondary,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  distributionPercentSelected: {
-    color: Brand.pink,
-    fontWeight: '800',
+    opacity: 0.85,
   },
   worldButton: {
-    backgroundColor: Brand.pink,
+    backgroundColor: Brand.gold,
     borderRadius: 14,
     alignItems: 'center',
     paddingVertical: Spacing.two,
-    marginTop: Spacing.one,
+    paddingHorizontal: Spacing.four,
   },
   worldButtonText: {
-    color: '#FFFFFF',
+    color: Brand.plum,
     fontSize: 14,
     fontWeight: '800',
   },
-  // The premium/private surface treatment: deep plum, cream text, a restrained coral
-  // eyebrow — visibly a different room from the pink free-content chrome around it, with no
-  // purchase functionality behind it yet (see privateDropStatus below, deliberately not a
-  // Pressable so it never implies a real, tappable purchase action exists).
-  privateDropCard: {
-    backgroundColor: Brand.plum,
-    borderRadius: Radius.lg,
-    padding: Spacing.four,
-    gap: Spacing.one,
+  // Compact post-answer state — replaces the old full inline Read/Room expansion. Today stays
+  // visually clean; the real Read/Room live in the reopenable modal.
+  completedCard: {
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
   },
-  privateDropEyebrow: {
-    color: Brand.coral,
+  completedBadge: {
+    backgroundColor: 'rgba(246,184,63,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.4)',
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+  },
+  completedBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#FFD88A',
+  },
+  completedQuestion: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#D8C9FF',
+    opacity: 0.85,
+    textAlign: 'center',
+  },
+  viewReadBtn: {
+    backgroundColor: Brand.gold,
+    borderRadius: 999,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.six,
+  },
+  viewReadBtnPrivate: {
+    backgroundColor: Brand.coral,
+    borderRadius: 999,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.six,
+  },
+  viewReadBtnText: {
+    color: Brand.plum,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  // Apparently Private's zone — borderless/atmospheric, distinct from Free Daily via a pink
+  // eyebrow + coral accent rather than card chrome, separated from Free Daily by a thin
+  // divider rather than a boxed card.
+  privateZone: {
+    gap: Spacing.three,
+    alignItems: 'center',
+  },
+  privateDivider: {
+    width: 60,
+    height: 1,
+    backgroundColor: 'rgba(255,158,214,0.3)',
+    marginBottom: Spacing.one,
+  },
+  privateEyebrow: {
+    color: '#FF9ED6',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
+    textAlign: 'center',
+  },
+  privateStatusLine: {
+    color: Brand.coral,
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  // Build 15: a real card shell for the locked/loading/error states only (the unlocked
+  // premium state stays floating, matching Free Daily's own "no more rectangles" stage) — this
+  // is what gives a free user's Private Daily preview the same visual presence as Free Daily's
+  // question, instead of reading as a small text aside beneath it.
+  privateLockedCard: {
+    width: '100%',
+    gap: Spacing.three,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,121,95,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,121,95,0.25)',
+    borderRadius: 24,
+    padding: Spacing.four,
+  },
+  privateLockBadge: {
+    backgroundColor: 'rgba(255,121,95,0.16)',
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+  },
+  privateLockBadgeText: {
+    color: Brand.coral,
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   privateDropTitle: {
-    color: Brand.cream,
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+    ...CelestialType.question,
+    textAlign: 'center',
   },
   privateDropCopy: {
     color: 'rgba(255,249,245,0.7)',
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  privateReadEyebrow: {
-    color: Brand.coral,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.3,
-    marginTop: Spacing.two,
+  privateButtonRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  privateWorldToggleText: {
-    color: Brand.coral,
+  privateOutlineButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,249,245,0.3)',
+    borderRadius: 999,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  privateOutlineButtonText: {
+    color: Brand.cream,
     fontSize: 13,
     fontWeight: '800',
   },
-  // Private's own Room-row palette — cream/coral against the plum card, since the Public
-  // distribution rows above (styles.distribution*) are tuned for a white card background and
-  // would be unreadable here.
-  privateDistributionRow: {
-    flexDirection: 'row',
+  privateSolidButton: {
+    backgroundColor: Brand.coral,
+    borderRadius: 999,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  privateSolidButtonText: {
+    color: Brand.plum,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  privateConfirmButton: {
+    backgroundColor: Brand.coral,
+    borderRadius: 999,
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.six,
+    alignSelf: 'center',
+  },
+  privateConfirmButtonText: {
+    color: Brand.plum,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  completedCardPrivate: {
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.two,
+    marginTop: Spacing.one,
   },
-  privateDistributionRowSelected: {
-    backgroundColor: 'rgba(255,249,245,0.1)',
+  completedBadgePrivate: {
+    backgroundColor: 'rgba(255,158,214,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,158,214,0.4)',
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 5,
   },
-  privateDistributionLabel: {
-    flex: 1,
-    color: 'rgba(255,249,245,0.65)',
+  completedBadgePrivateText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#FF9ED6',
+  },
+  roomStatusText: {
+    color: Celestial.textSecondary,
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  privateDistributionLabelSelected: {
-    color: Brand.cream,
-    fontWeight: '800',
-  },
-  privateDistributionPercent: {
-    color: 'rgba(255,249,245,0.65)',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  privateDistributionPercentSelected: {
-    color: Brand.coral,
-    fontWeight: '800',
-  },
-  privateDropStatus: {
-    color: Brand.coral,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginTop: Spacing.one,
-  },
-  privateDropUnlockButton: {
-    backgroundColor: Brand.coral,
-    borderRadius: 14,
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-    marginTop: Spacing.two,
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.three,
-  },
-  privateDropUnlockButtonText: {
-    color: Brand.plum,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  privateDropSubscribeButton: {
-    alignSelf: 'flex-start',
-    marginTop: Spacing.one,
-    paddingVertical: Spacing.one,
-  },
-  privateDropSubscribeButtonText: {
-    color: 'rgba(255,249,245,0.75)',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  privateOptions: {
+  roomStatusBlock: {
     gap: Spacing.two,
-    marginTop: Spacing.one,
+    alignItems: 'center',
   },
-  privateOption: {
-    minHeight: 50,
-    borderRadius: 14,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    backgroundColor: 'rgba(255,249,245,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,249,245,0.14)',
+  roomRetry: {
+    color: Brand.gold,
+    fontSize: 13,
+    fontWeight: '800',
   },
-  privateOptionSelected: {
-    backgroundColor: Brand.coral,
-    borderColor: Brand.coral,
+  // Featured Quiz + Your Creature — one shared row so both panels (see celestial.tsx's Panel
+  // shell, used inside each component) read as one family rather than two differently-weighted
+  // stacked cards.
+  panelRow: {
+    gap: Spacing.three,
   },
-  privateOptionText: {
-    color: Brand.cream,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  privateOptionTextSelected: {
-    color: Brand.plum,
-  },
-  // statsRow/statBlock/.../progressCopy (the old local-prototype-only fake Commonality + "YOUR
-  // 7" milestone-bar block) removed in Build 9 -- see this file's own comment at the former
-  // call site for why.
 });

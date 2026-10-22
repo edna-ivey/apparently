@@ -76,7 +76,7 @@ export const PRIVATE_LOCKED_CATALOG: PrivateCatalogEntry[] = [
     id: 'hidden-you-wrong',
     category: 'Hidden You',
     title: 'What do people keep getting wrong about you?',
-    subtitle: 'Your reputation and your reality may not be dating.',
+    subtitle: 'People have a whole story about you. Cute. Let’s see if it’s accurate.',
   },
   {
     id: 'hidden-you-nobody-needs',
@@ -135,7 +135,7 @@ export const PRIVATE_LOCKED_CATALOG: PrivateCatalogEntry[] = [
     id: 'life-match-dream-life',
     category: 'Life Match',
     title: 'Would your dream life actually fit you?',
-    subtitle: 'Wanting it and liking the day-to-day are different things.',
+    subtitle: 'You know what looks good. We’re asking whether you’d actually like living there. 👀',
   },
   {
     id: 'life-match-thrive',
@@ -166,7 +166,7 @@ export const PRIVATE_LOCKED_CATALOG: PrivateCatalogEntry[] = [
     id: 'style-vibe-intimidating',
     category: 'Style & Vibe',
     title: 'Are you actually intimidating?',
-    subtitle: 'Maybe they’re scared. Maybe you’re just quiet.',
+    subtitle: 'People keep saying it. Let’s find out whether they’re scared of you... or just scared of your face. 😂',
   },
   {
     id: 'style-vibe-attention',
@@ -204,7 +204,7 @@ export const PRIVATE_LOCKED_CATALOG: PrivateCatalogEntry[] = [
     id: 'private-private-trouble',
     category: 'Private Private. 😈',
     title: 'How much trouble are you after dark?',
-    subtitle: 'Sweet in public tells us almost nothing. 😈',
+    subtitle: 'Everybody has a private side. Apparently would like to see yours.',
   },
 ];
 

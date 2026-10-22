@@ -35,7 +35,15 @@ assert(!/Restore Purchases/.test(youSource), 'You no longer renders "Restore Pur
 assert(!/restorePurchases/.test(youSource), 'You no longer imports/calls restorePurchases at all');
 assert(!/Manage(\s|→|→)/.test(youSource) || !/getSubscriptionManagementUrl/.test(youSource), 'You no longer renders a "Manage" subscription action (moved to Settings)');
 assert(!/getSubscriptionManagementUrl/.test(youSource), 'You no longer imports getSubscriptionManagementUrl');
-assert(!/usePremiumStatus/.test(youSource), 'You no longer reads subscription status directly (that surface moved to Settings entirely)');
+// Build 15 correction: usePremiumStatus was reintroduced, but NOT to render a subscription-
+// status surface in You again (every check above/below this one -- no subscriptionCard, no
+// Restore Purchases, no Manage action -- still holds and still passes). It now feeds exactly
+// one prop, `isSubscriber`, into RelicSection's own teaser copy branching ("Still forming" for
+// an already-subscribed-but-not-yet-qualified user vs. "Your Relic is waiting in Apparently
+// Private" for a non-subscriber) -- a legitimate, later-approved use, distinct from the
+// subscription-management surface this check originally guarded against.
+assert(/usePremiumStatus/.test(youSource), 'You reads premium status only for RelicSection\'s own teaser copy branching (isSubscriber), not to render a subscription-management surface');
+assert(/isSubscriber/.test(youSource) && !/subscriptionCard|'Active'|'Free'/.test(youSource), 'that premium read never flows into a subscription-status display card (Active/Free), confirming it stays scoped to Relic-teaser copy');
 assert(!/progressCard/.test(youSource), 'You no longer renders the YOUR 7 progress card');
 assert(!/\/\s*50/.test(youSource) === false || !/progressCount/.test(youSource), 'You no longer renders a "X / 50" milestone counter');
 assert(!/'YOUR 7'/.test(youSource) && !/>YOUR 7</.test(youSource), 'You no longer exposes "YOUR 7" as a consumer-facing label');
@@ -53,7 +61,14 @@ assert(!/buildYourSevenCards|buildYouProfileCards/.test(youSource), 'the retired
 assert(/router\.push\('\/settings'\)/.test(youSource), 'You has a gear action that navigates to /settings');
 assert(/gearIcon|gearButton/.test(youSource), 'a gear icon element exists in You (top-right settings entry point)');
 assert(/IdentityHero/.test(youSource), 'You renders the avatar/relic hero prototype');
-assert(/relicShape/.test(youSource) && /avatarArea/.test(youSource), 'the hero has structurally separate avatar and relic elements');
+// Build 15 correction: the Relic moved out of IdentityHero entirely into its own RelicSection
+// (see that function's own header comment) -- `relicShape`/`avatarArea` were the pre-Build-15
+// variable names for the hero's two structurally-separate halves; IdentityHero's two halves
+// are now named `avatar`/`nameGroup` (name-only, no Relic inside it at all), and the Relic's
+// own structurally-separate presentation is RelicSection, a sibling section, not a sub-element
+// of this hero. Checks the CURRENT structural separation instead of the retired names.
+assert(/const avatar = /.test(youSource) && /const nameGroup = /.test(youSource), 'the hero has structurally separate avatar and name elements');
+assert(/function RelicSection/.test(youSource), 'the Relic has its own structurally separate section (RelicSection), outside the hero entirely since Build 15');
 // Pass 1 correction (superseded by the Creature-centerpiece pass): the hero originally had to
 // stay a LEFT avatar / RIGHT relic row on EVERY viewport (approved Option B), back when the
 // avatar was a small placeholder mark. Promoting the Creature to a substantially larger
@@ -71,7 +86,11 @@ assert(
   /<View style={styles\.heroRow}>/.test(youSource),
   'IdentityHero always renders styles.heroRow (never a ternary between a row and a column style)',
 );
-assert(/CHARACTER NAME/.test(youSource), 'a neutral character-name placeholder is reserved above the relic (no invented syllable mapping)');
+// Build 15 correction: the placeholder copy itself was later approved as "Not Yet Named"
+// (see IdentityHero's characterNameMystery branch) rather than the original all-caps
+// "CHARACTER NAME" scaffold text -- still a neutral placeholder with no invented
+// syllable/name mapping, just updated, approved wording.
+assert(/Not Yet Named/.test(youSource), 'a neutral character-name placeholder is reserved (no invented syllable mapping)');
 assert(
   !/TRAIT_SYLLABLES|CHARACTER_NAME_MAP|SYLLABLE_MAP/.test(youSource),
   'no invented trait-syllable/character-name mapping DATA STRUCTURE was added to You (mentioning the approved future example in an explanatory comment is fine; a real mapping table is not)',
@@ -88,12 +107,21 @@ assert(/AGE_RANGES/.test(settingsSource) && /GENDER_IDENTITIES/.test(settingsSou
 assert(/customGenderDraft/.test(settingsSource), "Settings supports editing custom gender when applicable");
 assert(/Restore Purchases/.test(settingsSource) && /restorePurchases/.test(settingsSource), 'Restore Purchases lives in Settings');
 assert(/Manage Subscription/.test(settingsSource) && /getSubscriptionManagementUrl/.test(settingsSource), 'Manage Subscription lives in Settings, shown when a real management URL exists');
+// Build 18: owner confirmed the real Zoho alias is configured/tested (OWNER_APP_STORE_
+// ACTIONS.md item 1) -- the earlier temporary edna.tyus@gmail.com placeholder was replaced
+// with the real support@apparentlyyou.com mailbox.
 assert(
-  /const SUPPORT_EMAIL = 'edna\.tyus@gmail\.com'/.test(settingsSource) && /mailto:\$\{SUPPORT_EMAIL\}/.test(settingsSource),
-  'the Support Contact Us action uses the exact required temporary mailto address (edna.tyus@gmail.com)',
+  /const SUPPORT_EMAIL = 'support@apparentlyyou\.com'/.test(settingsSource) && /mailto:\$\{SUPPORT_EMAIL\}/.test(settingsSource),
+  'the Support Contact Us action uses the real, owner-confirmed support@apparentlyyou.com mailbox',
 );
 assert(/Constants\.expoConfig\?\.version/.test(settingsSource) && /Constants\.expoConfig\?\.ios\?\.buildNumber/.test(settingsSource), 'About shows the real app version and build number, never hardcoded');
-assert(!/Privacy Policy|Terms of Service|Terms & Conditions/i.test(settingsSource), 'no invented Privacy Policy/Terms text or dead legal links were added');
+// Build 18 correction: Privacy Policy/Terms of Use links were later explicitly requested and
+// added (Apple account-deletion/subscription-disclosure requirements) -- this Build 8 Pass 1
+// check originally guarded against an INVENTED/dead link existing before that was ever asked
+// for. Now that it has been, the real check is that the links are REAL in-app routes, never a
+// dead external URL -- see scripts/validate-account-deletion.ts for the full verification of
+// that (real route components, draft-status disclosed honestly).
+assert(/router\.push\('\/privacy-policy'\)/.test(settingsSource) && /router\.push\('\/terms-of-use'\)/.test(settingsSource), 'Privacy Policy/Terms of Use link to real in-app routes, not an invented or dead external URL');
 
 // ============================================================================================
 // 3. ONBOARDING STORE -- updateUserProfile writes the SAME storage/shape and stays reactive

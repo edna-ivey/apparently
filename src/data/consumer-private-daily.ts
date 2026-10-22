@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import type { ConsumerDailyOption, ConsumerDailyQuestion, DistributionState } from './consumer-daily';
+import type { PersonalityEffect } from '@/data/personality';
+import { isPrivateDailyTesterAccessEnabled, isRemoteDailyEnabled } from '@/lib/supabase';
+import { ensureAnonymousSession } from '@/services/auth-service';
+import { getDailyAnswer, getDailyDistribution, getPrivateDaily, submitPrivateDailyAnswer } from '@/services/daily-service';
+import type { DailyDistributionRow, PrivateDailyOption } from '@/services/types';
+import { useEffectivePremium } from '@/services/purchases-service';
+
 // Bounded revalidation after a purchase/restore -- see the useEffect below. A successful
 // purchase already awaits syncServerEntitlement() (purchases-service.ts) before resolving, so
 // user_entitlements is USUALLY already current by the time this hook's isPremium flips to
@@ -19,14 +27,6 @@ const ENTITLEMENT_REVALIDATION_DELAYS_MS = [800, 1600, 3200];
 // on the next cold start. Retrying a few times with a short, increasing delay gives that same
 // "another chance" without requiring the user to do anything.
 const FIRST_LOAD_RETRY_DELAYS_MS = [600, 1500];
-
-import type { ConsumerDailyOption, ConsumerDailyQuestion, DistributionState } from './consumer-daily';
-import type { PersonalityEffect } from '@/data/personality';
-import { isPrivateDailyTesterAccessEnabled, isRemoteDailyEnabled } from '@/lib/supabase';
-import { ensureAnonymousSession } from '@/services/auth-service';
-import { getDailyAnswer, getDailyDistribution, getPrivateDaily, submitPrivateDailyAnswer } from '@/services/daily-service';
-import type { DailyDistributionRow, PrivateDailyOption } from '@/services/types';
-import { useEffectivePremium } from '@/services/purchases-service';
 
 // Apparently Private's Today experience — deliberately its own hook rather than folded into
 // useConsumerDailyExperience(). Private has no local/prototype fallback (it's a remote-only
@@ -342,7 +342,7 @@ export const usePrivateDailyExperience = (): UsePrivateDailyExperience => {
 
     committingRef.current = false;
     setIsCommitting(false);
-  }, [state, draftIndex, refreshDistribution, isPremium]);
+  }, [state, draftIndex, refreshDistribution]);
 
   const retry = useCallback(() => {
     void load();

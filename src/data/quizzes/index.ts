@@ -1,17 +1,24 @@
 import { BE_SO_SERIOUS_QUIZ } from './be-so-serious';
 import { CRISIS_QUIZ } from './crisis';
+import { CAREER_HOW_BAD_QUIZ } from './career-how-bad';
+import { CAREER_PROVING_QUIZ } from './career-proving';
 import { DATING_QUIZ } from './dating';
 import { ERA_QUIZ } from './era';
 import { FOOD_ORDER_QUIZ } from './food-order';
 import { FRIENDSHIP_QUIZ } from './friendship';
 import { GROUP_CHAT_QUIZ } from './group-chat';
+import { HIDDEN_YOU_WRONG_QUIZ } from './hidden-you-wrong';
 import { ICK_QUIZ } from './ick';
 import { KEEP_YOU_AROUND_QUIZ } from './keep-you-around';
+import { LIFE_MATCH_DREAM_LIFE_QUIZ } from './life-match-dream-life';
 import { KID_YOU_QUIZ } from './kid-you';
 import { ONE_BITE_QUIZ } from './one-bite';
+import { LOVE_READY_QUIZ } from './love-ready';
 import { PETTY_QUIZ } from './petty';
+import { PRIVATE_PRIVATE_TROUBLE_QUIZ } from './private-private-trouble';
 import { SECRETLY_LOVE_QUIZ } from './secretly-love';
 import { SPENDING_QUIZ } from './spending';
+import { STYLE_VIBE_INTIMIDATING_QUIZ } from './style-vibe-intimidating';
 import type { QuizDefinition } from './types';
 import { UNEXPECTED_MONEY_QUIZ } from './unexpected-money';
 
@@ -55,6 +62,13 @@ export const QUIZ_REGISTRY: Record<string, QuizDefinition> = {
   'secretly-love': SECRETLY_LOVE_QUIZ,
   'keep-you-around': KEEP_YOU_AROUND_QUIZ,
   'be-so-serious': BE_SO_SERIOUS_QUIZ,
+  'private-private-trouble': PRIVATE_PRIVATE_TROUBLE_QUIZ,
+  'life-match-dream-life': LIFE_MATCH_DREAM_LIFE_QUIZ,
+  'style-vibe-intimidating': STYLE_VIBE_INTIMIDATING_QUIZ,
+  'hidden-you-wrong': HIDDEN_YOU_WRONG_QUIZ,
+  'career-ambition-how-bad': CAREER_HOW_BAD_QUIZ,
+  'career-ambition-proving': CAREER_PROVING_QUIZ,
+  'love-soulmates-ready': LOVE_READY_QUIZ,
 };
 
 export const getQuizDefinition = (quizId: string | undefined): QuizDefinition | null =>

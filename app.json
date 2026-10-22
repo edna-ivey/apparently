@@ -11,7 +11,7 @@
     "ios": {
       "icon": "./assets/images/brand/app-icon.png",
       "bundleIdentifier": "com.supergreatventures.apparently",
-      "buildNumber": "7",
+      "buildNumber": "20",
       "associatedDomains": [
         "applinks:apparentlyyou.com"
       ],
@@ -41,7 +41,16 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "@sentry/react-native",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "Apparently You uses this to save your Creature image to your photo library when you tap Save."
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

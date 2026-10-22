@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 
 // V1 auth strategy: anonymous-first. A user gets a real, authenticated Supabase identity the
 // moment the app can reach Supabase — no email, no password, no login screen, no forced
@@ -60,11 +61,17 @@ export const ensureAnonymousSession = async (): Promise<Session | null> => {
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) {
         console.warn('[auth-service] signInAnonymously failed:', error.message);
+        // Foundational: nothing else in the app (identity, purchases, Compare, Daily) can
+        // work without a session, so a failure here is worth knowing about even though the
+        // app already degrades gracefully (every local/prototype flow keeps working with no
+        // session at all -- see this function's own header comment).
+        reportBackendFailure({ operation: 'ensure_anonymous_session' }, error);
         return null;
       }
       return data.session;
     } catch (error) {
       console.warn('[auth-service] ensureAnonymousSession threw:', error);
+      reportBackendFailure({ operation: 'ensure_anonymous_session' }, error);
       return null;
     } finally {
       ensureAnonymousSessionPromise = null;
@@ -72,6 +79,23 @@ export const ensureAnonymousSession = async (): Promise<Session | null> => {
   })();
 
   return ensureAnonymousSessionPromise;
+};
+
+// Build 18: clears the LOCAL session cache after the account it belongs to has already been
+// deleted server-side (see account-deletion-service.ts) -- the anonymous JWT would fail on
+// its own next use anyway (the user row behind it is gone), but calling this explicitly
+// clears the SDK's own cached token/session immediately rather than leaving it to discover
+// that on its next network call. Kept here, not in account-deletion-service.ts, because this
+// module is the only place that talks to supabase.auth directly.
+export const clearLocalSession = async (): Promise<void> => {
+  if (!supabase) {
+    return;
+  }
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.warn('[auth-service] clearLocalSession threw:', error);
+  }
 };
 
 // Returns an unsubscribe function, always — a no-op one when Supabase isn't configured, so

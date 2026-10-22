@@ -142,6 +142,8 @@ type QuizBase = {
   introCta: string;
   introNote?: string;
   questions: QuizQuestion[];
+  // Opt in to Bible §15A answer-level personality evidence for this quiz.
+  answerLevelPersonalityEvidence?: boolean;
   // Whether a first completion of this quiz may contribute to the living You profile
   // (personality_evidence + profileAnswerCount/Your7). Defaults to true (existing behavior,
   // unchanged) when absent. Set to false ONLY for a quiz whose result→profile mapping hasn't
@@ -198,6 +200,70 @@ export type ArchetypeQuizDefinition = QuizBase & {
   // from >=2 distinct questions, and at least one of those was a full +2 PRIMARY selection for
   // it. Absent/false for every existing archetype quiz (unchanged: always exactly one result).
   enableCloseSecond?: boolean;
+  // Optional data-driven eligibility gates for strong/high-confidence archetype reads.
+  resultGates?: Record<string, { minSignals: number; requiredAnyOf?: string[][]; requiredGroups?: { answers: string[]; min: number }[] }>;
+  // Optional explicit final fallback order after configured tie-breaks.
+  tieFallbackOrder?: string[];
+  // Optional primary-weight value counted by the tie-break (default 2 for legacy quizzes).
+  primaryTieWeight?: number;
+  // Optional final answer discriminator used after the normal high-signal/+weight tie steps.
+  finalTieQuestionId?: string;
+  // Optional extra tie step: compare count of questions where the candidate is the selected choice's primary result.
+  countPrimaryMatchesTieBreak?: boolean;
+};
+
+// Two INDEPENDENTLY scored 6-way dimensions, resolved into one of (dimensionA.length x
+// dimensionB.length) paired combination results -- e.g. "What's Your Type?" (6 Attraction
+// archetypes x 6 Partner Energy archetypes = 36 combinations). Deliberately generic over
+// question/archetype COUNT rather than hardcoded to any one quiz's exact shape.
+//
+// "What's Your Type?" (src/data/quizzes/whats-your-type-content.ts / -results.ts) is the one
+// real quiz using scoringType 'dualDimension', with its own dedicated static route
+// (src/app/quiz/whats-your-type.tsx) rather than the generic [quizId] runner --
+// computeQuizResult/ResultDisplay/that runner screen are deliberately NOT wired to this
+// scoringType: every function that pattern-matches over QuizDefinition below assumes exactly
+// two variants and branches with a plain if/else rather than an exhaustive switch (see the next
+// comment), so a standalone route was the lower-risk integration path over touching that shared
+// pipeline for all 21 other live quizzes.
+export type QuizDimensionArchetype = {
+  id: string;
+  title: string;
+};
+
+export type QuizCombinationResult = {
+  // "${dimensionAArchetypeId}:${dimensionBArchetypeId}" -- see resolveCombinationKey in scoring.ts.
+  id: string;
+  title: string;
+  heroRead?: string[];
+  body?: string;
+  kicker?: string;
+  traits?: string[];
+  profileSignals?: PersonalityEffect[];
+};
+
+// Deliberately NOT a member of QuizDefinition below -- every function that pattern-matches
+// over QuizDefinition (computeQuizResult, reconstructResultDisplay, resolveShareableResultContent,
+// resolveResultDisplayTitle, resolveStoredQuizProfileSignals, all in scoring.ts) assumes exactly
+// two variants today and branches with a plain `if (scoringType === 'archetype') {...} else
+// {...}` rather than an exhaustive switch. Adding a third member here would force real,
+// untested changes to every one of those functions for a scoring type nothing uses yet --
+// exactly the "touch the shared pipeline for all 21 live quizzes to support a feature with no
+// real content" risk this pass is trying to avoid. DualDimensionQuizDefinition stays
+// independent, with its own standalone scoring function (scoreDualDimensionQuiz in
+// scoring.ts), until real content exists and that integration can be done with something real
+// to verify it against.
+export type DualDimensionQuizDefinition = QuizBase & {
+  scoringType: 'dualDimension';
+  dimensionALabel: string;
+  dimensionBLabel: string;
+  dimensionAQuestionIds: string[];
+  dimensionBQuestionIds: string[];
+  dimensionAArchetypes: QuizDimensionArchetype[];
+  dimensionBArchetypes: QuizDimensionArchetype[];
+  // One entry per real combination. A quiz may be authored with fewer than the full cross-
+  // product while content is still being approved; scoreDualDimensionQuiz (scoring.ts)
+  // throws on a missing combination rather than fabricating filler copy.
+  combinations: Record<string, QuizCombinationResult>;
 };
 
 export type QuizDefinition = NumericBandQuizDefinition | ArchetypeQuizDefinition;

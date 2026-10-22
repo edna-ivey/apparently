@@ -52,7 +52,13 @@ export type PersonalityDimensionId =
 // today's approved mappings, not a rule this type encodes.
 export type PersonalityDimensionType = 'core' | 'private';
 
-export type PersonalityEffectValue = -2 | -1 | 1 | 2;
+// Build 11: widened from -2|-1|1|2 to also allow -3|3 — the magnitude the LOCKED Private quiz
+// ranked evidence award (rank #1) now uses (see quiz-personality-awards.ts's
+// applyPermanentQuizAwards). Ordinary answer-level/Daily signals are unaffected and continue to
+// use -2|-1|1|2 exactly as before; only the ranked quiz-level award can ever produce ±3 — see
+// normalizeEffect below for how ±3 is folded into the existing -1..1 normalized scale without
+// changing what ±1/±2 already mean.
+export type PersonalityEffectValue = -3 | -2 | -1 | 1 | 2 | 3;
 
 export type PersonalityEffect = {
   dimension: PersonalityDimensionId;
@@ -555,8 +561,16 @@ export const isCoreDimension = (dimensionId: PersonalityDimensionId): boolean =>
 export const isPrivateDimension = (dimensionId: PersonalityDimensionId): boolean =>
   dimensionMap.get(dimensionId)?.type === 'private';
 
+// ±3 (Build 11's ranked Private quiz rank-#1 award) is folded onto the SAME -1..1 ceiling as
+// ±2, deliberately NOT extended further (-3/2 = -1.5 would overflow getDisplayedPole's percent
+// math and, worse, silently change what ±1/±2 already mean if the whole scale were rebased
+// around a new ±3 endpoint). A dimension already reads as "fully expressing that pole" at ±2;
+// ±3 expresses it just as fully for averaging purposes. The real extra weight of a ±3 award
+// shows up elsewhere — in raw point totals (resolveActiveBoardPole/WITHIN_QUIZ_QUALIFICATION_
+// THRESHOLD both sum signed magnitudes, not normalized values) and in evidenceCount — never
+// here. ±1/±2 are completely untouched from their pre-Build-11 values.
 const normalizeEffect = (value: PersonalityEffectValue): number => {
-  if (value === -2) return -1;
+  if (value <= -2) return -1;
   if (value === -1) return -0.5;
   if (value === 1) return 0.5;
   return 1;
@@ -1049,7 +1063,7 @@ export type ConsensusLanguage = {
   sentence: string;
 };
 
-export const getConsensusLanguage = (options: Array<{ percent: number }>, selectedIndex: number): ConsensusLanguage => {
+export const getConsensusLanguage = (options: { percent: number }[], selectedIndex: number): ConsensusLanguage => {
   const selected = options[selectedIndex];
   if (!selected) {
     throw new Error(`No answer option exists at index ${selectedIndex}.`);

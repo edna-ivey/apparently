@@ -4,14 +4,22 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { hydrateOnboardingState } from '@/data/onboarding';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { hydrateOnboardingState, useOnboardingState } from '@/data/onboarding';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { initErrorReporting } from '@/services/observability';
 import { initializePurchases } from '@/services/purchases-service';
+import { syncLocalProfileToRemote } from '@/services/profile-backfill-service';
 
 SplashScreen.preventAutoHideAsync();
+// Work Package 2: same "call once, at module scope, before anything else" convention as
+// SplashScreen.preventAutoHideAsync() above — must run before any render, so a crash during
+// the FIRST paint is still reportable. No-ops safely with no DSN configured (see
+// observability.ts's own header comment).
+initErrorReporting();
 
 // This is the ONLY thing that decides which top-level branch of the route tree renders:
 // the (tabs) group (consumer screens, wrapped in AppTabs) or admin/* (internal editorial
@@ -33,6 +41,8 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
+  const onboardingState = useOnboardingState();
+  const onboardingComplete = onboardingState !== 'loading' && onboardingState.completed;
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -57,8 +67,20 @@ export default function RootLayout() {
     // so it has none of the native-navigator-mounting race a conditional <Redirect/> at this
     // root level would — see the comment above this component for why THAT kind of gating
     // was deliberately moved out of the root layout.
+    //
+    // App Privacy audit (2026-10-21): also require onboardingState.completed. Without this,
+    // this effect fired on EVERY launch regardless of route or onboarding progress — including
+    // the very first launch, before the age-gate step (onboarding.tsx) had even rendered —
+    // which created a real anonymous auth.users row ahead of the user ever answering "under
+    // 13." (tabs)/_layout.tsx already blocks every consumer tab screen until onboarding
+    // completes, so this root effect was the ONE path that could establish a session before
+    // age verification. completeOnboarding() (data/onboarding.ts) establishes the session
+    // itself at the moment onboarding actually finishes — this effect no longer needs to (or
+    // should) race ahead of that. A device that already completed onboarding in a prior
+    // session is unaffected: onboardingState.completed is true from the first render after
+    // hydration, so this still fires on every normal relaunch exactly as before.
     const isAdminRoute = segments[0] === 'admin';
-    if (isRemoteDailyEnabled && !isAdminRoute) {
+    if (isRemoteDailyEnabled && !isAdminRoute && onboardingComplete) {
       void ensureAnonymousSession().then(() => {
         // Opportunistic retry for any quiz completion that failed to reach the server
         // earlier (see pending-quiz-submissions.ts) — "app/session initializes again" is
@@ -71,6 +93,10 @@ export default function RootLayout() {
         // legacy-quiz-backfill-service.ts. Session-established + local-history-hydrated is
         // exactly this moment; it also safely retries when You opens (you.tsx's loadRemote).
         void syncLegacyQuizResultsToRemote();
+        // Recovers a local onboarding/profile record with no public.profiles row yet --
+        // either a pre-fix historical device, or a completion/edit write that succeeded
+        // locally but failed to reach Supabase. See profile-backfill-service.ts.
+        void syncLocalProfileToRemote();
         // Establishes the RevenueCat identity (same anonymous Supabase auth.uid(), see
         // purchases-service.ts's own comment) and loads real CustomerInfo once a session
         // exists -- same "app/session initializes" moment as everything else in this block.
@@ -78,12 +104,14 @@ export default function RootLayout() {
         void initializePurchases();
       });
     }
-  }, [segments]);
+  }, [segments, onboardingComplete]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

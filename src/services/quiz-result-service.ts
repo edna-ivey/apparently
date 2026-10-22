@@ -2,6 +2,7 @@ import { getCurrentUserId } from './auth-service';
 import type { QuizResultRow } from './types';
 import { supabase } from '@/lib/supabase';
 import type { PersonalityEffect } from '@/data/personality';
+import { reportBackendFailure } from '@/services/observability';
 
 // Thin Supabase-facing layer over the append-only `quiz_results` table and the
 // submit_quiz_result RPC. Persists a result a screen has already computed via the existing
@@ -25,9 +26,11 @@ export type SubmitQuizResultPayload = {
   traits: string[];
   mix?: Record<string, number>;
   // Result-level canonical signals, only ever present on a fresh completion (ResultDisplay.profileSignals
-  // — reconstructResultDisplay for ?view=result never sets this). Server-validated: max 3, a
-  // known dimension, value in {-2,-1,1,2}, no duplicate dimension — this layer does not
-  // re-validate, the RPC is the actual authority.
+  // — reconstructResultDisplay for ?view=result never sets this). Server-validated: max 6 (3
+  // Core + 3 Private, widened from 3 — see supabase/migrations/20260929010000), a known
+  // dimension, value in {-3,-2,-1,1,2,3} (widened from {-2,-1,1,2} for Build 11's ranked
+  // Private quiz award — see supabase/migrations/20261004120000), no duplicate dimension —
+  // this layer does not re-validate, the RPC is the actual authority.
   profileSignals?: PersonalityEffect[];
   // Question-id -> choice-id map for this completion. Used ONLY by Compare's exact-match-
   // count (see get_compare_result) — never used to re-score anything. Optional so older call
@@ -67,6 +70,10 @@ export const submitQuizResultRemote = async (payload: SubmitQuizResultPayload): 
 
   if (error) {
     console.warn('[quiz-result-service] submitQuizResultRemote failed:', error.message);
+    // Caller already queues this for retry (pending-quiz-submissions.ts) -- a known-recoverable
+    // path -- but a failure here can still mean a legitimate completion never becomes permanent
+    // identity evidence, so it's worth knowing about if it keeps happening.
+    reportBackendFailure({ operation: 'submit_quiz_result', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
 
@@ -113,6 +120,7 @@ export const getQuizResultsRemote = async (): Promise<GetQuizResultsResult> => {
 
   if (error) {
     console.warn('[quiz-result-service] getQuizResultsRemote failed:', error.message);
+    reportBackendFailure({ operation: 'get_my_quiz_results', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   return { ok: true, data: data ?? [] };

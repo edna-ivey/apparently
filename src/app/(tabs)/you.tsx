@@ -1,16 +1,17 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature, MAGNETIC_LOOP_SOURCE } from '@/components/brand-signature';
 import { AtmosphericGlow } from '@/components/creature/atmospheric-glow';
 import { CreatureAvatar } from '@/components/creature/creature-avatar';
 import { CreatureRevealOverlay } from '@/components/creature/creature-reveal-overlay';
+import { Celestial, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
-import { CardStyle, Elevation, PastelAccentRotation, Radius, Surface, Type } from '@/constants/design-system';
+import { BottomTabInset, Brand, Fonts, Spacing } from '@/constants/theme';
+import { Elevation, Radius, Type } from '@/constants/design-system';
 import { hydrateUserProfile, useUserProfile } from '@/data/onboarding';
 import {
   buildCreatureIdentity,
@@ -37,12 +38,17 @@ import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
+import { rankPoles, type RankedPole } from '@/data/personality-v2/scoring-engine';
+import { mergeCoreTraitsWithV2Gaps, mergePrivateSignalsWithV2Gaps } from '@/data/personality-v2/activation';
 import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
+import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
+import { RelicAvatar } from '@/components/relic/relic-avatar';
 import { buildYourSignatureCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { usePremiumStatus } from '@/services/purchases-service';
 import {
   computeProfileActivityCounts,
   getMyCommonality,
@@ -52,6 +58,13 @@ import {
   type MyCommonalityRow,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
+import { getMyPersonalityPoleEvidence, toEnginePoleEvidenceRows } from '@/services/personality-v2-service';
+
+// Celestial redesign (Option B, approved without spotlight rays): the real, approved
+// silhouette asset — same require() → Image path already established for Today's Creature
+// surfaces (src/components/today/CreatureStage.tsx) — replaces the pre-reveal Magnetic Loop
+// placeholder here. Not converted, recolored, or rasterized.
+const CELESTIAL_SILHOUETTE_SOURCE = require('../../../assets/images/celestial_portal_creature_silhouette.svg');
 
 // "1 answer shaping your read" / "11 answers shaping your read" — profileAnswerCount, never
 // raw activity count (a 10-question quiz's first completion is 10 answers here, not 1).
@@ -69,7 +82,13 @@ const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount:
 type RemoteYouState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts };
+  // Build 16: `profile` is V1's own PersonalityProfile with ONLY topTraits possibly extended
+  // by Scoring V2 gap-filling (see activation.ts) -- profile.dimensions stays pure V1, so
+  // every reader of .dimensions (selectStrongestPrivateSignals included) is completely
+  // unaffected by this. `v2Ranked` is kept alongside so the separate Private/Relic merge
+  // below (which operates on PrivateSignalTrait[], not .dimensions) can apply the same V2
+  // gap-fill rule without a second fetch.
+  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts; v2Ranked: RankedPole[] };
 
 type CommonalityState =
   | { status: 'loading' }
@@ -92,100 +111,45 @@ type RevealMoment = {
 // plus one qualifying Core trait, then the last revealed mixed snapshot after the 50-answer /
 // five-trait gate. Before First Form, the Magnetic Loop remains the neutral placeholder. Both
 // forms derive from the same ranked Core list that powers Your Signature, so there is no
-// second ranking. The Relic remains structurally separate and unchanged.
+// second ranking.
 //
-// Layout: on wide viewports, the approved left/right relationship holds (Creature left,
-// name+Relic right) -- it has room to. On narrow phone widths, a large centerpiece Creature
-// plus the name+Relic column no longer fit side by side without cropping or squeezing either
-// element, so narrow stacks them vertically instead (Creature centered on top, name below it,
-// Relic below the name) -- composition over forcing a row that would clip. CreatureAvatar
-// itself is always rendered at a literal square (size === size), so the full calibrated
-// 1700x1700 composition scales uniformly with no cropping and no distortion at any size here.
-// Relic silhouette (Build 9) -- the pale, flat-opacity diamond this replaces read as a broken/
-// missing image, not an intentional locked state. Always renders the SAME gem silhouette (never
-// literally near-invisible) with a soft plum/gold glow whose warmth scales with how many of the
-// three Relic slots have resolved -- 0 resolved reads as a quiet, clearly-a-shape "this is
-// locked, not missing" mystical object; 3 resolved reads as the real earned glow. A tiny sparkle
-// glyph marks the still-locked state so it reads as "there is something here to unlock,"
-// connected to Apparently Private, never as empty geometry.
-function RelicGlyph({ resolvedSlotCount, wide }: { resolvedSlotCount: number; wide: boolean }) {
-  const glowOpacity = 0.28 + resolvedSlotCount * 0.24; // 0.28 / 0.52 / 0.76 / 1.0
-  const innerOpacity = resolvedSlotCount >= 3 ? 1 : resolvedSlotCount >= 2 ? 0.55 : resolvedSlotCount >= 1 ? 0.3 : 0;
-  const isLocked = resolvedSlotCount === 0;
-  const bloomSize = wide ? 104 : 78;
-  const bloomInnerSize = bloomSize * 0.68;
-
-  return (
-    // Final-polish pass: a soft under-bloom (two oversized, very-low-opacity gold rings,
-    // NOT rotated with the gem -- a separate sibling behind it) plus a second, smaller
-    // sparkle. Stays small/secondary by construction: the bloom is faint and the gem itself
-    // is unchanged in size, so it never competes with the Creature beside it.
-    <View style={[styles.relicWrap, { width: bloomSize, height: bloomSize }]}>
-      <View
-        pointerEvents="none"
-        style={[
-          styles.relicBloomOuter,
-          { width: bloomSize, height: bloomSize, borderRadius: bloomSize / 2, top: 0, left: 0 },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.relicBloomInner,
-          {
-            width: bloomInnerSize,
-            height: bloomInnerSize,
-            borderRadius: bloomInnerSize / 2,
-            top: (bloomSize - bloomInnerSize) / 2,
-            left: (bloomSize - bloomInnerSize) / 2,
-          },
-        ]}
-      />
-      <View style={[styles.relicShape, wide ? styles.relicShapeWide : styles.relicShapeNarrow]}>
-        <View style={[StyleSheet.absoluteFill, styles.relicShapeGlow, { opacity: glowOpacity }]} />
-        <View style={[wide ? styles.relicShapeInnerWide : styles.relicShapeInnerNarrow, { opacity: innerOpacity }]} />
-        {isLocked && (
-          // relicShape itself is rotated 45deg to read as a gem/diamond -- counter-rotate the
-          // sparkle glyphs so they stay upright rather than inheriting that tilt.
-          <>
-            <ThemedText
-              style={[styles.relicLockedSparkle, { transform: [{ rotate: '-45deg' }] }]}
-              accessibilityElementsHidden
-              importantForAccessibility="no">
-              ✦
-            </ThemedText>
-            <ThemedText
-              style={[styles.relicLockedSparkleSmall, { transform: [{ rotate: '-45deg' }] }]}
-              accessibilityElementsHidden
-              importantForAccessibility="no">
-              ✦
-            </ThemedText>
-          </>
-        )}
-      </View>
-    </View>
-  );
-}
-
+// Layout: on wide viewports, the approved left/right relationship holds (Creature left, name
+// right) -- it has room to. On narrow phone widths, the large centerpiece Creature and the
+// name column no longer fit side by side without cropping or squeezing either, so narrow
+// stacks them vertically instead. CreatureAvatar itself is always rendered at a literal
+// square (size === size), so the full calibrated 1700x1700 composition scales uniformly with
+// no cropping and no distortion at any size here.
+//
+// Build 15: the Relic is no longer part of this hero at all -- see RelicSection below, now
+// its own compact section after Undercurrent, per the explicit new hierarchy ("Make the
+// Creature big again. Make the unrevealed Relic significantly smaller.").
 function IdentityHero({
   isWide,
-  resolvedRelicSlotCount,
   creature,
   onGetYourRead,
 }: {
   isWide: boolean;
-  resolvedRelicSlotCount: number;
   creature: VisibleCreature | null;
   onGetYourRead: (() => void) | null;
 }) {
-  // Visual-redesign pass: substantially larger than Build 9's 248/204 -- the Creature is the
-  // page's centerpiece, not an avatar-sized icon. placeholderSize stays modest and framed (see
-  // avatarArea below) since the pre-reveal state is deliberately quiet, not the "collectible"
-  // moment this size exists for.
-  const creatureSize = isWide ? 340 : 272;
-  const placeholderSize = isWide ? 112 : 84;
+  // Celestial redesign (approved Option B): "large Creature as the primary visual focal
+  // point," restored here at Build 15's own explicit final direction -- the Creature is the
+  // star of Apparently You and must be the largest, most visually exciting element on the
+  // page. Back to 380/300 (the approved size). The previous round's shrink to 320/250 was a
+  // response to "Your Signature is buried too far down" -- that reachability problem is now
+  // solved differently: the Relic has been pulled OUT of this hero entirely (see
+  // YouScreen's own RelicTeaser section, rendered after Undercurrent instead of beside the
+  // Creature), which recovers far more vertical space than shrinking the Creature ever did.
+  // This only changes the SIZE this real, unmodified CreatureAvatar/silhouette renders at --
+  // CreatureAvatar scales its full calibrated composition uniformly at any size (see its own
+  // header comment), so this is not a change to scale/composition/calibration in the
+  // protected sense. The silhouette renders at the same size as the real Creature (no
+  // separate smaller "placeholder" frame), so pre-reveal and revealed occupy the same footprint.
+  const creatureSize = isWide ? 380 : 300;
   const recipe = creature?.recipe ?? null;
-  const glowSize = creatureSize * 1.3;
+  // Tightened from the original 1.3x multiplier -- same glow treatment, just not an
+  // oversized halo that reintroduces the "excessive blank space" problem on its own.
+  const glowSize = creatureSize * 1.2;
   // A small presentation-only upward shift -- purely how the Creature sits within its own
   // atmosphere, never a change to the locked composition calibration itself (see
   // CreatureAvatar/CreatureTestComposer, untouched). Visually checked against real renders:
@@ -202,24 +166,38 @@ function IdentityHero({
           <CreatureAvatar recipe={recipe} size={creatureSize} />
         </View>
       ) : (
-        <View style={[styles.avatarArea, { width: placeholderSize, height: placeholderSize }]}>
-          <Image source={MAGNETIC_LOOP_SOURCE} resizeMode="contain" style={{ width: placeholderSize, height: placeholderSize }} />
-        </View>
+        // The real approved silhouette, unframed -- floating directly over the portal-ring
+        // atmosphere like the revealed Creature does, not boxed in a placeholder disc (the
+        // exact "looks pasted on, like an avatar icon" feedback this file's own history
+        // already resolved for the revealed state now applies the same fix here).
+        <Image
+          source={CELESTIAL_SILHOUETTE_SOURCE}
+          contentFit="contain"
+          style={{ width: creatureSize * 0.74, height: creatureSize * 0.74, opacity: 0.9 }}
+        />
       )}
     </View>
   );
 
-  const nameAndRelic = (
+  const nameGroup = (
     <View style={[styles.relicGroup, !isWide ? styles.relicGroupNarrow : null]}>
-      <ThemedText
-        style={[
-          styles.characterNamePlaceholder,
-          isWide ? styles.characterNamePlaceholderWide : styles.characterNamePlaceholderNarrow,
-          creature ? styles.characterNameRevealed : null,
-        ]}>
-        {creature?.name ?? 'CHARACTER NAME'}
-      </ThemedText>
-      <RelicGlyph resolvedSlotCount={resolvedRelicSlotCount} wide={isWide} />
+      {creature ? (
+        <View style={styles.characterNameRow}>
+          <ThemedText style={styles.characterNameOrnament} accessibilityElementsHidden importantForAccessibility="no">
+            &#10022;
+          </ThemedText>
+          <ThemedText style={[styles.characterNameRevealed, isWide ? styles.characterNameRevealedWide : styles.characterNameRevealedNarrow]}>
+            {creature.name}
+          </ThemedText>
+          <ThemedText style={styles.characterNameOrnament} accessibilityElementsHidden importantForAccessibility="no">
+            &#10022;
+          </ThemedText>
+        </View>
+      ) : (
+        <ThemedText style={[styles.characterNameMystery, isWide ? styles.characterNameMysteryWide : styles.characterNameMysteryNarrow]}>
+          Not Yet Named
+        </ThemedText>
+      )}
       {creature && onGetYourRead && (
         <Pressable style={styles.getYourReadButton} onPress={onGetYourRead} accessibilityRole="button">
           <ThemedText style={styles.getYourReadButtonText}>GET YOUR READ →</ThemedText>
@@ -232,7 +210,7 @@ function IdentityHero({
     return (
       <View style={styles.heroRow}>
         {avatar}
-        {nameAndRelic}
+        {nameGroup}
       </View>
     );
   }
@@ -240,8 +218,103 @@ function IdentityHero({
   return (
     <View style={styles.heroColumn}>
       {avatar}
-      {nameAndRelic}
+      {nameGroup}
     </View>
+  );
+}
+
+// Build 15 "Make the Creature big again. Make the unrevealed Relic significantly smaller.":
+// the Relic is no longer part of the Creature hero at all -- it moved to its own compact
+// section, rendered after Undercurrent (see YouScreen's JSX), per the explicit new hierarchy.
+// Three real states:
+//   - identity.base set (>=1 qualifying Private signal; "forming" through "complete") -- the
+//     real approved RelicAvatar artwork, at a visually balanced (not hero-sized) presentation.
+//   - locked + non-subscriber -- a compact, ~90pt-tall teaser: a miniature of the existing
+//     approved locked-gem placeholder (same shapes as before, just much smaller), a short
+//     heading, one enticing line, and a real "Discover Private" action.
+//   - locked + subscriber (no qualifying signal YET) -- the same compact footprint, honest
+//     progress copy, deliberately NO subscription upsell (they're already subscribed).
+function RelicSection({
+  isWide,
+  isSubscriber,
+  resolvedSlotCount,
+  identity,
+  onTapRelic,
+  onDiscoverPrivate,
+}: {
+  isWide: boolean;
+  isSubscriber: boolean;
+  resolvedSlotCount: number;
+  identity: ResolvedRelicIdentity;
+  // Null in local/offline demo mode, same convention as IdentityHero's onGetYourRead.
+  onTapRelic: (() => void) | null;
+  onDiscoverPrivate: (() => void) | null;
+}) {
+  if (identity.base) {
+    const revealedSize = isWide ? 96 : 84;
+    const statusLabel = resolvedSlotCount >= 3 ? 'Your Relic' : 'Still forming';
+    return (
+      <>
+        <ThemedText style={styles.sectionTitle}>YOUR RELIC</ThemedText>
+        <Pressable
+          style={styles.relicRevealedRow}
+          onPress={onTapRelic ?? undefined}
+          disabled={!onTapRelic}
+          accessibilityRole="button"
+          accessibilityLabel="Open your Relic Read">
+          <View style={[styles.relicRevealedWrap, { width: revealedSize, height: revealedSize }]}>
+            <RelicAvatar identity={{ base: identity.base, color: identity.color, effect: identity.effect }} size={revealedSize} />
+          </View>
+          <View style={styles.relicRevealedTextGroup}>
+            <ThemedText style={styles.relicRevealedLabel}>{statusLabel}</ThemedText>
+            <ThemedText style={styles.relicRevealedSub}>
+              {resolvedSlotCount >= 3 ? 'Tap to read →' : `${resolvedSlotCount} of 3 signals qualified · Tap to read →`}
+            </ThemedText>
+          </View>
+        </Pressable>
+      </>
+    );
+  }
+
+  // Compact placeholder -- a small miniature of the existing approved locked-gem shape
+  // (same geometry/colors RelicGlyph always used, just rendered far smaller: 40pt vs. the old
+  // 94-130pt bloom), never an oversized portal or a placeholder that looks like a finished
+  // collectible.
+  const iconSize = 40;
+  return (
+    <>
+      <ThemedText style={styles.sectionTitle}>YOUR RELIC</ThemedText>
+      <View style={styles.relicTeaser}>
+        <View style={[styles.relicTeaserIconWrap, { width: iconSize, height: iconSize }]}>
+          <View style={[StyleSheet.absoluteFill, styles.relicTeaserIconGlow]} />
+          <View style={styles.relicTeaserIconGem}>
+            <ThemedText style={styles.relicTeaserSparkle} accessibilityElementsHidden importantForAccessibility="no">
+              ✦
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.relicTeaserTextGroup}>
+          {isSubscriber ? (
+            <>
+              <ThemedText style={styles.relicTeaserHeading}>Still forming</ThemedText>
+              <ThemedText style={styles.relicTeaserCopy}>
+                Apparently is waiting for one real pattern to qualify.
+              </ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText style={styles.relicTeaserHeading}>Your Relic is waiting</ThemedText>
+              <ThemedText style={styles.relicTeaserCopy}>in Apparently Private.</ThemedText>
+              {onDiscoverPrivate && (
+                <Pressable onPress={onDiscoverPrivate} accessibilityRole="button" hitSlop={6}>
+                  <ThemedText style={styles.relicTeaserCta}>Discover Private →</ThemedText>
+                </Pressable>
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    </>
   );
 }
 
@@ -395,6 +468,13 @@ export default function YouScreen() {
   // content column" always agree.
   const isWide = contentWidth !== undefined;
   const [calendarNow, setCalendarNow] = useState(() => new Date());
+  // Real RevenueCat entitlement only (never the client tester-access build flag) -- used
+  // exclusively by the compact Relic section below to decide between an honest "still
+  // forming" progress message (subscriber, no qualifying signal yet) and a "Discover
+  // Private" invitation (free user). Undercurrent/the Relic's own qualification logic
+  // deliberately still never reads this -- only this one piece of copy does.
+  const premium = usePremiumStatus();
+  const isSubscriber = premium.status === 'premium';
 
   // Local prototype path — completely unchanged, still built from the same demo data. Only
   // ever rendered when isRemoteDailyEnabled is false (see the branch in the JSX below). The
@@ -410,6 +490,7 @@ export default function YouScreen() {
   const localResolvedRelicSlotCount = [localRelicSlots.relicTrait, localRelicSlots.colorTrait, localRelicSlots.effectTrait].filter(
     Boolean,
   ).length;
+  const localRelicIdentity = useMemo(() => resolveRelicIdentity(localRelicSlots), [localRelicSlots]);
 
   // Real remote path — Michelle's/a real tester's own personality_evidence, never demo data.
   // Uses the SAME consumer anonymous identity Today already established (ensureAnonymousSession
@@ -448,9 +529,19 @@ export default function YouScreen() {
       return;
     }
     const answers = groupEvidenceIntoAnswers(evidenceResult.data);
-    const profile = scorePersonalityProfile(answers);
+    const v1Profile = scorePersonalityProfile(answers);
     const counts = computeProfileActivityCounts(evidenceResult.data, quizResultsResult.data);
-    setRemoteState({ status: 'ready', profile, counts });
+
+    // Build 16: Scoring V2 gap-fill, additive only -- see activation.ts's own header comment.
+    // A V2 fetch failure (or simply zero V2 evidence yet) falls back to v1Profile completely
+    // unchanged -- never blocks or degrades the existing V1-only read.
+    const poleEvidenceResult = await getMyPersonalityPoleEvidence();
+    const v2Ranked = poleEvidenceResult.ok ? rankPoles(toEnginePoleEvidenceRows(poleEvidenceResult.data)) : [];
+    const profile: PersonalityProfile = poleEvidenceResult.ok
+      ? { ...v1Profile, topTraits: mergeCoreTraitsWithV2Gaps(v1Profile, v2Ranked) }
+      : v1Profile;
+
+    setRemoteState({ status: 'ready', profile, counts, v2Ranked });
   }, []);
 
   const loadCommonality = useCallback(async () => {
@@ -679,12 +770,23 @@ export default function YouScreen() {
   // approved Core mapping already contributes to profileCards above through the exact same
   // profile.dimensions — both layers read the same underlying evidence, filtered by dimension
   // type, never by source. See src/data/private-signals.ts.
-  const privateSignals = useMemo(
-    () => (remoteState.status === 'ready' ? selectStrongestPrivateSignals(remoteState.profile) : []),
-    [remoteState],
-  );
+  const privateSignals = useMemo(() => {
+    if (remoteState.status !== 'ready') {
+      return [];
+    }
+    const v1Signals = selectStrongestPrivateSignals(remoteState.profile);
+    // Build 16: same V2 gap-fill rule as profileCards/the Creature above, applied here to the
+    // simpler PrivateSignalTrait[] shape Relic's own slot selection reads -- see activation.ts.
+    return mergePrivateSignalsWithV2Gaps(v1Signals, remoteState.profile, remoteState.v2Ranked);
+  }, [remoteState]);
   const relicSlots: RelicSlotAssignment = useMemo(() => selectRelicSlots(privateSignals), [privateSignals]);
   const resolvedRelicSlotCount = [relicSlots.relicTrait, relicSlots.colorTrait, relicSlots.effectTrait].filter(Boolean).length;
+  // Real Private -> Relic identity resolution (production consolidation pass) -- base object
+  // from rank #1's pole, color family from rank #2's pole, effect from rank #3's pole's family.
+  // null until a given rank is itself qualified; IdentityHero/RelicGlyph only render the real
+  // RelicAvatar once all three are non-null, matching the Bible's locked-silhouette-until-3
+  // rule exactly (see relic-production-config.ts).
+  const relicIdentity = useMemo(() => resolveRelicIdentity(relicSlots), [relicSlots]);
 
   // Additive only — reads the same persisted quiz-results store the quiz runner writes to
   // (apparently:quiz-results), does not touch Daily/Commonality/pattern data at all. Reactive
@@ -729,11 +831,17 @@ export default function YouScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <BrandSignature variant="mark" />
+            {/* BrandSignature's 'mark' variant renders magnetic-loop.png, which has a baked-in
+                cream background (confirmed: plain RGB, no alpha channel) -- invisible on the
+                app's old light pages, a visible white square on this dark one. The approved
+                preview's top bar is the wordmark alone, matching Today's own top bar exactly. */}
+            <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
             <Pressable
               onPress={() => router.push('/settings')}
               hitSlop={12}
@@ -752,7 +860,6 @@ export default function YouScreen() {
           <View style={styles.heroCluster}>
             <IdentityHero
               isWide={isWide}
-              resolvedRelicSlotCount={isRemoteDailyEnabled ? resolvedRelicSlotCount : localResolvedRelicSlotCount}
               creature={isRemoteDailyEnabled ? visibleCreature : null}
               onGetYourRead={isRemoteDailyEnabled ? () => router.push('/creature-read') : null}
             />
@@ -815,13 +922,21 @@ export default function YouScreen() {
               <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
               <View style={styles.patternList}>
                 {localTopPatterns.map((pattern, index) => (
-                  <View key={pattern.id} style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
+                  <View key={pattern.id} style={styles.pattern}>
                     <ThemedText style={styles.patternNumber}>{index + 1}</ThemedText>
                     <ThemedText style={styles.patternName}>{pattern.name}</ThemedText>
                   </View>
                 ))}
               </View>
               <UndercurrentSection signals={localPrivateSignals} />
+              <RelicSection
+                isWide={isWide}
+                isSubscriber={false}
+                resolvedSlotCount={localResolvedRelicSlotCount}
+                identity={localRelicIdentity}
+                onTapRelic={null}
+                onDiscoverPrivate={null}
+              />
               {recentReadCard}
             </>
           )}
@@ -858,26 +973,50 @@ export default function YouScreen() {
 
           {isRemoteDailyEnabled && remoteState.status === 'ready' && remoteState.counts.profileActivityCount > 0 && (
             <>
-              {profileCards.length > 0 && (
-                <>
-                  <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
-                  <View style={styles.patternList}>
-                    {profileCards.map((card, index) => (
-                      <View
-                        key={card.dimension}
-                        style={[styles.pattern, { backgroundColor: PastelAccentRotation[index % PastelAccentRotation.length] }]}>
-                        <ThemedText style={styles.patternNumber}>{index + 1}</ThemedText>
-                        <View style={styles.patternTextGroup}>
-                          <ThemedText style={styles.patternName}>{card.label}</ThemedText>
-                          <ThemedText style={styles.patternStrength}>{card.strengthLabel}</ThemedText>
-                        </View>
+              {/* Build 15 correction: this section previously rendered NOTHING -- not even its
+                  own "YOUR SIGNATURE" heading -- whenever the user had real activity but no
+                  Core trait had yet crossed the active-board qualification threshold
+                  (buildYourSignatureCards returning []). Every sibling section below
+                  (Undercurrent, Commonality) already has an honest "still building" fallback
+                  for exactly this situation; Your Signature was the one section silently
+                  disappearing instead. Always render the heading once there is real activity;
+                  show the real cards once >=1 trait has qualified, otherwise an honest
+                  building state -- never a fabricated trait or fake progress bar. */}
+              <ThemedText style={styles.sectionTitle}>YOUR SIGNATURE</ThemedText>
+              {profileCards.length > 0 ? (
+                <View style={styles.patternList}>
+                  {profileCards.map((card, index) => (
+                    <View key={card.dimension} style={styles.pattern}>
+                      <ThemedText style={styles.patternNumber}>{index + 1}</ThemedText>
+                      <View style={styles.patternTextGroup}>
+                        <ThemedText style={styles.patternName}>{card.label}</ThemedText>
+                        <ThemedText style={styles.patternStrength}>{card.strengthLabel}</ThemedText>
                       </View>
-                    ))}
-                  </View>
-                </>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.signatureBuildingCard}>
+                  <ThemedText style={styles.signatureBuildingGlyph} accessibilityElementsHidden importantForAccessibility="no">
+                    ✦
+                  </ThemedText>
+                  <ThemedText style={styles.signatureBuildingEyebrow}>STILL TAKING SHAPE</ThemedText>
+                  <ThemedText style={styles.signatureBuildingCopy}>
+                    Answer a few more Dailies and quizzes — your Signature appears once a real pattern qualifies.
+                  </ThemedText>
+                </View>
               )}
 
               <UndercurrentSection signals={privateSignals} />
+
+              <RelicSection
+                isWide={isWide}
+                isSubscriber={isSubscriber}
+                resolvedSlotCount={resolvedRelicSlotCount}
+                identity={relicIdentity}
+                onTapRelic={() => router.push('/relic-read')}
+                onDiscoverPrivate={() => router.push('/private')}
+              />
 
               <CommonalitySection state={commonalityState} />
 
@@ -903,16 +1042,15 @@ export default function YouScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Slightly deeper than the app's own cream so the app column reads as a deliberate
-    // object sitting on a page, instead of blending edge-to-edge on wide web viewports.
-    // Invisible on native, where safeArea always fills the container exactly.
-    backgroundColor: Surface.pageDeep,
+    // Celestial redesign (approved Option B) -- same outer wrapper tone as Today/onboarding
+    // (src/app/(tabs)/index.tsx), replacing the old light cream Surface.pageDeep.
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Surface.page,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
@@ -925,23 +1063,22 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.four },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   gearButton: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
-  gearIcon: { fontSize: 22, color: Brand.inkSecondary },
+  gearIcon: { fontSize: 22, color: Celestial.textSecondary },
 
-  // Hero cluster (visual-redesign pass) -- tighter internal gap than `content`'s section
-  // rhythm, plus a soft rounded backdrop wash (CardStyle-free -- no border, no hard edge) so
-  // the Creature/name/Relic/CTA/Evolution-chip/"Meki, apparently." read as one composed scene
-  // sitting in its own atmosphere, not plain cream page showing through between modules.
+  // Hero cluster -- no card chrome at all now (matching the approved preview's floating
+  // Creature, same "no more rectangles" direction as Today's Free Daily): the pink glass wash
+  // this used to have is gone; PortalRings/CelestialWash (rendered once, behind the whole
+  // page) carry the atmosphere instead.
+  // Build 15: paddingVertical tightened from Spacing.four -- real personality information
+  // (Your Signature etc.) was buried too far down; the Creature stays the unambiguous hero
+  // but no longer claims more vertical space than its own content needs.
   heroCluster: {
     alignItems: 'center',
     gap: Spacing.two,
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
-    borderRadius: Radius.xl,
-    backgroundColor: 'rgba(255, 214, 232, 0.10)',
-    // Deliberately NOT overflow:'hidden' -- AtmosphericGlow's outer rings are meant to bleed
-    // past this card's own soft background fill rather than being clipped into a visible
-    // rounded-rect edge cutting across a circular glow.
   },
 
   // --- Identity hero (the Creature centerpiece + name/Relic) ------------------------------
@@ -960,91 +1097,102 @@ const styles = StyleSheet.create({
   // outer rings are intentionally larger than this box so the atmosphere bleeds outward rather
   // than terminating in a visible edge at the stage boundary.
   heroStage: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  // Placeholder-only frame (the pre-reveal Magnetic Loop mark benefits from a bounded card;
-  // the real revealed Creature renders through CreatureAvatar instead, fully unframed -- no
-  // circle, disc, or container of any kind -- directly over AtmosphericGlow, so it reads as a
-  // floating collectible illustration rather than an avatar icon. Direct user feedback on the
-  // prior pass: "sits inside a white circle/disc... looks pasted on, like an avatar icon.")
-  avatarArea: {
-    borderRadius: Radius.lg,
-    backgroundColor: Surface.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Surface.hairline,
-    overflow: 'hidden',
-    boxShadow: '0 8px 20px rgba(23, 21, 29, 0.14)',
-  },
   // Shared regardless of width — only the character-name type size and relic size below
   // scale; the group's own alignment/gap stays constant. `maxWidth` + `flexShrink` let the
   // placeholder name wrap onto a second line rather than force horizontal overflow if a
   // future real character name is ever longer than this one. gap tightened (Spacing.two ->
   // Spacing.one) so name/Relic/CTA read as one connected stack, not separated modules.
-  relicGroup: { alignItems: 'center', gap: Spacing.one, flexShrink: 1, maxWidth: 200 },
+  relicGroup: { alignItems: 'center', gap: Spacing.one, flexShrink: 1, maxWidth: 240 },
   // On narrow, the group no longer sits beside the avatar in a row with its own flexShrink
   // context, so it gets a plain, centered, non-shrinking width instead.
   relicGroupNarrow: { maxWidth: 280 },
-  characterNamePlaceholder: {
-    ...Type.display,
-    color: Brand.inkSecondary,
-    opacity: 0.55,
+  // Pre-reveal mystery label ("Not Yet Named") -- a quiet tracked-uppercase line, intentional
+  // rather than a literal placeholder string.
+  characterNameMystery: {
+    fontSize: 12,
+    letterSpacing: 4,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    color: 'rgba(255,249,245,0.55)',
     textAlign: 'center',
   },
-  characterNamePlaceholderWide: { fontSize: 26, lineHeight: 31, letterSpacing: 0.4 },
-  characterNamePlaceholderNarrow: { fontSize: 15, lineHeight: 18, letterSpacing: 0.8 },
-  characterNameRevealed: { color: Brand.ink, opacity: 1 },
-  // A rotated-square "gem" silhouette — placeholder geometry only, not final relic art.
-  // Structurally separate from avatarArea by construction (its own sibling View, in the same
-  // row, with a fixed gap), never overlapping or touching it on any viewport. Build 9: always
-  // a clearly-intentional shape (RelicGlyph above layers a soft glow + a locked sparkle on
-  // top of this base) rather than a flat, near-invisible opacity fade that could read as a
-  // missing image.
-  relicShape: {
-    borderRadius: Radius.sm,
-    backgroundColor: Surface.sand,
+  characterNameMysteryWide: {},
+  characterNameMysteryNarrow: {},
+  characterNameRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  characterNameOrnament: { color: Brand.gold, fontSize: 13, opacity: 0.75 },
+  // Revealed name -- the same serif-italic "major identity moment" treatment as Today/Read's
+  // own prompt/quote text (Fonts.serif, italic, weight 500), matching the approved preview
+  // exactly rather than the shared Type.display token (which several other untouched screens
+  // also consume -- see the equivalent note in onboarding.tsx for why this isn't shared there
+  // either).
+  characterNameRevealed: {
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  characterNameRevealedWide: { fontSize: 40, lineHeight: 46, letterSpacing: -0.3 },
+  characterNameRevealedNarrow: { fontSize: 32, lineHeight: 38, letterSpacing: -0.3 },
+  // Build 15 compact Relic section — rendered after Undercurrent, not beside the Creature.
+  // "Revealed/forming" row: real RelicAvatar artwork (untouched) at a small, balanced size
+  // next to a short status line — reads as a secondary collectible beneath the personality
+  // information, never competing with the Creature hero above.
+  relicRevealedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  relicRevealedWrap: { alignItems: 'center', justifyContent: 'center' },
+  relicRevealedTextGroup: { flex: 1, gap: 2 },
+  relicRevealedLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  relicRevealedSub: { color: Brand.gold, fontSize: 12.5, fontWeight: '700' },
+  // Locked/compact teaser — explicitly small (~80-120pt tall total with heading+title), a
+  // miniature of the same gem-silhouette language the old large placeholder used (rotated
+  // square, gold glow, sparkle), just at icon scale (40pt) rather than a 94-130pt "finished
+  // collectible." No portal, no oversized decorative background.
+  relicTeaser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(23, 21, 29, 0.14)',
+    borderColor: 'rgba(246,184,63,0.25)',
+    borderRadius: Radius.lg,
+    padding: Spacing.three,
+  },
+  relicTeaserIconWrap: { alignItems: 'center', justifyContent: 'center' },
+  relicTeaserIconGlow: { borderRadius: 999, backgroundColor: 'rgba(246,184,63,0.16)' },
+  relicTeaserIconGem: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.45)',
     transform: [{ rotate: '45deg' }],
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'visible',
-    // Deepened slightly (final-polish pass) for more perceptible depth/elevation beside the
-    // now-larger, richer-shadowed Creature hero.
-    boxShadow: '0 10px 26px rgba(23, 21, 29, 0.16)',
   },
-  relicShapeWide: { width: 72, height: 72 },
-  relicShapeNarrow: { width: 52, height: 52 },
-  // Soft under-glow, scales with resolvedSlotCount (see RelicGlyph) -- what makes the locked
-  // state read as "a gem with something glowing inside," not a flat pale square.
-  relicShapeGlow: { borderRadius: Radius.sm, backgroundColor: Brand.gold },
-  relicShapeInnerWide: { width: 28, height: 28, borderRadius: 6, backgroundColor: Brand.gold },
-  relicShapeInnerNarrow: { width: 20, height: 20, borderRadius: 5, backgroundColor: Brand.gold },
-  relicLockedSparkle: { position: 'absolute', fontSize: 14, color: Brand.plum, opacity: 0.5 },
-  // A second, smaller/fainter sparkle, offset from the first -- final-polish pass, makes the
-  // locked Relic feel like it has something quietly stirring inside rather than one static mark.
-  relicLockedSparkleSmall: { position: 'absolute', fontSize: 8, color: Brand.gold, opacity: 0.55, top: -10, right: -8 },
-  // Centers the gem + its soft bloom together; sized exactly to the bloom (the largest layer),
-  // so the whole glyph's footprint is fully predictable regardless of resolvedSlotCount.
-  relicWrap: { alignItems: 'center', justifyContent: 'center' },
-  // Soft gold bloom behind the gem -- real rgba fill (not boxShadow) at very low opacity, the
-  // same "stepped, no hard edge" approach as AtmosphericGlow, scaled down to stay secondary.
-  relicBloomOuter: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.10)' },
-  relicBloomInner: { position: 'absolute', backgroundColor: 'rgba(246, 184, 63, 0.16)' },
+  relicTeaserSparkle: { color: Brand.gold, fontSize: 11, transform: [{ rotate: '-45deg' }] },
+  relicTeaserTextGroup: { flex: 1, gap: 2 },
+  relicTeaserHeading: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  relicTeaserCopy: { color: Celestial.textSecondary, fontSize: 12.5, lineHeight: 17, fontWeight: '600' },
+  relicTeaserCta: { color: Brand.gold, fontSize: 12.5, fontWeight: '800', marginTop: 2 },
+  // Premium gold CTA (matches Today/Read's "View Your Read" treatment) -- was a plum pill,
+  // which read fine against the old light cream page but would nearly disappear against this
+  // page's own dark plum background.
   getYourReadButton: {
     marginTop: Spacing.two,
     minHeight: 44,
     borderRadius: Radius.pill,
-    backgroundColor: Brand.plum,
+    backgroundColor: Brand.gold,
     paddingHorizontal: Spacing.four,
     paddingVertical: 10,
     justifyContent: 'center',
-    boxShadow: '0 10px 24px rgba(36, 1, 31, 0.22)',
+    boxShadow: '0 10px 24px rgba(0,0,0,0.3)',
   },
-  getYourReadButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.6 },
+  getYourReadButtonText: { color: Brand.plum, fontSize: 13, fontWeight: '800', letterSpacing: 0.6 },
 
   creaturePreRevealCopy: {
     textAlign: 'center',
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     paddingHorizontal: Spacing.four,
@@ -1054,41 +1202,47 @@ const styles = StyleSheet.create({
   evolutionDateChipRow: { alignItems: 'center' },
   evolutionDateChip: {
     borderRadius: Radius.pill,
-    backgroundColor: Surface.lavender,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: Spacing.three,
     paddingVertical: 5,
   },
   evolutionDateChipText: {
-    color: Brand.plum,
+    color: Celestial.textPrimary,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   evolutionPrompt: {
-    ...CardStyle.tinted(Surface.lavender, '#E4D8FF'),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.three,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
   },
   evolutionPromptCopy: { flex: 1, gap: Spacing.one },
-  evolutionPromptTitle: { ...Type.heading, color: Brand.ink },
-  evolutionPromptSupporting: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18 },
+  evolutionPromptTitle: { ...Type.heading, color: Celestial.textPrimary },
+  evolutionPromptSupporting: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 18 },
   evolutionPromptButton: {
-    backgroundColor: Brand.plum,
+    backgroundColor: Brand.gold,
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
-  evolutionPromptButtonText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
+  evolutionPromptButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
   identityHeader: { alignItems: 'center', gap: Spacing.one },
-  displayName: { ...Type.display, textAlign: 'center' },
-  subline: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
-  sublineSecondary: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', opacity: 0.75, marginTop: 1 },
+  displayName: { ...Type.display, color: Celestial.textPrimary, textAlign: 'center' },
+  subline: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '600' },
+  sublineSecondary: { color: Celestial.textSecondary, fontSize: 12, fontWeight: '600', opacity: 0.75, marginTop: 1 },
 
-  eyebrow: { ...Type.eyebrow },
-  sectionTitle: { ...Type.heading, letterSpacing: 0.6 },
+  eyebrow: { ...Type.eyebrow, color: Brand.gold },
+  sectionTitle: { ...Type.heading, color: Celestial.textPrimary, letterSpacing: 0.6 },
 
   // Horizontal scroll + a card wide enough that even the longest single-word dimension
   // label (e.g. "Collaborative", "Peacekeeping" — 12-13 characters, no space or hyphen to
@@ -1102,6 +1256,10 @@ const styles = StyleSheet.create({
   // Visual-redesign pass: a quiet lift (Elevation.soft) added -- same compact pill shape the
   // user explicitly wants kept, just with a touch of the rest of the page's premium shadow
   // language so it doesn't read as flat color chips next to the richer hero above it.
+  // Fixed celestial card fill -- replaces the old per-index PastelAccentRotation (a
+  // light-page-only palette) with the same single dark-glass treatment the rest of this page
+  // and Today both already use, consistent with the approved preview's uniform Your Signature
+  // cards.
   pattern: {
     borderRadius: Radius.pill,
     paddingVertical: Spacing.two,
@@ -1109,10 +1267,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    ...Elevation.soft,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   patternNumber: {
-    color: 'rgba(23,21,29,0.5)',
+    color: Brand.gold,
     fontSize: 11,
     fontWeight: '800',
     width: 18,
@@ -1120,81 +1280,129 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'center',
     borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(246,184,63,0.18)',
     overflow: 'hidden',
   },
   patternTextGroup: { gap: 1 },
-  patternName: { color: Brand.ink, fontSize: 14, lineHeight: 17, fontWeight: '800' },
-  patternStrength: { fontSize: 11, fontWeight: '700', color: 'rgba(23,21,29,0.55)', letterSpacing: 0.2 },
+  patternName: { color: '#FFFFFF', fontSize: 14, lineHeight: 17, fontWeight: '800' },
+  patternStrength: { fontSize: 11, fontWeight: '700', color: Celestial.textSecondary, letterSpacing: 0.2 },
 
-  // The Undercurrent's own pills (Build 8 Pass 3; pill treatment Build 9) — deep plum,
-  // distinct from Your Signature's pastel rotation, echoing Private's own deeper surface
-  // identity (see private.tsx) without making the whole You page dark. Never rendered with
-  // fewer than 1 or more than 3 real cards.
-  undercurrentPattern: { backgroundColor: Brand.plum },
-  undercurrentPatternNumber: { color: 'rgba(255,249,245,0.7)', backgroundColor: 'rgba(255,255,255,0.14)' },
-  undercurrentPatternName: { color: Brand.cream, fontSize: 14, lineHeight: 17, fontWeight: '800' },
-  undercurrentPatternStrength: { fontSize: 11, fontWeight: '700', color: Brand.coral, letterSpacing: 0.2 },
+  // The Undercurrent's own pills (Build 8 Pass 3; pill treatment Build 9) — a rose/pink tint
+  // (Private's own established accent, matching the Read modal's Private treatment) instead
+  // of solid Brand.plum, which would nearly disappear against this page's own dark plum
+  // background. Never rendered with fewer than 1 or more than 3 real cards.
+  undercurrentPattern: { backgroundColor: 'rgba(255,158,214,0.14)', borderWidth: 1, borderColor: 'rgba(255,158,214,0.3)' },
+  undercurrentPatternNumber: { color: '#FF9ED6', backgroundColor: 'rgba(255,255,255,0.14)' },
+  undercurrentPatternName: { color: '#FFFFFF', fontSize: 14, lineHeight: 17, fontWeight: '800' },
+  undercurrentPatternStrength: { fontSize: 11, fontWeight: '700', color: '#FF9ED6', letterSpacing: 0.2 },
 
   // Locked Undercurrent state (no qualifying Private evidence yet) -- Build 9 correction: three
   // VEILED pills, not hollow dashed outlines (the prior treatment read as "missing content,"
-  // per direct user feedback on the real preview). Filled with the same deep plum identity a
-  // revealed Undercurrent pill uses (undercurrentPattern), just softened/translucent, so the
-  // shape itself already communicates "the same section, sealed" rather than "empty." Each
-  // carries a small sparkle glyph -- purely decorative, never a fabricated trait label.
-  undercurrentLockedEyebrow: { ...Type.eyebrow, color: Brand.plum, opacity: 0.8, marginTop: -Spacing.one },
+  // per direct user feedback on the real preview). Same light-glass fill as every other card
+  // on this now-dark page (the old translucent-plum fill was tuned for a light page and would
+  // read as near-invisible dark-on-dark here) -- the shape itself still communicates "the same
+  // section, sealed" rather than "empty." Each carries a small sparkle glyph -- purely
+  // decorative, never a fabricated trait label.
+  undercurrentLockedEyebrow: { ...Type.eyebrow, color: '#FF9ED6', opacity: 0.9, marginTop: -Spacing.one },
   lockedSlot: {
     width: 104,
     height: 40,
     borderRadius: Radius.pill,
-    // rgba (not Brand.plum + a View-level `opacity`) so the glyph on top renders at full
-    // strength instead of inheriting the pill's own translucency. Deepened from 0.22 to 0.36
-    // and given a violet-tinted edge (visual-redesign pass) -- at the original low alpha,
-    // Brand.plum's near-black hue read as plain grey rather than a deliberate plum tint
-    // (direct user feedback: "avoid excessive gray").
-    backgroundColor: 'rgba(36,1,31,0.36)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(121,100,232,0.28)',
+    borderColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lockedSlotGlyph: { color: Brand.cream, fontSize: 15, opacity: 0.9 },
-  undercurrentTeaser: { ...CardStyle.tinted(Surface.card, Surface.hairline), gap: Spacing.three, alignItems: 'flex-start' },
-  undercurrentTeaserCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  undercurrentTeaserCta: { backgroundColor: Brand.plum, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, alignSelf: 'flex-start' },
-  undercurrentTeaserCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
+  lockedSlotGlyph: { color: 'rgba(255,158,214,0.7)', fontSize: 15, opacity: 0.9 },
+  undercurrentTeaser: {
+    gap: Spacing.three,
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  undercurrentTeaserCopy: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  undercurrentTeaserCta: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, alignSelf: 'flex-start' },
+  undercurrentTeaserCtaText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
 
-  // "YOUR COMMONALITY" (Build 9) -- one elegant editorial card, real data only.
-  commonalityCard: { ...CardStyle.tinted(Surface.seafoam, '#D7EEE5'), ...Elevation.soft, alignItems: 'center', gap: Spacing.one },
-  commonalityPercent: { ...Type.display, fontSize: 40, lineHeight: 44 },
-  commonalityTagline: { ...Type.body, color: Brand.ink, fontWeight: '800', textAlign: 'center' },
-  commonalityExplainer: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.half },
-  commonalityFootnote: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '700', opacity: 0.75, marginTop: Spacing.one },
-  // Final-polish pass: the building (insufficient-data) state's own quieter card -- a soft
-  // lavender wash (distinct from commonalityCard's vibrant seafoam "real data" tint, since
-  // this is a waiting state, not an achievement) with its own depth and a small accent glyph.
-  commonalityBuildingCard: {
-    ...CardStyle.tinted(Surface.lavender, '#EAE2FF'),
-    ...Elevation.soft,
+  // "YOUR COMMONALITY" (Build 9) -- one elegant editorial card, real data only. Same dark-glass
+  // card language as the rest of this page now, in place of the light seafoam/lavender washes
+  // tuned for the old page -- "real data" vs. "waiting" stays distinguished by a gold vs.
+  // violet accent instead of by two different light tints.
+  commonalityCard: {
+    alignItems: 'center',
+    gap: Spacing.one,
+    backgroundColor: 'rgba(246,184,63,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.25)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  commonalityPercent: { ...Type.display, color: '#FFFFFF', fontSize: 40, lineHeight: 44 },
+  commonalityTagline: { ...Type.body, color: '#FFFFFF', fontWeight: '800', textAlign: 'center' },
+  commonalityExplainer: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.half },
+  commonalityFootnote: { color: Celestial.textSecondary, fontSize: 12, fontWeight: '700', opacity: 0.75, marginTop: Spacing.one },
+  signatureBuildingCard: {
     alignItems: 'center',
     gap: Spacing.half,
+    backgroundColor: 'rgba(246,184,63,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(246,184,63,0.28)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
   },
-  commonalityBuildingGlyph: { color: Brand.violet, fontSize: 18, opacity: 0.6, marginBottom: 2 },
-  commonalityBuildingEyebrow: { ...Type.eyebrow, color: Brand.inkSecondary },
-  commonalityBuildingCopy: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.one },
+  signatureBuildingGlyph: { color: Brand.gold, fontSize: 18, opacity: 0.85, marginBottom: 2 },
+  signatureBuildingEyebrow: { ...Type.eyebrow, color: Celestial.textSecondary },
+  signatureBuildingCopy: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.one },
+  commonalityBuildingCard: {
+    alignItems: 'center',
+    gap: Spacing.half,
+    backgroundColor: 'rgba(147,110,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(147,110,255,0.25)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  commonalityBuildingGlyph: { color: Brand.violet, fontSize: 18, opacity: 0.8, marginBottom: 2 },
+  commonalityBuildingEyebrow: { ...Type.eyebrow, color: Celestial.textSecondary },
+  commonalityBuildingCopy: { color: Celestial.textSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: Spacing.one },
 
-  // Additive quiz-completion card — lavender wash, distinct enough from the pastel signature
-  // cards to read as "a different kind of result."
-  recentReadCard: { ...CardStyle.tinted(Surface.lavender, '#EAE2FF'), ...Elevation.soft },
-  recentReadQuizTitle: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '600' },
-  recentReadResultTitle: { color: Brand.ink, fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
-  recentReadCta: { color: Brand.pink, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
+  // Additive quiz-completion card — same dark-glass card language, distinct via a gold accent.
+  recentReadCard: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  recentReadQuizTitle: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '600' },
+  recentReadResultTitle: { color: '#FFFFFF', fontSize: 20, lineHeight: 25, fontWeight: '800', marginTop: Spacing.half },
+  recentReadCta: { color: Brand.gold, fontSize: 14, fontWeight: '800', marginTop: Spacing.one },
 
   // Remote-only loading/error/empty states — never demo data behind any of these.
-  stateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two },
-  stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  retryButton: { backgroundColor: Brand.pink, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  emptyStateCard: { ...CardStyle.base, alignItems: 'center', gap: Spacing.two },
-  emptyStateCopy: { color: Brand.inkSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
+  stateCard: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  stateText: { color: Celestial.textSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  retryButton: { backgroundColor: Brand.gold, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  retryButtonText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  emptyStateCard: {
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    borderRadius: Radius.lg,
+    padding: Spacing.four,
+  },
+  emptyStateCopy: { color: Celestial.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '600', textAlign: 'center' },
 });
