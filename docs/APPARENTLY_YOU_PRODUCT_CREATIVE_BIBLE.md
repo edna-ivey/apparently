@@ -3223,3 +3223,66 @@ results recorded separately, once genuinely attempted and independently re-verif
 Continuity Protocol for the real outcome, never assumed from a queuing log alone.
 
 **Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators green.
+
+## 93. APP PRIVACY AUDIT + TWO AGE-ELIGIBILITY GAPS FOUND AND FIXED (2026-10-21)
+
+A dedicated, deeper audit of data collection, SDKs, RevenueCat, and the full age-eligibility
+implementation against this task's own locked policy (minimum account age 13; 13-17 gets the
+standard app including Apparently Private; "Private Private" completely hidden/inaccessible
+under 18; no under-13 accounts; Apple's calculated 9+ rating not overridden). Full writeup:
+`docs/app-store/APP_PRIVACY_AUDIT_2026-10-21.md`.
+
+**Two real gaps found, both fixed in code this pass:**
+
+1. **Pre-age-gate anonymous session creation.** `src/app/_layout.tsx`'s background identity-
+   bootstrap effect fired on every app launch, for any route, regardless of onboarding
+   progress -- including a brand-new install's very first launch, before onboarding.tsx's
+   age-gate step had even rendered. Confirmed this was live in production, not theoretical:
+   `npx eas-cli env:list --environment production` shows `EXPO_PUBLIC_REMOTE_DAILY_ENABLED=true`,
+   exactly the flag this effect is gated on. `(tabs)/_layout.tsx` already blocks every consumer
+   TAB screen until onboarding completes, but this root-level effect sits above that gate and
+   was unaffected by it. Fixed: the effect now also requires `onboardingState.completed` (the
+   existing reactive `useOnboardingState()` store) before running. A self-identified under-13
+   answer still never completes onboarding, so no session of any kind is now created for that
+   path -- closing the gap the onboarding age-gate always intended. Residual, not fixed: any
+   anonymous `auth.users` row already created in production by the old behavior before this
+   fix landed is indistinguishable from any other abandoned-onboarding session (no PII, no
+   profile, no age ever attached) -- recommended a general retention/cleanup policy for
+   never-completed anonymous accounts, not implemented this pass.
+
+2. **Public sharing bypassed the 18+ gate.** `/s/[token]` (the shared-result web landing) is, by
+   design, reachable with zero session and zero age check -- intended for every quiz except the
+   one that's 18+-gated. Neither `create_quiz_share` nor `get_shared_quiz_result`
+   (`20260919010000_quiz_result_sharing.sql`) special-cased `private-private-trouble`, and the
+   quiz runner's Share button rendered unconditionally for every completed result. An 18+
+   subscriber could therefore share that quiz's mature/suggestive-themed result to a link
+   recipient of any age, fully bypassing the gate. Fixed client-side (committed): the quiz
+   runner now computes `isShareRestricted` and never offers/attempts a share for this one quiz
+   (`src/app/quiz/[quizId].tsx`). Fixed server-side via
+   `supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql` --
+   **STAGED, NOT APPLIED, requires explicit owner authorization** before `supabase db push`.
+   The client fix alone is not sufficient enforcement on its own (a direct RPC call could still
+   create/read a share) -- the migration is the real fix.
+
+**Corrections made to existing docs while verifying (both found to be stale, now fixed):**
+`20261018020000_age_eligibility_gate.sql`'s header said "STAGED, NOT YET APPLIED" -- false; a
+fresh `supabase migration list` plus a live anonymous RPC call to `is_adult_eligible` confirmed
+it is genuinely live in production. Header corrected in place.
+`APP_PRIVACY_DISCLOSURE_WORKSHEET.md`'s "Web sharing" entry didn't flag gap #2 above --
+corrected with a dated note pointing to the full writeup.
+
+**Also confirmed, no gap:** every other of the 11 audit-brief surfaces (storage, existing-user
+retroactive confirmation, immutability, reinstalls, Explore/search discovery, backend
+enforcement of `submit_quiz_result`, local-storage clearing on account deletion, no
+notification feature to leak through) -- all already correct, verified directly against code
+and, where relevant, live production. No advertising SDK exists anywhere (code, `app.json`,
+dependency list, SKAdNetwork/ATT config all checked) -- confirmed, not assumed, and nothing
+hypothetical about future ad monetization was disclosed as though it already occurs. Terms of
+Use (unlike the Privacy Policy) has zero age-eligibility language -- flagged for owner decision
+with drafted wording in the audit doc, not published (a legal-text change needs explicit
+approval).
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 39/39 validators green,
+including 11 new assertions added to `scripts/validate-age-eligibility-gate.ts` covering both
+fixes above. No native iOS device/simulator test was run this pass -- flag before the next
+TestFlight build if device confirmation of these two fixes is wanted.

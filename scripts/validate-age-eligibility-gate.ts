@@ -92,6 +92,66 @@ assert(
 );
 assert(!/drop table|drop column|alter column .* type/.test(migrationSource), 'the migration contains no destructive operation (no drop/retype) -- purely additive');
 
+// ============================================================================================
+// 5. SHARING GAP FIX (App Privacy audit, 2026-10-21) -- /s/[token] is a fully anonymous, no
+//    age-check public web page (by design, for every OTHER quiz). Without this fix, an 18+
+//    subscriber's completed private-private-trouble result could be shared via that same
+//    unguarded link, handing its mature/suggestive-themed copy to a visitor of any age. Client
+//    fix: never offer/attempt a share for this one quiz. Server fix (staged, not yet applied):
+//    create_quiz_share/get_shared_quiz_result both reject this quiz id outright, independent
+//    of the client -- see the migration's own header for why client-side alone is insufficient.
+// ============================================================================================
+
+assert(
+  /isShareRestricted = definition\.id === 'private-private-trouble'/.test(quizRunnerSource),
+  'the quiz runner computes a dedicated share-restriction flag for private-private-trouble',
+);
+assert(
+  /handleShare = async \(\) => \{\s*if \(!result \|\| isShareRestricted\) \{/.test(quizRunnerSource),
+  'handleShare refuses to run for a share-restricted result, not just hide its own button',
+);
+assert(
+  /handleAskForNotes = async \(\) => \{\s*if \(!result \|\| isShareRestricted\) \{/.test(quizRunnerSource),
+  'handleAskForNotes (the second share entry point) is refused the same way as handleShare',
+);
+assert(/canShare={!isShareRestricted}/.test(quizRunnerSource), 'ResultScreen is told not to offer sharing for a restricted result');
+assert(
+  /\{canShare && \(\s*<Pressable onPress=\{onShare\}/.test(quizRunnerSource),
+  'the Share button itself is never rendered when canShare is false -- not merely disabled',
+);
+
+const shareMigrationSource = read('../supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql');
+assert(
+  /create_quiz_share[\s\S]*if p_quiz_id = 'private-private-trouble' then\s*raise exception/.test(shareMigrationSource),
+  'create_quiz_share rejects private-private-trouble before reading or writing any row',
+);
+assert(
+  /and s\.quiz_id <> 'private-private-trouble'/.test(shareMigrationSource),
+  'get_shared_quiz_result excludes private-private-trouble even for a pre-existing share row, closing the retroactive case too',
+);
+
+// ============================================================================================
+// 6. PRE-AGE-GATE SESSION CREATION FIX (App Privacy audit, 2026-10-21) -- the root layout's
+//    background identity-bootstrap effect fired on every launch regardless of onboarding
+//    progress, including a brand-new install's very first launch, before the age-gate step
+//    had even rendered -- creating a real anonymous auth.users row ahead of the user ever
+//    answering "under 13." Fixed by additionally requiring onboarding to be complete.
+// ============================================================================================
+
+const rootLayoutSource = read('../src/app/_layout.tsx');
+assert(
+  /const onboardingComplete = onboardingState !== 'loading' && onboardingState\.completed;/.test(rootLayoutSource),
+  'the root layout computes a real onboarding-completion flag from the reactive onboarding store',
+);
+assert(
+  /if \(isRemoteDailyEnabled && !isAdminRoute && onboardingComplete\) \{/.test(rootLayoutSource),
+  'the background ensureAnonymousSession() bootstrap additionally requires onboarding to be complete -- never fires ahead of the age gate',
+);
+assert(
+  /\}, \[segments, onboardingComplete\]\);/.test(rootLayoutSource),
+  'the effect re-evaluates when onboarding completes, not only on navigation -- the bootstrap fires promptly once the age gate actually clears',
+);
+
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED.`);
   process.exit(1);

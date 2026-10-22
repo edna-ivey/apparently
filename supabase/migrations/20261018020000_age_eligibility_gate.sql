@@ -1,8 +1,12 @@
 -- ============================================================================================
--- STAGED, NOT YET APPLIED. Prepared per the Build 16 implementation task's age-eligibility
--- requirement -- do not run `supabase db push` (or any other apply step) against this file
--- until the product owner has explicitly reviewed and approved it. Nothing here has been
--- applied to the production database.
+-- APPLIED TO PRODUCTION. Prepared per the Build 16 implementation task's age-eligibility
+-- requirement, reviewed and approved, then applied -- confirmed live via a fresh
+-- `supabase migration list` direct remote-database query during the 2026-10-21 App Privacy
+-- audit (this migration's version 20261018020000 appears in both the local and remote
+-- migration lists with a matching timestamp) and a live RPC call to is_adult_eligible()
+-- returning a real result rather than "function does not exist". The header below is
+-- preserved for its design rationale; only this top notice has been corrected -- it
+-- previously, incorrectly, still said "STAGED, NOT YET APPLIED" after this had already shipped.
 --
 -- Scope: adds ONE nullable column to the existing profiles table, ONE trigger making that
 -- column immutable once set, ONE read-only helper function, and extends submit_quiz_result

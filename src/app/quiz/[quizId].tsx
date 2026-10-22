@@ -253,8 +253,18 @@ export default function QuizScreen() {
     return shareUrl;
   };
 
+  // Audit finding (2026-10-21): 'private-private-trouble' is the one 18+-gated quiz, but
+  // /s/[token] (the public shared-result landing) has NO session or age check at all -- it's
+  // deliberately reachable by a fully anonymous web visitor of any age. A completed result
+  // here contains the quiz's own mature/suggestive-themed copy (flirting, attraction,
+  // chemistry -- see private-private-trouble.ts), so sharing it would hand that content to
+  // anyone with the link, bypassing the 18+ gate entirely. Blocked here (never offered) AND
+  // server-side in create_quiz_share/get_shared_quiz_result (see the staged migration) -- this
+  // client check alone would never be sufficient on its own.
+  const isShareRestricted = definition.id === 'private-private-trouble';
+
   const handleShare = async () => {
-    if (!result) {
+    if (!result || isShareRestricted) {
       return;
     }
     try {
@@ -280,7 +290,7 @@ export default function QuizScreen() {
   // into the identical share link — no separate native-share copy is invented here. Only
   // offered for structuredRead (Apparently Private) results — see ResultScreen below.
   const handleAskForNotes = async () => {
-    if (!result) {
+    if (!result || isShareRestricted) {
       return;
     }
     try {
@@ -345,6 +355,7 @@ export default function QuizScreen() {
             <ResultScreen
               result={result}
               isPrivatePreview={definition.access === 'private-preview'}
+              canShare={!isShareRestricted}
               onShare={handleShare}
               onAskForNotes={handleAskForNotes}
               onSeeYou={() => router.push('/you')}
@@ -431,6 +442,7 @@ function QuestionStep({
 function ResultScreen({
   result,
   isPrivatePreview,
+  canShare,
   onShare,
   onAskForNotes,
   onSeeYou,
@@ -439,6 +451,7 @@ function ResultScreen({
 }: {
   result: ResultDisplay;
   isPrivatePreview: boolean;
+  canShare: boolean;
   onShare: () => void;
   onAskForNotes: () => void;
   onSeeYou: () => void;
@@ -449,14 +462,19 @@ function ResultScreen({
     <View style={styles.stepGap}>
       {result.structuredRead ? <PrivateStructuredResult result={result} /> : <StandardResultCard result={result} />}
 
-      <Pressable onPress={onShare} style={styles.cta}>
-        <ThemedText style={styles.ctaText}>Share this →</ThemedText>
-      </Pressable>
+      {/* canShare is false only for 'private-private-trouble' -- see isShareRestricted's
+          comment above. The public /s/[token] landing has no age check, so this 18+ result
+          is never offered a shareable link at all, not even a disabled-looking one. */}
+      {canShare && (
+        <Pressable onPress={onShare} style={styles.cta}>
+          <ThemedText style={styles.ctaText}>Share this →</ThemedText>
+        </Pressable>
+      )}
 
       {/* "THEY HAVE NOTES." invite — only for Apparently Private's structuredRead results
           (the two quizzes Compare's friend-answering flow supports). A standard quiz result
           keeps exactly its previous three-button layout, unchanged. */}
-      {result.structuredRead && (
+      {result.structuredRead && canShare && (
         <View style={styles.notesCard}>
           <ThemedText style={styles.notesEyebrow}>THEY HAVE NOTES. {'\u{1F440}'}</ThemedText>
           <ThemedText style={styles.notesBody}>You&apos;ve told us your version.</ThemedText>

@@ -71,6 +71,17 @@ requires ASC access this environment does not have.
   is deleted (cascade). The shared page itself does not render the sharer's profile name or
   other account fields (confirmed by reading `src/app/s/[token].tsx`) -- only the
   comparison/result content explicitly shared.
+  **Correction, 2026-10-21 (App Privacy / age-eligibility audit):** this entry previously
+  stopped at "only the result content explicitly shared" without flagging that, for exactly one
+  quiz, that content IS the thing the app otherwise gates to 18+. `/s/[token]` has no session or
+  age check at all (by design, for every other quiz), and neither `create_quiz_share` nor
+  `get_shared_quiz_result` special-cased `private-private-trouble` -- an 18+ subscriber could
+  share that quiz's mature/suggestive-themed result to a link recipient of any age. Fixed this
+  pass: client-side (the Share button/flow is never offered for this one quiz -- see
+  `src/app/quiz/[quizId].tsx`'s `isShareRestricted`) and, pending owner authorization, a staged
+  (not yet applied) migration closes it server-side too --
+  `supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql`. See
+  `APP_PRIVACY_AUDIT_2026-10-21.md` §2.11 for the full writeup.
 - **Advertising/tracking:** Confirmed no advertising/attribution SDK anywhere in
   `package.json`. "No tracking" is a defensible answer based on this evidence, but ASC's own
   tracking definition should still be reviewed against Apple's current guidance before
@@ -90,3 +101,15 @@ Final Apple questionnaire values: [REQUIRES LIVE ASC] -- this worksheet is evide
 those answers from, not a substitute for entering/certifying them in App Store Connect itself.
 Date entered/published: [REQUIRES LIVE ASC]
 No tracking assertion or age rating is made here.
+
+## App Privacy / age-eligibility audit, 2026-10-21 (separate pass)
+A second, deeper pass (`APP_PRIVACY_AUDIT_2026-10-21.md`) re-verified the age-eligibility
+implementation end-to-end (onboarding, storage, every navigation/deep-link path, backend
+enforcement, sharing) and the exact Apple Data Collection checklist with full
+linked/tracking/purpose answers per data type. Two real gaps were found and fixed in code this
+pass: (1) the root layout created a real anonymous Supabase account on every app launch,
+including before the onboarding age-gate step rendered -- confirmed live in production via
+`EXPO_PUBLIC_REMOTE_DAILY_ENABLED=true`, now fixed to require onboarding completion first; (2)
+the sharing gap corrected above. A third database migration remains staged (not applied),
+pending owner authorization. See that document for the complete writeup, evidence, and the
+full Apple checklist table this worksheet's own table above summarizes less formally.

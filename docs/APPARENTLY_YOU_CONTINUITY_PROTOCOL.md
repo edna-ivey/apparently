@@ -150,3 +150,39 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
 - Created `docs/app-store/APP_PRIVACY_CONNECT_ANSWERS.md` and `docs/app-store/AGE_RATING_CONNECT_ANSWERS.md`, both evidence-based against real SDK privacy manifests (read from `ios/Pods/` after a real `pod install`) and a real grep of the live quiz corpus. Found only one of four cataloged "Private Private" quiz titles has real implemented content; the other three are future placeholders whose titles suggest more explicit content -- age rating must be re-reviewed before those ship. Found the 18+ gate is keyed to one quiz ID, not the category generically -- a risk for whoever adds those quizzes next.
 - `app.json` buildNumber bumped 19 -> 20 (confirmed via fresh `eas-cli build:list` that Build 19's commit, 287c648, predates this and the prior two passes' work).
 - tsc/lint/39 validators green.
+
+## Build 20 created and delivered to TestFlight, 2026-10-21
+- EAS build `4544200b-3ea0-4a63-82b0-19305d083aa8` -- FINISHED (fresh `eas-cli build:view`, not just the queuing log), commit `4b65485` confirmed matching HEAD at build time, real Application Archive URL present. Archive size came back at 474MB (vs. the usual ~317MB baseline, and well below the 905MB broken attempt earlier in the same pass) -- investigated before letting it proceed: `node_modules`/`.git` are always excluded by eas-cli regardless of `.easignore` (confirmed from eas-cli's own `vcs/local.js` source), so the size increase is legitimate tracked-asset growth (`assets/creatures` 131MB + `assets/relics` 73MB, no duplicate SVG/PNG pairs), not a bug.
+- EAS submission `9dcf1d4a-b32b-4799-8e73-2c19ed3a8db7` -- finished per a fresh `eas-cli status` re-check (3 minutes after submission, unchanged). This confirms EAS delivered the binary to App Store Connect; Apple's own post-delivery TestFlight processing (export-compliance check, appearing under the TestFlight tab) could not be independently re-confirmed from this environment -- no ASC dashboard/API access, and this eas-cli version has no `submit:status`/`submission:view` command.
+- tsc clean, lint clean, all 39 validators passed. One unrelated pre-existing failure found and reported, not fixed (out of this task's scope): `scripts/check-four-answer-invariant.mjs` flags `whats-your-type-content.ts` having 10 questions with 6 answer choices instead of 4-5 -- predates this pass, no quiz content was touched.
+- No public App Store Review submission -- TestFlight only, per standing instruction.
+
+## App Privacy audit + two age-eligibility gaps found and fixed, 2026-10-21
+- Dedicated audit against the owner's locked age policy (minimum account age 13; 13-17 gets the
+  standard app incl. Apparently Private; "Private Private" fully hidden/inaccessible under 18;
+  no under-13 accounts; Apple's 9+ calculated rating not overridden). Full writeup:
+  `docs/app-store/APP_PRIVACY_AUDIT_2026-10-21.md`.
+- **Gap 1, fixed:** `src/app/_layout.tsx`'s background identity-bootstrap effect created a real
+  anonymous Supabase session on every launch regardless of onboarding progress -- including
+  before onboarding's own age-gate step ever rendered. Confirmed live in production (not
+  theoretical) via `eas-cli env:list --environment production` showing
+  `EXPO_PUBLIC_REMOTE_DAILY_ENABLED=true`. Fixed: the effect now also requires
+  `onboardingState.completed`. Residual, not fixed: any already-created anonymous row from
+  before this fix is indistinguishable from any other abandoned session (no PII ever attached)
+  -- recommended a general cleanup policy, not implemented.
+- **Gap 2, fixed:** the public, no-auth `/s/[token]` shared-result page had no restriction
+  preventing an 18+ subscriber from sharing `private-private-trouble`'s mature-themed result to
+  a recipient of any age. Fixed client-side (committed) in `src/app/quiz/[quizId].tsx`. Server
+  fix is `supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql` --
+  **STAGED, NOT APPLIED, requires explicit owner authorization**.
+- Corrected two stale docs found while verifying: `20261018020000_age_eligibility_gate.sql`'s
+  header wrongly still said "STAGED, NOT YET APPLIED" (it's live -- confirmed via
+  `supabase migration list` + a live RPC call); `APP_PRIVACY_DISCLOSURE_WORKSHEET.md`'s "Web
+  sharing" entry didn't flag gap 2.
+- Confirmed, no gap: every other of the 11 audited surfaces (discovery, deep links, backend
+  enforcement, immutability, local-storage clearing on deletion, no notification feature to
+  leak through). No advertising SDK exists anywhere (code/app.json/dependency list/SKAdNetwork
+  all checked). Flagged for owner decision, not published: Terms of Use has zero age-eligibility
+  language (unlike Privacy Policy) -- drafted wording provided in the audit doc.
+- tsc/lint clean, 39/39 validators green including 11 new assertions covering both fixes. No
+  native iOS device test run this pass -- code/validator-verified only.
