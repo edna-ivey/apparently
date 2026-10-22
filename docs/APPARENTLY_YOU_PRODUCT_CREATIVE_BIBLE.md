@@ -3286,3 +3286,88 @@ approval).
 including 11 new assertions added to `scripts/validate-age-eligibility-gate.ts` covering both
 fixes above. No native iOS device/simulator test was run this pass -- flag before the next
 TestFlight build if device confirmation of these two fixes is wanted.
+
+## 94. POSITIVE-ONLY PERSONALITY EVIDENCE STANDARD (SCORING CORRECTION, 2026-10-21)
+
+**OWNER DIRECTIVE, LOCKED, SUPERSEDES CONFLICTING LANGUAGE IN §15A WHERE NOTED BELOW.**
+
+*"ALL personality evidence awards positive points to the actual trait demonstrated by the
+answer. Do not represent Spontaneous as Planner -2 or Blunt as Tactful -3."* -- the owner's own
+words, preserved verbatim as the rule. Effective immediately for all new content. §15A's
+underlying RANKING PHILOSOPHY (qualification thresholds, ranked-award tiers, tie-breaking by
+timestamp) is preserved except where this section explicitly says otherwise -- this is a
+correction to how evidence is REPRESENTED and STORED, not a wholesale replacement of the
+scoring system.
+
+### The canonical trait identifier system (owner requirement #2)
+
+Every dimension in §13 (Core, 20) and §14 (Private, 12) already names both of its poles with an
+approved label (e.g. `planner_spontaneous`: Planner / Spontaneous). The canonical positive-only
+identifier for each pole is `${dimensionId}:positive` (the dimension's `positiveLabel`) or
+`${dimensionId}:negative` (its `negativeLabel`) -- 64 ids total (40 Core, 24 Private), derived
+mechanically from the existing 32-dimension list, never hand-authored as a second list that
+could drift. **This is not a new invention**: it is `src/data/personality-v2/pole-ids.ts`,
+already built, already used to calibrate all 21 existing quizzes
+(`src/data/quiz-pole-awards/*.ts`, 991 rows) and, as of this pass, the 15 live Daily questions
+that carry a personality mapping (`docs/DAILY_LIVE_CONTENT_POLE_RECALIBRATION_2026-10-21.md`).
+Going forward, every new quiz, Daily question, or other personality-evidence source MUST author
+its mappings as `{pole, points}` pairs using these 64 ids and a positive integer 1-3 -- never a
+dimension id plus a signed value.
+
+### What this explicitly supersedes in §15A
+
+- **RAW EVIDENCE SCALE**'s "+3 reserved exclusively for the rank #1 LOCKED PRIVATE QUIZ RANKED
+  EVIDENCE award" and **APPARENTLY PRIVATE QUIZZES**' "Rank #1 qualifying supported Private
+  trait: ±3" (and ±2/±1 for ranks #2/#3): the magnitude (3/2/1) and the "which rank gets which
+  magnitude" rule are UNCHANGED -- only the "±" notation is retired. Whichever of the 64 poles
+  wins a rank receives that many positive points under that pole's own id; there is no longer a
+  sign to flip. This is a pure notation fix with no open question -- the ± never meant anything
+  design-significant beyond "whichever pole is currently winning."
+- Every other signed-value example anywhere in this Bible (none exist outside §15A) is
+  retroactively understood the same way: a dimension + signed value was always shorthand for a
+  pole + positive magnitude, and should be read that way going forward.
+
+### Two open parameters this directive does not itself resolve -- owner confirmation needed
+
+The owner's instruction is explicit about STORAGE/representation (never signed) and about
+MULTIPLICITY (an answer may support any number of distinct poles, no arbitrary cap) -- both are
+resolved above, no ambiguity. Two further questions the instruction's own wording does not
+settle, flagged rather than silently decided:
+
+1. **Can both poles of one dimension simultaneously appear as a person's "current" traits?**
+   §15A's OPPOSITE-POLE MATH is explicit today: only the higher-scoring pole ever displays; "the
+   losing pole does not appear beside the winning pole as a separate current trait." The
+   already-built V2 reference engine (`rankPoles` in `src/data/personality-v2/scoring-engine.ts`)
+   ranks all 64 poles independently by earned percentage with no opposite-pole suppression at
+   all -- meaning if a user genuinely earns enough evidence toward BOTH Planner and Spontaneous,
+   V2's engine would let both rank and display. The owner's directive's own test requirement
+   ("both opposing traits can be represented independently") is satisfied either way at the
+   EVIDENCE layer (both poles always accumulate independently now, by construction) -- this
+   open question is specifically about the DISPLAY/ranking layer: does Your Signature/the
+   Creature keep showing one winner per dimension (positive-only evidence underneath, same
+   single-winner display as today), or can a dimension show both poles if both separately earn
+   it? Recommend: keep single-winner display per dimension for now (minimal product-visible
+   change, preserves every existing approved Creature/Signature read), and revisit explicitly
+   if/when the owner wants a dimension to be able to show both poles. Not decided here.
+2. **Does the existing LOCKED 3-point qualification threshold (MINIMUM TO MAKE THE BOARD /
+   ACTIVE BOARD QUALIFICATION) carry forward unchanged, or does the new positive-only model use
+   a different threshold?** The already-built V2 reference engine uses a DIFFERENT number (9
+   lifetime earned points, not 3) as its eligibility bar -- a deliberate design choice made
+   during V2's own build, not dictated by "positive-only" itself; positive-only evidence could
+   just as easily sum to the existing 3-point bar. Recommend: keep the existing LOCKED 3-point
+   threshold (minimum possible product-visible change) unless the owner specifically wants V2's
+   9-point bar adopted instead. Not decided here.
+
+### Migration status (owner requirement #7, #10 -- plan only, nothing applied)
+
+See `docs/BUILD21_SCORING_STANDARD_AND_MIGRATION_PLAN_2026-10-21.md` for the full plan,
+compatibility audit, and test coverage. Summary: the existing signed `personality_evidence`
+table (V1) is left completely untouched -- no existing user's Creature, Your Signature, Relic,
+or historical quiz result changes shape or regresses. The already-staged, not-yet-applied
+schema (`20261018010000_personality_scoring_v2_schema.sql`) plus the new Daily content migration
+(`20261021160000_daily_live_content_pole_awards.sql`) are the proposed path; both remain staged
+pending explicit owner authorization. **Build 21 is held** until this section's two open
+parameters are resolved and the migration plan is reviewed and approved.
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 40/40 validators green
+(one new validator, `scripts/validate-positive-only-scoring-standard.ts`, added this pass).

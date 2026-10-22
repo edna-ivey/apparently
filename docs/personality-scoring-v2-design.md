@@ -1,5 +1,15 @@
 # Personality Scoring V2 — Design & Decision Record
 
+**STATUS UPDATE, 2026-10-21**: this design is no longer an optional parallel experiment. Per the
+owner's explicit scoring correction ("ALL personality evidence awards positive points to the
+actual trait demonstrated by the answer") and Bible §94 (LOCKED), the positive-only pole model
+documented here is now **the mandatory standard for all new personality-evidence content** —
+quizzes and Daily alike. See `docs/BUILD21_SCORING_STANDARD_AND_MIGRATION_PLAN_2026-10-21.md`
+for the full migration plan, compatibility audit, and the two open parameters (display/ranking
+philosophy, eligibility threshold) still awaiting explicit owner confirmation before Build 21
+proceeds. Everything below this notice is the original design record and remains accurate as a
+description of what V2 IS; only its STATUS (optional vs. mandatory) has changed.
+
 Status: implemented as a **parallel system**, not yet wired into any live screen or write path.
 Nothing in this document has been applied to the production database. See "Rollout" below for
 exactly what that means and what remains to be explicitly approved.

@@ -186,3 +186,48 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
   language (unlike Privacy Policy) -- drafted wording provided in the audit doc.
 - tsc/lint clean, 39/39 validators green including 11 new assertions covering both fixes. No
   native iOS device test run this pass -- code/validator-verified only.
+
+## Critical scoring correction: positive-only personality evidence, Build 21 held, 2026-10-21
+- Owner directive: all personality evidence must award positive points to the trait a answer
+  actually demonstrates -- never a dimension + signed value standing in for the opposite trait
+  (e.g. never "Spontaneous as Planner -2"). Full plan: `docs/BUILD21_SCORING_STANDARD_AND_
+  MIGRATION_PLAN_2026-10-21.md`. Bible §94 (LOCKED) records the product-level ruling.
+- **Headline finding**: the exact canonical positive-only system the owner asked for was
+  already designed and substantially built in an earlier pass under the working name "Scoring
+  V2" -- 64 canonical pole ids derived mechanically from the existing 32 dimensions, 991 rows of
+  already-calibrated positive-only content for all 21 quizzes, a full parallel DB schema, and a
+  tested ranking engine already wired into live client code (inert only because its schema
+  migration was never applied). Nothing here is new invention; this pass promotes it from
+  optional-parallel-experiment to mandatory standard and does the new work that was still
+  missing.
+- **New work this pass**: audited the actual LIVE production Daily content (27 canonical
+  questions pulled via direct, read-only `supabase db query --linked` access, NOT the unrelated
+  local prototype file `src/data/daily-questions.ts`) -- 15 questions/60 options carry a real
+  signed mapping, individually re-examined (not mechanically repolarized), turning up one
+  genuine evidence-mismatch correction (not just a sign flip). Full writeup: `docs/DAILY_LIVE_
+  CONTENT_POLE_RECALIBRATION_2026-10-21.md`. New staged migration (`20261021160000_daily_live_
+  content_pole_awards.sql`) writes the recalibrated awards onto the real production rows, plus
+  a bundled fix to `advance_daily_rotation` (which would otherwise have silently dropped V2
+  awards on every recycled Daily occurrence).
+- New validator `scripts/validate-positive-only-scoring-standard.ts` (18 assertions) proves the
+  owner's three named test requirements: negative awards rejected (type layer, DB CHECK
+  constraints, content scan), both opposing traits independently represented (against real
+  recalibrated content), and accumulated evidence produces the intended profile (end-to-end
+  fixture from this pass's own recalibrated content). 40/40 validators green overall.
+- Mechanically converted the not-yet-approved Build 21 Daily workbook's notation (`docs/DAILY_
+  ONE_PASS_FULL_WORKBOOK_2026-10-20.md`, 804 mapping tokens) from signed to positive-only pole
+  notation -- lossless, preserves every hand-reasoned dimension/magnitude exactly; this is a
+  notation fix only, NOT a fresh evidence-quality review, and the workbook remains explicitly
+  unapproved.
+- Flagged, not decided unilaterally (Bible §94, plan doc §4): whether both poles of one
+  dimension can simultaneously display as "current" traits (recommend: no, keep single-winner
+  display for now), and whether the existing LOCKED 3-point qualification threshold carries
+  forward or V2's 9-point threshold replaces it (recommend: keep 3). Both need explicit owner
+  confirmation.
+- **Nothing applied to production.** Three migrations staged (V2 schema, quiz seed, new Daily
+  content) in the recommended apply order in the plan doc; V1 (`personality_evidence`,
+  `scorePersonalityProfile`) completely untouched -- no existing user's Creature, Signature,
+  Relic, or quiz history can regress. **Build 21 is held** per the owner's explicit instruction
+  until the two open parameters are resolved and the migration plan is reviewed/authorized --
+  no build number bump, no EAS build, no submission attempted.
+- tsc/lint clean, 40/40 validators green (one new file).
