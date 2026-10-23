@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -22,6 +22,15 @@ import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width'
 import { getSubscriptionManagementUrl, restorePurchases, usePremiumStatus } from '@/services/purchases-service';
 import { deleteAccount } from '@/services/account-deletion-service';
 import { confirmAction } from '@/utils/confirm-action';
+import { NOTIFICATION_CATEGORY_LABELS, type NotificationCategory } from '@/services/notifications-config';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  updateNotificationPreferences,
+  useNotificationPreferences,
+} from '@/services/notification-preferences-service';
+import { getNotificationPermissionStatus, requestNotificationPermission } from '@/services/notification-permission-service';
+import { registerPushToken, removeThisDevicePushToken } from '@/services/push-token-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
 
 // Build 18: owner-confirmed real Zoho alias (docs/app-store/OWNER_APP_STORE_ACTIONS.md item 1)
 // -- replaces the earlier temporary edna.tyus@gmail.com placeholder now that the real
@@ -102,6 +111,11 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = async () => {
     setDeleteState({ phase: 'deleting' });
+    // Best-effort, ahead of the real deletion call -- the delete-account function's own
+    // cascade (push_tokens.user_id references auth.users(id) on delete cascade) removes this
+    // regardless, but doing it here too means this device's token is gone immediately rather
+    // than only after the server round-trip completes.
+    void removeThisDevicePushToken();
     const result = await deleteAccount();
     if (!result.ok) {
       setDeleteState({ phase: 'error', message: result.message });
@@ -228,6 +242,10 @@ export default function SettingsScreen() {
             {restoreState.phase === 'done' && restoreState.message && <ThemedText style={styles.restoreMessage}>{restoreState.message}</ThemedText>}
           </View>
 
+          {/* --- NOTIFICATIONS --- */}
+          <ThemedText style={styles.sectionEyebrow}>NOTIFICATIONS</ThemedText>
+          <NotificationSettingsCard />
+
           {/* --- SUPPORT --- */}
           <ThemedText style={styles.sectionEyebrow}>SUPPORT</ThemedText>
           <View style={styles.card}>
@@ -302,6 +320,155 @@ export default function SettingsScreen() {
   );
 }
 
+// A plain hour-of-day stepper -- no native time-picker dependency added for this one field.
+// Steps by 30 minutes for the reminder time (fine enough granularity for "around dinner,"
+// never needs minute precision) and by whole hours for quiet hours.
+const formatHourMinute = (hour: number, minute: number): string => {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+};
+
+const formatHour = (hour: number): string => formatHourMinute(hour, 0);
+
+const CATEGORY_ORDER: NotificationCategory[] = ['daily_reminder', 'friend_activity', 'creature_evolution', 'new_quizzes', 'private_updates'];
+
+function NotificationSettingsCard() {
+  const preferences = useNotificationPreferences();
+  const [osPermission, setOsPermission] = useState<'granted' | 'denied' | 'undetermined' | 'loading'>('loading');
+
+  useEffect(() => {
+    void getNotificationPermissionStatus().then(setOsPermission);
+  }, []);
+
+  const categoryEnabledKey: Record<NotificationCategory, keyof typeof preferences> = {
+    daily_reminder: 'dailyReminderEnabled',
+    friend_activity: 'friendActivityEnabled',
+    creature_evolution: 'creatureEvolutionEnabled',
+    new_quizzes: 'newQuizzesEnabled',
+    private_updates: 'privateUpdatesEnabled',
+  };
+
+  const toggleCategory = (category: NotificationCategory, value: boolean) => {
+    logAnalyticsEvent({ name: 'notification_preference_changed', properties: { category, enabled: value } });
+    const key = categoryEnabledKey[category];
+    void updateNotificationPreferences({ [key]: value } as Partial<typeof preferences>);
+  };
+
+  const stepReminderTime = (deltaMinutes: number) => {
+    const totalMinutes = (preferences.dailyReminderHour * 60 + preferences.dailyReminderMinute + deltaMinutes + 24 * 60) % (24 * 60);
+    void updateNotificationPreferences({ dailyReminderHour: Math.floor(totalMinutes / 60), dailyReminderMinute: totalMinutes % 60 });
+  };
+
+  const hasQuietHours = preferences.quietHoursStartHour !== null && preferences.quietHoursEndHour !== null;
+  const stepQuietHour = (field: 'quietHoursStartHour' | 'quietHoursEndHour', delta: number) => {
+    const current = preferences[field] ?? (field === 'quietHoursStartHour' ? 22 : 8);
+    const next = (current + delta + 24) % 24;
+    void updateNotificationPreferences({ [field]: next } as Partial<typeof preferences>);
+  };
+
+  return (
+    <View style={styles.card}>
+      {osPermission !== 'granted' && (
+        <>
+          <ThemedText style={styles.dangerExplainer}>
+            {osPermission === 'denied'
+              ? 'Notifications are turned off in iOS Settings. Enable them there to use any of this.'
+              : 'Turn on notifications to use any of this.'}
+          </ThemedText>
+          {osPermission === 'undetermined' && (
+            <Pressable
+              style={styles.inlineCta}
+              onPress={() =>
+                void requestNotificationPermission().then((status) => {
+                  setOsPermission(status);
+                  if (status === 'granted') {
+                    void registerPushToken();
+                  }
+                })
+              }>
+              <ThemedText style={styles.inlineCtaText}>Turn on notifications →</ThemedText>
+            </Pressable>
+          )}
+          {osPermission === 'denied' && (
+            <Pressable style={styles.inlineCta} onPress={() => void Linking.openSettings()}>
+              <ThemedText style={styles.inlineCtaText}>Open iOS Settings →</ThemedText>
+            </Pressable>
+          )}
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {CATEGORY_ORDER.map((category, index) => (
+        <View key={category}>
+          <View style={styles.notificationRow}>
+            <ThemedText style={styles.fieldLabel}>{NOTIFICATION_CATEGORY_LABELS[category]}</ThemedText>
+            <Switch
+              disabled={osPermission !== 'granted'}
+              value={Boolean(preferences[categoryEnabledKey[category]])}
+              onValueChange={(value) => toggleCategory(category, value)}
+            />
+          </View>
+          {category === 'daily_reminder' && preferences.dailyReminderEnabled && osPermission === 'granted' && (
+            <View style={styles.notificationTimeRow}>
+              <ThemedText style={styles.linkRowSecondary}>Remind me around</ThemedText>
+              <View style={styles.stepperRow}>
+                <Pressable style={styles.stepperButton} onPress={() => stepReminderTime(-30)}>
+                  <ThemedText style={styles.stepperButtonText}>−</ThemedText>
+                </Pressable>
+                <ThemedText style={styles.stepperValue}>{formatHourMinute(preferences.dailyReminderHour, preferences.dailyReminderMinute)}</ThemedText>
+                <Pressable style={styles.stepperButton} onPress={() => stepReminderTime(30)}>
+                  <ThemedText style={styles.stepperButtonText}>+</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          {index < CATEGORY_ORDER.length - 1 && <View style={styles.divider} />}
+        </View>
+      ))}
+
+      <View style={styles.divider} />
+      <View style={styles.notificationTimeRow}>
+        <ThemedText style={styles.linkRowSecondary}>Quiet hours</ThemedText>
+        {hasQuietHours ? (
+          <View style={styles.stepperRow}>
+            <ThemedText style={styles.stepperValue}>{formatHour(preferences.quietHoursStartHour!)}</ThemedText>
+            <Pressable style={styles.stepperButton} onPress={() => stepQuietHour('quietHoursStartHour', -1)}>
+              <ThemedText style={styles.stepperButtonText}>−</ThemedText>
+            </Pressable>
+            <Pressable style={styles.stepperButton} onPress={() => stepQuietHour('quietHoursStartHour', 1)}>
+              <ThemedText style={styles.stepperButtonText}>+</ThemedText>
+            </Pressable>
+            <ThemedText style={styles.linkRowSecondary}>to</ThemedText>
+            <ThemedText style={styles.stepperValue}>{formatHour(preferences.quietHoursEndHour!)}</ThemedText>
+            <Pressable style={styles.stepperButton} onPress={() => stepQuietHour('quietHoursEndHour', -1)}>
+              <ThemedText style={styles.stepperButtonText}>−</ThemedText>
+            </Pressable>
+            <Pressable style={styles.stepperButton} onPress={() => stepQuietHour('quietHoursEndHour', 1)}>
+              <ThemedText style={styles.stepperButtonText}>+</ThemedText>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() =>
+              void updateNotificationPreferences({
+                quietHoursStartHour: DEFAULT_NOTIFICATION_PREFERENCES.quietHoursStartHour ?? 22,
+                quietHoursEndHour: DEFAULT_NOTIFICATION_PREFERENCES.quietHoursEndHour ?? 8,
+              })
+            }>
+            <ThemedText style={styles.inlineCtaText}>Set quiet hours →</ThemedText>
+          </Pressable>
+        )}
+      </View>
+      {hasQuietHours && (
+        <Pressable onPress={() => void updateNotificationPreferences({ quietHoursStartHour: null, quietHoursEndHour: null })}>
+          <ThemedText style={styles.linkRowSecondary}>Clear quiet hours</ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#17000F' },
   safeArea: {
@@ -369,6 +536,21 @@ const styles = StyleSheet.create({
   inlineCtaSecondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Brand.gold },
   inlineCtaTextSecondary: { color: Brand.gold },
   divider: { height: 1, backgroundColor: Celestial.glassBorder },
+  notificationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.two },
+  notificationTimeRow: { paddingVertical: Spacing.two, gap: Spacing.one },
+  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  stepperButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Celestial.glassFill,
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperButtonText: { color: Celestial.textPrimary, fontSize: 16, fontWeight: '800' },
+  stepperValue: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '700' },
   restoreText: { color: Celestial.textSecondary, fontSize: 13, fontWeight: '700' },
   restoreMessage: { color: Celestial.textMuted, fontSize: 12, fontWeight: '600', marginTop: Spacing.one },
   linkRow: { color: Celestial.textPrimary, fontSize: 15, fontWeight: '700' },

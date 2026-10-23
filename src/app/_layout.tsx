@@ -1,4 +1,5 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
@@ -13,6 +14,12 @@ import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-s
 import { initErrorReporting } from '@/services/observability';
 import { initializePurchases } from '@/services/purchases-service';
 import { syncLocalProfileToRemote } from '@/services/profile-backfill-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
+import type { NotificationCategory } from '@/services/notifications-config';
+import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
+import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
+import { hydrateNotificationPreferences, useNotificationPreferences } from '@/services/notification-preferences-service';
+import { registerPushToken } from '@/services/push-token-service';
 
 SplashScreen.preventAutoHideAsync();
 // Work Package 2: same "call once, at module scope, before anything else" convention as
@@ -20,6 +27,33 @@ SplashScreen.preventAutoHideAsync();
 // the FIRST paint is still reportable. No-ops safely with no DSN configured (see
 // observability.ts's own header comment).
 initErrorReporting();
+
+// Notifications, 2026-10-22: controls whether/how a notification is presented while the app is
+// ALREADY in the foreground (iOS otherwise suppresses the banner entirely for a foregrounded
+// app unless a handler says to show it). Same "call once, at module scope" convention as
+// SplashScreen/initErrorReporting above. Every category in this app is a real, user-relevant
+// moment (a reminder, a friend's response, a Creature update) -- none are "silent" background
+// data pushes, so every category shows a real banner, plays sound, and updates the badge.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+// The real deep-link target for a tapped notification, derived from the payload this app
+// itself always sets (data.url) -- see daily-reminder-service.ts and the Edge Function that
+// sends Friend/Creature/new-quiz/Private pushes for where that field is populated. Falls back
+// to Today ('/') for a malformed/missing payload rather than doing nothing.
+const resolveNotificationUrl = (response: Notifications.NotificationResponse): string => {
+  const data = response.notification.request.content.data as { url?: string; category?: string } | undefined;
+  if (data?.category) {
+    logAnalyticsEvent({ name: 'notification_opened', properties: { category: data.category as NotificationCategory } });
+  }
+  return typeof data?.url === 'string' && data.url.length > 0 ? data.url : '/';
+};
 
 // This is the ONLY thing that decides which top-level branch of the route tree renders:
 // the (tabs) group (consumer screens, wrapped in AppTabs) or admin/* (internal editorial
@@ -102,9 +136,60 @@ export default function RootLayout() {
         // exists -- same "app/session initializes" moment as everything else in this block.
         // No-op on web/unconfigured builds; never blocks rendering, never shows a splash.
         void initializePurchases();
+        // Notifications, 2026-10-22: re-registers this device's push token if permission was
+        // already granted in a prior session (never requests it here -- that only ever
+        // happens contextually, from a real in-app explainer flow, never from this launch
+        // effect) and re-derives/reschedules the next local Daily reminder from the user's own
+        // saved preferences. Same "app/session initializes" moment as everything else above.
+        void hydrateNotificationPreferences().then(async () => {
+          const permissionStatus = await getNotificationPermissionStatus();
+          if (permissionStatus === 'granted') {
+            void registerPushToken();
+          }
+        });
       });
     }
   }, [segments, onboardingComplete]);
+
+  // Notifications, 2026-10-22: reschedules the single next Daily-reminder notification on
+  // every launch/foreground AND whenever the user's own saved preference (enabled/hour/minute)
+  // changes -- recomputed fresh each time from the device's current local clock, so "respect
+  // the user's timezone" holds even across travel. Deliberately NOT gated on
+  // isRemoteDailyEnabled/onboardingComplete the way the session-bootstrap effect above is --
+  // local notification scheduling touches no backend and creates no account, so there is
+  // nothing in this specific effect that the age-gate/anonymous-session concerns above apply
+  // to; it simply does nothing useful before onboarding anyway since permission can only ever
+  // be granted after a real contextual ask, which itself only happens post-onboarding.
+  const notificationPreferences = useNotificationPreferences();
+  useEffect(() => {
+    void getNotificationPermissionStatus().then((permissionStatus) => {
+      void scheduleNextDailyReminder({
+        enabled: notificationPreferences.dailyReminderEnabled,
+        hour: notificationPreferences.dailyReminderHour,
+        minute: notificationPreferences.dailyReminderMinute,
+        permissionGranted: permissionStatus === 'granted',
+      });
+    });
+  }, [notificationPreferences.dailyReminderEnabled, notificationPreferences.dailyReminderHour, notificationPreferences.dailyReminderMinute]);
+
+  // Notifications, 2026-10-22: deep-link handling for a tapped notification, covering all
+  // three app states the task names explicitly -- foreground (addNotificationResponseReceived
+  // Listener), background (the same listener, since expo-notifications/iOS resumes the app
+  // and fires it), and cold-start-from-notification (getLastNotificationResponseAsync, read
+  // once on mount). router.push (not replace) -- a notification tap is a real navigation
+  // action the user should be able to back out of, not a redirect.
+  const router = useRouter();
+  useEffect(() => {
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        router.push(resolveNotificationUrl(response) as never);
+      }
+    });
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      router.push(resolveNotificationUrl(response) as never);
+    });
+    return () => subscription.remove();
+  }, [router]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

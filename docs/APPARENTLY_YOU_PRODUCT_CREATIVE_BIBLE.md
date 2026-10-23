@@ -3371,3 +3371,55 @@ parameters are resolved and the migration plan is reviewed and approved.
 
 **Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 40/40 validators green
 (one new validator, `scripts/validate-positive-only-scoring-standard.ts`, added this pass).
+
+## 95. ADVERTISING (ADMOB) + PUSH NOTIFICATIONS, FULL LAUNCH-ARCHITECTURE BUILD (2026-10-22)
+
+Google AdMob advertising and native/remote push notifications implemented as core launch
+features, per owner directive. Full architecture, setup instructions, and known limitations:
+`docs/ADVERTISING_AND_NOTIFICATIONS_SETUP_2026-10-22.md` — this entry records only the
+product-level decisions and their rationale.
+
+**Advertising, free users only, LOCKED entitlement boundary**: every placement reads
+`usePremiumStatus()` — the same server-verified RevenueCat source Apparently Private's own
+paywall already uses — through a single `useAdEligibility()` gate that fails closed (treats
+`'loading'`/`'error'` as NOT eligible, never defaults to showing an ad while uncertain). A
+subscriber sees zero ads anywhere, with no code path that can show one. Placements: one
+interstitial max per free public quiz (pre-reveal default, result computed/persisted first,
+never blocks on ad failure), one interstitial max per completed Free Daily (after the real
+reveal, never repeated same-day), native sponsored cards in Explore (clearly "Ad"-labeled,
+conservative configurable spacing). Never shown in You/Creature, Apparently Private, paywall,
+Settings, or any private/private-preview quiz — enforced structurally (access === 'free' gate),
+not by convention alone. Users who have not confirmed 18+ (the existing age-eligibility signal)
+get non-personalized ads only, regardless of consent/ATT answers.
+
+**Push notifications**: Expo's own push service (not Firebase, not raw APNs — see the setup
+doc §1.2 for the full reasoning). Local Daily reminders are scheduled/cancelled entirely
+client-side in the user's own device timezone; Friend/Compare activity fires on a real
+`compare_responses` INSERT trigger; Creature evolution is detected using the real, LOCKED
+`scorePersonalityProfile`/V2 engine output (never re-derived in SQL, never fabricated); new-
+quiz/Private-content notifications are an explicit admin-invoked broadcast (quizzes are static
+app content with no "publish" database event to hook automatically). Permission requested
+contextually (after a first completed Daily), never at cold launch.
+
+**Architecture gaps found and resolved pragmatically** (full detail in the setup doc §2): no
+analytics system existed (built a minimal first-party table, no new third-party SDK); no
+friend/blocking system exists (Compare is anonymous/share-link-based — notified the real share
+owner on a real event instead of fabricating a block-list check that has nothing to check
+against); quizzes/Private content are static, not database-driven (admin broadcast instead of
+an automatic trigger).
+
+**Flagged, not resolved in this pass** (owner action required before production): the live
+Privacy Policy's "we do not use any advertising, analytics, or behavioral-tracking SDK"
+sentence becomes false the moment this ships — needs a real rewrite, not done here; the
+2026-10-21 App Privacy audit's Usage Data/Advertising Data/tracking answers all need to flip
+from No to Yes and have not been re-done; a real AdMob account, Apple Developer Push
+Notifications capability, and EAS push credentials still need to be created (none of which
+this environment can do).
+
+**Nothing applied to production.** Four new staged migrations (analytics, push schema,
+Creature-evolution RPC, send-cron) — additive only, touch nothing existing. No native device
+test was performed (unavailable in this environment) — `scripts/validate-ads-and-notifications.ts`
+(38 assertions) covers what's verifiable by static analysis; see the final report for exactly
+which of the task's 17 required test cases still need a physical device.
+
+**Verification:** `npx tsc --noEmit` clean, `npm run lint` clean, full 41/41 validators green.

@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +23,50 @@ import { usePrivateDailyExperience } from '@/data/consumer-private-daily';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { getConsensusLanguage, getPercentLanguage, stripApparentlyPrefix } from '@/data/personality';
+import { useAdEligibility } from '@/services/ad-eligibility-service';
+import { showInterstitialIfDue } from '@/services/ad-interstitial-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
+import { cancelTodaysDailyReminder } from '@/services/daily-reminder-service';
+import { getNotificationPermissionStatus, hasShownContextualPermissionPrompt, markContextualPromptShown, requestNotificationPermission } from '@/services/notification-permission-service';
+import { registerPushToken } from '@/services/push-token-service';
+import { NotificationPermissionPrompt } from '@/components/today/NotificationPermissionPrompt';
+
+// Advertising, 2026-10-22: one ad at most per completed Free Daily, shown only after the user
+// closes the real reveal they already saw (never before, never during answering) -- the task's
+// own "the reveal must appear first" requirement. Dedup key is the real prompt text + the
+// device's own local calendar day -- a genuinely new day's Daily (even one that happens to
+// recycle an old prompt) gets its own key; reopening/closing the SAME day's already-seen
+// reveal any number of times never shows a second ad. Never applied to the Private Daily
+// reveal -- Apparently Private stays completely ad-free (task's own explicit ad-free-surfaces
+// rule), so only the 'free' ReadModal's onClose ever calls this.
+const DAILY_AD_SHOWN_KEY_STORAGE = 'apparently:ads:daily-ad-shown-key';
+
+const getTodayLocalDateKey = (): string => new Date().toDateString();
+
+const hasShownDailyAdForKey = async (key: string): Promise<boolean> => {
+  try {
+    const stored =
+      typeof window !== 'undefined' && 'localStorage' in window ? window.localStorage.getItem(DAILY_AD_SHOWN_KEY_STORAGE) : await AsyncStorage.getItem(DAILY_AD_SHOWN_KEY_STORAGE);
+    return stored === key;
+  } catch {
+    return false;
+  }
+};
+
+const markDailyAdShownForKey = async (key: string): Promise<void> => {
+  try {
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      window.localStorage.setItem(DAILY_AD_SHOWN_KEY_STORAGE, key);
+      return;
+    }
+    await AsyncStorage.setItem(DAILY_AD_SHOWN_KEY_STORAGE, key);
+  } catch {
+    // Best-effort -- a failure to persist here just means today's dedup key may not stick,
+    // so a later close of the same day's reveal could show the ad again. Rare (same storage
+    // this app already relies on elsewhere) and low-stakes; never worth blocking the reveal
+    // itself over.
+  }
+};
 
 // A single floating answer tile — shared shape for both Free (gold/pink accent) and Private
 // (coral/pink accent) Daily. No card chrome of its own; the 2x2 grid floats directly on the
@@ -136,6 +181,26 @@ export default function HomeScreen() {
   // always lives inside the modal rather than an inline expand/collapse section.
   const [activeModal, setActiveModal] = useState<'free' | 'private' | null>(null);
 
+  // Advertising, 2026-10-22: see this file's own header comment for the full placement rule.
+  const dailyAdEligibility = useAdEligibility('dailyInterstitial');
+  const handleCloseFreeReadModal = (prompt: string) => {
+    setActiveModal(null);
+    if (!dailyAdEligibility.eligible) {
+      return;
+    }
+    const key = `${prompt}|${getTodayLocalDateKey()}`;
+    void (async () => {
+      if (await hasShownDailyAdForKey(key)) {
+        return;
+      }
+      logAnalyticsEvent({ name: 'ad_eligible', properties: { placement: 'daily_interstitial' } });
+      const shown = await showInterstitialIfDue('daily_interstitial', !dailyAdEligibility.personalizedAdsAllowed);
+      if (shown) {
+        await markDailyAdShownForKey(key);
+      }
+    })();
+  };
+
   // Real, non-fabricated Creature/Relic connections for both the panel cards and the Read
   // modals — see each hook's own header comment for exactly what "revealed" does and does not
   // mean, and why these intentionally do not duplicate you.tsx's own state machine.
@@ -149,6 +214,38 @@ export default function HomeScreen() {
     experience.source === 'local' ? experience : experience.phase === 'ready' ? experience : null;
 
   const isCommitted = ready !== null && ready.committedIndex !== null;
+
+  // Notifications, 2026-10-22: the moment today's Free Daily is known to be answered -- whether
+  // a fresh commit this session or an already-committed Daily this device opens later the same
+  // day -- cancel today's pending local reminder (task requirement: "do not send a reminder
+  // after that Daily has already been completed"). The NEXT day's reminder is scheduled
+  // separately on launch/foreground -- see _layout.tsx.
+  useEffect(() => {
+    if (isCommitted) {
+      void cancelTodaysDailyReminder();
+    }
+  }, [isCommitted]);
+
+  // Notifications, 2026-10-22: the contextual explainer trigger point -- a completed Daily is
+  // real, experienced value (the task's own bar for when to ask). Checked, not assumed: only
+  // actually shows if this device has never seen it before (hasShownContextualPermissionPrompt)
+  // AND the OS itself still reports 'undetermined' (a device that already has a real granted/
+  // denied answer, e.g. restored from a backup, never sees this at all).
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  useEffect(() => {
+    if (!isCommitted) {
+      return;
+    }
+    void (async () => {
+      if (await hasShownContextualPermissionPrompt()) {
+        return;
+      }
+      const currentStatus = await getNotificationPermissionStatus();
+      if (currentStatus === 'undetermined') {
+        setShowNotificationPrompt(true);
+      }
+    })();
+  }, [isCommitted]);
   const displayedOption = ready ? ready.committedIndex ?? draftIndex : null;
   const selectedChoice = ready ? ready.question.options[displayedOption ?? 0] ?? ready.question.options[0] : null;
   // A vote can be locked in while its distribution is still loading or has failed — that must
@@ -471,9 +568,25 @@ export default function HomeScreen() {
             (both Dailies) from loading and rendering underneath it. */}
         <TodayWelcomeModal />
 
+        <NotificationPermissionPrompt
+          visible={showNotificationPrompt}
+          onEnable={() => {
+            setShowNotificationPrompt(false);
+            void requestNotificationPermission().then((status) => {
+              if (status === 'granted') {
+                void registerPushToken();
+              }
+            });
+          }}
+          onDismiss={() => {
+            setShowNotificationPrompt(false);
+            void markContextualPromptShown();
+          }}
+        />
+
         <ReadModal
           visible={activeModal === 'free'}
-          onClose={() => setActiveModal(null)}
+          onClose={() => handleCloseFreeReadModal(ready?.question.prompt ?? '')}
           variant="free"
           readText={freeReadText}
           percentLine={freePercentLine}
@@ -483,7 +596,7 @@ export default function HomeScreen() {
           room={freeRoomSlot}
           ctaLabel="Explore Your Identity →"
           onCta={() => {
-            setActiveModal(null);
+            handleCloseFreeReadModal(ready?.question.prompt ?? '');
             router.push('/explore');
           }}
         />

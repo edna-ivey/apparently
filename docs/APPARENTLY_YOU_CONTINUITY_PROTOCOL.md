@@ -231,3 +231,49 @@ LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content.
   until the two open parameters are resolved and the migration plan is reviewed/authorized --
   no build number bump, no EAS build, no submission attempted.
 - tsc/lint clean, 40/40 validators green (one new file).
+
+## Advertising (AdMob) + push notifications, full launch-architecture build, 2026-10-22
+- Implemented Google AdMob advertising and push notifications as core launch features, per
+  owner directive, after presenting the audit/plan and confirming three architecture decisions
+  with the owner first: build against Google's test ad units (no AdMob account exists yet),
+  Expo's push service over APNs (not Firebase, not raw APNs), first-party analytics table (no
+  new third-party SDK). Full writeup: Bible §95,
+  `docs/ADVERTISING_AND_NOTIFICATIONS_SETUP_2026-10-22.md`.
+- Advertising: `src/services/ads-config.ts`/`ad-eligibility-service.ts`/`ad-interstitial-
+  service.ts`/`ads-consent-service.ts`, `src/components/ads/native-ad-card.tsx`. Wired into
+  `quiz/[quizId].tsx` (pre-reveal interstitial, free quizzes only), `(tabs)/index.tsx` (Daily
+  interstitial after reveal, once per completed day), `(tabs)/explore.tsx` (native sponsored
+  cards, labeled, conservative spacing). Fails closed on uncertain subscription status; forces
+  non-personalized ads for any account not confirmed 18+; bounded safety timeout (5s) so the
+  quiz result can never be delayed indefinitely even if subscription-status resolution or the
+  ad flow itself hangs.
+- Notifications: `src/services/notification-permission-service.ts`/`notification-preferences-
+  service.ts`/`push-token-service.ts`/`daily-reminder-service.ts`/`creature-evolution-
+  notification-service.ts`, `src/components/today/NotificationPermissionPrompt.tsx`. Contextual
+  permission ask after first completed Daily (never cold launch). Local Daily reminders
+  scheduled/cancelled client-side in the device's own timezone. New Settings "Notifications"
+  section: 5 category toggles, reminder time, quiet hours.
+- Backend: 4 new staged migrations (analytics_events; push_tokens/notification_preferences/
+  notification_outbox + a real compare_responses trigger + admin broadcast RPC; the Creature-
+  evolution enqueue RPC; the send-cron wiring) and a new Edge Function,
+  send-push-notification, that reads the outbox and calls Expo's push API respecting
+  per-category preferences and quiet hours. **Nothing applied to production** -- same
+  authorization step every DB change this engagement has required.
+- Real architecture gaps found and resolved pragmatically, not glossed over: no analytics
+  system existed (built one, first-party, no new SDK); no friend/blocking system exists
+  (Compare is anonymous/share-link-based -- notifies the real share owner on a real
+  `compare_responses` event instead); quizzes/Private content are static app code with no
+  "publish" DB event (admin-invoked broadcast RPC instead of a fabricated trigger); Creature-
+  evolution detection reuses the real LOCKED scoring engine client-side rather than risking a
+  second, driftable SQL re-derivation.
+- Flagged for explicit owner action, not done this pass: the live Privacy Policy's "no
+  advertising/analytics/tracking SDK" sentence becomes false the moment this ships (needs a
+  real rewrite); the 2026-10-21 App Privacy audit's tracking/Usage-Data answers all need to
+  flip from No to Yes and have not been re-done; a real AdMob account, Apple Developer Push
+  capability, and EAS push credentials still need the owner's own setup (cannot be done from
+  this environment).
+- New validator `scripts/validate-ads-and-notifications.ts` (38 assertions, source-text
+  verified against the same react-native-native-module limitation every validator touching
+  these packages has). tsc/lint clean, 41/41 validators green. **No physical-device test was
+  performed** (unavailable in this environment) -- the final report enumerates exactly which
+  of the task's 17 required test cases are validator-covered vs. still need a real device.

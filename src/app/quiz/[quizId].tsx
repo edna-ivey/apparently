@@ -22,6 +22,9 @@ import { createQuizShare } from '@/services/quiz-share-service';
 import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
 import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
 import { useEffectivePremium } from '@/services/purchases-service';
+import { useAdEligibility } from '@/services/ad-eligibility-service';
+import { showInterstitialIfDue } from '@/services/ad-interstitial-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
 
 export default function QuizScreen() {
   const { quizId, view } = useLocalSearchParams<{ quizId: string; view?: string }>();
@@ -201,6 +204,75 @@ export default function QuizScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, savedResultDisplay]);
 
+  // Advertising, 2026-10-22: the pre-reveal quiz interstitial. Deliberately a SEPARATE effect
+  // from the save/submit effect above -- the result is already computed and persisted by that
+  // effect regardless of this one (task requirement: "Calculate and persist the result before
+  // requesting or presenting the ad"). This effect only ever delays the RESULT SCREEN'S OWN
+  // RENDER, never the computation or submission that already happened above. Only ever runs
+  // for a genuinely free, public quiz (access === 'free') -- 'private-preview'/'private' quizzes
+  // live inside Apparently Private, which must stay completely ad-free, and skip straight to
+  // showing the result with no gate at all. A revisited saved result (savedResultDisplay) never
+  // re-triggers this either -- the ad is a once-per-fresh-completion moment, never shown again
+  // for "See result →".
+  const adGateStarted = useRef(false);
+  // Only ever set true from an async callback (the ad-resolution callback below, or the
+  // bounded safety-timeout effect further down) -- every "skip the ad entirely" case
+  // (revisited saved result, non-free quiz, status resolved-and-ineligible) is a plain derived
+  // boolean computed at render time just below instead of a setState call, so the main effect
+  // never calls setState synchronously from its own body.
+  const [freshCompletionAdResolved, setFreshCompletionAdResolved] = useState(false);
+  const adEligibility = useAdEligibility('quizInterstitial');
+  // While subscription status is still resolving (adEligibility.statusUncertain) for a free
+  // quiz, this deliberately stays false -- the brief "Pulling your read together…" wait is for
+  // a genuine pending check, not an ad failure, and the safety-timeout effect below bounds it
+  // regardless so it can never become an indefinite stall.
+  const adGatePassed =
+    savedResultDisplay !== null ||
+    definition?.access !== 'free' ||
+    freshCompletionAdResolved ||
+    (!adEligibility.statusUncertain && !adEligibility.eligible);
+  useEffect(() => {
+    if (savedResultDisplay || step !== 'result' || !definition || adGateStarted.current) {
+      return;
+    }
+    // Wait for a real (non-uncertain) eligibility answer before locking in a decision -- this
+    // effect's own dependency array includes adEligibility.statusUncertain/.eligible precisely
+    // so it re-fires the moment subscription status actually resolves, rather than acting on a
+    // premature 'loading' snapshot.
+    if (definition.access === 'free' && adEligibility.statusUncertain) {
+      return;
+    }
+    adGateStarted.current = true;
+
+    logAnalyticsEvent({ name: 'quiz_completed', properties: { quiz_id: definition.id } });
+
+    if (definition.access !== 'free' || !adEligibility.eligible) {
+      logAnalyticsEvent({ name: 'result_revealed', properties: { quiz_id: definition.id, ad_shown: false } });
+      return;
+    }
+
+    logAnalyticsEvent({ name: 'ad_eligible', properties: { placement: 'quiz_interstitial' } });
+    logAnalyticsEvent({ name: 'ad_placement_variant', properties: { placement: 'quiz_interstitial', variant: 'pre-reveal' } });
+    void showInterstitialIfDue('quiz_interstitial', !adEligibility.personalizedAdsAllowed).then((adShown) => {
+      setFreshCompletionAdResolved(true);
+      logAnalyticsEvent({ name: 'result_revealed', properties: { quiz_id: definition.id, ad_shown: adShown } });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, savedResultDisplay, adEligibility.statusUncertain, adEligibility.eligible]);
+
+  // Safety net (task requirement: never delay access to an earned result): if subscription
+  // status somehow never resolves, this forces the result through anyway after a bounded wait,
+  // completely independent of the ad-load timeout above (which only bounds an AD that's already
+  // loading -- this bounds the ELIGIBILITY CHECK itself, a different failure mode). Fails safe
+  // -- forcing through means "no ad," never "show one without a resolved eligibility answer."
+  useEffect(() => {
+    if (savedResultDisplay || step !== 'result' || !definition || definition.access !== 'free' || freshCompletionAdResolved) {
+      return;
+    }
+    const timer = setTimeout(() => setFreshCompletionAdResolved(true), 5000);
+    return () => clearTimeout(timer);
+  }, [step, savedResultDisplay, definition, freshCompletionAdResolved]);
+
   // Not thrown/notFound — a quiz route reached with an unknown id (a stale link, a typo)
   // should land somewhere real rather than crash. Explore is the natural home.
   if (!definition) {
@@ -351,7 +423,13 @@ export default function QuizScreen() {
             />
           )}
 
-          {step === 'result' && result && (
+          {step === 'result' && result && !adGatePassed && (
+            <View style={styles.adGateWait}>
+              <ThemedText style={styles.progress}>Pulling your read together…</ThemedText>
+            </View>
+          )}
+
+          {step === 'result' && result && adGatePassed && (
             <ResultScreen
               result={result}
               isPrivatePreview={definition.access === 'private-preview'}
@@ -757,6 +835,15 @@ const styles = StyleSheet.create({
     color: Celestial.textSecondary,
     fontSize: 13,
     fontWeight: '700',
+  },
+  // Brief transitional state while the pre-reveal ad gate resolves (ad shown+closed, skipped,
+  // or timed out) -- the result itself is already computed/persisted by this point; this is
+  // purely a visual bridge, never a real loading state for the result itself.
+  adGateWait: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.six,
   },
   stepGap: {
     gap: Spacing.four,

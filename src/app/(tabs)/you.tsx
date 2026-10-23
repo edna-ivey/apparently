@@ -34,6 +34,7 @@ import {
   type CreatureEvolutionState,
 } from '@/data/creature/creature-reveal-state';
 import { getDemoPersonalityProfile, scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
+import { checkAndNotifyCreatureEvolution } from '@/services/creature-evolution-notification-service';
 import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
@@ -542,6 +543,7 @@ export default function YouScreen() {
       : v1Profile;
 
     setRemoteState({ status: 'ready', profile, counts, v2Ranked });
+    void checkAndNotifyCreatureEvolution(profile.topTraits);
   }, []);
 
   const loadCommonality = useCallback(async () => {

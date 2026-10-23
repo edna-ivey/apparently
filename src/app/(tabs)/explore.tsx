@@ -13,6 +13,9 @@ import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
 import { WHATS_YOUR_TYPE_DEFINITION } from '@/data/quizzes/whats-your-type-results';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
+import { NativeAdExploreCard } from '@/components/ads/native-ad-card';
+import { useAdEligibility } from '@/services/ad-eligibility-service';
+import { AdsConfig } from '@/services/ads-config';
 
 // FreeQuizCategory specifically — NOT the general QuizCategory union — so an Apparently
 // Private category (e.g. "Love & Soulmates") can never accidentally leak into this pill row.
@@ -150,6 +153,14 @@ export default function ExploreScreen() {
   // heading instead — only rendered at all when incompleteQuizzes is non-empty (see below).
   const incompleteSectionTitle = selectedCategory === 'All' ? 'Currently irresistible' : `More in ${selectedCategory}`;
 
+  // Advertising, 2026-10-22: a native sponsored card every AdsConfig.nativeAdCardSpacing real
+  // quiz cards, ONLY within the "currently irresistible" incomplete-quiz list (not Featured,
+  // not Apparently Private's own portal card, not the "Completed" history section) -- a
+  // conservative, configurable density per the task's own instruction. Never rendered at all
+  // for a subscriber or while subscription status is still resolving (useAdEligibility's own
+  // fail-safe default).
+  const exploreAdEligibility = useAdEligibility('exploreNative');
+
   const renderQuizCard = (quiz: QuizCard) => (
     <Pressable
       key={quiz.id}
@@ -233,7 +244,14 @@ export default function ExploreScreen() {
                 <View style={styles.sectionHeader}>
                   <ThemedText style={styles.sectionTitle}>{incompleteSectionTitle}</ThemedText>
                 </View>
-                {incompleteQuizzes.map(renderQuizCard)}
+                {incompleteQuizzes.map((quiz, index) => (
+                  <View key={quiz.id} style={styles.quizCardWithAd}>
+                    {renderQuizCard(quiz)}
+                    {exploreAdEligibility.eligible && index > 0 && (index + 1) % AdsConfig.nativeAdCardSpacing === 0 && (
+                      <NativeAdExploreCard underAgeOfConsent={!exploreAdEligibility.personalizedAdsAllowed} />
+                    )}
+                  </View>
+                ))}
               </>
             )}
             {completedQuizzes.length > 0 && (
@@ -312,6 +330,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.one },
   sectionTitle: CelestialType.heading,
   quizList: { gap: Spacing.two },
+  quizCardWithAd: { gap: Spacing.two },
   // Dark glass card, same language as every other celestial card — each quiz keeps its own
   // identity via a low-opacity color wash (quizGlow) and a solid accent dot/border tint,
   // rather than a solid pastel fill that would fight the dark ground.

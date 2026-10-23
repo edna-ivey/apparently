@@ -16,7 +16,8 @@
         "applinks:apparentlyyou.com"
       ],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "Apparently You may use this to show you more relevant ads. You can continue without this — ads will still appear, just not personalized to you."
       }
     },
     "android": {
@@ -50,7 +51,24 @@
           "savePhotosPermission": "Apparently You uses this to save your Creature image to your photo library when you tap Save."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "userTrackingUsageDescription": "Apparently You may use this to show you more relevant ads. You can continue without this — ads will still appear, just not personalized to you.",
+          "delayAppMeasurementInit": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/brand/app-icon.png",
+          "color": "#17000F"
+        }
+      ],
+      "expo-tracking-transparency"
     ],
     "experiments": {
       "typedRoutes": true,
