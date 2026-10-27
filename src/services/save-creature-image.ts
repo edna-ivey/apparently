@@ -54,7 +54,13 @@ export async function saveCreatureImageFromRef(viewRef: React.RefObject<View | n
 
   // writeOnly: true -- requests ONLY the add-to-library permission, never full photo library
   // read access, matching the add-only Info.plist entry this feature is configured with.
-  const permission = await MediaLibrary.requestPermissionsAsync(true);
+  let permission;
+  try {
+    permission = await MediaLibrary.requestPermissionsAsync(true);
+  } catch (error) {
+    console.error('[CreaturePhoto] permission request failed', error);
+    return { ok: false, reason: 'save-failed', message: 'Photos access could not be requested. Please try again.' };
+  }
   if (!permission.granted) {
     return {
       ok: false,
@@ -84,7 +90,13 @@ export async function shareCreatureImageFromRef(viewRef: React.RefObject<View | 
     return { ok: false, reason: 'capture-failed', message: 'We couldn’t prepare your Creature to share. Try again?' };
   }
 
-  const available = await Sharing.isAvailableAsync();
+  let available: boolean;
+  try {
+    available = await Sharing.isAvailableAsync();
+  } catch (error) {
+    console.error('[CreaturePhoto] sharing availability check failed', error);
+    return { ok: false, reason: 'unavailable', message: 'Sharing isn’t available right now.' };
+  }
   if (!available) {
     return { ok: false, reason: 'unavailable', message: 'Sharing isn’t available on this device.' };
   }
