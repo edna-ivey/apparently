@@ -330,6 +330,9 @@ export type ResultDisplay = {
   heroRead: string[];
   body: string;
   kicker: string;
+  // See QuizResultBand.apparentlySignature — present only when the locked reveal specifies
+  // both a kicker and a separate "Apparently," signature line; never one dropped for the other.
+  apparentlySignature?: string;
   traits: string[];
   score: number;
   percent: number;
@@ -391,6 +394,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       heroRead: primary.heroRead ?? [],
       body: primary.body ?? '',
       kicker: primary.kicker ?? '',
+      apparentlySignature: primary.apparentlySignature,
       traits: primary.traits ?? [],
       score: totals[primary.id] ?? 0,
       percent: percentages[primary.id] ?? 0,
@@ -412,6 +416,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
     score,
     percent,
@@ -445,6 +450,7 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
       heroRead: primary.heroRead ?? [],
       body: primary.body ?? '',
       kicker: primary.kicker ?? '',
+      apparentlySignature: primary.apparentlySignature,
       traits: primary.traits ?? [],
       score: record.score,
       percent: record.percent,
@@ -467,6 +473,7 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
     score: record.score,
     percent: record.percent,
@@ -504,6 +511,7 @@ export type ShareableResultContent = {
   heroRead: string[];
   body: string;
   kicker: string;
+  apparentlySignature?: string;
   traits: string[];
   resultSubtitle?: string;
   // See ResultDisplay.structuredRead — passed through unchanged, since it's static approved
@@ -536,6 +544,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
       heroRead: archetype.heroRead ?? [],
       body: archetype.body ?? '',
       kicker: archetype.kicker ?? '',
+      apparentlySignature: archetype.apparentlySignature,
       traits: archetype.traits ?? [],
       resultSubtitle: archetype.resultSubtitle,
       structuredRead: archetype.structuredRead,
@@ -553,6 +562,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
   };
 };

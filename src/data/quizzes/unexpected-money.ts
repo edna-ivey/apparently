@@ -23,7 +23,7 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'safety-net',
       title: 'THE SAFETY NET',
-      heroRead: ['The money didn’t feel real yet.', 'So you protected it like it was.'],
+      heroRead: ["The money didn't feel real yet.", 'So you protected it like it was.'],
       body: "Sudden money doesn't read as fun money to you. It reads as proof you should keep preparing. You're not scared of enjoying things. You just trust future-you more than a single lucky moment. While everybody else is planning vacations, you're calculating how many months of bills you could cover if life decided to get disrespectful. Watching your savings grow gives you a kind of satisfaction that a shopping spree never could. You might celebrate by transferring the money to an account you don't even have a debit card for.",
       kicker: "Apparently, your emergency fund gets spoiled more than you do.",
       traits: ['Prepared', 'Grounded', 'Responsible'],
@@ -47,7 +47,7 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'level-up',
       title: 'THE LEVEL-UP',
-      heroRead: ['You don’t just spend money.', 'You look for leverage.'],
+      heroRead: ["You don't just spend money.", 'You look for leverage.'],
       body: "A course. Better equipment. A certification. Seed money for an idea. Something that makes you more capable, more valuable, or more able to earn. When extra money appears, your brain naturally asks how it could turn into more options later. You're the person who gets a surprise $1,500 and somehow turns it into a conversation about starting a business. People might tell you to relax and enjoy your money, but building something that could change your future genuinely excites you. The dangerous part is that you've probably got twelve ideas already, and now eleven of them think they've been funded.",
       kicker: "Apparently, you can't even receive free money without giving it a business plan.",
       traits: ['Ambitious', 'Resourceful', 'Growth-minded'],
@@ -60,7 +60,7 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'master-plan',
       title: 'THE MASTER PLAN',
-      heroRead: ['Free money isn’t free money to you.', 'It’s momentum.'],
+      heroRead: ["Free money isn't free money to you.", "It's momentum."],
       body: "You don't see a windfall, you see a multiplier. Where it goes depends on what moves you forward fastest, and you already had that answer before the money even cleared. You've got goals with deadlines, numbers attached to them, and probably a mental ranking of which one deserves the money first. You can enjoy a little unexpected cash, but you're not about to let a temporary impulse derail something you've been building for months. Somebody could hand you a thousand dollars at your birthday party, and before the cake is cut, that money has already been assigned a department.",
       kicker: "Apparently, even your surprise money has a scheduled performance review.",
       traits: ['Strategic', 'Ambitious', 'Decisive'],

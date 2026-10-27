@@ -607,6 +607,7 @@ function StandardResultCard({ result }: { result: ResultDisplay }) {
           ))}
         </View>
         <ThemedText style={styles.kicker}>{result.kicker}</ThemedText>
+        {result.apparentlySignature ? <ThemedText style={styles.kicker}>{result.apparentlySignature}</ThemedText> : null}
       </View>
     </>
   );
@@ -1069,6 +1070,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: Spacing.four,
     gap: Spacing.one,
+    alignItems: 'center',
     shadowColor: Brand.violet,
     shadowOpacity: 0.25,
     shadowRadius: 24,
@@ -1096,6 +1098,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.6,
+    textAlign: 'center',
   },
   // Serif italic per the unified type scale -- the one true "verdict" moment in the app, now
   // visually distinct from a bold-sans heading everywhere else.
@@ -1104,6 +1107,7 @@ const styles = StyleSheet.create({
     fontSize: 29,
     lineHeight: 34,
     marginTop: Spacing.one,
+    textAlign: 'center',
   },
   verdictSubtitle: {
     color: '#DCD6FF',
@@ -1111,12 +1115,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.4,
     marginTop: -Spacing.half,
+    textAlign: 'center',
   },
   verdictHero: {
     color: '#F1EEFF',
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '700',
+    textAlign: 'center',
   },
   // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
   // TRY THIS) — same violet verdict card as every other quiz's hero read, just with an

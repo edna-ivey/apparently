@@ -25,10 +25,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'luxury-loyalist',
       title: 'THE LUXURY LOYALIST',
-      heroRead: ['If it comes in a dust bag, you understand.'],
-      body: 'You care about quality, presentation, design, and yes, sometimes the name on the label. If something is going to be yours, you want the version that feels special every time you use it. Function matters. The experience matters too.',
-      kicker: 'The logo is not the point. It is, however, invited.',
-      traits: ['Elevated', 'Brand-aware', 'Indulgent'],
+      heroRead: ["You've never met an upgrade you didn't at least consider."],
+      body: "You like nice things. There, we said it. The packaging matters. The quality matters. And yes, sometimes that little logo matters too. You're not necessarily buying everything expensive, but when something catches your eye, the budget version has a lot of explaining to do. You'll wear the same jacket for five years if it's the RIGHT jacket. You'll also spend twenty minutes convincing yourself the designer one is actually cheaper because it'll last longer. The math may be questionable, but the outfit? Immaculate.",
+      kicker: 'Apparently, your taste has a higher credit limit than your common sense.',
+      traits: ['Quality-Loving', 'Particular', 'Indulgent'],
       profileSignals: [
         { dimension: 'practical_idealistic', value: -1 },
         { dimension: 'sentimental_thick_skinned', value: 1 },
@@ -37,10 +37,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'bargain-hunter',
       title: 'THE BARGAIN HUNTER',
-      heroRead: ['If the cheap one works, explain the expensive one.'],
-      body: 'You take real satisfaction in paying less for something that does the same job. Labels do not impress you nearly as much as value, function, and knowing you did not get played by the price tag.',
-      kicker: 'You don’t need the best one. You need the one that works and minds its price.',
-      traits: ['Practical', 'Value-driven', 'Resourceful'],
+      heroRead: ['Full price? In this economy? Be serious.'],
+      body: "You don't mind spending money. You mind spending money STUPIDLY. There's a difference. You know which stores have the real sales, which ones raised their prices first, and exactly how much that thing cost last Tuesday. Someone could show you the most beautiful bag in the world, and your first question would still be, \"Does it come in a cheaper beautiful?\" The best part isn't even the purchase. It's telling somebody how much you saved. And you're going to tell them. Whether they asked or not.",
+      kicker: 'Apparently, the discount is half the experience.',
+      traits: ['Resourceful', 'Practical', 'Deal-Savvy'],
       profileSignals: [
         { dimension: 'practical_idealistic', value: 2 },
         { dimension: 'trust_verify', value: -1 },
@@ -49,10 +49,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'planner',
       title: 'THE PLANNER',
-      heroRead: ['You can spend.', 'You just prefer advance notice.'],
-      body: 'You research, compare, budget, wait, and buy on purpose. You are fully capable of spending serious money when the purchase makes sense. You just prefer the decision to happen before the card swipe.',
-      kicker: 'Your money would like a calendar invite.',
-      traits: ['Deliberate', 'Organized', 'Measured'],
+      heroRead: ["You've got money for it. That doesn't mean it's in the budget."],
+      body: "You don't just buy things. You conduct a small investigation first. Reviews, prices, return policies, and whether you'll still want it in three weeks. You've probably had something sitting in your cart so long it's gone out of stock, come back, and gone on clearance. Meanwhile, everybody else is already enjoying theirs. But here's the thing: when you finally make a purchase, you rarely regret it. You did the homework. You ran the numbers. You consulted the committee. And yes, the committee is just you.",
+      kicker: 'Apparently, even your impulse purchases need prior approval.',
+      traits: ['Intentional', 'Thorough', 'Disciplined'],
       profileSignals: [
         { dimension: 'planner_spontaneous', value: 2 },
         { dimension: 'patient_urgent', value: 1 },
@@ -61,10 +61,10 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'impulse-spender',
       title: 'THE IMPULSE SPENDER',
-      heroRead: ['You saw it.', 'You loved it.', 'Meeting adjourned.'],
-      body: 'Your purchases tend to begin with a feeling. Excitement, mood, a random little reward, the sudden conviction that this specific thing would improve your life immediately. Sometimes you’re right. The committee rarely gets enough time to investigate.',
-      kicker: 'The purchase happened before the committee could meet.',
-      traits: ['Spontaneous', 'Emotional', 'Fast-moving'],
+      heroRead: ["You've got excellent taste and absolutely no warning system."],
+      body: "You weren't even looking for anything. That's the problem. One minute you're buying toothpaste, the next you're leaving with a throw blanket, a candle, and something from the seasonal aisle that you can't explain. You see it, you love it, and suddenly it's a necessity. Sometimes you regret it. Sometimes it's the best thing you've ever bought. And sometimes a package arrives and you genuinely have no idea what's inside. That's not a delivery. That's a surprise party you threw for yourself three days ago.",
+      kicker: 'Apparently, your bank account needs parental controls.',
+      traits: ['Spontaneous', 'Enthusiastic', 'Easily Tempted'],
       profileSignals: [
         { dimension: 'planner_spontaneous', value: -2 },
         { dimension: 'emotional_intensity', value: 1 },

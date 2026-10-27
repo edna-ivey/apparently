@@ -33,7 +33,7 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'negotiator',
       title: 'THE NEGOTIATOR',
-      heroRead: ['You’ll share.', 'You will also be keeping count.'],
+      heroRead: ["You'll share.", 'You will also be keeping count.'],
       body: "You're not against sharing. You just want it to be fair. One bite is one bite, and everyone knows exactly where the line is because you drew it clearly, out loud, in real time. You can absolutely have some fries, but we're going to establish what *some* means before your hand enters the bag. You're generous when people respect the arrangement. What you cannot tolerate is somebody agreeing to one bite and then opening their mouth like they're trying to swallow the entire sandwich.",
       kicker: "Apparently, sharing with you comes with terms, conditions, and a legally binding bite limit.",
       traits: ['Fair', 'Precise', 'Practical'],
@@ -58,7 +58,7 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
       id: 'order-your-own',
       title: 'THE "ORDER YOUR OWN"',
       displayTitle: 'The "Order Your Own"',
-      heroRead: ['There’s a whole menu.', 'Use it.'],
+      heroRead: ["There's a whole menu.", 'Use it.'],
       body: "You'd genuinely rather everyone just get what they actually want. Splitting sounds like a logistics project you didn't sign up for. Order what you're craving, eat it in peace, everybody wins. You don't understand why four grown adults need to negotiate ownership of six chicken wings when the restaurant will happily bring another order. You'll even pay for somebody else's meal if that's what it takes to protect yours. It's not about the money. It's about the principle, and the principle is that you ordered your own food for a reason.",
       kicker: "Apparently, you're happy to buy the whole table dinner as long as everybody stays out of yours.",
       traits: ['Independent', 'Efficient', 'Low-drama'],

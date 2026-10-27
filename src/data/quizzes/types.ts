@@ -39,6 +39,10 @@ export type QuizResultBand = {
   heroRead: string[];
   body: string;
   kicker: string;
+  // Some locked reveals (e.g. Era) specify BOTH a kicker and a separate italic "Apparently,"
+  // signature line — both are rendered when present, never one silently dropped in favor of
+  // the other. Undefined for every result that only has a kicker.
+  apparentlySignature?: string;
   traits: string[];
   // Result-level (not per-choice) personality signals this result contributes to the living
   // You profile, ONLY on a quiz's first completion — see src/services/quiz-service.ts and the
@@ -74,6 +78,9 @@ export type QuizArchetype = {
   heroRead?: string[];
   body?: string;
   kicker?: string;
+  // Same contract as QuizResultBand.apparentlySignature above — present only on results whose
+  // locked review specifies both a kicker AND a separate "Apparently," signature line.
+  apparentlySignature?: string;
   traits?: string[];
   // Same contract as QuizResultBand.profileSignals above — result-level, max 3, first-
   // completion-only. See that field's comment for the full rationale.

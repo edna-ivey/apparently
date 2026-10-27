@@ -68,7 +68,7 @@ export const PETTY_QUIZ: QuizDefinition = {
       prompt: 'Someone cuts the line like you don’t exist.',
       choices: [
         { id: 'a', label: 'Let it go. I have somewhere to be.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
-        { id: 'b', label: '“Excuse me. The line starts back there.”', score: 2, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
+        { id: 'b', label: '“Excuse me. The line starts back there.”', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
         { id: 'c', label: 'My face says everything.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
         {
           id: 'd',

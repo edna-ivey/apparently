@@ -300,6 +300,9 @@ export default function SharedResultScreen() {
                       ))}
                     </View>
                     <ThemedText style={styles.kicker}>{state.content.kicker}</ThemedText>
+                    {state.content.apparentlySignature ? (
+                      <ThemedText style={styles.kicker}>{state.content.apparentlySignature}</ThemedText>
+                    ) : null}
                   </View>
                 </>
               )}
@@ -595,16 +598,17 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: Spacing.four,
     gap: Spacing.one,
+    alignItems: 'center',
     shadowColor: Brand.violet,
     shadowOpacity: 0.2,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
-  verdictEyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  verdictTitle: { color: '#FFFFFF', fontSize: 30, lineHeight: 34, fontWeight: '900', letterSpacing: -0.6, marginTop: Spacing.one },
-  verdictSubtitle: { color: '#DCD6FF', fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: -Spacing.half },
-  verdictHero: { color: '#F1EEFF', fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  verdictEyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3, textAlign: 'center' },
+  verdictTitle: { color: '#FFFFFF', fontSize: 30, lineHeight: 34, fontWeight: '900', letterSpacing: -0.6, marginTop: Spacing.one, textAlign: 'center' },
+  verdictSubtitle: { color: '#DCD6FF', fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: -Spacing.half, textAlign: 'center' },
+  verdictHero: { color: '#F1EEFF', fontSize: 18, lineHeight: 24, fontWeight: '700', textAlign: 'center' },
   // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
   // TRY THIS) — mirrors quiz/[quizId].tsx's PrivateStructuredResult styling exactly, so a
   // shared structuredRead result reads identically here as it does in the quiz runner itself.
@@ -612,11 +616,11 @@ const styles = StyleSheet.create({
   privateSectionHeading: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   privateSectionBody: { color: '#F1EEFF', fontSize: 16, lineHeight: 22, fontWeight: '700' },
   whyCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
-  whyBody: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600' },
-  traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
+  whyBody: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
+  traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one, justifyContent: 'center' },
   traitPill: { backgroundColor: '#F7F3FF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
   traitPillText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
-  kicker: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18, fontWeight: '600', fontStyle: 'italic', marginTop: Spacing.one },
+  kicker: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18, fontWeight: '600', fontStyle: 'italic', marginTop: Spacing.one, textAlign: 'center' },
   cta: { backgroundColor: Brand.pink, borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three },
   ctaDisabled: { opacity: 0.4 },
   ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },

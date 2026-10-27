@@ -28,10 +28,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       // The generic naive title-caser can't handle a title opening with a curly quote (the
       // capital that should follow it gets swallowed), so this is spelled out explicitly.
       displayTitle: 'The “I’ll Have My Usual”',
-      heroRead: ['You found your order.', 'Why would you betray it?'],
-      body: 'You know what you like and see no reason to turn dinner into a risk assessment. Familiar is not boring when familiar keeps being delicious. Other people call it predictable. You call it repeatedly correct.',
-      kicker: 'Your favorite restaurant already knows why you’re calling.',
-      traits: ['Loyal', 'Comfort-driven', 'Decisive'],
+      heroRead: ["You've been ordering the same thing since 2017. And?"],
+      body: "You know what you like, and you're not about to waste $28 finding out you don't like something else. People call you predictable, but those same people are sitting there regretting their experimental pasta while you're enjoying every bite. You don't need a new experience every time you leave the house. You need your food made right, your sauce on the side, and everybody to stop asking why you always order that. Because it's GOOD. That's why.",
+      kicker: 'Apparently, your taste buds have a long-term commitment.',
+      traits: ['Loyal', 'Comfort-Loving', 'Decisive'],
       profileSignals: [
         { dimension: 'adventure_comfort', value: -2 },
         { dimension: 'curious_decisive', value: -1 },
@@ -40,10 +40,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'menu-critic',
       title: 'THE MENU CRITIC',
-      heroRead: ['Dinner is not the time for avoidable mistakes.'],
-      body: 'You read the menu like it contains evidence. Preparation matters. Reviews matter. Temperature matters. If you’re paying restaurant prices, you would like the restaurant portion of the experience to actually perform.',
-      kicker: 'The fries had one job.',
-      traits: ['Particular', 'Observant', 'Discerning'],
+      heroRead: ["You're not picky. You just have standards. Several, actually."],
+      body: "You read reviews, inspect pictures, and ask questions the server may need to check with the kitchen about. You're not spending your money on a meal that looks nothing like the picture. And if those fries come out cold, somebody's taking them back. You notice the little things because the little things matter. The only problem? Sometimes everybody else has finished ordering while you're still investigating whether the salmon is worth it.",
+      kicker: "Apparently, the restaurant is being evaluated. They just don't know it yet.",
+      traits: ['Observant', 'Particular', 'Discerning'],
       profileSignals: [
         { dimension: 'trust_verify', value: -2 },
         { dimension: 'social_attunement', value: 1 },
@@ -55,10 +55,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
       // The generic naive title-caser only capitalizes the first letter after a space, which
       // turns the acronym into "Ceo" — spelled out explicitly instead.
       displayTitle: 'The Table CEO',
-      heroRead: ['Somehow everybody else’s dinner became your responsibility.'],
-      body: 'You know who’s sharing, who has allergies, whether the table ordered enough, and which person is pretending they don’t want fries. You did not ask to run dinner. You simply noticed no one else was doing it correctly.',
-      kicker: 'You came to eat. You accidentally became management.',
-      traits: ['Considerate', 'Social', 'Organized'],
+      heroRead: ["You came for dinner. Somehow you're running the whole operation."],
+      body: "Before you've even looked at the menu, you've figured out who's sharing, who can't eat dairy, who needs a kids' menu, and why nobody has ordered appetizers yet. You want everybody to enjoy themselves, which is sweet. But somewhere between coordinating the orders and checking whether everyone has enough napkins, you became the unpaid manager of a restaurant you don't even work at. Your food is getting cold while you're making sure everybody else's is perfect.",
+      kicker: 'Apparently, nobody appointed you. You just took the position.',
+      traits: ['Considerate', 'Organized', 'Collaborative'],
       profileSignals: [
         { dimension: 'independent_collaborative', value: -2 },
         { dimension: 'control_allowing', value: 1 },
@@ -67,10 +67,10 @@ export const FOOD_ORDER_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'wildcard',
       title: 'THE WILDCARD',
-      heroRead: ['If nobody at the table knows what it is, you’re interested.'],
-      body: 'You would rather risk a strange meal than order something boring on purpose. Specials, tiny restaurants, mystery ingredients, suspicious sauces, you are here for the possibility that dinner becomes a story.',
-      kicker: 'Best case, incredible. Worst case, still content.',
-      traits: ['Curious', 'Adventurous', 'Impulsive'],
+      heroRead: ['You see a mystery ingredient and take it as a personal invitation.'],
+      body: "You will walk into a restaurant with absolutely no idea what's on the menu and call that exciting. Strange sauces? Yes. Something you can't pronounce? Even better. A dish the server describes as 'an acquired taste'? Now you're interested. Sometimes you discover the best meal of your life. Sometimes you spend $40 pretending you like something because you refuse to admit you should've ordered the burger. Either way, you're leaving with a story.",
+      kicker: 'Apparently, your dinner comes with a plot twist.',
+      traits: ['Adventurous', 'Curious', 'Spontaneous'],
       profileSignals: [
         { dimension: 'adventure_comfort', value: 2 },
         { dimension: 'planner_spontaneous', value: -1 },

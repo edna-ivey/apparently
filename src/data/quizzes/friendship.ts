@@ -26,9 +26,9 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'emergency-contact',
       title: 'THE EMERGENCY CONTACT',
-      heroRead: ['If we’re friends, you can probably call me at 2:14 a.m.'],
-      body: 'You show up. Not just emotionally, but physically, practically, inconveniently. Rides, pickups, food, backup plans, emergency cash, you are the friend who starts moving while everybody else is still saying “oh my God.”',
-      kicker: 'You did not volunteer as emergency contact. Somehow you are emergency contact.',
+      heroRead: ['Your friends don’t have a support system. They have you on speed dial.'],
+      body: 'You are the friend people call when everything has officially gone left. Need a ride? You’re grabbing your keys. Need food? You’re asking what they want. Need somebody to help clean up a disaster you specifically warned them about? Unfortunately, you’re available for that too. Your loyalty is beautiful. Your inability to mind your business when somebody you love is struggling? A full-time unpaid position.',
+      kicker: 'Apparently, being everybody’s backup plan wasn’t on your calendar. Yet here we are.',
       traits: ['Loyal', 'Dependable', 'Protective'],
       profileSignals: [
         { dimension: 'protective_hands_off', value: 2 },
@@ -38,9 +38,9 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'reality-check',
       title: 'THE REALITY CHECK',
-      heroRead: ['You love your friends enough to ruin a perfectly good delusion.'],
-      body: 'People come to you when they want the truth, then sometimes regret how efficiently you provide it. You notice patterns, remember history, and rarely confuse being supportive with pretending a terrible idea is secretly brilliant.',
-      kicker: 'You’re not a hater. You brought evidence.',
+      heroRead: ['You are the reason your friends stopped asking for honest opinions.'],
+      body: 'You love your people. Deeply. Unfortunately for them, love does not come with a complimentary delusion package. You remember what happened last time, you notice what everybody else is pretending not to see, and you will absolutely interrupt a bad decision before it becomes a six-month healing journey. Your delivery could occasionally use a seatbelt, but your intentions are solid.',
+      kicker: 'Apparently, the truth hurts. You just happen to deliver it express.',
       traits: ['Honest', 'Observant', 'Direct'],
       profileSignals: [
         { dimension: 'direct_indirect', value: 2 },
@@ -50,9 +50,9 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'soft-place',
       title: 'THE SOFT PLACE',
-      heroRead: ['People accidentally tell you the truth around you.'],
-      body: 'You make people feel safe enough to stop performing. You listen before fixing, ask the question underneath the question, and somehow make messy feelings feel less embarrassing just by letting them exist.',
-      kicker: 'You’ve heard things. You’re taking them to the grave.',
+      heroRead: ['People tell you things they haven’t even admitted to themselves.'],
+      body: 'You’re the friend who makes somebody say, ‘I wasn’t even planning to tell anyone this,’ and then proceeds to hear their entire childhood backstory. You listen, you notice the little changes in people’s voices, and you somehow make difficult conversations feel safe. But here’s the thing: being everybody’s emotional safe place doesn’t mean you have to become their unpaid therapist. You’re allowed to have a bad day too.',
+      kicker: 'Apparently, your emotional office hours are 24/7.',
       traits: ['Empathetic', 'Patient', 'Steady'],
       profileSignals: [
         { dimension: 'social_attunement', value: 2 },
@@ -62,9 +62,9 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'instigator',
       title: 'THE INSTIGATOR',
-      heroRead: ['You are not always the solution.', 'You are very often the plot.'],
-      body: 'You bring energy, nerve, and just enough questionable encouragement to make ordinary life more interesting. Sometimes your friends need comfort. Sometimes they need someone to say, “Okay, but hear me out...”',
-      kicker: 'Somebody had to suggest the bad idea.',
+      heroRead: ['You are not a bad influence. You’re a very enthusiastic accomplice.'],
+      body: 'You bring the energy, the audacity, and the kind of encouragement that starts with ‘Hear me out’ and ends with everybody having a story they can’t tell at work. You don’t always create the chaos, but you have an impressive ability to recognize its entertainment potential. Your friends love having you around because life is never boring. Their decision-making skills, however, have filed a complaint.',
+      kicker: 'Apparently, the group chat was peaceful before you logged on.',
       traits: ['Playful', 'Spontaneous', 'Bold'],
       profileSignals: [
         { dimension: 'playful_serious', value: 2 },

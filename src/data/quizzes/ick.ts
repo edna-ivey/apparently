@@ -107,8 +107,8 @@ export const ICK_QUIZ: NumericBandQuizDefinition = {
       minScore: 0,
       maxScore: 6,
       heroRead: ['You believe in context.', 'And maybe second chances.'],
-      body: 'A weird text, questionable habit, or awkward moment rarely destroys attraction on its own. If you like someone, you give the whole person more weight than one tiny offense.',
-      kicker: 'Your tolerance is either enlightenment or a red flag. Unclear.',
+      body: "A weird text, questionable habit, or awkward moment rarely destroys attraction on its own. If you like someone, you give the whole person more weight than one tiny offense. You understand that everybody has a little weird in them, including you, and you're not about to throw away good chemistry over a questionable laugh or an unfortunate pair of shoes. But there's a fine line between giving someone grace and giving them unlimited opportunities to embarrass you.",
+      kicker: 'Apparently, your attraction comes with a warranty and a very generous return policy.',
       traits: ['Easygoing', 'Fair', 'Forgiving'],
       profileSignals: [
         { dimension: 'forgiving_receipts', value: 2 },
@@ -121,8 +121,8 @@ export const ICK_QUIZ: NumericBandQuizDefinition = {
       minScore: 7,
       maxScore: 12,
       heroRead: ['Nothing is wrong.', 'You just have follow-up questions.'],
-      body: 'You notice things, but you don’t hand out permanent icks on first contact. You watch for patterns. One odd moment is information. A repeat performance becomes evidence.',
-      kicker: 'The investigation remains open.',
+      body: "You notice things, but you don't hand out permanent icks on first contact. You watch for patterns. One odd moment is information. A repeat performance becomes evidence. You're not impossible to please, but you do have an internal checklist that nobody knows they're being graded on. You'll laugh something off the first time, raise an eyebrow the second, and by the third, you're quietly reconsidering the entire situation. You're giving people a fair chance. You're just keeping notes.",
+      kicker: 'Apparently, nobody gets rejected without a thorough review of the evidence.',
       traits: ['Observant', 'Selective', 'Measured'],
       profileSignals: [
         { dimension: 'social_attunement', value: 1 },
@@ -136,8 +136,8 @@ export const ICK_QUIZ: NumericBandQuizDefinition = {
       minScore: 13,
       maxScore: 18,
       heroRead: ['Once you see it,', 'you cannot unsee it.'],
-      body: 'Your attraction has excellent pattern recognition and terrible amnesia. Small things can land loudly, and once your brain files something under “no thank you,” reopening the case is difficult.',
-      kicker: 'Unfortunately, your brain saved the receipt.',
+      body: "Your attraction has excellent pattern recognition and terrible amnesia. Small things can land loudly, and once your brain files something under 'no thank you,' reopening the case is difficult. You can be having the best time with someone, and then they do one oddly specific thing that changes the entire atmosphere. You'll try to be reasonable. You'll remind yourself they're a good person. Unfortunately, your brain has already created a highlight reel of the incident, and it keeps playing without your permission.",
+      kicker: 'Apparently, your attraction has a photographic memory and absolutely no delete button.',
       traits: ['Perceptive', 'Particular', 'Instinctive'],
       profileSignals: [
         { dimension: 'social_attunement', value: 2 },
@@ -150,8 +150,8 @@ export const ICK_QUIZ: NumericBandQuizDefinition = {
       minScore: 19,
       maxScore: 24,
       heroRead: ['Thank you for your time.', 'Chemistry will escort itself out.'],
-      body: 'You know quickly when the feeling shifts. Maybe it’s a phrase, habit, or tiny social crime. The point is not whether anyone else agrees. Your attraction already left the building.',
-      kicker: 'No appeals are being accepted at this time.',
+      body: "You know quickly when the feeling shifts. Maybe it's a phrase, habit, or tiny social crime. The point is not whether anyone else agrees. Your attraction already left the building. You don't need a committee meeting, three outside opinions, or a PowerPoint presentation explaining why you should give someone another chance. Once the switch flips, even you might be surprised by how fast it happens. They could be gorgeous, successful, and perfectly nice. Unfortunately, the position has already been filled by absolutely nobody.",
+      kicker: "Apparently, your attraction doesn't give two weeks' notice. It just clears out its desk.",
       traits: ['Decisive', 'Exacting', 'Instinctive'],
       profileSignals: [
         { dimension: 'curious_decisive', value: -2 },
