@@ -55,7 +55,7 @@
       [
         "react-native-google-mobile-ads",
         {
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "iosAppId": "ca-app-pub-2298824723392414~8653828630",
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "userTrackingUsageDescription": "Apparently You may use this to show you more relevant ads. You can continue without this — ads will still appear, just not personalized to you.",
           "delayAppMeasurementInit": true

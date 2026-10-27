@@ -1,19 +1,6 @@
-// Centralized AdMob configuration -- the ONE place every ad placement reads its ad-unit id,
-// enabled/disabled flag, cooldown, cap, spacing, or A/B variant from. No placement component
-// ever reads an env var or hardcodes an id directly; everything routes through this module so
-// a single owner-facing change (an env var, or a value here) controls every placement at once.
-//
-// SAFE-BY-DEFAULT: every ad-unit id below defaults to one of Google's own official, publicly
-// documented TEST ad units (https://developers.google.com/admob/ios/test-ads) when the
-// corresponding EXPO_PUBLIC_ADMOB_* env var is unset -- exactly the same "placeholder means
-// safe fallback behavior, never a crash or a real charge" pattern isRevenueCatConfigured
-// already uses for RevenueCat. The native iOS AdMob APP id (app.json's
-// react-native-google-mobile-ads plugin config) is ALSO still Google's public test app id
-// today -- see docs/ADVERTISING_AND_NOTIFICATIONS_SETUP_2026-10-22.md for exactly what the
-// owner needs to create in their own AdMob account and where to paste the real ids before any
-// production ad can ever serve. Nothing here is a secret; ad-unit ids are not credentials
-// (they identify a placement, not an account) -- the real secret-adjacent value, the AdMob
-// account itself, never appears in this app's code at all.
+// Centralized AdMob configuration. Production IDs come from EAS build env.
+// TestFlight explicitly uses Google test ad units; production uses the owner-created IDs.
+// Unset or empty values fall back to official SDK test IDs.
 
 import { TestIds } from 'react-native-google-mobile-ads';
 
