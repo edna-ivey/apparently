@@ -4,11 +4,28 @@
 // Function needs to respect; the local cache exists purely so Settings can render instantly
 // without a network round trip, and so the Daily-reminder scheduler can read the user's chosen
 // time without an async fetch on every app launch.
+//
+// TIMEZONE (owner correction, 2026-10-23): the device's own IANA timezone
+// (Intl.DateTimeFormat().resolvedOptions().timeZone) is sent to the server on every
+// preference write AND independently via syncDeviceTimeZone(), called on every app
+// launch/foreground (see _layout.tsx) -- not only when the user happens to touch a
+// notification setting. A travelling user's zone change is reflected promptly either way; a
+// DST shift within an UNCHANGED zone needs no re-sync at all, since the send function derives
+// the real local hour from the IANA zone name at send TIME (see supabase/functions/_shared/
+// push-notification-logic.ts), never from a stored numeric offset that could go stale.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
 import { supabase } from '@/lib/supabase';
+
+const getDeviceTimeZone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'UTC';
+  }
+};
 
 export type NotificationPreferences = {
   dailyReminderEnabled: boolean;
@@ -146,5 +163,17 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
     p_private_updates_enabled: patch.privateUpdatesEnabled ?? null,
     p_quiet_hours_start_hour: next.quietHoursStartHour,
     p_quiet_hours_end_hour: next.quietHoursEndHour,
+    p_timezone: getDeviceTimeZone(),
   });
+};
+
+// Called on every app launch/foreground (see _layout.tsx) -- independent of any preference
+// edit, so a travelling user's zone change reaches the server promptly even if they never
+// open Settings. A plain timezone-only RPC call (every other field stays unchanged, per the
+// RPC's own null-means-unchanged contract) -- never touches the local cache/snapshot, since
+// NotificationPreferences doesn't expose timezone to the UI at all (nothing in Settings reads
+// or displays it; quiet hours are shown/edited as plain hour-of-day, same as before).
+export const syncDeviceTimeZone = async (): Promise<void> => {
+  if (!supabase) return;
+  await supabase.rpc('upsert_notification_preferences', { p_timezone: getDeviceTimeZone() });
 };

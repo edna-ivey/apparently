@@ -14,7 +14,22 @@
 --
 -- Also requires supabase/functions/send-push-notification to have already been deployed
 -- (`supabase functions deploy send-push-notification`) -- this job will simply get HTTP 404s
--- harmlessly (pg_net logs the failure; nothing else breaks) until that happens.
+-- harmlessly (pg_net logs the failure to net._http_response; nothing else breaks) until that
+-- happens.
+--
+-- Each invocation of the Edge Function does BOTH the send pass (claim pending rows, call
+-- Expo's push API, classify tickets) AND the receipt-check pass (check delivery confirmation
+-- for rows already sent, clean up dead tokens) -- see that function's own header comment.
+-- Running every minute is safe under the function's own concurrency-safe claiming (FOR UPDATE
+-- SKIP LOCKED) even if a slow invocation overlaps with the next tick.
+--
+-- MONITORING GAP, not resolved here: net.http_post is fire-and-forget from this cron job's own
+-- perspective -- a non-2xx response or a network failure is recorded in net._http_response but
+-- never surfaces as an alert. If the Edge Function starts failing consistently (e.g. a bad
+-- deploy, an expired Vault secret), nothing in this migration notices on its own. Recommend the
+-- owner periodically spot-check `select * from net._http_response order by created desc limit
+-- 20;` or wire up Supabase's own function-invocation logs/alerts -- out of scope for this
+-- migration itself.
 
 create extension if not exists pg_net;
 

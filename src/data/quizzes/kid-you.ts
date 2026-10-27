@@ -21,8 +21,8 @@ export const KID_YOU_QUIZ: ArchetypeQuizDefinition = {
       id: 'little-ceo',
       title: 'THE LITTLE CEO',
       heroRead: ['You didn’t need authority.', 'You simply recognized a leadership vacuum.'],
-      body: 'You had plans, opinions, systems, and a suspicious comfort with assigning other children jobs.\n\nAdults called you bossy.\n\nHistory will decide.',
-      kicker: 'The clipboard was imaginary. The management style was not.',
+      body: "You had plans, opinions, systems, and a suspicious comfort with assigning other children jobs. Adults called you bossy. History will decide. You were the kid organizing everybody into teams, explaining the rules, and getting irritated when your cousins refused to follow a perfectly reasonable schedule you invented three minutes ago. Even your pretend games somehow had a chain of command. You weren't trying to ruin anybody's fun. You just couldn't understand why having fun had to be so disorganized.",
+      kicker: "Apparently, you were running a Fortune 500 company out of somebody's backyard.",
       traits: ['Decisive', 'Organized', 'Ambitious'],
       profileSignals: [
         { dimension: 'control_allowing', value: 2 },
@@ -34,8 +34,8 @@ export const KID_YOU_QUIZ: ArchetypeQuizDefinition = {
       id: 'neighborhood-menace',
       title: 'THE NEIGHBORHOOD MENACE',
       heroRead: ['You were not a bad kid.', 'You were committed to field research.'],
-      body: 'Rules created questions.\n\nFences created curiosity.\n\nAnd “don’t do that” occasionally sounded less like a warning and more like a challenge.',
-      kicker: 'At least one adult still remembers your name specifically.',
+      body: "Rules created questions. Fences created curiosity. And \"don't do that\" occasionally sounded less like a warning and more like a challenge. You were the kid who could turn an ordinary Tuesday afternoon into a neighborhood incident that adults would still be discussing at Thanksgiving. Somebody was always yelling your name, and there was a decent chance you were already running before they finished. You weren't necessarily trying to cause trouble. Trouble just had a remarkable ability to find you whenever you had free time and an audience.",
+      kicker: "Apparently, half your childhood memories could've been submitted as evidence.",
       traits: ['Adventurous', 'Bold', 'Playful'],
       profileSignals: [
         { dimension: 'rules_bending', value: -2 },
@@ -47,8 +47,8 @@ export const KID_YOU_QUIZ: ArchetypeQuizDefinition = {
       id: 'quiet-observer',
       title: 'THE QUIET OBSERVER',
       heroRead: ['You weren’t missing anything.', 'You were taking notes.'],
-      body: 'You knew which adults were mad at each other, which kid was lying, who was about to cry, and why everybody suddenly got quiet when one particular person walked into the room.\n\nPeople may have mistaken quiet for innocence.\n\nAdorable.',
-      kicker: 'You knew the family business before you knew multiplication.',
+      body: "You knew which adults were mad at each other, which kid was lying, who was about to cry, and why everybody suddenly got quiet when one particular person walked into the room. People may have mistaken quiet for innocence. Adorable. You could sit in the corner pretending to watch television while absorbing an entire family argument through the kitchen doorway. Nobody thought to lower their voice around you because you weren't asking questions. Meanwhile, you had enough information to reconstruct three generations of family drama, and you hadn't even finished elementary school.",
+      kicker: "Apparently, you knew all the family secrets before you learned long division.",
       traits: ['Perceptive', 'Quiet', 'Curious'],
       profileSignals: [
         { dimension: 'social_attunement', value: 2 },
@@ -61,8 +61,8 @@ export const KID_YOU_QUIZ: ArchetypeQuizDefinition = {
       title: 'THE GOLDEN CHILD OFF-DUTY',
       displayTitle: 'The Golden Child Off-Duty',
       heroRead: ['Excellent reputation.', 'Incomplete records.'],
-      body: 'Around adults, you knew the rules, used your manners, and understood exactly how not to get yourself killed.\n\nBut once supervision got loose?\n\nThere may be additional documentation.\n\nYou weren’t necessarily the wildest kid in the room.\n\nYou were simply very good at making sure the adults never believed you were.',
-      kicker: 'Your publicist started young.',
+      body: "Around adults, you knew the rules, used your manners, and understood exactly how not to get yourself killed. But once supervision got loose? There may be additional documentation. You weren't necessarily the wildest kid in the room. You were simply very good at making sure the adults never believed you were. You knew when to act innocent, when to disappear, and exactly how fast to switch back into perfect-child mode when somebody's mother walked into the room. Your friends knew the truth, but good luck convincing the grown-ups. You had character witnesses.",
+      kicker: "Apparently, you had a spotless reputation and a highly classified childhood.",
       traits: ['Well-behaved', 'Strategic', 'Sneaky'],
       profileSignals: [
         { dimension: 'rules_bending', value: 2 },

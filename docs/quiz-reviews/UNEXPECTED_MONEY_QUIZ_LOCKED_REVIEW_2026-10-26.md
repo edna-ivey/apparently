@@ -1,6 +1,6 @@
 # Unexpected Money | Quiz Review
 
-**Status:** PARTIALLY APPROVED: four expanded reveals locked; revamped Q&A and Core mappings PENDING
+**Status:** FULLY APPROVED 2026-10-26: revamped Q&A, Core mappings, and four expanded reveals
 **Reviewed:** 2026-10-26
 **Scope:** Creative review documentation only. No application code changes, commits, or pushes.
 
@@ -8,7 +8,7 @@
 
 Center the complete reveal: archetype title, hero, full-length body, Apparently statement, and three trait tags. Do not print the label "Signature:". Preserve the complete expanded body exactly as reviewed; do not substitute the short existing app body. No em dashes in new copy.
 
-## Revamped questions, answer votes, and proposed Core mappings (NOT APPROVED)
+## Approved revamped questions, answer votes, and Core mappings
 
 **Title:** Unexpected money just hit your account. Be honest.
 **Intro:** Your bank account just got an unexpected visitor. Let's see how long the money survives.
@@ -70,7 +70,7 @@ Center the complete reveal: archetype title, hero, full-length body, Apparently 
 - **C.** 'You should've seen that weekend. No further questions.' | **Little Treat +1** | Core: Spontaneous +2; Playful +2; Private +1
 - **D.** 'It paid for something that's opening doors for me now.' | **Level-Up +1** | Core: Ambitious +3; Practical +2; Planner +1
 
-**Balance:** Each archetype appears twice per A/B/C/D position across eight questions. These mappings and all Q&A await owner approval.
+**Balance:** Each archetype appears twice per A/B/C/D position across eight questions. These mappings and all Q&A were explicitly approved by the owner after the initial review document was saved.
 
 ## Approved expanded result reveals
 

@@ -110,6 +110,17 @@ order by 1 desc;
 comment on view public.analytics_daily_active_free_users is
   'Daily count of distinct users who generated at least one quiz_completed or result_revealed event -- a proxy for free-tier daily activity, not a full DAU definition (it does not count Daily-only or You/Creature-only sessions, which emit no analytics event in this pass). Read-only reference query, not a finalized metric.';
 
+-- SECURITY (production-readiness review, 2026-10-23): a view does NOT automatically inherit
+-- the base table's RLS restriction for every caller -- views run with the VIEW OWNER's
+-- privileges for permission-checking purposes (the owner here is the migration-applying role,
+-- typically a superuser-equivalent that bypasses RLS entirely), so if this view were ever
+-- reachable by authenticated/anon (via Supabase's own schema-level default privileges, which
+-- can auto-grant SELECT on new relations depending on project configuration), every user could
+-- read every OTHER user's aggregate analytics data through it -- a real cross-user data
+-- exposure the base table's own "insert-own-rows-only" RLS policy was never designed to allow.
+-- Explicitly revoked here rather than assumed safe by omission.
+revoke all on public.analytics_daily_active_free_users from public, anon, authenticated;
+
 create view public.analytics_ad_funnel_by_placement as
 select
   (properties ->> 'placement') as placement,
@@ -126,3 +137,9 @@ group by 1;
 
 comment on view public.analytics_ad_funnel_by_placement is
   'Ad funnel counts per placement (quiz_interstitial / explore_native / daily_interstitial, as reported in each event''s own properties.placement). estimated_revenue_micros_total sums the AdMob SDK''s own on-device revenue estimate (micros of the ad''s currency) from ad_revenue_paid events -- an ESTIMATE the SDK itself reports, not a finalized/reconciled payout figure. Never presented to the owner as confirmed revenue without that distinction.';
+
+-- Same reasoning as analytics_daily_active_free_users above -- revoked explicitly, not
+-- assumed safe by omission. This view aggregates ACROSS all users (no per-user grouping at
+-- all), which would be an even more direct cross-user exposure than the per-user-row view if
+-- it were ever reachable by a normal client role.
+revoke all on public.analytics_ad_funnel_by_placement from public, anon, authenticated;

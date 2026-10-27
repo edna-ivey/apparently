@@ -1170,12 +1170,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
+    textAlign: 'center',
   },
   traitRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
     marginTop: Spacing.one,
+    justifyContent: 'center',
   },
   traitPill: {
     backgroundColor: 'rgba(246,184,63,0.14)',
@@ -1195,5 +1197,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontStyle: 'italic',
     marginTop: Spacing.one,
+    textAlign: 'center',
   },
 });

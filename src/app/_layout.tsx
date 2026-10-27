@@ -18,7 +18,7 @@ import { logAnalyticsEvent } from '@/services/analytics-service';
 import type { NotificationCategory } from '@/services/notifications-config';
 import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
 import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
-import { hydrateNotificationPreferences, useNotificationPreferences } from '@/services/notification-preferences-service';
+import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
 import { registerPushToken } from '@/services/push-token-service';
 
 SplashScreen.preventAutoHideAsync();
@@ -147,6 +147,11 @@ export default function RootLayout() {
             void registerPushToken();
           }
         });
+        // Timezone correction, 2026-10-23: every launch/foreground re-sends the device's
+        // current IANA timezone, independent of whether the user ever opens Settings -- a
+        // travelling user's real zone change reaches the server promptly even if they never
+        // touch a notification preference.
+        void syncDeviceTimeZone();
       });
     }
   }, [segments, onboardingComplete]);

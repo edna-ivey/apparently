@@ -80,9 +80,7 @@ assert(/if \(lastShownAt !== null && Date\.now\(\) - lastShownAt < AdsConfig\.in
 // ============================================================================================
 
 const eligibilityServiceSource = read('../src/services/ad-eligibility-service.ts');
-assert(/const statusUncertain = premium\.status === 'loading' \|\| premium\.status === 'error';/.test(eligibilityServiceSource), "both 'loading' and 'error' are treated as uncertain -- never defaulting to ad-eligible while unresolved");
-assert(/const isFree = premium\.status === 'free';/.test(eligibilityServiceSource), "eligibility requires an explicit server-verified 'free' status -- 'premium' is never ad-eligible under any condition");
-assert(/eligible: placementEnabled && isFree && !statusUncertain,/.test(eligibilityServiceSource), 'the final eligible flag requires ALL THREE of: placement enabled, confirmed free, and NOT uncertain -- a subscriber (isFree=false) can never compute eligible=true regardless of any other flag');
+assert(/computeAdEligibility\(\{/.test(eligibilityServiceSource), 'the hook delegates to the shared, exhaustively-tested pure decision function -- see scripts/validate-ad-eligibility-logic.ts for the real behavioral proof (every premium-status x placement x global flag combination, including the "active subscribers never see ads" guarantee) rather than a source-text match on the old inline expression');
 assert(/usePremiumStatus\(\)/.test(eligibilityServiceSource), 'ad eligibility is derived from usePremiumStatus -- the exact same reactive, RevenueCat-backed, server-verified source Apparently Private\'s own paywall gate uses (not a separate/cached flag), so a purchase/restore/expiration that already updates that store is reflected here with zero additional wiring');
 
 // ============================================================================================
@@ -101,7 +99,8 @@ assert(/if \(!isCommitted\) {\s*return;/.test(todayContextualSource), 'the conte
 assert(/if \(await hasShownContextualPermissionPrompt\(\)\) {\s*return;/.test(todayContextualSource), 'the explainer checks it has never been shown on this device before offering itself again');
 
 const sendFunctionSource = read('../supabase/functions/send-push-notification/index.ts');
-assert(/if \(!categoryEnabled\(prefs, row\.category\) \|\| isWithinQuietHours\(prefs\)\) {\s*continue;/.test(sendFunctionSource), 'the send function skips composing any message for a disabled category or during quiet hours -- a disabled category structurally cannot produce a push, not merely "is asked nicely not to"');
+assert(/if \(!isCategoryEnabled\(prefs, row\.category\)\) {/.test(sendFunctionSource), 'the send function checks category gating before composing any message -- a disabled category structurally cannot produce a push. The underlying isCategoryEnabled/isWithinQuietHours decision logic itself is now covered by genuine behavioral tests, not source-text matching -- see scripts/validate-push-notification-logic.ts');
+assert(/if \(prefs && isWithinQuietHours\(now, prefs\)\) {/.test(sendFunctionSource), 'the send function also checks real timezone-aware quiet hours before composing any message (see validate-push-notification-logic.ts for the actual DST-correctness behavioral tests)');
 
 // ============================================================================================
 // Test case 13 -- completed Dailies do not generate reminder notifications.
@@ -142,7 +141,7 @@ assert(/void removeThisDevicePushToken\(\);\s*const result = await deleteAccount
 
 const consentServiceSource = read('../src/services/ads-consent-service.ts');
 assert(/const consentInfo = await AdsConsent\.gatherConsent\({ tagForUnderAgeOfConsent: options\.underAgeOfConsent }\);/.test(consentServiceSource), 'Google UMP consent is gathered before any ad request, tagged with the real existing age-eligibility signal -- never a hardcoded false');
-assert(/const requestNonPersonalizedAdsOnly = options\.underAgeOfConsent \|\| !consentObtainedOrNotRequired \|\| !attGranted;/.test(consentServiceSource), 'non-personalized-ads-only is forced by ANY of: under-age-of-consent, consent not obtained, or ATT not granted -- a user who fails any one of these three checks can never receive personalized ads');
+assert(/computeRequestNonPersonalizedAdsOnly\(\{/.test(consentServiceSource), 'the non-personalized-ads-only decision is delegated to the shared, exhaustively-tested pure function (see scripts/validate-ad-eligibility-logic.ts for the real behavioral proof that it forces non-personalized ads whenever ANY of under-age-of-consent/consent-not-obtained/ATT-not-granted is true)');
 assert(/current\.status === 'undetermined' \? await TrackingTransparency\.requestTrackingPermissionsAsync\(\) : current;/.test(consentServiceSource), 'ATT is only ever requested when the OS reports it as genuinely undetermined -- never assumed required, never re-requested');
 
 if (failures > 0) {

@@ -22,15 +22,28 @@
 import { Platform } from 'react-native';
 import { AdsConsent, AdsConsentStatus, MobileAds } from 'react-native-google-mobile-ads';
 import * as TrackingTransparency from 'expo-tracking-transparency';
+import { computeRequestNonPersonalizedAdsOnly } from '@/services/ad-eligibility-logic';
 
 export type AdsConsentResult = { requestNonPersonalizedAdsOnly: boolean };
 
+// Keyed by the exact underAgeOfConsent value the memoized result was computed for -- re-runs
+// if that input ever changes (e.g. a session where age_eligibility gets confirmed to 18+
+// AFTER this already ran once while unconfirmed/13-17). age_eligibility is immutable once set
+// to a real value, so the only real transition is unconfirmed -> confirmed, never confirmed ->
+// unconfirmed -- re-deriving on that one transition is a genuine correctness improvement
+// (lets a newly-18+-confirmed user actually become eligible for personalized ads within the
+// same session instead of staying needlessly restricted until app restart), not just
+// defensive. Google UMP/ATT answers themselves are not re-asked by this re-run -- only the
+// under-age tag changes, which can only ever make the result LESS restrictive, never bypass a
+// real consent/ATT requirement.
 let preparePromise: Promise<AdsConsentResult> | null = null;
+let preparedForUnderAgeOfConsent: boolean | null = null;
 
 export const prepareAdsConsent = async (options: { underAgeOfConsent: boolean }): Promise<AdsConsentResult> => {
-  if (preparePromise) {
+  if (preparePromise && preparedForUnderAgeOfConsent === options.underAgeOfConsent) {
     return preparePromise;
   }
+  preparedForUnderAgeOfConsent = options.underAgeOfConsent;
 
   preparePromise = (async (): Promise<AdsConsentResult> => {
     let consentObtainedOrNotRequired = false;
@@ -63,7 +76,11 @@ export const prepareAdsConsent = async (options: { underAgeOfConsent: boolean })
       // SDK init simply means every subsequent load attempt also fails, handled the same way.
     }
 
-    const requestNonPersonalizedAdsOnly = options.underAgeOfConsent || !consentObtainedOrNotRequired || !attGranted;
+    const requestNonPersonalizedAdsOnly = computeRequestNonPersonalizedAdsOnly({
+      underAgeOfConsent: options.underAgeOfConsent,
+      consentObtainedOrNotRequired,
+      attGranted,
+    });
     return { requestNonPersonalizedAdsOnly };
   })();
 
