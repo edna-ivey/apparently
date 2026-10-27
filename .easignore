@@ -80,3 +80,10 @@ preview-screenshots/
 # configuration a real build needs.
 .env*
 !.env.example
+
+# Generated web export and local Expo caches are not inputs to native EAS builds.
+/dist/
+/.expo/
+
+# Dependencies are installed afresh by EAS from package-lock.json.
+/node_modules/
