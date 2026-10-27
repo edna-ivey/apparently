@@ -21,8 +21,8 @@
       "autoIncrement": false,
       "env": {
         "EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS": "true",
-        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID": "",
-        "EXPO_PUBLIC_ADMOB_NATIVE_UNIT_ID": ""
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID": "ca-app-pub-3940256099942544/4411468910",
+        "EXPO_PUBLIC_ADMOB_NATIVE_UNIT_ID": "ca-app-pub-3940256099942544/3986624511"
       }
     }
   },
