@@ -221,7 +221,7 @@ export default function CreatureReadScreen() {
 
           {readState.kind === 'first-form' && (
             <>
-              <TappableCreatureAvatar recipe={readState.recipe} onPress={() => setPreviewOpen(true)} />
+              <TappableCreatureAvatar recipe={readState.recipe} onPress={() => setPreviewOpen(true)} hideAvatar={previewOpen} />
               <ThemedText style={styles.pageEyebrow}>{readState.name.toUpperCase()}</ThemedText>
               <ThemedText style={styles.pageIntro}>
                 Your Creature is still in its First Form — built entirely from the single pattern showing up strongest right now.
@@ -242,6 +242,7 @@ export default function CreatureReadScreen() {
                 recipe={readState.recipe}
                 combinedRead={readState.combinedRead}
                 onAvatarPress={() => setPreviewOpen(true)}
+                hideAvatar={previewOpen}
               />
               <ThemedText style={styles.partsEyebrow}>THE FIVE PARTS</ThemedText>
               {readState.entries.map((entry, index) => (
@@ -277,11 +278,21 @@ function TappableCreatureAvatar({
   onPress,
   size = AVATAR_SIZE,
   stageSize = AVATAR_STAGE_SIZE,
+  hideAvatar = false,
 }: {
   recipe: CreatureRecipe;
   onPress: () => void;
   size?: number;
   stageSize?: number;
+  // True while CreaturePreviewModal is open: that modal renders this same recipe full-screen,
+  // completely covering this smaller avatar underneath (React Native's Modal does not unmount
+  // whatever is behind it). Each CreatureAvatar decodes 5 separate large images (one per body
+  // part); keeping both the page's own avatar AND the modal's export-card avatar fully mounted
+  // and decoding at once is pure wasted memory for pixels nobody can see. Skipping just the
+  // image layer here (never the Pressable/stage/glow, so there is no layout jump when the
+  // modal closes and this reappears) is a real, measurable memory reduction during exactly the
+  // save/export flow crash reports point at, with zero visual change.
+  hideAvatar?: boolean;
 }) {
   return (
     <Pressable
@@ -293,7 +304,7 @@ function TappableCreatureAvatar({
     >
       <View style={[styles.avatarStage, { width: stageSize, height: stageSize }]}>
         <AtmosphericGlow size={stageSize} />
-        <CreatureAvatar recipe={recipe} size={size} />
+        {!hideAvatar && <CreatureAvatar recipe={recipe} size={size} />}
       </View>
       <ThemedText style={styles.tapCue}>Tap to view your Creature</ThemedText>
     </Pressable>
@@ -313,11 +324,13 @@ function CombinedReadReveal({
   recipe,
   combinedRead,
   onAvatarPress,
+  hideAvatar,
 }: {
   name: string;
   recipe: CreatureRecipe;
   combinedRead: CombinedCreatureRead | null;
   onAvatarPress: () => void;
+  hideAvatar?: boolean;
 }) {
   return (
     <View style={styles.revealFrame}>
@@ -345,6 +358,7 @@ function CombinedReadReveal({
           onPress={onAvatarPress}
           size={COMBINED_AVATAR_SIZE}
           stageSize={COMBINED_AVATAR_STAGE_SIZE}
+          hideAvatar={hideAvatar}
         />
 
         {combinedRead && (
