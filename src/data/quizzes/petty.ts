@@ -42,8 +42,8 @@ export const PETTY_QUIZ: QuizDefinition = {
       id: 'q2',
       prompt: 'Someone who’s been annoying you asks, “Does this outfit look good?”',
       choices: [
-        { id: 'a', label: 'I pause long enough to be suspicious.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
-        { id: 'b', label: 'I tell the truth with unnecessary detail.', score: 3, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
+        { id: 'a', label: "I ask why they're suddenly seeking my fashion expertise.", score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
+        { id: 'b', label: "I finally have a chance to be honest about those shoes.", score: 3, traitSignals: [{ dimension: 'direct_indirect', value: 1 }] },
         { id: 'c', label: 'I find one nice thing to say.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
         { id: 'd', label: 'Their outfit is unrelated to their crimes.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
       ],
@@ -53,11 +53,11 @@ export const PETTY_QUIZ: QuizDefinition = {
       prompt: 'Someone who owes you money posts brunch.',
       choices: [
         { id: 'a', label: 'I clock it. Quietly.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
-        { id: 'b', label: 'Brunch with my money is wild.', score: 2, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
+        { id: 'b', label: "I comment, “Looks delicious. So does getting my money back.”", score: 3, traitSignals: [{ dimension: 'forgiving_receipts', value: -1 }] },
         {
           id: 'c',
           label: '“Cute. Now Cash App me.”',
-          score: 3,
+          score: 2,
           traitSignals: [{ dimension: 'direct_indirect', value: 1 }, { dimension: 'conflict_peacekeeping', value: 1 }],
         },
         { id: 'd', label: 'I keep scrolling.', score: 0, traitSignals: [{ dimension: 'conflict_peacekeeping', value: -1 }] },
@@ -83,10 +83,10 @@ export const PETTY_QUIZ: QuizDefinition = {
       prompt: 'Your ex’s new person watches your story.',
       choices: [
         { id: 'a', label: 'Noted.', score: 1, traitSignals: [{ dimension: 'social_attunement', value: 1 }] },
-        { id: 'b', label: 'I probably wouldn’t notice.', score: 0, traitSignals: [{ dimension: 'social_attunement', value: -1 }] },
+        { id: 'b', label: "I'm happy over here. They can watch whatever they want.", score: 0, traitSignals: [{ dimension: 'social_attunement', value: -1 }] },
         {
           id: 'c',
-          label: 'Oh, you came to LOOK? Hold on.',
+          label: "Oh, you came to LOOK? Let me post something worth watching.",
           score: 3,
           traitSignals: [{ dimension: 'control_allowing', value: 1 }, { dimension: 'conflict_peacekeeping', value: 1 }],
         },
@@ -113,7 +113,7 @@ export const PETTY_QUIZ: QuizDefinition = {
       prompt: 'They return something they borrowed... damaged.',
       choices: [
         { id: 'a', label: 'Congrats. Borrowing privileges revoked.', score: 2, traitSignals: [{ dimension: 'control_allowing', value: 1 }] },
-        { id: 'b', label: 'I mention it.', score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
+        { id: 'b', label: "I tell them it's damaged and ask how we're fixing it.", score: 1, traitSignals: [{ dimension: 'direct_indirect', value: -1 }] },
         { id: 'c', label: 'Stuff happens.', score: 0, traitSignals: [{ dimension: 'forgiving_receipts', value: 1 }] },
         {
           id: 'd',
