@@ -39,11 +39,28 @@ const DAILY_STATUS_SET = new Set<DailyStatus>([
   'Rejected',
 ]);
 
-// Single source of truth for the personality-signal cap per answer. An answer may
-// reasonably carry 1, 2, or 3 signals — this is a ceiling, not a requirement (the
-// completeness gate below only requires at least 1). Referenced by both normalization
-// (persistence) and the Review Studio's Add Signal UI so the two can never drift apart.
-export const MAX_PERSONALITY_EFFECTS_PER_OPTION = 3;
+// Build 18 owner decision (Bible §56/§77, LOCKED): an answer may genuinely support any
+// number of distinct trait poles -- there is no ceiling on COUNT. The only real limit is
+// PersonalityEffectValue's own type (-3|-2|-1|1|2|3): at most 3 points for any ONE pole,
+// which is already structurally enforced wherever an effect's `value` is assigned, with no
+// separate constant needed for it. A previous MAX_PERSONALITY_EFFECTS_PER_OPTION = 3 constant
+// here conflated "how many points can one trait get" with "how many traits can one answer
+// support" and silently truncated genuinely-supported traits past the 3rd -- removed.
+
+// One effect per dimension, first occurrence wins -- mirrors the server's own
+// personality_evidence_unique_source_dimension constraint (one row per (source, dimension)),
+// so a Daily answer's client-side shape can never represent something the database would
+// reject/collapse anyway. Never throws, never reorders survivors.
+const dedupeEffectsByDimension = (effects: PersonalityEffect[]): PersonalityEffect[] => {
+  const seen = new Set<string>();
+  return effects.filter((effect) => {
+    if (seen.has(effect.dimension)) {
+      return false;
+    }
+    seen.add(effect.dimension);
+    return true;
+  });
+};
 
 export type DailyOption = {
   id: number;
@@ -496,9 +513,14 @@ const normalizeQuestion = (question: Partial<DailyQuestion>, fallbackId: number)
         const defaultOption = initialQuestion?.options.find((item) => item.id === optionId);
 
         // Persisted values win. Seed values are only a fallback for when the persisted
-        // record has no value at all (e.g. an option that has never been edited).
+        // record has no value at all (e.g. an option that has never been edited). No count
+        // cap (Build 18, Bible §56/§77 LOCKED) -- every genuinely persisted trait survives
+        // deserialization. Still deduplicated by dimension (defense in depth; the editor's
+        // own Add Signal flow already prevents creating a duplicate in the first place) --
+        // keeps the first occurrence, since that is the one the editor actually intended
+        // before any later corruption/merge could have appended a second.
         const persistedEffects = Array.isArray(option?.personalityEffects)
-          ? option.personalityEffects.slice(0, MAX_PERSONALITY_EFFECTS_PER_OPTION)
+          ? dedupeEffectsByDimension(option.personalityEffects)
           : undefined;
         const persistedFeedback =
           typeof option?.apparentlyFeedback === 'string' && option.apparentlyFeedback.trim()
@@ -1177,16 +1199,14 @@ export const updateQuestionOption = (
 
 // Both of the following route through applyMaterialEdit exactly like updateQuestionOption's
 // label branch — same Live/Archived block, same Approved/Scheduled → NeedsRevision
-// invalidation. Capped at MAX_PERSONALITY_EFFECTS_PER_OPTION effects per answer to match
-// the cap normalizeQuestion already enforces on persisted data — without this cap here, a
-// UI could add a 4th effect that silently disappears the next time the question reloads.
+// invalidation. No count cap (Build 18, Bible §56/§77 LOCKED) -- still deduplicated by
+// dimension, matching normalizeQuestion's own dedupeEffectsByDimension exactly, so a direct
+// call to this function can never persist two effects for the same dimension either.
 export const updateQuestionOptionEffects = (id: number, optionId: number, effects: PersonalityEffect[]): boolean =>
   applyMaterialEdit(id, (question) => ({
     ...question,
     options: question.options.map((option) =>
-      option.id === optionId
-        ? { ...option, personalityEffects: effects.slice(0, MAX_PERSONALITY_EFFECTS_PER_OPTION) }
-        : option
+      option.id === optionId ? { ...option, personalityEffects: dedupeEffectsByDimension(effects) } : option
     ),
   }));
 

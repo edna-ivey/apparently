@@ -1,17 +1,59 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { hydrateOnboardingState } from '@/data/onboarding';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { hydrateOnboardingState, useOnboardingState } from '@/data/onboarding';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
 import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { initErrorReporting } from '@/services/observability';
 import { initializePurchases } from '@/services/purchases-service';
+import { syncLocalProfileToRemote } from '@/services/profile-backfill-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
+import type { NotificationCategory } from '@/services/notifications-config';
+import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
+import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
+import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
+import { registerPushToken } from '@/services/push-token-service';
 
 SplashScreen.preventAutoHideAsync();
+// Work Package 2: same "call once, at module scope, before anything else" convention as
+// SplashScreen.preventAutoHideAsync() above — must run before any render, so a crash during
+// the FIRST paint is still reportable. No-ops safely with no DSN configured (see
+// observability.ts's own header comment).
+initErrorReporting();
+
+// Notifications, 2026-10-22: controls whether/how a notification is presented while the app is
+// ALREADY in the foreground (iOS otherwise suppresses the banner entirely for a foregrounded
+// app unless a handler says to show it). Same "call once, at module scope" convention as
+// SplashScreen/initErrorReporting above. Every category in this app is a real, user-relevant
+// moment (a reminder, a friend's response, a Creature update) -- none are "silent" background
+// data pushes, so every category shows a real banner, plays sound, and updates the badge.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+// The real deep-link target for a tapped notification, derived from the payload this app
+// itself always sets (data.url) -- see daily-reminder-service.ts and the Edge Function that
+// sends Friend/Creature/new-quiz/Private pushes for where that field is populated. Falls back
+// to Today ('/') for a malformed/missing payload rather than doing nothing.
+const resolveNotificationUrl = (response: Notifications.NotificationResponse): string => {
+  const data = response.notification.request.content.data as { url?: string; category?: string } | undefined;
+  if (data?.category) {
+    logAnalyticsEvent({ name: 'notification_opened', properties: { category: data.category as NotificationCategory } });
+  }
+  return typeof data?.url === 'string' && data.url.length > 0 ? data.url : '/';
+};
 
 // This is the ONLY thing that decides which top-level branch of the route tree renders:
 // the (tabs) group (consumer screens, wrapped in AppTabs) or admin/* (internal editorial
@@ -33,6 +75,8 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
+  const onboardingState = useOnboardingState();
+  const onboardingComplete = onboardingState !== 'loading' && onboardingState.completed;
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -57,8 +101,20 @@ export default function RootLayout() {
     // so it has none of the native-navigator-mounting race a conditional <Redirect/> at this
     // root level would — see the comment above this component for why THAT kind of gating
     // was deliberately moved out of the root layout.
+    //
+    // App Privacy audit (2026-10-21): also require onboardingState.completed. Without this,
+    // this effect fired on EVERY launch regardless of route or onboarding progress — including
+    // the very first launch, before the age-gate step (onboarding.tsx) had even rendered —
+    // which created a real anonymous auth.users row ahead of the user ever answering "under
+    // 13." (tabs)/_layout.tsx already blocks every consumer tab screen until onboarding
+    // completes, so this root effect was the ONE path that could establish a session before
+    // age verification. completeOnboarding() (data/onboarding.ts) establishes the session
+    // itself at the moment onboarding actually finishes — this effect no longer needs to (or
+    // should) race ahead of that. A device that already completed onboarding in a prior
+    // session is unaffected: onboardingState.completed is true from the first render after
+    // hydration, so this still fires on every normal relaunch exactly as before.
     const isAdminRoute = segments[0] === 'admin';
-    if (isRemoteDailyEnabled && !isAdminRoute) {
+    if (isRemoteDailyEnabled && !isAdminRoute && onboardingComplete) {
       void ensureAnonymousSession().then(() => {
         // Opportunistic retry for any quiz completion that failed to reach the server
         // earlier (see pending-quiz-submissions.ts) — "app/session initializes again" is
@@ -71,19 +127,81 @@ export default function RootLayout() {
         // legacy-quiz-backfill-service.ts. Session-established + local-history-hydrated is
         // exactly this moment; it also safely retries when You opens (you.tsx's loadRemote).
         void syncLegacyQuizResultsToRemote();
+        // Recovers a local onboarding/profile record with no public.profiles row yet --
+        // either a pre-fix historical device, or a completion/edit write that succeeded
+        // locally but failed to reach Supabase. See profile-backfill-service.ts.
+        void syncLocalProfileToRemote();
         // Establishes the RevenueCat identity (same anonymous Supabase auth.uid(), see
         // purchases-service.ts's own comment) and loads real CustomerInfo once a session
         // exists -- same "app/session initializes" moment as everything else in this block.
         // No-op on web/unconfigured builds; never blocks rendering, never shows a splash.
         void initializePurchases();
+        // Notifications, 2026-10-22: re-registers this device's push token if permission was
+        // already granted in a prior session (never requests it here -- that only ever
+        // happens contextually, from a real in-app explainer flow, never from this launch
+        // effect) and re-derives/reschedules the next local Daily reminder from the user's own
+        // saved preferences. Same "app/session initializes" moment as everything else above.
+        void hydrateNotificationPreferences().then(async () => {
+          const permissionStatus = await getNotificationPermissionStatus();
+          if (permissionStatus === 'granted') {
+            void registerPushToken();
+          }
+        });
+        // Timezone correction, 2026-10-23: every launch/foreground re-sends the device's
+        // current IANA timezone, independent of whether the user ever opens Settings -- a
+        // travelling user's real zone change reaches the server promptly even if they never
+        // touch a notification preference.
+        void syncDeviceTimeZone();
       });
     }
-  }, [segments]);
+  }, [segments, onboardingComplete]);
+
+  // Notifications, 2026-10-22: reschedules the single next Daily-reminder notification on
+  // every launch/foreground AND whenever the user's own saved preference (enabled/hour/minute)
+  // changes -- recomputed fresh each time from the device's current local clock, so "respect
+  // the user's timezone" holds even across travel. Deliberately NOT gated on
+  // isRemoteDailyEnabled/onboardingComplete the way the session-bootstrap effect above is --
+  // local notification scheduling touches no backend and creates no account, so there is
+  // nothing in this specific effect that the age-gate/anonymous-session concerns above apply
+  // to; it simply does nothing useful before onboarding anyway since permission can only ever
+  // be granted after a real contextual ask, which itself only happens post-onboarding.
+  const notificationPreferences = useNotificationPreferences();
+  useEffect(() => {
+    void getNotificationPermissionStatus().then((permissionStatus) => {
+      void scheduleNextDailyReminder({
+        enabled: notificationPreferences.dailyReminderEnabled,
+        hour: notificationPreferences.dailyReminderHour,
+        minute: notificationPreferences.dailyReminderMinute,
+        permissionGranted: permissionStatus === 'granted',
+      });
+    });
+  }, [notificationPreferences.dailyReminderEnabled, notificationPreferences.dailyReminderHour, notificationPreferences.dailyReminderMinute]);
+
+  // Notifications, 2026-10-22: deep-link handling for a tapped notification, covering all
+  // three app states the task names explicitly -- foreground (addNotificationResponseReceived
+  // Listener), background (the same listener, since expo-notifications/iOS resumes the app
+  // and fires it), and cold-start-from-notification (getLastNotificationResponseAsync, read
+  // once on mount). router.push (not replace) -- a notification tap is a real navigation
+  // action the user should be able to back out of, not a redirect.
+  const router = useRouter();
+  useEffect(() => {
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        router.push(resolveNotificationUrl(response) as never);
+      }
+    });
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      router.push(resolveNotificationUrl(response) as never);
+    });
+    return () => subscription.remove();
+  }, [router]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

@@ -22,8 +22,8 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
       id: 'sharer',
       title: 'THE SHARER',
       heroRead: ['Your plate was never really yours.', 'You knew that going in.'],
-      body: 'You order with the table in mind, not just yourself. Sharing doesn’t feel like a loss to you — more food on the table means more good moments, and you’d rather have variety than territory.',
-      kicker: 'Communal by nature, not by pressure.',
+      body: "You order with the table in mind, not just yourself. Sharing doesn't feel like a loss to you. More food on the table means more good moments, and you'd rather have variety than territory. You're the person offering somebody a taste before they've even asked, then insisting they try the sauce too. The only problem is you sometimes forget that other people aren't nearly as generous with their plates. You've definitely offered somebody else's fries like they belonged to the community.",
+      kicker: "Apparently, your plate is a public service and everybody's been approved for benefits.",
       traits: ['Generous', 'Easygoing', 'Social'],
       profileSignals: [
         { dimension: 'independent_collaborative', value: -2 },
@@ -33,9 +33,9 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
     {
       id: 'negotiator',
       title: 'THE NEGOTIATOR',
-      heroRead: ['You’ll share.', 'You will also be keeping count.'],
-      body: 'You’re not against sharing — you just want it to be fair. One bite is one bite, and everyone knows exactly where the line is because you drew it clearly, out loud, in real time.',
-      kicker: 'Generosity, audited.',
+      heroRead: ["You'll share.", 'You will also be keeping count.'],
+      body: "You're not against sharing. You just want it to be fair. One bite is one bite, and everyone knows exactly where the line is because you drew it clearly, out loud, in real time. You can absolutely have some fries, but we're going to establish what *some* means before your hand enters the bag. You're generous when people respect the arrangement. What you cannot tolerate is somebody agreeing to one bite and then opening their mouth like they're trying to swallow the entire sandwich.",
+      kicker: "Apparently, sharing with you comes with terms, conditions, and a legally binding bite limit.",
       traits: ['Fair', 'Precise', 'Practical'],
       profileSignals: [
         { dimension: 'trust_verify', value: -1 },
@@ -46,8 +46,8 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
       id: 'plate-protector',
       title: 'THE PLATE PROTECTOR',
       heroRead: ['You ordered this.', 'You would like to eat this.'],
-      body: 'You’re not stingy, you just believe food you chose for yourself should stay that way. You’ll split an appetizer out of politeness. Your entree is a closed border.',
-      kicker: 'Sharing is caring. This isn’t that.',
+      body: "You're not stingy, you just believe food you chose for yourself should stay that way. You'll split an appetizer out of politeness. Your entrée is a closed border. You spent time studying that menu, made your decision, and have been mentally preparing for this meal since the waiter walked away. So when somebody who said they weren't hungry suddenly develops an interest in your plate, you have questions. And yes, you noticed they took the piece with the most cheese.",
+      kicker: "Apparently, your love language is quality time, not unauthorized access to your plate.",
       traits: ['Boundary-aware', 'Direct', 'Decisive'],
       profileSignals: [
         { dimension: 'direct_indirect', value: 1 },
@@ -58,9 +58,9 @@ export const ONE_BITE_QUIZ: ArchetypeQuizDefinition = {
       id: 'order-your-own',
       title: 'THE "ORDER YOUR OWN"',
       displayTitle: 'The "Order Your Own"',
-      heroRead: ['There’s a whole menu.', 'Use it.'],
-      body: 'You’d genuinely rather everyone just get what they actually want. Splitting sounds like a logistics project you didn’t sign up for — order what you’re craving, eat it in peace, everybody wins.',
-      kicker: 'Efficient. Slightly antisocial. Correct.',
+      heroRead: ["There's a whole menu.", 'Use it.'],
+      body: "You'd genuinely rather everyone just get what they actually want. Splitting sounds like a logistics project you didn't sign up for. Order what you're craving, eat it in peace, everybody wins. You don't understand why four grown adults need to negotiate ownership of six chicken wings when the restaurant will happily bring another order. You'll even pay for somebody else's meal if that's what it takes to protect yours. It's not about the money. It's about the principle, and the principle is that you ordered your own food for a reason.",
+      kicker: "Apparently, you're happy to buy the whole table dinner as long as everybody stays out of yours.",
       traits: ['Independent', 'Efficient', 'Low-drama'],
       profileSignals: [
         { dimension: 'independent_collaborative', value: 2 },

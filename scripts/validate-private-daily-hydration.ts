@@ -60,8 +60,13 @@ assert(foregroundEffectMatch !== null, 'the foreground-refresh effect depends on
 assert(/privateDaily\.experience\.phase === 'loading'/.test(todaySource), "Today renders an intentional state for 'loading' instead of nothing");
 assert(/privateDaily\.experience\.phase === 'error'/.test(todaySource), "Today renders a retry affordance for 'error' instead of nothing");
 assert(/onPress=\{privateDaily\.retry\}/.test(todaySource), 'the error-state retry button calls the hook\'s own retry() (re-runs load(), not a page reload)');
-assert(/Loading today.s Private question/.test(todaySource), 'the loading state uses honest, non-technical copy');
-assert(/couldn.t load today.s Private question/.test(todaySource), 'the error state uses honest, non-technical copy');
+// Source text has JSX's &apos; entity, not a literal apostrophe -- `.` (one char) never
+// matched the 6-character "&apos;" entity, so this always failed regardless of the real copy.
+// The actual rendered copy ("Loading today's Private question…" / "We couldn't load today's
+// Private question.") already was honest and non-technical; this was a regex bug in the
+// check, not a content problem.
+assert(/Loading today&apos;s Private question/.test(todaySource), 'the loading state uses honest, non-technical copy');
+assert(/We couldn&apos;t load today&apos;s Private question/.test(todaySource), 'the error state uses honest, non-technical copy');
 
 // 'no-live-private' intentionally still renders nothing -- that is a real, non-error state
 // (genuinely no Private Daily today), not a bug to patch over. Confirm it is never used as an

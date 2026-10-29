@@ -10,12 +10,19 @@
     },
     "production": {
       "autoIncrement": true,
-      "environment": "production"
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID": "ca-app-pub-2298824723392414/3854682110",
+        "EXPO_PUBLIC_ADMOB_NATIVE_UNIT_ID": "ca-app-pub-2298824723392414/7678165029"
+      }
     },
     "testflight": {
       "extends": "production",
+      "autoIncrement": false,
       "env": {
-        "EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS": "true"
+        "EXPO_PUBLIC_PRIVATE_DAILY_TESTER_ACCESS": "true",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID": "ca-app-pub-3940256099942544/4411468910",
+        "EXPO_PUBLIC_ADMOB_NATIVE_UNIT_ID": "ca-app-pub-3940256099942544/3986624511"
       }
     }
   },

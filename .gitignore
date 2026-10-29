@@ -47,3 +47,7 @@ example
 
 # Supabase CLI local cache (created even by read-only CLI calls; never contains project data)
 supabase/.temp/
+
+# Local Creature artwork source folders (kept on disk, not committed)
+/assets/creatures_old/
+/assets/creatures copy/

@@ -9,16 +9,32 @@
 # scripts/creature-factory/, and the asset folders assets/creatures-canonical/,
 # assets/creatures-dev-registered/, assets/creatures-dev-prototype/ it alone referenced) had
 # zero real importers and has been git-rm'd entirely -- see the Build 9 correction report for
-# before/after archive size. assets/creatures-test/ is the current production asset tree
+# before/after archive size. assets/creatures/ is the current production asset tree
 # (used by CreatureAvatar for every real user) and is correctly never excluded here.
 #
-# assets/creatures/ below is DIFFERENT from all of the above: it was never git-tracked at all
+# CORRECTIVE NOTE (Work Package 3, Phase B Stage 2 corrective commit): a Stage 2 attempt to
+# require() optimized .png siblings instead of the original .svg wrappers, and to exclude the
+# originals here, was proposed and committed but then EXPLICITLY WITHDRAWN -- the original
+# SVG artwork and rendering pipeline were previously approved and locked after extensive
+# calibration/rendering work, and changing their format was not authorized. Both the asset
+# references and this exclusion were reverted in the corrective commit. assets/creatures/
+# and assets/relics/ are LOCKED: do not exclude any file under them, do not change what
+# creature-test-assets.ts / relic-assets.ts require(), without explicit approval first.
+#
+# assets/creatures_old/ below is DIFFERENT from all of the above: it was never git-tracked at all
 # (confirmed untracked, ~233MB, the single largest asset tree in the project) and was the one
 # remaining thing the removed obsolete tree referenced. Excluded from the EAS upload here
 # (EAS Build includes untracked-but-not-gitignored files by default) rather than deleted from
 # disk, since it has no git history to recover it from -- that decision is left to whoever owns
 # this local checkout.
-assets/creatures/
+assets/creatures_old/
+
+# "assets/creatures copy/" (Work Package 3 audit): confirmed via SHA-1 checksum, file-for-file
+# identical to assets/creatures_old/ above (69/69 files, same relative paths, same hashes) --
+# an exact duplicate of the tree already excluded on the previous line. Also untracked, also
+# unreferenced by any src/ import. Excluded for the same reason and under the same no-delete
+# constraint as assets/creatures_old/.
+assets/creatures copy/
 
 # Documentation -- never imported by app code.
 docs/
@@ -32,6 +48,42 @@ scripts/
 # Supabase CLI; never part of the Expo client bundle.
 supabase/
 
+# Local native prebuild output (Build 20 incident, 2026-10-21): `npx expo run:ios` (used this
+# pass for real iOS Simulator testing -- see Bible §92) generates a full native `ios/` project
+# including CocoaPods' Pods/ tree, locally ~1.2GB. It's gitignored (.gitignore's own /ios,
+# /android), but this file's own header comment already documents that .easignore REPLACES
+# .gitignore for EAS archive purposes once .easignore exists -- so gitignored was not actually
+# excluded from the upload. A real build attempt this pass uploaded an 905MB archive (vs the
+# normal ~317MB) before this was caught and the build was canceled. Excluded explicitly here so
+# this can't recur: this app is managed-workflow (EAS runs its own prebuild), so a local
+# `ios/`/`android/` directory is never a real input to a production/TestFlight build.
+/ios/
+/android/
+
+# Local testing/documentation screenshots -- never imported by app code, not a build input.
+preview-screenshots/
+
 # Standard non-build-artifact excludes.
 .git/
 .vscode/
+
+# SECURITY (Work Package 3, Phase B Stage 2): because .easignore exists at all, EAS Build
+# ignores .gitignore ENTIRELY for archive purposes (confirmed by reading eas-cli's own
+# Ignore class, vcs/local.js -- ".gitignore files are not used" once a project has an
+# .easignore). That means .gitignore's own `.env*` / `!.env.example` protection was NOT
+# actually in effect for the EAS upload -- every local env file, including .env.local
+# (which holds non-public credentials such as VERCEL_OIDC_TOKEN alongside EXPO_PUBLIC_*
+# values that are already meant to ship in the client bundle), was being uploaded in full
+# with every build. Mirrored here so local secrets never enter the archive again. Production
+# builds get their actual EXPO_PUBLIC_* / SENTRY_* config from EAS's own Environment
+# Variables system (`eas env:list`), not from this file, so excluding it does not remove any
+# configuration a real build needs.
+.env*
+!.env.example
+
+# Generated web export and local Expo caches are not inputs to native EAS builds.
+/dist/
+/.expo/
+
+# Dependencies are installed afresh by EAS from package-lock.json.
+/node_modules/

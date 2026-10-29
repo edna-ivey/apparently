@@ -181,7 +181,15 @@ console.log('\n--- PRIVATE QUIZ AWARDS ---');
   assert(coreAwards.length === 3, `top 3 only of 4 qualifying Core traits receive an award (got ${coreAwards.length})`);
   assert(coreAwards.every((a) => a.value === 1), 'every awarded Core trait on a Private quiz gets +1 (never +2)');
   assert(privateAwards.length === 3, `top 3 only of 4 qualifying Private traits receive an award (got ${privateAwards.length})`);
-  assert(privateAwards.every((a) => a.value === 2), 'every awarded Private trait on a Private quiz gets +2');
+  // Build 11 LOCKED ranked Private evidence: rank #1 -> ±3, rank #2 -> ±2, rank #3 -> ±1
+  // (replaces the old flat ±2-for-all-three-ranks model this fixture used to assert).
+  // privateAwards is already ranked strongest-first (applyPermanentQuizAwards preserves
+  // resolveWithinQuizQualification's order), and this fixture's privateDims were authored with
+  // strictly descending raw points (6, 5, 4 for the three awarded ranks), so index 0/1/2 here
+  // really are rank #1/#2/#3.
+  assert(privateAwards[0]?.value === 3, `rank #1 Private trait gets ±3 (got ${privateAwards[0]?.value})`);
+  assert(privateAwards[1]?.value === 2, `rank #2 Private trait gets ±2 (got ${privateAwards[1]?.value})`);
+  assert(privateAwards[2]?.value === 1, `rank #3 Private trait gets ±1 (got ${privateAwards[2]?.value})`);
   assert(!coreAwards.some((a) => a.dimension === 'social_attunement'), '4th-ranked Core trait (weakest) receives no award');
   assert(!privateAwards.some((a) => a.dimension === 'boundary_holding_approval_seeking'), '4th-ranked Private trait (weakest) receives no award');
 }

@@ -24,17 +24,19 @@ import {
 // timestamps -- two genuinely different orderings that should not be forced to share one
 // implementation just because the math looks similar.
 //
-// IMPORTANT SCOPE NOTE (see the reconciliation-pass final report): today's actual quiz content
-// (src/data/quizzes/*.ts) authors each result's `profileSignals` as a small, already-final,
-// human-picked list (<=3 signals) attached to the WINNING archetype/band, not as raw per-answer
-// effects on each question's own choices. That means no current quiz can supply this module
-// the real per-answer raw evidence its within-quiz qualification step is designed to consume.
-// This module is still implemented and validated against the Bible's exact spec now (see
-// scripts/validate-build8-pass4-bible-qualification-reconciliation.ts) so the algorithmic
-// foundation is correct and ready -- wiring it into the real submission path would require
-// authoring quiz content with real per-answer raw effects, which is a content change outside
-// this pass's "scoring/evidence architecture correction only" scope. Flagged, not silently
-// resolved, per instruction.
+// SCOPE NOTE, UPDATED FOR BUILD 11: the comment that used to live here said no quiz content
+// could supply this module real per-answer raw evidence. That's no longer true and hasn't been
+// since the 7 premium Apparently Private quizzes were authored with real per-choice
+// `traitSignals` (src/data/quizzes/career-how-bad.ts, career-proving.ts, love-ready.ts,
+// life-match-dream-life.ts, private-private-trouble.ts, hidden-you-wrong.ts,
+// style-vibe-intimidating.ts — each sets `answerLevelPersonalityEvidence: true`). scoring.ts's
+// answerLevelProfileSignals() builds real PersonalityAnswerEvidence from those per-choice
+// traitSignals and calls applyPermanentQuizAwards below on every fresh completion of those 7
+// quizzes. Quizzes WITHOUT that flag (every public/free quiz, plus the 2 free Private-preview
+// quizzes keep-you-around.ts and be-so-serious.ts, which have no traitSignals authored at all)
+// still use the older, simpler path: a small hand-picked `profileSignals` list attached
+// directly to the winning result/archetype, never routed through this module's ranking at all.
+// Both paths are real and currently live; they are not layered, a given quiz uses exactly one.
 // ---------------------------------------------------------------------------------------
 
 export const WITHIN_QUIZ_QUALIFICATION_THRESHOLD = 3;
@@ -151,18 +153,42 @@ export const resolveWithinQuizQualification = (answers: PersonalityAnswerEvidenc
   return resolved.map(({ dimension, winningSign, winningRawPoints }) => ({ dimension, winningSign, winningRawPoints }));
 };
 
-const toEffect = (trait: QualifiedQuizTrait, magnitude: 1 | 2): PersonalityEffect => ({
+const toEffect = (trait: QualifiedQuizTrait, magnitude: 1 | 2 | 3): PersonalityEffect => ({
   dimension: trait.dimension,
   value: (trait.winningSign * magnitude) as PersonalityEffectValue,
 });
 
-// Step 4-5: rank qualifying winning poles -> apply permanent profile awards. Bible §15A:
-//   PUBLIC / FREE quizzes  -- Core: top 3 qualifying traits +2 each, 4th/5th +1 each. No
-//                             Private awards (even if a Private trait happened to qualify).
-//   APPARENTLY PRIVATE     -- Core: top 3 qualifying traits +1 each. Private: top 3 qualifying
-//   quizzes                  traits +2 each. Both layers ranked/capped independently.
+// Rank #1/#2/#3 of an already strongest-first ordered list -> award magnitudes 3/2/1. A list
+// shorter than 3 (2 qualifying traits, 1, or 0) simply receives fewer awards — see the
+// LOCKED PRIVATE QUIZ RANKED EVIDENCE rule below for why this must never be padded.
+const RANKED_MAGNITUDES: readonly (1 | 2 | 3)[] = [3, 2, 1];
+const applyRankedAwards = (ranked: QualifiedQuizTrait[], awards: PersonalityEffect[]): void => {
+  ranked.slice(0, 3).forEach((trait, index) => awards.push(toEffect(trait, RANKED_MAGNITUDES[index])));
+};
+
+// Step 4-5: rank qualifying winning poles -> apply permanent profile awards.
+//
+//   PUBLIC / FREE quizzes   -- Core: top 3 qualifying traits +2 each, 4th/5th +1 each. No
+//                              Private awards (even if a Private trait happened to qualify).
+//   APPARENTLY PRIVATE      -- Core: top 3 qualifying traits +1 each (UNCHANGED — see the
+//   quizzes                    "DO NOT DAMAGE CORE EVIDENCE" rule below; Private quizzes must
+//                              never be allowed to outweigh Core/Creature identity).
+//
+//                              Private: LOCKED (Build 11) RANKED evidence —
+//                                rank #1 qualifying trait -> ±3
+//                                rank #2 qualifying trait -> ±2
+//                                rank #3 qualifying trait -> ±1
+//                              This REPLACES the previous flat ±2-for-all-three-ranks model.
+//                              The strongest Private finding from a quiz now outweighs its
+//                              secondary/tertiary findings instead of all three counting
+//                              equally — see quiz-personality-awards.ts's module doc / the
+//                              Apparently You Product Creative Bible's "PRIVATE QUIZ RANKED
+//                              EVIDENCE" section for the full rationale.
+//
 // If fewer traits qualify than a tier needs, only the traits that genuinely qualified receive
-// awards -- this NEVER pads a tier with an invented trait to fill it.
+// awards -- this NEVER pads a tier (Core OR Private) with an invented trait to fill it. Two
+// qualifying Private traits award only ±3/±2; one qualifying trait awards only ±3; zero award
+// nothing.
 export const applyPermanentQuizAwards = (answers: PersonalityAnswerEvidence[], quizType: QuizType): PersonalityEffect[] => {
   const qualified = resolveWithinQuizQualification(answers);
   const coreQualified = qualified.filter((trait) => isCoreDimension(trait.dimension));
@@ -177,7 +203,7 @@ export const applyPermanentQuizAwards = (answers: PersonalityAnswerEvidence[], q
     // privateQualified is deliberately never awarded here.
   } else {
     coreQualified.slice(0, 3).forEach((trait) => awards.push(toEffect(trait, 1)));
-    privateQualified.slice(0, 3).forEach((trait) => awards.push(toEffect(trait, 2)));
+    applyRankedAwards(privateQualified, awards);
   }
 
   return awards;

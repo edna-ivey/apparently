@@ -3,11 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Brand, Spacing } from '@/constants/theme';
 import { Radius } from '@/constants/design-system';
+import { Celestial, CelestialType, Panel } from '@/components/today/celestial';
+import { isAdultEligible, setAgeEligibilityOnce, useAgeEligibility } from '@/data/age-eligibility';
 import { getQuizDefinition } from '@/data/quizzes';
 import { PRIVATE_CATEGORIES, PRIVATE_LOCKED_CATALOG, type PrivateCatalogEntry } from '@/data/quizzes/private-catalog';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
@@ -51,6 +52,15 @@ const CATEGORY_PILLS: CategoryFilter[] = ['All', ...PRIVATE_CATEGORIES];
 // shared-result links keep working exactly as before — removing an id from this array never
 // touches that quiz's own definition or history.
 const OPEN_PRIVATE_QUIZ_IDS = ['keep-you-around', 'be-so-serious'];
+const PREMIUM_PRIVATE_QUIZ_IDS = [
+  'love-soulmates-ready',
+  'career-ambition-how-bad',
+  'career-ambition-proving',
+  'hidden-you-wrong',
+  'life-match-dream-life',
+  'style-vibe-intimidating',
+  'private-private-trouble',
+];
 
 type OpenQuizCard = {
   id: string;
@@ -59,12 +69,28 @@ type OpenQuizCard = {
   lastResultTitle: string | null;
 };
 
+// Build 15 fix: the landing copy previously hardcoded "One preview is on us" while
+// OPEN_PRIVATE_QUIZ_IDS actually lists two free-preview quizzes, both rendered with their own
+// "FREE PREVIEW" badge below — a real mismatch between copy and actual entitlement, not a
+// stylistic choice. Derives the real count from the same array every card below reads from,
+// so the two can never drift out of sync again; the access rules themselves (which quizzes are
+// open) are completely unchanged.
+const OPEN_PREVIEW_COPY =
+  OPEN_PRIVATE_QUIZ_IDS.length === 1
+    ? 'One preview is on us. The rest are staying mysterious for now.'
+    : `${OPEN_PRIVATE_QUIZ_IDS.length} previews are on us. The rest are staying mysterious for now.`;
+
 export default function PrivateScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [lockedInfoEntry, setLockedInfoEntry] = useState<PrivateCatalogEntry | null>(null);
+  // Only for an account that predates the Build 16 age gate (onboarding's own age-gate step
+  // runs once at signup and sets this immediately — a device that has genuinely never been
+  // asked yet is the only way `ageEligibility` is still null here). Distinct from '13to17',
+  // which is a real, immutable answer — never re-prompted.
+  const [ageConfirmVisible, setAgeConfirmVisible] = useState(false);
 
   // Real RevenueCat entitlement truth only (never the client tester-access build flag — see
   // purchases-service.ts's useEffectivePremium correction). The pre-subscription sales pitch
@@ -73,6 +99,14 @@ export default function PrivateScreen() {
   // reassuring.
   const premium = usePremiumStatus();
   const isSubscriber = premium.status === 'premium';
+
+  // Build 16: premium entitlement never substitutes for the 18+ gate on the one 'Private
+  // Private. 😈' category quiz -- a subscriber who isn't confirmed 18+ still doesn't get it
+  // listed as playable here (the quiz runner's own gate, backed by the server-side
+  // is_adult_eligible() check, is the real authorization either way -- this only controls
+  // what this screen shows).
+  const ageEligibility = useAgeEligibility();
+  const canAccessPrivatePrivate = isSubscriber && isAdultEligible(ageEligibility);
 
   // Same persisted quiz history Explore already reads from — no second completion system.
   // One useQuizResults() call (a hook, so it can't live inside the loop below) feeds every
@@ -84,7 +118,9 @@ export default function PrivateScreen() {
   }, []);
 
   const openQuizCards: OpenQuizCard[] = useMemo(() => {
-    return OPEN_PRIVATE_QUIZ_IDS.map((id) => {
+    const premiumIds = isSubscriber ? PREMIUM_PRIVATE_QUIZ_IDS.filter((id) => id !== 'private-private-trouble' || canAccessPrivatePrivate) : [];
+    const playableIds = [...OPEN_PRIVATE_QUIZ_IDS, ...premiumIds];
+    return playableIds.map((id) => {
       const definition = getQuizDefinition(id);
       if (!definition) {
         return null;
@@ -98,23 +134,59 @@ export default function PrivateScreen() {
       const lastResultTitle = completed ? resolveResultDisplayTitle(definition, latest.resultId) ?? latest.resultTitle : null;
       return { id, definition, completed, lastResultTitle };
     }).filter((card): card is OpenQuizCard => card !== null);
-  }, [quizResults]);
+  }, [quizResults, isSubscriber, canAccessPrivatePrivate]);
 
   const visibleQuizCards = useMemo(
     () => openQuizCards.filter((card) => selectedCategory === 'All' || card.definition.category === selectedCategory),
     [openQuizCards, selectedCategory],
   );
 
+  // Build 16: the "Private Private. 😈" filter pill never appears for a device confirmed
+  // 13-17 (a real, immutable answer) -- that device shouldn't be able to discover the category
+  // even via its own filter chip once every entry inside it is already hidden above. A device
+  // that predates the age gate entirely (ageEligibility still null -- never asked) still sees
+  // the pill, so it has a way to resolve that instead of being silently locked out forever;
+  // tapping it opens the retroactive confirmation modal below instead of selecting the category.
+  const visibleCategoryPills = useMemo(
+    () => CATEGORY_PILLS.filter((category) => category !== 'Private Private. 😈' || isAdultEligible(ageEligibility) || ageEligibility === null),
+    [ageEligibility],
+  );
+
+  const handleCategoryPress = (category: CategoryFilter) => {
+    if (category === 'Private Private. 😈' && ageEligibility === null) {
+      setAgeConfirmVisible(true);
+      return;
+    }
+    setSelectedCategory(category);
+  };
+
+  const confirmRetroactiveAge = async (eligibility: '13to17' | '18plus') => {
+    setAgeConfirmVisible(false);
+    await setAgeEligibilityOnce(eligibility);
+    if (eligibility === '18plus') {
+      setSelectedCategory('Private Private. 😈');
+    }
+  };
+
   const visibleLockedEntries = useMemo(
-    () => PRIVATE_LOCKED_CATALOG.filter((entry) => selectedCategory === 'All' || entry.category === selectedCategory),
-    [selectedCategory],
+    () =>
+      PRIVATE_LOCKED_CATALOG.filter(
+        (entry) =>
+          (!isSubscriber || !PREMIUM_PRIVATE_QUIZ_IDS.includes(entry.id)) &&
+          // Build 16: every 'Private Private. 😈' teaser (not just the one real quiz behind
+          // it, 'private-private-trouble') is hidden from a non-adult-eligible device -- a
+          // 13-17 year old never sees so much as a locked tease for this category.
+          (entry.category !== 'Private Private. 😈' || isAdultEligible(ageEligibility)) &&
+          (selectedCategory === 'All' || entry.category === selectedCategory),
+      ),
+    [selectedCategory, isSubscriber, ageEligibility],
   );
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
         <ScrollView contentContainerStyle={[styles.content, { paddingTop: topInset }]} showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="mark" />
+          <ThemedText style={styles.wordmark}>apparently you.</ThemedText>
 
           <View style={styles.headingGroup}>
             <ThemedText style={styles.heading}>apparently private.</ThemedText>
@@ -130,67 +202,71 @@ export default function PrivateScreen() {
             ) : (
               <>
                 <ThemedText style={styles.headingSupport}>The questions get a little more personal in here.</ThemedText>
-                <ThemedText style={styles.headingNote}>One preview is on us. The rest are staying mysterious for now.</ThemedText>
+                <ThemedText style={styles.headingNote}>{OPEN_PREVIEW_COPY}</ThemedText>
               </>
             )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
-            {CATEGORY_PILLS.map((category) => {
+            {visibleCategoryPills.map((category) => {
               const isActive = category === selectedCategory;
               return (
                 <Pressable
                   key={category}
                   style={[styles.category, isActive && styles.categoryActive]}
-                  onPress={() => setSelectedCategory(category)}>
+                  onPress={() => handleCategoryPress(category)}>
                   <ThemedText style={[styles.categoryText, isActive && styles.categoryTextActive]}>{category}</ThemedText>
                 </Pressable>
               );
             })}
           </ScrollView>
 
-          {visibleQuizCards.map((card) => (
-            <View key={card.id} style={styles.previewCard}>
-              <View style={styles.previewHeader}>
-                <ThemedText style={styles.previewEyebrow}>{card.definition.category.toUpperCase()}</ThemedText>
-                {/* A subscriber already has full access — this was never a "free preview" FOR
-                    THEM, so the badge only appears for a completed result or for a
-                    non-subscriber (preserving today's free-tier semantics unchanged). */}
-                {(card.completed || !isSubscriber) && (
-                  <View style={styles.previewBadge}>
-                    <ThemedText style={styles.previewBadgeText}>{card.completed ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
+          <View style={styles.previewList}>
+            {visibleQuizCards.map((card) => (
+              <Pressable
+                key={card.id}
+                style={[Panel.shell, styles.previewCard]}
+                onPress={() =>
+                  router.push({ pathname: '/quiz/[quizId]', params: card.completed ? { quizId: card.id, view: 'result' } : { quizId: card.id } })
+                }>
+                <View style={[Panel.glow, styles.previewGlow]} />
+                <View style={styles.previewHeader}>
+                  <ThemedText style={[Panel.eyebrow, styles.previewEyebrow]}>{card.definition.category.toUpperCase()}</ThemedText>
+                  {/* A subscriber already has full access — this was never a "free preview" FOR
+                      THEM, so the badge only appears for a completed result or for a
+                      non-subscriber (preserving today's free-tier semantics unchanged). */}
+                  {(card.completed || !isSubscriber) && (
+                    <View style={styles.previewBadge}>
+                      <ThemedText style={styles.previewBadgeText}>{card.completed ? 'COMPLETED' : 'FREE PREVIEW'}</ThemedText>
+                    </View>
+                  )}
+                </View>
+                <ThemedText style={styles.previewTitle}>&ldquo;{card.definition.title}&rdquo;</ThemedText>
+                <ThemedText style={styles.previewMeta}>{card.definition.meta} · Apparently Private</ThemedText>
+                {card.completed && card.lastResultTitle ? (
+                  <ThemedText style={styles.previewLastResult}>Your result: {card.lastResultTitle}</ThemedText>
+                ) : null}
+                {card.completed ? (
+                  <View style={styles.previewCtaRow}>
+                    <View style={[styles.previewCta, styles.previewCtaInRow]}>
+                      <ThemedText style={styles.previewCtaText}>See result →</ThemedText>
+                    </View>
+                    <Pressable
+                      style={styles.previewCtaSecondary}
+                      onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
+                      <ThemedText style={styles.previewCtaSecondaryText}>Retake →</ThemedText>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={styles.previewCta}>
+                    {/* A subscriber already has full access — this was never a "preview" FOR
+                        THEM (it just happens to also be free for everyone else). */}
+                    <ThemedText style={styles.previewCtaText}>{isSubscriber ? 'Take the quiz →' : 'Take the preview →'}</ThemedText>
                   </View>
                 )}
-              </View>
-              <ThemedText style={styles.previewTitle}>{card.definition.title}</ThemedText>
-              <ThemedText style={styles.previewMeta}>{card.definition.meta} · Apparently Private</ThemedText>
-              {card.completed && card.lastResultTitle ? (
-                <ThemedText style={styles.previewLastResult}>Your result: {card.lastResultTitle}</ThemedText>
-              ) : null}
-              {card.completed ? (
-                <View style={styles.previewCtaRow}>
-                  <Pressable
-                    style={[styles.previewCta, styles.previewCtaInRow]}
-                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id, view: 'result' } })}>
-                    <ThemedText style={styles.previewCtaText}>See result →</ThemedText>
-                  </Pressable>
-                  <Pressable
-                    style={styles.previewCtaSecondary}
-                    onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
-                    <ThemedText style={styles.previewCtaSecondaryText}>Retake →</ThemedText>
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  style={styles.previewCta}
-                  onPress={() => router.push({ pathname: '/quiz/[quizId]', params: { quizId: card.id } })}>
-                  {/* A subscriber already has full access — this was never a "preview" FOR
-                      THEM (it just happens to also be free for everyone else). */}
-                  <ThemedText style={styles.previewCtaText}>{isSubscriber ? 'Take the quiz →' : 'Take the preview →'}</ThemedText>
-                </Pressable>
-              )}
-            </View>
-          ))}
+              </Pressable>
+            ))}
+          </View>
 
           <View style={styles.lockedList}>
             {visibleLockedEntries.map((entry) => (
@@ -239,63 +315,98 @@ export default function PrivateScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={ageConfirmVisible} transparent animationType="fade" onRequestClose={() => setAgeConfirmVisible(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setAgeConfirmVisible(false)}>
+          <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
+            <ThemedText style={styles.modalEyebrow}>PRIVATE PRIVATE. 😈</ThemedText>
+            <ThemedText style={styles.modalTitle}>One quick thing.</ThemedText>
+            <ThemedText style={styles.modalBody}>This category is 18+. Are you 18 or older?</ThemedText>
+            <View style={styles.ageConfirmRow}>
+              <Pressable style={styles.modalCta} onPress={() => void confirmRetroactiveAge('18plus')}>
+                <ThemedText style={styles.modalCtaText}>Yes, I&apos;m 18+</ThemedText>
+              </Pressable>
+              <Pressable style={styles.ageConfirmSecondary} onPress={() => void confirmRetroactiveAge('13to17')}>
+                <ThemedText style={styles.ageConfirmSecondaryText}>No</ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Brand.plum },
+  // Already the approved darker-plum Apparently Private identity — unchanged value
+  // (Celestial.background === Brand.plum), only switched to the shared token for consistency
+  // with every other screen's container/safeArea convention.
+  container: { flex: 1, backgroundColor: Celestial.background },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: Brand.plum,
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: { marginVertical: 28, borderRadius: Radius.xl, overflow: 'hidden' },
       default: {},
     }),
   },
-  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.four },
-  headingGroup: { gap: Spacing.one },
-  heading: { color: Brand.cream, fontSize: 32, lineHeight: 37, fontWeight: '800', letterSpacing: -0.7 },
-  headingSupport: { color: 'rgba(255,249,245,0.8)', fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  headingNote: { color: 'rgba(255,249,245,0.55)', fontSize: 12, fontWeight: '600', marginTop: Spacing.one },
+  content: { paddingHorizontal: Spacing.four, paddingBottom: BottomTabInset + Spacing.five, gap: Spacing.three },
+  wordmark: { color: Celestial.textPrimary, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  headingGroup: { gap: 2 },
+  // Build 15: serif italic editorial treatment, matching the unified type scale -- "apparently
+  // private." reads as an intriguing invitation, not a bold app-store listing title.
+  heading: { ...CelestialType.editorialHeadline, fontSize: 30, lineHeight: 35 },
+  headingSupport: { ...CelestialType.body, marginTop: 2 },
+  headingNote: { ...CelestialType.caption, marginTop: 2 },
   categoryList: { gap: Spacing.two, paddingVertical: Spacing.one },
-  category: { backgroundColor: 'rgba(255,249,245,0.08)', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)' },
-  categoryActive: { backgroundColor: Brand.coral, borderColor: Brand.coral },
-  categoryText: { color: 'rgba(255,249,245,0.85)', fontSize: 13, fontWeight: '800' },
-  categoryTextActive: { color: Brand.cream },
-  // The hero card — visually the strongest thing on the page, matching a "gateway quiz" job.
-  previewCard: { backgroundColor: Brand.coral, borderRadius: 26, padding: Spacing.four, gap: Spacing.two },
+  category: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderWidth: 1, borderColor: 'rgba(255,249,245,0.12)' },
+  categoryActive: { backgroundColor: 'rgba(255,121,95,0.22)', borderColor: Brand.coral },
+  categoryText: { color: 'rgba(255,249,245,0.7)', fontSize: 12.5, fontWeight: '800' },
+  categoryTextActive: { color: Brand.coral },
+  previewList: { gap: Spacing.two },
+  // Build 15: replaces the solid-coral rectangle with the same dark-glass Panel shell every
+  // other celestial card uses -- coral stays a soft accent glow + border tint, not the whole
+  // fill, so it reads as "intimate, sophisticated" rather than a loud flat slab.
+  previewCard: { gap: Spacing.one, borderColor: 'rgba(255,121,95,0.32)' },
+  previewGlow: { backgroundColor: 'rgba(255,121,95,0.22)' },
   previewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
-  previewEyebrow: { color: 'rgba(36,1,31,0.65)', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  previewBadge: { backgroundColor: 'rgba(36,1,31,0.18)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
-  previewBadgeText: { color: Brand.plum, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  previewTitle: { color: Brand.plum, fontSize: 25, lineHeight: 30, fontWeight: '800' },
-  previewMeta: { color: 'rgba(36,1,31,0.65)', fontSize: 13, fontWeight: '600' },
-  previewLastResult: { color: 'rgba(36,1,31,0.75)', fontSize: 13, fontWeight: '700', marginTop: -Spacing.one },
+  previewEyebrow: { color: Brand.coral },
+  previewBadge: { backgroundColor: 'rgba(255,121,95,0.18)', borderRadius: 99, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  previewBadgeText: { color: Brand.coral, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  previewTitle: { ...CelestialType.question, fontSize: 20, lineHeight: 26, marginTop: 2 },
+  previewMeta: { ...CelestialType.caption },
+  previewLastResult: { color: 'rgba(255,249,245,0.65)', fontSize: 13, fontWeight: '700' },
   previewCtaRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.two },
-  previewCta: { alignSelf: 'flex-start', backgroundColor: Brand.plum, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
+  previewCta: { alignSelf: 'flex-start', backgroundColor: Brand.coral, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.two },
   previewCtaInRow: { marginTop: 0 },
-  previewCtaText: { color: Brand.cream, fontSize: 14, fontWeight: '800' },
+  previewCtaText: { ...CelestialType.button, color: Brand.plum },
   previewCtaSecondary: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(36,1,31,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
-  previewCtaSecondaryText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  previewCtaSecondaryText: { ...CelestialType.button, color: Celestial.textPrimary },
   lockedList: { gap: Spacing.two },
   // Premium plum/violet variations, never grey — locked should look tempting, not disabled.
-  lockedCard: { backgroundColor: 'rgba(255,249,245,0.06)', borderRadius: 20, padding: Spacing.three, gap: Spacing.one, borderWidth: 1, borderColor: 'rgba(255,249,245,0.12)' },
+  lockedCard: {
+    backgroundColor: 'rgba(255,249,245,0.045)',
+    borderRadius: 20,
+    padding: Spacing.three,
+    gap: Spacing.one,
+    borderWidth: 1,
+    borderColor: 'rgba(255,249,245,0.1)',
+  },
   lockedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
-  lockedCategory: { color: Brand.coral, fontSize: 10, fontWeight: '800', letterSpacing: 1.1, flexShrink: 1 },
+  lockedCategory: { color: 'rgba(255,158,214,0.9)', fontSize: 10, fontWeight: '800', letterSpacing: 1.1, flexShrink: 1 },
   lockedBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half },
-  lockedBadge: { color: 'rgba(255,249,245,0.55)', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  lockedBadgeDot: { color: 'rgba(255,249,245,0.35)', fontSize: 10, fontWeight: '800' },
-  lockedTitle: { color: Brand.cream, fontSize: 17, lineHeight: 22, fontWeight: '800' },
-  lockedSubtitle: { color: 'rgba(255,249,245,0.6)', fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  lockedBadge: { color: 'rgba(255,249,245,0.5)', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  lockedBadgeDot: { color: 'rgba(255,249,245,0.3)', fontSize: 10, fontWeight: '800' },
+  lockedTitle: { ...CelestialType.question, fontSize: 17, lineHeight: 22 },
+  lockedSubtitle: { ...CelestialType.caption },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(23,21,29,0.6)', alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   modalCard: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.five, gap: Spacing.one, maxWidth: 360, width: '100%', borderWidth: 1, borderColor: 'rgba(255,249,245,0.14)' },
   modalEyebrow: { color: Brand.coral, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
@@ -303,4 +414,7 @@ const styles = StyleSheet.create({
   modalBody: { color: 'rgba(255,249,245,0.75)', fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: Spacing.one },
   modalCta: { alignSelf: 'flex-start', backgroundColor: Brand.coral, borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, marginTop: Spacing.three },
   modalCtaText: { color: Brand.plum, fontSize: 14, fontWeight: '800' },
+  ageConfirmRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three },
+  ageConfirmSecondary: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,249,245,0.08)', borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
+  ageConfirmSecondaryText: { color: Celestial.textPrimary, fontSize: 14, fontWeight: '800' },
 });

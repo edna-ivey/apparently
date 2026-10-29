@@ -1,10 +1,15 @@
-import type { PersonalityEffect } from '@/data/personality';
+import type { PersonalityAnswerEvidence, PersonalityEffect } from '@/data/personality';
+import { applyPermanentQuizAwards } from '@/data/quiz-personality-awards';
 
 import type {
   ArchetypeQuizDefinition,
+  DualDimensionQuizDefinition,
   NumericBandQuizDefinition,
   QuizArchetype,
+  QuizCombinationResult,
   QuizDefinition,
+  QuizDimensionArchetype,
+  QuizQuestion,
   QuizResultBand,
   QuizStructuredRead,
 } from './types';
@@ -155,7 +160,7 @@ const pickPrimaryArchetypeByHighSignal = (
   });
   for (const { weights } of perQuestionWeights) {
     const winner = primaryWeightEntry(weights);
-    if (winner && winner.value === 2 && afterHighSignal.includes(winner.archetypeId)) {
+    if (winner && winner.value === (definition.primaryTieWeight ?? 2) && afterHighSignal.includes(winner.archetypeId)) {
       fullPrimaryTwoCount[winner.archetypeId] += 1;
     }
   }
@@ -165,16 +170,54 @@ const pickPrimaryArchetypeByHighSignal = (
     return afterPrimaryCount[0];
   }
 
-  return definition.archetypes.find((archetype) => afterPrimaryCount.includes(archetype.id))!.id;
+  if (definition.countPrimaryMatchesTieBreak) {
+    const primaryMatchCount: Record<string, number> = {};
+    afterPrimaryCount.forEach((id) => { primaryMatchCount[id] = 0; });
+    for (const { weights } of perQuestionWeights) {
+      const winner = primaryWeightEntry(weights);
+      if (winner && afterPrimaryCount.includes(winner.archetypeId)) primaryMatchCount[winner.archetypeId] += 1;
+    }
+    const bestMatches = Math.max(...afterPrimaryCount.map((id) => primaryMatchCount[id]));
+    const afterMatches = afterPrimaryCount.filter((id) => primaryMatchCount[id] === bestMatches);
+    if (afterMatches.length === 1) return afterMatches[0];
+    afterPrimaryCount.splice(0, afterPrimaryCount.length, ...afterMatches);
+  }
+
+  if (definition.finalTieQuestionId) {
+    const finalEntry = perQuestionWeights.find((entry) => entry.questionId === definition.finalTieQuestionId);
+    const finalWinner = finalEntry ? primaryWeightEntry(finalEntry.weights)?.archetypeId : null;
+    if (finalWinner && afterPrimaryCount.includes(finalWinner)) return finalWinner;
+  }
+  const fallback = definition.tieFallbackOrder ?? definition.archetypes.map((a) => a.id);
+  return fallback.find((id) => afterPrimaryCount.includes(id)) ?? afterPrimaryCount[0];
+};
+
+const eligibleArchetypeIds = (definition: ArchetypeQuizDefinition, answers: Record<string, string>): Set<string> => {
+  const eligible = new Set(definition.archetypes.map((a) => a.id));
+  if (!definition.resultGates) return eligible;
+  for (const [archetypeId, gate] of Object.entries(definition.resultGates)) {
+    const signals = definition.questions.filter((q) => {
+      const c = q.choices.find((choice) => choice.id === answers[q.id]);
+      return (c?.resultWeights?.[archetypeId] ?? 0) > 0;
+    }).map((q) => `${q.id}-${answers[q.id]}`);
+    const enough = signals.length >= gate.minSignals;
+    const groupsOk = (gate.requiredAnyOf ?? []).every((group) => group.some((key) => signals.includes(key)));
+    const countedGroupsOk = (gate.requiredGroups ?? []).every((group) => group.answers.filter((key) => signals.includes(key)).length >= group.min);
+    if (!enough || !groupsOk || !countedGroupsOk) eligible.delete(archetypeId);
+  }
+  return eligible;
 };
 
 const pickPrimaryArchetype = (
   definition: ArchetypeQuizDefinition,
   totals: Record<string, number>,
   perQuestionWeights: PerQuestionWeights[],
+  answers: Record<string, string>,
 ): string => {
-  const maxScore = Math.max(...definition.archetypes.map((archetype) => totals[archetype.id] ?? 0));
-  const tied = definition.archetypes.filter((archetype) => (totals[archetype.id] ?? 0) === maxScore).map((a) => a.id);
+  const eligible = eligibleArchetypeIds(definition, answers);
+  const candidates = definition.archetypes.filter((a) => eligible.has(a.id));
+  const maxScore = Math.max(...candidates.map((archetype) => totals[archetype.id] ?? 0));
+  const tied = candidates.filter((archetype) => (totals[archetype.id] ?? 0) === maxScore).map((a) => a.id);
 
   if (tied.length === 1) {
     return tied[0];
@@ -267,7 +310,7 @@ export const scoreArchetypeQuiz = (definition: ArchetypeQuizDefinition, answers:
     percentages[archetype.id] = totalPoints > 0 ? Math.round(((totals[archetype.id] ?? 0) / totalPoints) * 100) : 0;
   });
 
-  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWeights);
+  const primaryId = pickPrimaryArchetype(definition, totals, perQuestionWeights, answers);
   const primary = definition.archetypes.find((archetype) => archetype.id === primaryId)!;
   const secondary = pickCloseSecond(definition, primary, percentages, perQuestionWeights);
 
@@ -287,6 +330,9 @@ export type ResultDisplay = {
   heroRead: string[];
   body: string;
   kicker: string;
+  // See QuizResultBand.apparentlySignature — present only when the locked reveal specifies
+  // both a kicker and a separate "Apparently," signature line; never one dropped for the other.
+  apparentlySignature?: string;
   traits: string[];
   score: number;
   percent: number;
@@ -324,6 +370,16 @@ export type ResultDisplay = {
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
 // happens for computing a NEW result. Called once, right when a quiz reaches its result step.
+
+const answerLevelProfileSignals = (definition: QuizDefinition, answers: Record<string, string>): PersonalityEffect[] | undefined => {
+  if (!definition.answerLevelPersonalityEvidence) return undefined;
+  const evidence: PersonalityAnswerEvidence[] = definition.questions.map((question) => {
+    const choice = question.choices.find((candidate) => candidate.id === answers[question.id]);
+    return { question: question.prompt, category: definition.category, chosenAnswer: choice?.label ?? '', effects: choice?.traitSignals ?? [] };
+  });
+  return applyPermanentQuizAwards(evidence, definition.access === 'free' ? 'public' : 'private');
+};
+
 export const computeQuizResult = (definition: QuizDefinition, answers: Record<string, string>): ResultDisplay => {
   if (definition.scoringType === 'archetype') {
     const { primary, totals, percentages, secondary } = scoreArchetypeQuiz(definition, answers);
@@ -338,6 +394,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       heroRead: primary.heroRead ?? [],
       body: primary.body ?? '',
       kicker: primary.kicker ?? '',
+      apparentlySignature: primary.apparentlySignature,
       traits: primary.traits ?? [],
       score: totals[primary.id] ?? 0,
       percent: percentages[primary.id] ?? 0,
@@ -345,7 +402,7 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       mixLabel: definition.mixLabel,
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
-      profileSignals: primary.profileSignals,
+      profileSignals: answerLevelProfileSignals(definition, answers) ?? primary.profileSignals,
       structuredRead: primary.structuredRead,
       secondaryResult: secondary ? { resultId: secondary.id, resultDisplayTitle: resolveArchetypeDisplayTitle(secondary) } : null,
     };
@@ -359,12 +416,13 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
     score,
     percent,
     meterLabel: definition.meterLabel,
     resultDisplayTitle: defaultTitleCase(band.title),
-    profileSignals: band.profileSignals,
+    profileSignals: answerLevelProfileSignals(definition, answers) ?? band.profileSignals,
   };
 };
 
@@ -392,6 +450,7 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
       heroRead: primary.heroRead ?? [],
       body: primary.body ?? '',
       kicker: primary.kicker ?? '',
+      apparentlySignature: primary.apparentlySignature,
       traits: primary.traits ?? [],
       score: record.score,
       percent: record.percent,
@@ -414,6 +473,7 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
     score: record.score,
     percent: record.percent,
@@ -451,6 +511,7 @@ export type ShareableResultContent = {
   heroRead: string[];
   body: string;
   kicker: string;
+  apparentlySignature?: string;
   traits: string[];
   resultSubtitle?: string;
   // See ResultDisplay.structuredRead — passed through unchanged, since it's static approved
@@ -483,6 +544,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
       heroRead: archetype.heroRead ?? [],
       body: archetype.body ?? '',
       kicker: archetype.kicker ?? '',
+      apparentlySignature: archetype.apparentlySignature,
       traits: archetype.traits ?? [],
       resultSubtitle: archetype.resultSubtitle,
       structuredRead: archetype.structuredRead,
@@ -500,6 +562,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
     heroRead: band.heroRead,
     body: band.body,
     kicker: band.kicker,
+    apparentlySignature: band.apparentlySignature,
     traits: band.traits,
   };
 };
@@ -612,3 +675,96 @@ export const countExactMatches = (
   answersA: Record<string, string>,
   answersB: Record<string, string>,
 ): number => definition.questions.filter((q) => answersA[q.id] && answersA[q.id] === answersB[q.id]).length;
+
+// --- DUAL-DIMENSION SCORING (e.g. "What's Your Type?") -- see types.ts's DualDimensionQuizDefinition
+// for why this is engineering-only as of this pass: real, tested, not yet wired into
+// computeQuizResult/the quiz runner because no quiz currently uses it. -------------------------
+
+export type DualDimensionWinner = {
+  archetypeId: string;
+  totals: Record<string, number>;
+  percentages: Record<string, number>;
+};
+
+export const resolveCombinationKey = (dimensionAArchetypeId: string, dimensionBArchetypeId: string): string =>
+  `${dimensionAArchetypeId}:${dimensionBArchetypeId}`;
+
+// Resolves ONE dimension's winning archetype from only the questions that belong to it.
+// Deterministic tie-break: the most recent (within this dimension's own question order)
+// question whose single highest-weighted choice is in the tied set, else a fixed
+// archetypes-array-order fallback -- the same two-step shape pickPrimaryArchetypeGeneric above
+// already uses for the single-dimension ArchetypeQuizDefinition case, reimplemented here
+// scoped to one dimension's own question subset rather than refactored out of the existing,
+// already-shipping function (touching that function's generic path risks every one of the 9
+// live ArchetypeQuizDefinition quizzes for a feature with no real content yet to verify
+// against).
+const resolveDimensionWinner = (
+  archetypes: readonly QuizDimensionArchetype[],
+  dimensionQuestionIds: readonly string[],
+  allQuestions: readonly QuizQuestion[],
+  answers: Record<string, string>,
+): DualDimensionWinner => {
+  const archetypeIds = archetypes.map((a) => a.id);
+  const totals: Record<string, number> = {};
+  archetypeIds.forEach((id) => {
+    totals[id] = 0;
+  });
+
+  const perQuestionWinners: string[] = [];
+  for (const questionId of dimensionQuestionIds) {
+    const question = allQuestions.find((q) => q.id === questionId);
+    if (!question) continue;
+    const chosenId = answers[question.id];
+    const choice = question.choices.find((candidate) => candidate.id === chosenId);
+    const weights = choice?.resultWeights ?? {};
+    for (const [archetypeId, weight] of Object.entries(weights)) {
+      if (archetypeId in totals) {
+        totals[archetypeId] += weight;
+      }
+    }
+    const winner = primaryWeightEntry(weights);
+    if (winner && winner.archetypeId in totals) {
+      perQuestionWinners.push(winner.archetypeId);
+    }
+  }
+
+  const totalPoints = Object.values(totals).reduce((sum, value) => sum + value, 0);
+  const percentages: Record<string, number> = {};
+  archetypeIds.forEach((id) => {
+    percentages[id] = totalPoints > 0 ? Math.round((totals[id] / totalPoints) * 100) : 0;
+  });
+
+  const maxTotal = Math.max(...archetypeIds.map((id) => totals[id] ?? 0));
+  const tied = archetypeIds.filter((id) => (totals[id] ?? 0) === maxTotal);
+
+  let archetypeId: string;
+  if (tied.length === 1) {
+    archetypeId = tied[0];
+  } else {
+    const recentWinners = [...perQuestionWinners].reverse();
+    archetypeId = recentWinners.find((id) => tied.includes(id)) ?? tied.find((id) => archetypeIds.includes(id)) ?? archetypeIds[0];
+  }
+
+  return { archetypeId, totals, percentages };
+};
+
+export type DualDimensionScore = {
+  dimensionA: DualDimensionWinner;
+  dimensionB: DualDimensionWinner;
+  combination: QuizCombinationResult;
+};
+
+// Resolves both dimensions independently, then looks up the ONE authored combination result
+// for the resulting pair. Throws (never fabricates filler copy) if that exact combination has
+// no authored entry yet -- every one of the full cross-product's combinations must be approved
+// content before a quiz using this scoring type can be considered complete.
+export const scoreDualDimensionQuiz = (definition: DualDimensionQuizDefinition, answers: Record<string, string>): DualDimensionScore => {
+  const dimensionA = resolveDimensionWinner(definition.dimensionAArchetypes, definition.dimensionAQuestionIds, definition.questions, answers);
+  const dimensionB = resolveDimensionWinner(definition.dimensionBArchetypes, definition.dimensionBQuestionIds, definition.questions, answers);
+  const key = resolveCombinationKey(dimensionA.archetypeId, dimensionB.archetypeId);
+  const combination = definition.combinations[key];
+  if (!combination) {
+    throw new Error(`No authored combination result for "${key}" -- every combination in the dimensionA x dimensionB cross-product must have approved content.`);
+  }
+  return { dimensionA, dimensionB, combination };
+};

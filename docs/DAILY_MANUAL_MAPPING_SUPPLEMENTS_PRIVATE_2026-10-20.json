@@ -1,0 +1,366 @@
+{
+  "private:0:A": [
+    [
+      "sentimental_thick_skinned",
+      -1,
+      "Admits appearance outweighed emotional compatibility"
+    ]
+  ],
+  "private:0:B": [
+    [
+      "reflective_reactive",
+      -2,
+      "Allowed attraction to overrule deliberation"
+    ]
+  ],
+  "private:0:F": [
+    [
+      "practical_idealistic",
+      -2,
+      "Stayed for imagined potential rather than present reality"
+    ]
+  ],
+  "private:1:B": [
+    [
+      "playful_serious",
+      1,
+      "Finds an ex's boldness entertaining despite misgivings"
+    ]
+  ],
+  "private:2:B": [
+    [
+      "trust_verify",
+      -1,
+      "Identifies inconsistency as a threat to dependable affection"
+    ]
+  ],
+  "private:4:A": [
+    [
+      "vulnerable_armored",
+      2,
+      "Would face a painful truth about feeling unwanted"
+    ]
+  ],
+  "private:4:B": [
+    [
+      "trust_verify",
+      -2,
+      "Wants transparency about interest in another person"
+    ]
+  ],
+  "private:4:C": [
+    [
+      "vulnerable_armored",
+      -2,
+      "Acknowledges hidden distress behind an outward performance"
+    ]
+  ],
+  "private:5:A": [
+    [
+      "self_secure_reassurance",
+      -2,
+      "Wants an ex to see a visible post-breakup glow-up"
+    ]
+  ],
+  "private:7:C": [
+    [
+      "boundary_holding_approval_seeking",
+      -2,
+      "Admits attraction to someone unavailable"
+    ]
+  ],
+  "private:7:D": [
+    [
+      "sentimental_thick_skinned",
+      2,
+      "Is drawn to someone who knows their personal history and vulnerabilities"
+    ]
+  ],
+  "private:7:F": [
+    [
+      "boundary_holding_approval_seeking",
+      -2,
+      "Accepts affection despite absent commitment"
+    ]
+  ],
+  "private:8:A": [
+    [
+      "trust_verify",
+      -2,
+      "Was unaware of a competing relationship"
+    ]
+  ],
+  "private:8:E": [
+    [
+      "curious_decisive",
+      3,
+      "Keeps questioning until hidden information is exposed"
+    ]
+  ],
+  "private:8:F": [
+    [
+      "reflective_reactive",
+      1,
+      "Acknowledges complexity rather than offering a simple conclusion"
+    ]
+  ],
+  "private:9:D": [
+    [
+      "curious_decisive",
+      2,
+      "Wonders about an ex-partner's past experience"
+    ]
+  ],
+  "private:10:A": [
+    [
+      "vulnerable_armored",
+      3,
+      "Would risk hearing whether a partner considered leaving"
+    ]
+  ],
+  "private:10:D": [
+    [
+      "vulnerable_armored",
+      2,
+      "Would invite disclosure of a partner's unspoken desire"
+    ]
+  ],
+  "private:12:B": [
+    [
+      "emotional_intensity",
+      2,
+      "Describes eye contact as unusually emotionally charged"
+    ]
+  ],
+  "private:12:E": [
+    [
+      "rules_bending",
+      -2,
+      "Admits attraction to a knowingly bad idea"
+    ]
+  ],
+  "private:12:F": [
+    [
+      "emotional_intensity",
+      3,
+      "Experiences strong emotional meaning without overt action"
+    ]
+  ],
+  "private:13:C": [
+    [
+      "boundary_holding_approval_seeking",
+      -1,
+      "Acknowledges looking forward to a coworker beyond ordinary work"
+    ]
+  ],
+  "private:14:A": [
+    [
+      "reflective_reactive",
+      -2,
+      "Recognizes warning signs but kept moving forward"
+    ]
+  ],
+  "private:14:B": [
+    [
+      "reflective_reactive",
+      2,
+      "Recognizes chemistry does not prove character"
+    ]
+  ],
+  "private:14:C": [
+    [
+      "reflective_reactive",
+      -2,
+      "Recognizes a pattern of attraction-driven mistakes"
+    ]
+  ],
+  "private:14:D": [
+    [
+      "practical_idealistic",
+      -2,
+      "Was drawn to potential rather than execution"
+    ]
+  ],
+  "private:15:A": [
+    [
+      "forgiving_receipts",
+      -2,
+      "Continues mentally revisiting an old conversation"
+    ]
+  ],
+  "private:15:E": [
+    [
+      "practical_idealistic",
+      -2,
+      "Imagines an alternative life rather than current constraints"
+    ]
+  ],
+  "private:17:C": [
+    [
+      "private_open",
+      2,
+      "Keeps an embarrassing comfort-show preference private"
+    ]
+  ],
+  "private:18:C": [
+    [
+      "self_secure_reassurance",
+      -2,
+      "Confuses external dependence with feeling loved"
+    ]
+  ],
+  "private:18:E": [
+    [
+      "boundary_holding_approval_seeking",
+      -2,
+      "Admits tolerating less than their stated standards"
+    ]
+  ],
+  "private:24:A": [
+    [
+      "accountability_defensiveness",
+      -3,
+      "Prefers escaping consequences for an acknowledged wrong"
+    ]
+  ],
+  "private:25:B": [
+    [
+      "patient_urgent",
+      -2,
+      "Is irritated by an interruption"
+    ]
+  ],
+  "private:25:C": [
+    [
+      "social_attunement",
+      1,
+      "Is sensitive to an ominous vague message"
+    ]
+  ],
+  "private:26:D": [
+    [
+      "duty_first_self_preserving",
+      -3,
+      "Would use freedom to rest without obligations"
+    ]
+  ],
+  "private:26:E": [
+    [
+      "ambitious_content",
+      2,
+      "Would pursue an educational ambition previously postponed by fear"
+    ]
+  ],
+  "private:28:C": [
+    [
+      "duty_first_self_preserving",
+      -2,
+      "Feels relief when social obligations are canceled"
+    ]
+  ],
+  "private:28:D": [
+    [
+      "tactful_blunt",
+      -2,
+      "Is willing to voice an unflattering unpopular judgment"
+    ]
+  ],
+  "private:29:B": [
+    [
+      "ambitious_content",
+      2,
+      "Values extraordinary achievement despite lack of recognition"
+    ]
+  ],
+  "private:30:C": [
+    [
+      "supportive_challenging",
+      -2,
+      "Wants to confront someone with a reality check"
+    ]
+  ],
+  "private:31:B": [
+    [
+      "perspective_taking_self_referencing",
+      3,
+      "Can reconsider a disliked person's actions and accept being wrong"
+    ]
+  ],
+  "private:33:C": [
+    [
+      "adventure_comfort",
+      3,
+      "Wants an extravagant anonymous new experience"
+    ]
+  ],
+  "private:36:E": [
+    [
+      "ambitious_content",
+      3,
+      "Fears ordinariness and is motivated to stand out"
+    ]
+  ],
+  "private:38:B": [
+    [
+      "curious_decisive",
+      2,
+      "Wants to count the money before taking action"
+    ]
+  ],
+  "private:38:C": [
+    [
+      "trust_verify",
+      -3,
+      "Wants to verify the owner's identity before deciding"
+    ]
+  ],
+  "private:38:E": [
+    [
+      "curious_decisive",
+      2,
+      "Wonders about the unknown person's circumstances"
+    ]
+  ],
+  "private:38:F": [
+    [
+      "rules_bending",
+      -3,
+      "Would keep cash despite an identifiable owner"
+    ]
+  ],
+  "private:39:C": [
+    [
+      "self_secure_reassurance",
+      -3,
+      "Craves evidence that someone cannot move on from them"
+    ]
+  ],
+  "private:39:E": [
+    [
+      "self_secure_reassurance",
+      -3,
+      "Seeks validation of being the most attractive person present"
+    ]
+  ],
+  "private:41:A": [
+    [
+      "reflective_reactive",
+      3,
+      "Invites a candid assessment of their own goodness"
+    ]
+  ],
+  "private:42:A": [
+    [
+      "competitive_cooperative",
+      2,
+      "Internally ranks friendships by preference"
+    ]
+  ],
+  "private:42:D": [
+    [
+      "vulnerable_armored",
+      -2,
+      "Hides jealousy behind a performance of happiness"
+    ]
+  ]
+}

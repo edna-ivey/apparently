@@ -3,6 +3,7 @@ import { getQuizResultsRemote, type GetQuizResultsResult } from './quiz-result-s
 import { getQuizDefinition } from '@/data/quizzes';
 import type { PersonalityAnswerEvidence, PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
 import { supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 import type { PersonalityEvidenceRow, QuizResultRow } from '@/services/types';
 
 // Real remote personality evidence for the CURRENT signed-in consumer only. Uses the
@@ -33,6 +34,10 @@ export const getMyPersonalityEvidence = async (): Promise<GetPersonalityEvidence
 
   if (error) {
     console.warn('[personality-service] getMyPersonalityEvidence failed:', error.message);
+    // This is the ONE read every identity surface (Your Signature, Undercurrent, Creature,
+    // Relic) ultimately depends on -- a failure here means the user's own already-earned
+    // identity can't be shown at all, not just a minor UI gap.
+    reportBackendFailure({ operation: 'get_my_personality_evidence', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   return { ok: true, data: (data ?? []) as PersonalityEvidenceRow[] };
