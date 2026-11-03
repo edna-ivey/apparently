@@ -1016,3 +1016,88 @@ are: (1) authorize the 21-file migration push, (2) separately authorize the rese
 (3) decide on the GitHub push / Vercel branch question, and (4) decide whether to revisit the
 locked Creature/Relic asset format given what tonight's crash tracing found. Nothing else is
 waiting on more engineering work tonight.
+
+---
+
+## SESSION 3 ADDENDUM (2026-11-03, "Close the Final Release Gaps")
+
+Continuation from the Phase 8 checkpoint above. Real engineering work this round, summarized
+here; the owner's own 7-item release-readiness table is delivered directly in this session's
+chat response rather than duplicated in full here.
+
+**1. Backup — fully resolved.** Installed a real local Postgres 17 server (Homebrew
+`postgresql@17`, exact version match to production) in addition to the `libpq` client tools
+from last round. Restored the real backup into it with **zero workarounds beyond expected
+Supabase-platform scaffolding** (roles, `cron`/`vault`/`extensions` schema stubs) — genuine
+native `COPY` via `psql`, `SET session_replication_role = replica` for the one documented
+circular FK, zero errors, exact row counts matching the backup file. Backup files secured to
+mode 600 / directory 700. Auth gap: Supabase's own `pg_dump` convention deliberately excludes
+`auth`/`storage`/other platform-managed schemas from any logical dump — this is why `auth.users`
+itself isn't in our backup, and is restored by Supabase's own infrastructure, never by replaying
+a dump. Real pricing found: Pro plan $25/mo (prerequisite), PITR itself **$100/mo per 7 days
+of retention** (e.g. $125/mo total for 7-day coverage) — current plan tier not independently
+confirmed (would require the same credential-reveal path already declined by this session's
+safety classifier).
+
+**2. Daily library — substantially advanced, not "complete."** Fixed #3C in the real seed
+source (not just a doc note) and verified the regenerated migration touches exactly that one
+option. Generated and verified all 36 missing approved Dailies (#27–62) programmatically from
+the master document — zero manual transcription, every trait name resolved against the real
+dimension catalog, zero duplicates — staged at
+`supabase/pending-owner-review/20261103000000_daily_missing_approved_questions_seed.sql`,
+explicitly outside the 21-file candidate set pending its own sign-off (the master document
+itself is still "Awaiting owner review" as a compiled whole — this wasn't silently bypassed).
+Confirmed via code (client `options.map` + `String.fromCharCode`, and the real
+`get_daily_distribution` RPC body) that six-choice support already exists generically; prepared
+and verified the constraint-relaxation + 2-missing-option migration separately. Regenerated the
+recurrence-reconciliation migration against the real backup — now correctly covers all 35
+existing clones (was 29), picking up the #3C fix automatically. **#33C corrected** directly in
+the generator (the master doc's own copy is still wrong; the generator overrides it with the
+ledger's explicit final mapping). **Not done:** a full line-by-line audit of the other 13
+already-scored live questions against the full "Reassessment Round 1–4 of 4" layer — every
+*explicitly stated* final-mapping correction in the entire ledger (6 of them) was checked, only
+#3C and #33C were wrong; the broader implicit layer remains unaudited, stated plainly rather
+than silently skipped.
+
+**3. Crash investigation — real device verification attempted, partially achieved.**
+Discovered this sandbox has a working Xcode + booted iOS Simulator + an already-running Metro
+instance. Ran a genuine `npx expo run:ios` build: **succeeded end-to-end** (compiled, linked,
+signed, installed, launched) once `SENTRY_DISABLE_AUTO_UPLOAD=true` worked around a source-map
+upload step with no org configured. The real app genuinely launched on a real simulator,
+rendering live content correctly. Attempted scripted interactive testing (tap through
+onboarding, complete a quiz, save a Creature) via AppleScript/System Events synthetic clicks —
+**this did not work reliably** (clicks intermittently failed to register against the
+simulator's touch layer; not solved tonight). No crash was reproduced, but none of the
+interactive flows were actually exercised either — this is reported as genuinely unverified,
+not downgraded to a false PASS. **Separately, this interactive-testing detour indirectly found
+a real, unrelated regression**: pushing to GitHub triggered a real Vercel preview build that
+failed for a new reason — `src/app/dev/png-experiment.tsx` (committed) required files from
+`assets/_png_experiment/` (correctly gitignored last round as a 95M on-hold experiment), which
+broke the web bundle on Vercel's clean checkout even though it always succeeded locally (where
+the directory still exists on disk). **Fixed**: removed the dead route, verified locally,
+committed, pushed. A fresh preview build was queued as of this addendum; not yet confirmed
+Ready (see the chat response for the latest status check).
+
+**4. Migration safety — demonstrated structurally, not just classified.** Confirmed
+`supabase db push` has no per-file selection flag — it is inherently all-pending-or-nothing.
+**Demonstrated the actual safe mechanism**: physically moved the 1 gated + 4 independent files
+out of `supabase/migrations/` (to a scratch location), ran a real dry-run against the linked
+production project, and confirmed both the human-readable list and the machine-readable JSON
+summary show **exactly the 21 candidate files and nothing else** — then restored the 5 files to
+their original location (git-clean, no diff). This is the exact procedure to use at real push
+time: move the 5 aside, `supabase db push --linked` (now structurally restricted to 21, not
+merely classified), verify, then restore the 5 for their own later review.
+
+**5. GitHub — pushed.** Confirmed via direct build-log inspection (not assumption) that the
+one existing production Vercel deployment shows no git-clone step at all (`Downloading N
+deployment files`, unlike every git-triggered preview's `Cloning github.com/...`) — production
+here is CLI-deployed, never branch-triggered, so pushing cannot auto-promote to production.
+Pushed `feature/private-library-implementation`; local and remote SHAs match exactly
+(`c3f5d9b` as of this addendum, after the png-experiment fix). Vercel preview status: queued
+as of this writing, see the chat response.
+
+**6/7.** See the chat response for the consolidated release-readiness table and the exact
+production approvals still required — unchanged in substance from Phase 8's checkpoint, with
+one addition: the png-experiment regression fix is itself a new, already-pushed commit, not
+something requiring separate authorization (a local code fix, same authorization tier as
+everything else this round).
