@@ -47,8 +47,13 @@ try {
   // anything about the seed's own correctness. Verified instead by static structural checks:
   const seedSql = readFileSync(join(root, 'supabase/migrations/20261028060000_daily_trait_awards_seed.sql'), 'utf8');
   const seedRowMatches = [...seedSql.matchAll(/\('[0-9a-f-]{36}', \d+, \d+\)/g)];
-  check('Daily seed file contains the expected 118 numeric award rows', seedRowMatches.length === 118, `found=${seedRowMatches.length}`);
-  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 118'), 'guard text present');
+  // V1 final release execution (2026-11-03): 118 -> 120 after correcting the #3C "partner's
+  // ex asks them to hold some money... I don't care, if it's innocent, it's innocent" award
+  // (2 traits -> 4), per the owner's own explicit, later rescoring-round correction that the
+  // original legacy-to-V2 repolarization pass never incorporated -- see the archived source
+  // migration's own updated comment and docs/V1_FINAL_RELEASE_EXECUTION_2026-11-02.md.
+  check('Daily seed file contains the expected 120 numeric award rows', seedRowMatches.length === 120, `found=${seedRowMatches.length}`);
+  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 120'), 'guard text present');
   const u1 = (await db.query(`insert into auth.users default values returning id`)).rows[0].id;
 
   const publicLive = (await db.query(

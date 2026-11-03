@@ -3,7 +3,7 @@
 -- PREREQUISITE: 20261028010000 (trait catalog) and 20261028050000 (daily_option_trait_awards
 -- table) must both be applied first.
 --
--- Numeric Daily trait-award SEED -- 118 rows across 60 real, live
+-- Numeric Daily trait-award SEED -- 120 rows across 60 real, live
 -- daily_options rows. Source: supabase/migrations/20261021160000_daily_live_content_pole_
 -- awards.sql's already-reviewed hand-authored mapping (never applied as jsonb; transcribed
 -- here numerically). Resolves each string pole key to its numeric trait_id via the same
@@ -12,7 +12,7 @@
 -- Generated mechanically by scripts/generate-daily-trait-awards-seed-sql.ts -- do not hand-
 -- edit; regenerate if the source mapping changes.
 --
--- VERIFICATION GUARD: raises if the actual row count inserted does not match 118 --
+-- VERIFICATION GUARD: raises if the actual row count inserted does not match 120 --
 -- protects against applying this against a database where any of these specific option ids
 -- no longer exist (same guard pattern 20261021160000 itself already used).
 -- ============================================================================================
@@ -115,8 +115,10 @@ begin
   ('d4083739-7fa3-4ce1-a7e5-22ef03c84e63', 29, 2),
   ('d4083739-7fa3-4ce1-a7e5-22ef03c84e63', 9, 1),
   ('d4083739-7fa3-4ce1-a7e5-22ef03c84e63', 5, 1),
-  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 25, 2),
-  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 10, 1),
+  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 25, 3),
+  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 16, 2),
+  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 4, 1),
+  ('7d0df73e-acd8-4816-8679-072cef46c2c0', 8, 2),
   ('67aaacad-28b7-4bd4-b61a-7a5a4191d2e1', 5, 2),
   ('67aaacad-28b7-4bd4-b61a-7a5a4191d2e1', 9, 1),
   ('3242db06-4178-42f8-9f3b-d8b7d4c32a76', 38, 2),
@@ -147,7 +149,7 @@ begin
   )
   select count(*) into v_inserted from inserted;
 
-  if v_inserted <> 118 then
-    raise exception 'Expected to insert exactly 118 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
+  if v_inserted <> 120 then
+    raise exception 'Expected to insert exactly 120 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
   end if;
 end $$;

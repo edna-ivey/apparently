@@ -91,7 +91,21 @@ update public.daily_options set pole_personality_effects = '[{"pole": "trust_ver
 update public.daily_options set pole_personality_effects = '[{"pole": "direct_indirect:positive", "points": 1}, {"pole": "trust_verify:negative", "points": 1}]'::jsonb where id = '22ed955f-1878-4523-ba2e-feebaf3c49b4';
 update public.daily_options set pole_personality_effects = '[{"pole": "trust_verify:negative", "points": 2}, {"pole": "protective_hands_off:positive", "points": 1}]'::jsonb where id = '399c5eae-6d39-449f-b796-fcd9ae3502f0';
 update public.daily_options set pole_personality_effects = '[{"pole": "playful_serious:positive", "points": 2}, {"pole": "protective_hands_off:positive", "points": 1}, {"pole": "direct_indirect:positive", "points": 1}]'::jsonb where id = 'd4083739-7fa3-4ce1-a7e5-22ef03c84e63';
-update public.daily_options set pole_personality_effects = '[{"pole": "trust_verify:positive", "points": 2}, {"pole": "protective_hands_off:negative", "points": 1}]'::jsonb where id = '7d0df73e-acd8-4816-8679-072cef46c2c0';
+-- CORRECTED (V1 final release execution, 2026-11-03): this line's original mapping was a
+-- direct legacy-to-V2 repolarization of what was already live (trust_verify +2;
+-- protective_hands_off -1 -- see docs/DAILY_LIVE_CONTENT_POLE_RECALIBRATION_2026-10-21.md,
+-- "[private] Your partner's ex asks them to hold some money for them... 'I don't care. If
+-- it's innocent, it's innocent.'"), authored from the live legacy data BEFORE the owner's own
+-- later, richer rescoring passes in docs/DAILY_PRODUCTION_OWNER_APPROVALS.md ("OWNER SCORING
+-- DECISION | Audit Round 1 completed", 2026-10-22) -- the two tracks were never reconciled.
+-- The ledger's own explicit final mapping for this exact answer is "Trust first +3; Let it
+-- play out +2; Even-Keeled +1; Face Value +2" -- applied below using the real dimension ids
+-- (Even-Keeled = emotional_intensity:negative, Face Value = social_attunement:negative; see
+-- src/data/personality.ts). This is the one correction explicitly identified and requested
+-- this round; the other 14 live-mapped questions in this file have not been re-audited
+-- against the same later rescoring rounds and may carry the same kind of gap -- flagged, not
+-- fixed, in docs/V1_FINAL_RELEASE_EXECUTION_2026-11-02.md.
+update public.daily_options set pole_personality_effects = '[{"pole": "trust_verify:positive", "points": 3}, {"pole": "control_allowing:negative", "points": 2}, {"pole": "emotional_intensity:negative", "points": 1}, {"pole": "social_attunement:negative", "points": 2}]'::jsonb where id = '7d0df73e-acd8-4816-8679-072cef46c2c0';
 update public.daily_options set pole_personality_effects = '[{"pole": "direct_indirect:positive", "points": 2}, {"pole": "protective_hands_off:positive", "points": 1}]'::jsonb where id = '67aaacad-28b7-4bd4-b61a-7a5a4191d2e1';
 update public.daily_options set pole_personality_effects = '[{"pole": "patient_urgent:negative", "points": 2}, {"pole": "trust_verify:positive", "points": 1}]'::jsonb where id = '3242db06-4178-42f8-9f3b-d8b7d4c32a76';
 update public.daily_options set pole_personality_effects = '[{"pole": "trust_verify:negative", "points": 2}, {"pole": "curious_decisive:positive", "points": 1}]'::jsonb where id = '1ac1a42a-3365-4818-9753-fc317905e5bb';

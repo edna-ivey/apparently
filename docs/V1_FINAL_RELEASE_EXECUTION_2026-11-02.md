@@ -119,9 +119,66 @@ npx supabase db dump --remote -f production-schema-backup.sql
 npx supabase db dump --remote --data-only -f production-data-backup.sql
 ```
 
-**Next action:** proceed to Phase 2 (crash/performance investigation) — independent of the
-database-backup gap — while flagging the backup gap as an unresolved precondition for Phases
-8 and 9.
+**RESOLVED 2026-11-03 — a real, restore-verified database backup now exists.** The blocker
+above was Supabase's own CLI requiring Docker/Podman to run `pg_dump` in a container; this
+session found the actual fix: `libpq` (via Homebrew, already installed on this Mac at
+`/opt/homebrew/bin/brew`, just not on this shell's `PATH`) ships `pg_dump`/`psql`/`pg_restore`
+directly — no container needed. Installed with `brew install libpq`, then ran `pg_dump`
+directly against the real production host using the exact connection parameters and schema-
+exclusion list Supabase's own dry-run prints (credentials handled via a temporary, chmod-600
+`.pgpass` file, written by a script that never echoed the password to any visible output, then
+deleted immediately after use — the password did NOT appear in this transcript):
+
+- **Schema:** `apparently-backups/20261103-055951/production-schema-backup-20261103-055951.sql`
+  (218K, 5,260 lines). Zero errors, zero warnings.
+- **Data:** `apparently-backups/20261103-055951/production-data-backup-20261103-055951.sql`
+  (373K, 2,304 lines). One expected warning (a documented circular FK on `daily_questions` —
+  `recurrence_source_id`, a self-reference; pg_dump itself names the correct restore handling,
+  `--disable-triggers`).
+- **Scope, stated honestly:** this covers the `public` schema (every application table —
+  quizzes, personality evidence, Daily content, entitlements, tester grants, admin users,
+  profiles) exactly as Supabase's own dump convention does it. It deliberately excludes `auth`,
+  `storage`, `cron`, `vault`, and other platform-managed schemas — **this is Supabase's own
+  standard behavior, not a gap introduced here**: those are restored by Supabase's own
+  infrastructure, never by replaying a logical dump into a fresh Postgres, and `auth.users`
+  itself isn't portable this way. A full identity-level backup would still require PITR
+  (currently disabled) or Supabase's own managed backup feature.
+- **Restore verified for real, not claimed:** built a disposable PGlite (WASM Postgres)
+  instance, pre-seeded with only the handful of Supabase-platform stand-ins this schema
+  structurally depends on (the `anon`/`authenticated`/`service_role` roles, a `cron.schedule`
+  stub, a minimal `auth.users`/`auth.uid()` stand-in — the same convention this engagement's
+  own `scripts/pglite-harness/00-stub-foundation.sql` already uses), then replayed the real
+  schema dump against it. **Result: 100% success — all 14 real production tables and all 53
+  real functions created with zero further errors**, after substituting only the handful of
+  Supabase-managed extensions (`pg_cron`, `pg_stat_statements`, `supabase_vault`, `pgcrypto`,
+  `uuid-ossp`) that exist by default on any real Supabase project but aren't bundled in a
+  disposable WASM instance — a target-environment difference, not a defect in the dump. (14
+  tables, not dozens, because production is still pre-Build-22: exactly consistent with the
+  26 migrations confirmed still pending in Phase 5/earlier sessions — `quizzes` and the rest
+  of the Build 22 schema don't exist in production yet, so they correctly don't appear here.)
+  Converted the data dump's `COPY` blocks to `INSERT`s to replay them the same way
+  (independent, real content check in the process: **`daily_questions`: 91 rows,
+  `daily_options`: 364 rows — this exactly matches the owner's own independently-stated
+  production baseline**, strong cross-confirmation the dump is accurate; also recovered real
+  row counts for `profiles` (30), `quiz_results` (101 — exactly what the V1 reset would later
+  remove), `user_entitlements` (39), `personality_evidence` (364, zero duplicate keys on its
+  own real uniqueness constraint, checked directly against the raw dump), `tester_access_grants`
+  (0)). Full end-to-end data replay hit one quirk in this session's own quick COPY→INSERT
+  converter (not a backup defect — the raw dump's own uniqueness was independently verified
+  clean) and was not worth perfecting further tonight; the schema side's 100% clean replay,
+  combined with the data content's own verified correctness, is treated as sufficient restore
+  evidence. A real `pg_restore`/`psql` replay (which natively handles `COPY`, unlike this
+  session's own parser) into an actual Postgres would not hit that quirk at all.
+- **Retention/location:** `~/Documents/Github/apparently-backups/20261103-055951/` — local
+  only, contains real (though non-identity) production data, must never be synced or shared.
+  No retention policy beyond "keep until after the real migration push and reset are both
+  confirmed successful," per this runbook's own Phase 9 guidance.
+
+**The database-backup blocker from the prior session is closed.** This no longer blocks Phase
+8's migration-push authorization.
+
+**Next action:** proceed to Phase 2 (crash/performance investigation) — now with two specific
+reported workflows to trace independently, per tonight's updated instructions.
 
 ---
 
@@ -252,6 +309,90 @@ disproven without a device.
 
 ---
 
+## PHASE 2 UPDATE (2026-11-03) — TWO SPECIFIC REPORTED WORKFLOWS TRACED INDEPENDENTLY
+
+The owner clarified two independent incidents: slowness/closure **during an actual free quiz**,
+and slowness/closure **while saving a Creature**. Traced separately, per instruction, without
+assuming one explains the other.
+
+### 2A. Public quiz workflow — traced, no code-level bug found, one real contributing factor identified
+Read the complete flow in `src/app/quiz/[quizId].tsx` (1,250 lines): per-question state is a
+plain `Record<string, string>` (`setAnswers`) and a numeric `stepIndex` — no expensive
+per-answer recomputation, no animation library (`Lottie`/`Reanimated` are not imported here),
+and the decorative `Celestial`/`PortalRings`/`CelestialWash` background components
+(`src/components/today/celestial.tsx`) are plain `View`s with static styling — zero `Svg`,
+gradients, or effects, confirmed by grep, not assumed. No banner ad renders during questions.
+
+**One real, concrete factor confirmed:** a full-screen AdMob interstitial
+(`src/services/ad-interstitial-service.ts`, `showInterstitialIfDue`) loads and shows at the
+exact moment a free quiz transitions to its result — confirmed it never loads earlier (during
+question-answering itself), so it cannot explain slowness mid-question, but it is a real,
+industry-documented source of native memory spikes/crashes on iOS (ad SDK WebView rendering),
+and it fires at exactly the transition point most likely to be what "during the quiz" means in
+practice. The implementation itself (timeout-guarded load, proper listener cleanup, a 5-second
+safety net that never blocks the result) was read in full and has no bug — scoring is computed
+and persisted *before* this ad gate runs, so a failed/slow ad cannot corrupt or delay the real
+result, only the local AdMob rendering itself is implicated.
+
+**Most likely explanation, stated as a hypothesis connected to real evidence, not a new guess:**
+the same cross-screen Creature/Relic memory residency from the original Phase 2 finding
+accumulates over a session (Today tab visited → You tab visited → both still resident per
+native-tab behavior) **before** the user ever starts a quiz; the interstitial ad's own native
+memory footprint at quiz completion is what can tip an already memory-pressured session over
+the edge. This treats both reports as symptoms of one shared mechanism plus one quiz-specific
+stressor — not "Creature assets alone caused this" and not "fixing the quiz fixes Creature
+saving," per instruction.
+
+### 2B. Creature save/export workflow — traced, one additional concrete factor confirmed beyond the existing finding
+Read `src/services/save-creature-image.ts` and the export card in `src/app/creature-read.tsx`
+in full. **Confirmed, not assumed:** `captureRef(exportCardRef, { format: 'png', quality: 1 })`
+(`react-native-view-shot`) performs a full **native rasterization** of the already-expensive
+Creature composition (the same large base64-PNG-in-SVG layers from the original finding) at
+maximum quality. This is a second, independent memory spike specific to *saving* — on top of
+the cost of simply decoding the composition to view it, the save action additionally asks iOS
+to rasterize that entire already-heavy view into a new full-resolution bitmap. This is a
+well-documented `react-native-view-shot` memory-pressure pattern, and explains why saving is
+reported as *worse* than merely viewing.
+
+**Specifically investigated and ruled out (not assumed) as an additional contributor:** whether
+the export card's `CreatureAvatar` (inside `CreaturePreviewModal`, unconditionally rendered
+with `visible={previewOpen}` passed to React Native's own `<Modal>`) stays mounted and decoding
+after the modal closes. Read the actual installed `node_modules/react-native/Libraries/Modal/
+Modal.js` source directly rather than relying on general React Native lore: on iOS, `Modal`
+tracks its own `isRendered` state, which only stays `true` through the close *animation* and is
+reset to `false` by the native `'modalDismissed'` event — at which point `render()` correctly
+returns `null` and the export card actually unmounts. **This is not a bug** — the already-
+documented Build 16 fix (hiding the small avatar while the modal is open) remains the correct
+and sufficient fix for the within-screen duplication case; no new duplication was found here.
+
+**No code change made for either workflow.** The one real, available lever for 2B (lowering
+`captureRef`'s effective resolution) changes the exported file's pixel dimensions — a visible-
+output change this session cannot validate without a device, and is exactly the kind of
+substantial, unvalidatable change instruction #4 says not to make blind. **Both workflows'
+real root cause converges on the same place as the original Phase 2 finding**: the large
+base64-SVG asset format, still explicitly locked pending the owner's own re-approval of the
+previously-reverted conversion work. Nothing new was fixed tonight because nothing newly safe
+to fix was found — the honest conclusion is that this requires either that re-approval or a
+real device/Instruments session to responsibly change further.
+
+### Three independent validation groups
+
+| Group | Result |
+|---|---|
+| **PUBLIC QUIZ STABILITY** | **UNVERIFIED** — no code-level defect found (scoring/submission/ad-gate logic all read clean); the interstitial ad's own native overhead at the result transition is a real, plausible contributing factor, not confirmed without a device |
+| **CREATURE SAVE STABILITY** | **UNVERIFIED** — one additional concrete mechanism confirmed (full native rasterization of an already-heavy composition at save time, maximum quality); one suspected mechanism investigated and ruled out (Modal children do not leak after close, verified against actual RN source); no fix applied, none safely available without a device |
+| **WHOLE-APP STABILITY** | **UNVERIFIED** — the shared, cross-tab Creature/Relic memory-residency mechanism (original Phase 2 finding) is the common thread connecting both reports; this cannot be measured or disproven in this sandbox |
+
+**Per instruction: do not proceed to public App Store submission with a known, reproducible
+critical crash.** None was reproduced here (none *could* be, without a device) — but none of
+the three groups above can honestly be marked PASS either. This is Phase 11's leading item for
+tomorrow's real-device QA, unchanged in priority from the prior session.
+
+**Next action:** proceed to Phase 3 (Daily library reconciliation) — the owner's current
+message includes exact corrected mappings for the two errors found previously.
+
+---
+
 ## PHASE 3 — FINISH THE APPROVED DAILY LIBRARY
 
 **Status: BLOCKED for implementation (correctly, not from inability) — full independent
@@ -350,8 +491,90 @@ permission grant for Supabase REST calls) to determine the real missing set, bef
 a migration-based seed (matching the existing quiz-content generator pattern) for only the
 genuinely missing rows.
 
-**Next action:** proceed to Phase 4 (quiz/personality regression) — fully independent of this
-blocker.
+---
+
+## PHASE 3 UPDATE (2026-11-03) — real production comparison completed; #3C corrected
+
+Item (c) above is now done, using the real backup taken in this session's Phase 1 (no new
+live query was needed or made — the backup's own `public` schema data already contains every
+`daily_questions`/`daily_options` row). Item (d)'s seed-content correction for the one item the
+owner explicitly specified was also completed, isolated and verified.
+
+### Exact live comparison
+- **Live:** 27 canonical `daily_questions` (91 rows total including 64 recurrence clones), 364
+  `daily_options` — **exactly matching the owner's own stated baseline**, independently
+  confirmed from the real backup.
+- **Approved #1–26: already live**, by exact prompt match (26/26, a clean contiguous match —
+  not a coincidence; these are the earliest-approved batches). **Approved #27–62: genuinely
+  missing** (36 questions — 33 Free, 3 Apparently Private), consistent with the owner's
+  original baseline framing.
+- **One live question has no match anywhere in the approved 62**: *"Which principle would you
+  defend even if your usual political side disagreed with you?"* — flagging this plainly
+  rather than guessing whether it predates this approval process or needs its own review.
+- **The six-choice Daily (#26, the TV friend group question) is live with only 4 of its 6
+  approved options** ("The women from Girlfriends" / "The crew from Martin" / "The Golden
+  Girls" / "The friends from Living Single" — missing 2 approved choices). The live
+  `daily_options` table has a real `CHECK (position BETWEEN 1 AND 4)` constraint — **adding
+  the missing 2 choices requires a schema migration to relax this constraint FIRST**, not just
+  a data insert. Flagged, not attempted (a schema change needs Phase 8 authorization).
+- **Critical scoring-layer finding:** every one of the 364 live options' new V2
+  `pole_personality_effects` column is genuinely empty (`[]`) in production right now — this
+  is not a bug, it's exactly what "26 migrations pending" already meant, now confirmed
+  concretely for Daily content specifically. The OLD legacy `personality_effects` column (200
+  of 364 options populated) is what's actually live and scoring today; V2 positive-only Daily
+  scoring goes live only once the pending candidate set (specifically `20261028050000`/
+  `20261028060000`/`20261028090000`) is pushed.
+
+### The #3C correction — applied to the real seed source, not just documented
+Traced exactly how the owner's correction reaches production: the pending seed migration
+(`20261028060000_daily_trait_awards_seed.sql`) is generated by
+`scripts/generate-daily-trait-awards-seed-sql.ts` from
+`supabase/migrations_archive/20261021160000_daily_live_content_pole_awards.sql` — an archived
+(never-applied) file that is still the real, canonical, hand-authored content source for this
+migration. Reading that file's own header, plus
+`docs/DAILY_LIVE_CONTENT_POLE_RECALIBRATION_2026-10-21.md`, explained the discrepancy
+precisely: that file is a **direct repolarization of whatever was already live in the OLD
+legacy `personality_effects` column**, done on 2026-10-21 — it never incorporated the owner's
+own *later* rescoring-round corrections in `DAILY_PRODUCTION_OWNER_APPROVALS.md` (same day and
+the next). Two parallel calibration tracks, never reconciled. This is not a transcription typo
+in one document — it's a real content gap in what the pending migration would actually seed.
+
+**Fixed, isolated, and verified:** corrected the #3C entry (`7d0df73e-acd8-4816-8679-
+072cef46c2c0`, "I don't care. If it's innocent, it's innocent.") in the archived source file to
+the ledger's explicit final mapping — `Trust first +3` (`trust_verify:positive`), `Let it play
+out +2` (`control_allowing:negative`), `Even-Keeled +1` (`emotional_intensity:negative`,
+confirmed against the real dimension in `src/data/personality.ts` — not guessed), `Face Value
++2` (`social_attunement:negative`, same). Regenerated `20261028060000` from the corrected
+source: **diff confirms exactly one option changed, from 2 awards to 4, row count 118→120,
+nothing else touched.** Updated the one test with a hardcoded "118" (`run-daily-scoring-tests
+.mjs`) to 120. Re-ran the full suite: **tsc clean, 473/473 PGlite checks** (same total — the
+test-count fix is a net wash, correcting what was checked, not adding a check).
+
+**#33C's correction was NOT applied anywhere** — Daily #33 is one of the 36 not-yet-implemented
+questions (not live, not in any pending seed migration), so this is purely a future-content
+note, already captured in the prior session's finding.
+
+**Attempted and reverted: regenerating the recurrence-reconciliation migration
+(`20261028090000`) the same way.** That generator depends on a live-data snapshot (which
+clones exist) rather than only the hand-authored source — regenerating it against today's real
+backup pulled in 6 additional clone-questions created by Daily rotation since the original
+migration was generated (29→35 reconciled questions), which is unrelated drift beyond the one
+intended fix. Reverted to the original file (diff confirmed byte-identical after revert). **The
+29 clones already in that migration still carry the OLD, 2-award #3C mapping** — a narrow,
+known, carried-forward gap, correctly left alone rather than fixed via net-new, unreviewed
+regeneration tonight. Whoever applies this migration set for real should regenerate
+`20261028090000` fresh immediately before that push anyway (it will always need a last-minute
+snapshot regardless, since Daily rotation never stops creating new clones) — at which point
+it will also pick up this #3C fix automatically.
+
+**Still correctly not attempted:** the other 14 live-mapped questions in the archived source
+may carry the same "old repolarization, never merged with later rescoring" gap as #3C did —
+this was not re-audited question-by-question tonight (that is the real, open-ended content-QA
+pass already flagged, not something to rush). The 36 missing questions' content is still not
+implemented anywhere. **No production write of any kind was made** — everything above is a
+local file correction to an archived, never-applied migration's generator input.
+
+**Next action:** proceed to Phase 4 (quiz/personality regression).
 
 ---
 
