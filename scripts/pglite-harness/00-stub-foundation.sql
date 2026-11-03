@@ -60,7 +60,11 @@ alter table public.quiz_results enable row level security;
 create policy "quiz_results_select_own" on public.quiz_results for select using (auth.uid() = user_id);
 
 create type public.daily_room as enum ('public', 'private');
-create type public.daily_status as enum ('Idea', 'Live', 'Archived');
+-- V1 release execution (2026-11-03): extended to the real production enum's full value set
+-- (confirmed directly against a real production schema dump) -- 'Approved' is needed by the
+-- staged (not-yet-applied) missing-Dailies seed, supabase/pending-owner-review/
+-- 20261103000000_daily_missing_approved_questions_seed.sql.
+create type public.daily_status as enum ('Idea', 'Draft', 'ReadyForReview', 'Approved', 'Scheduled', 'Live', 'Archived', 'NeedsRevision', 'Rejected');
 create type public.daily_mode as enum ('standard');
 
 create table public.daily_questions (
