@@ -3,7 +3,7 @@
 -- PREREQUISITE: 20261028010000 (trait catalog) and 20261028050000 (daily_option_trait_awards
 -- table) must both be applied first.
 --
--- Numeric Daily trait-award SEED -- 232 rows across 83 real, live
+-- Numeric Daily trait-award SEED -- 259 rows across 91 real, live
 -- daily_options rows. Source: supabase/migrations/20261021160000_daily_live_content_pole_
 -- awards.sql's already-reviewed hand-authored mapping (never applied as jsonb; transcribed
 -- here numerically). Resolves each string pole key to its numeric trait_id via the same
@@ -12,7 +12,7 @@
 -- Generated mechanically by scripts/generate-daily-trait-awards-seed-sql.ts -- do not hand-
 -- edit; regenerate if the source mapping changes.
 --
--- VERIFICATION GUARD: raises if the actual row count inserted does not match 232 --
+-- VERIFICATION GUARD: raises if the actual row count inserted does not match 259 --
 -- protects against applying this against a database where any of these specific option ids
 -- no longer exist (same guard pattern 20261021160000 itself already used).
 -- ============================================================================================
@@ -134,6 +134,33 @@ begin
   ('ba72f8ea-980c-4259-b2c8-a7c2476a4de4', 34, 3),
   ('ba72f8ea-980c-4259-b2c8-a7c2476a4de4', 47, 2),
   ('ba72f8ea-980c-4259-b2c8-a7c2476a4de4', 56, 1),
+  ('4e9fd7c1-89d8-4c7e-a178-a1cf2d2b32de', 17, 3),
+  ('4e9fd7c1-89d8-4c7e-a178-a1cf2d2b32de', 61, 2),
+  ('4e9fd7c1-89d8-4c7e-a178-a1cf2d2b32de', 43, 1),
+  ('a2046dd7-b281-4497-a279-80e8217c7e82', 32, 2),
+  ('a2046dd7-b281-4497-a279-80e8217c7e82', 61, 1),
+  ('afeddd9c-2bc1-4963-a534-2f48c89f67f1', 17, 3),
+  ('afeddd9c-2bc1-4963-a534-2f48c89f67f1', 21, 2),
+  ('afeddd9c-2bc1-4963-a534-2f48c89f67f1', 5, 1),
+  ('31705478-f1f5-4764-97a1-d25578dae01f', 17, 3),
+  ('31705478-f1f5-4764-97a1-d25578dae01f', 32, 1),
+  ('31705478-f1f5-4764-97a1-d25578dae01f', 47, 1),
+  ('99ae0194-c7d1-4586-b0e5-4b1b03320726', 34, 3),
+  ('99ae0194-c7d1-4586-b0e5-4b1b03320726', 63, 3),
+  ('99ae0194-c7d1-4586-b0e5-4b1b03320726', 5, 2),
+  ('99ae0194-c7d1-4586-b0e5-4b1b03320726', 17, 1),
+  ('09456186-df6e-4405-be9d-e42484a79908', 14, 3),
+  ('09456186-df6e-4405-be9d-e42484a79908', 1, 2),
+  ('09456186-df6e-4405-be9d-e42484a79908', 32, 2),
+  ('09456186-df6e-4405-be9d-e42484a79908', 63, 1),
+  ('d7a83d46-19f9-4c9b-96bd-20d234f34baa', 64, 2),
+  ('d7a83d46-19f9-4c9b-96bd-20d234f34baa', 16, 3),
+  ('d7a83d46-19f9-4c9b-96bd-20d234f34baa', 37, 1),
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 13, 3),
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 34, 3),
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 63, 2),
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 5, 2),
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 45, 1),
   ('ddc750d1-9d7a-49b6-a636-f7783d7a3e57', 27, 3),
   ('ddc750d1-9d7a-49b6-a636-f7783d7a3e57', 51, 2),
   ('ddc750d1-9d7a-49b6-a636-f7783d7a3e57', 61, 1),
@@ -261,7 +288,7 @@ begin
   )
   select count(*) into v_inserted from inserted;
 
-  if v_inserted <> 232 then
-    raise exception 'Expected to insert exactly 232 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
+  if v_inserted <> 259 then
+    raise exception 'Expected to insert exactly 259 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
   end if;
 end $$;

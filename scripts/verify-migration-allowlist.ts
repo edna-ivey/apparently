@@ -68,6 +68,7 @@ const ENGINEERING_CANDIDATE_SET = [
   '20261102010000_archetype_fallback_result_and_tie_chain.sql',
   '20261102020000_final_scoring_cleanup_and_v1_reset.sql',
   '20261102040000_submit_quiz_result_version_guard.sql',
+  '20261106010000_admin_activate_approved_daily_for_rotation.sql',
 ];
 
 if (JSON.stringify([...ENGINEERING_CANDIDATE_SET].sort()) !== JSON.stringify(ENGINEERING_CANDIDATE_SET)) {

@@ -1,0 +1,918 @@
+{
+  "generatedNote": "Committed, one-time snapshot of real production question/option ids for the 26 already-live canonical Dailies, taken from the production backup at ~/Documents/Github/apparently-backups/20261103-055951/. productionRevealAsOf20261103 on each option is the reveal text actually live in production at that snapshot (pre-correction) -- used by scripts/validate-daily-content-against-specification.ts to confirm the staged reveal-correction file actually closes the gap to the authoritative specification, without depending on any ephemeral /tmp cache. Never hand-edit -- a real id only ever comes from a real database snapshot.",
+  "snapshotDate": "2026-11-03",
+  "questionCount": 26,
+  "optionCount": 104,
+  "questions": [
+    {
+      "num": 1,
+      "source": "APPROVED 1",
+      "questionId": "150420a5-88bc-4581-af4d-c696f815a29a",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "913022ee-7fae-4fc0-b454-c90b53b16365",
+          "position": 1,
+          "label": "If you finish it, replace it.",
+          "productionRevealAsOf20261103": "You are not asking for perfection. You are asking whoever finished the toilet paper to have a conscience."
+        },
+        {
+          "letter": "B",
+          "optionId": "57585104-9456-4597-9894-3b17ada0f356",
+          "position": 2,
+          "label": "Don’t wear shoes inside.",
+          "productionRevealAsOf20261103": "Apparently outside belongs outside."
+        },
+        {
+          "letter": "C",
+          "optionId": "cfe31e6f-70f0-448b-8a1a-f38758809b7e",
+          "position": 3,
+          "label": "Don’t go to bed with a dirty kitchen.",
+          "productionRevealAsOf20261103": "You cannot wake up peaceful to last night’s spaghetti pot."
+        },
+        {
+          "letter": "D",
+          "optionId": "4528aed5-a8ad-404b-9fdc-b6ffcf85e1e5",
+          "position": 4,
+          "label": "Put things back where they belong.",
+          "productionRevealAsOf20261103": "Apparently “where you found it” is a complete address."
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "source": "APPROVED 2",
+      "questionId": "db766878-a0ba-4859-ad69-19733e9cf1da",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "39f9d84c-571a-421c-8613-7ed51b97641e",
+          "position": 1,
+          "label": "“You never stopped being yourself.”",
+          "productionRevealAsOf20261103": "You want success without disappearing inside it."
+        },
+        {
+          "letter": "B",
+          "optionId": "9d96aad1-6a26-436c-bf6b-51265f03f51c",
+          "position": 2,
+          "label": "“You’re a great parent.”",
+          "productionRevealAsOf20261103": "Of all the things you could be good at, this one would hit home."
+        },
+        {
+          "letter": "C",
+          "optionId": "4195ecbe-236c-46a5-b36d-0c96c4a5b4a4",
+          "position": 3,
+          "label": "“You make people feel safe.”",
+          "productionRevealAsOf20261103": "Being somebody’s exhale means more to you than being impressive."
+        },
+        {
+          "letter": "D",
+          "optionId": "d96fc00f-64bf-4523-b177-3cf2277f39a4",
+          "position": 4,
+          "label": "“You built an incredible life.”",
+          "productionRevealAsOf20261103": "You want the evidence that your effort became something."
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "source": "B2-01",
+      "questionId": "d07119ea-32ac-414a-8393-69e3161bd18f",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "399c5eae-6d39-449f-b796-fcd9ae3502f0",
+          "position": 1,
+          "label": "“Why are they comfortable asking you for that?”",
+          "productionRevealAsOf20261103": "You are less interested in the money than the access."
+        },
+        {
+          "letter": "B",
+          "optionId": "d4083739-7fa3-4ce1-a7e5-22ef03c84e63",
+          "position": 2,
+          "label": "“Actually, my hands hold money better. Send it over.” 😂",
+          "productionRevealAsOf20261103": "You did not ask to join the situation. You did, however, volunteer to hold the cash. 😂"
+        },
+        {
+          "letter": "C",
+          "optionId": "7d0df73e-acd8-4816-8679-072cef46c2c0",
+          "position": 3,
+          "label": "“I don’t care. If it’s innocent, it’s innocent.”",
+          "productionRevealAsOf20261103": "Your trust does not need a committee meeting."
+        },
+        {
+          "letter": "D",
+          "optionId": "67aaacad-28b7-4bd4-b61a-7a5a4191d2e1",
+          "position": 4,
+          "label": "“Do they need the number to the nearest bank?”",
+          "productionRevealAsOf20261103": "Boundaries, but with customer-service information."
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "source": "B2-02",
+      "questionId": "b6f8f9dc-28a7-442b-84b4-fe2024f28bec",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "6dcb7df8-2c02-4564-915a-f3bad573c360",
+          "position": 1,
+          "label": "“Why did you feel the need to say that?”",
+          "productionRevealAsOf20261103": "The announcement itself became evidence."
+        },
+        {
+          "letter": "B",
+          "optionId": "ba4eba3d-775c-4467-a37c-dfafc2d278a1",
+          "position": 2,
+          "label": "Fair. Privacy still exists in relationships.",
+          "productionRevealAsOf20261103": "You can love somebody and still believe they get to have a private drawer."
+        },
+        {
+          "letter": "C",
+          "optionId": "61cb483c-3eb9-4b45-8ca1-609aba673051",
+          "position": 3,
+          "label": "If I suddenly can’t touch your phone, now I definitely have questions.",
+          "productionRevealAsOf20261103": "Interesting. Now your curiosity has a password."
+        },
+        {
+          "letter": "D",
+          "optionId": "22ed955f-1878-4523-ba2e-feebaf3c49b4",
+          "position": 4,
+          "label": "Fine, but secrecy and privacy are not the same thing.",
+          "productionRevealAsOf20261103": "You are not anti-privacy. You are anti-mystery with suspicious timing."
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "source": "B2-03",
+      "questionId": "89a2d1eb-5448-4b8f-84a0-8612eeaadfcd",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "3fd1f90b-670e-48c3-99a8-c229120f0b93",
+          "position": 1,
+          "label": "Depends what the lie protects and who it hurts.",
+          "productionRevealAsOf20261103": "You need the moral fine print before signing anything."
+        },
+        {
+          "letter": "B",
+          "optionId": "6fe8aa77-687a-4ae4-a7c6-5f65789f71dd",
+          "position": 2,
+          "label": "Absolutely not. Handle your own situation.",
+          "productionRevealAsOf20261103": "Your friendship package does not include perjury. 😂"
+        },
+        {
+          "letter": "C",
+          "optionId": "8ad5b062-0340-489f-be68-1aea7e5fa064",
+          "position": 3,
+          "label": "I’ll cover something small. Friends help friends.",
+          "productionRevealAsOf20261103": "Loyalty has a petty-cash limit."
+        },
+        {
+          "letter": "D",
+          "optionId": "5ef6c827-f194-4b92-aac8-94df4de43cb2",
+          "position": 4,
+          "label": "I won’t lie, but I also don’t have to expose them.",
+          "productionRevealAsOf20261103": "You found the narrow path between betrayal and becoming an accomplice."
+        }
+      ]
+    },
+    {
+      "num": 6,
+      "source": "B2-05",
+      "questionId": "55ba84c3-1f1c-45f5-8a4b-5cbd499a642b",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "2d45834d-3201-48af-9963-5e7599ad9aa8",
+          "position": 1,
+          "label": "Nothing at first. They already know how I feel.",
+          "productionRevealAsOf20261103": "You already submitted your report. No revisions."
+        },
+        {
+          "letter": "B",
+          "optionId": "780eb488-cf72-44a9-a591-3f4e1c1609fa",
+          "position": 2,
+          "label": "“Respectfully, please return the emotional labor I invested.” 😂",
+          "productionRevealAsOf20261103": "Your support hours have apparently exceeded the original contract. 😂"
+        },
+        {
+          "letter": "C",
+          "optionId": "d1932683-6885-4675-a07b-bb449a9ccc99",
+          "position": 3,
+          "label": "“If you’re happy, I’m here.”",
+          "productionRevealAsOf20261103": "You can disagree without making love conditional."
+        },
+        {
+          "letter": "D",
+          "optionId": "51e7a010-0727-4acd-920a-212662a2d40a",
+          "position": 4,
+          "label": "“I love you. I am also not pretending I think this is a good idea.”",
+          "productionRevealAsOf20261103": "Supportive, yes. Delusional, no."
+        }
+      ]
+    },
+    {
+      "num": 7,
+      "source": "B2-06",
+      "questionId": "a7f115ca-e9c6-4526-847e-3da8effe222f",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "0b92ef07-6470-4709-aef2-255eebf0697e",
+          "position": 1,
+          "label": "A relationship you never have to question",
+          "productionRevealAsOf20261103": "Apparently certainty in love feels like its own kind of peace."
+        },
+        {
+          "letter": "B",
+          "optionId": "4d9a662d-f5fc-4df3-a2fe-889c4d8c5b85",
+          "position": 2,
+          "label": "Perfect health",
+          "productionRevealAsOf20261103": "Everything else is easier to dream about when your body is on your side."
+        },
+        {
+          "letter": "C",
+          "optionId": "094860d7-4b7f-4f24-a6b2-230446c3e444",
+          "position": 3,
+          "label": "A peaceful home",
+          "productionRevealAsOf20261103": "Some things become priceless once you have lived without them."
+        },
+        {
+          "letter": "D",
+          "optionId": "94d77663-a67e-48f1-a744-1e609e9a2798",
+          "position": 4,
+          "label": "Financial security",
+          "productionRevealAsOf20261103": "Peace of mind has a number in the account."
+        }
+      ]
+    },
+    {
+      "num": 8,
+      "source": "B2-08",
+      "questionId": "c4e4a6ec-bdfe-43e1-b3b1-158650718e28",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "92f42469-c931-46c6-8cce-8279c4c235e7",
+          "position": 1,
+          "label": "Who genuinely loves me",
+          "productionRevealAsOf20261103": "Okay. That one got quiet."
+        },
+        {
+          "letter": "B",
+          "optionId": "7b2edd4f-7c4d-4c6a-991f-87cd680b3eb2",
+          "position": 2,
+          "label": "What happens after we die",
+          "productionRevealAsOf20261103": "One guaranteed answer and you went straight to eternity."
+        },
+        {
+          "letter": "C",
+          "optionId": "9d90c4c7-2b8a-467e-8ad8-1050c9d0e588",
+          "position": 3,
+          "label": "What people really think of me",
+          "productionRevealAsOf20261103": "You would rather know than wonder, even if the truth stings."
+        },
+        {
+          "letter": "D",
+          "optionId": "7bd747d2-d47b-4950-8880-caa314c22bb7",
+          "position": 4,
+          "label": "Whether I chose the right life",
+          "productionRevealAsOf20261103": "Apparently the question underneath the questions is: did I choose well?"
+        }
+      ]
+    },
+    {
+      "num": 9,
+      "source": "B2-09",
+      "questionId": "377544ba-febf-4053-8be9-ed489e7c942b",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "a98b6f67-cd03-4954-a6fe-38a05027e639",
+          "position": 1,
+          "label": "“They made life fun.”",
+          "productionRevealAsOf20261103": "You want your presence remembered as a feeling."
+        },
+        {
+          "letter": "B",
+          "optionId": "0deacb4c-7377-4078-8d25-eaefe64f6500",
+          "position": 2,
+          "label": "“They loved us really well.”",
+          "productionRevealAsOf20261103": "That is less a sentence and more a legacy."
+        },
+        {
+          "letter": "C",
+          "optionId": "057dac37-31e1-4ac7-beee-5952a5ac0859",
+          "position": 3,
+          "label": "“They built something that mattered.”",
+          "productionRevealAsOf20261103": "You want your life to leave fingerprints beyond you."
+        },
+        {
+          "letter": "D",
+          "optionId": "5dfb2cac-202c-4d08-a8ba-7354a63b9ac5",
+          "position": 4,
+          "label": "“They always showed up.”",
+          "productionRevealAsOf20261103": "Apparently consistency becomes very big when the people you love are doing the remembering."
+        }
+      ]
+    },
+    {
+      "num": 10,
+      "source": "B2-04",
+      "questionId": "0f9969e0-bf1a-4571-9518-9d67d1afc493",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "4eec948e-30ab-44ac-8d14-f15a2112299d",
+          "position": 1,
+          "label": "Honestly, I might joke back harder.",
+          "productionRevealAsOf20261103": "You chose retaliation with punchlines."
+        },
+        {
+          "letter": "B",
+          "optionId": "d771b4ef-247a-4ffb-8ece-9a09ecfb7f6e",
+          "position": 2,
+          "label": "That my partner didn’t shut it down.",
+          "productionRevealAsOf20261103": "For you, the real problem is not the joke. It is who left you standing alone in it."
+        },
+        {
+          "letter": "C",
+          "optionId": "7ee6691e-7f63-4b3b-84e3-ff32d08e3ff7",
+          "position": 3,
+          "label": "The jokes themselves.",
+          "productionRevealAsOf20261103": "Respect should not require a family meeting."
+        },
+        {
+          "letter": "D",
+          "optionId": "273e9434-8661-43ce-835d-a9dc850d0f4f",
+          "position": 4,
+          "label": "That y’all have now put ME in the position of having to address it.",
+          "productionRevealAsOf20261103": "You were willing to let your partner handle it. Apparently that window has closed."
+        }
+      ]
+    },
+    {
+      "num": 11,
+      "source": "B3-01",
+      "questionId": "e6faaa1f-1b57-466b-b10e-a466c9c438e0",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "3242db06-4178-42f8-9f3b-d8b7d4c32a76",
+          "position": 1,
+          "label": "Answering. Twice means it might matter.",
+          "productionRevealAsOf20261103": "Two calls was enough to activate your emergency protocol."
+        },
+        {
+          "letter": "B",
+          "optionId": "1ac1a42a-3365-4818-9753-fc317905e5bb",
+          "position": 2,
+          "label": "Letting it ring, then Googling the number.",
+          "productionRevealAsOf20261103": "You don’t answer mysteries. You investigate them."
+        },
+        {
+          "letter": "C",
+          "optionId": "69542272-19b5-46cc-b403-08c8cbadc3ee",
+          "position": 3,
+          "label": "Texting, “Who is this?”",
+          "productionRevealAsOf20261103": "You’ll engage, but on your terms and preferably in writing."
+        },
+        {
+          "letter": "D",
+          "optionId": "ba72f8ea-980c-4259-b2c8-a7c2476a4de4",
+          "position": 4,
+          "label": "Blocking it. If it’s important, they’ll figure it out.",
+          "productionRevealAsOf20261103": "You believe urgency should come with identification."
+        }
+      ]
+    },
+    {
+      "num": 12,
+      "source": "B3-02",
+      "questionId": "9387c445-ab42-44bb-89c8-fe38007fc156",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "4e9fd7c1-89d8-4c7e-a178-a1cf2d2b32de",
+          "position": 1,
+          "label": "Depends how crowded it is.",
+          "productionRevealAsOf20261103": "Context has entered the chat."
+        },
+        {
+          "letter": "B",
+          "optionId": "a2046dd7-b281-4497-a279-80e8217c7e82",
+          "position": 2,
+          "label": "Fair. Their people are coming.",
+          "productionRevealAsOf20261103": "The ancient law of “THESE SEATS ARE TAKEN” still has your support."
+        },
+        {
+          "letter": "C",
+          "optionId": "afeddd9c-2bc1-4963-a534-2f48c89f67f1",
+          "position": 3,
+          "label": "If people are standing, the reservation period has expired.",
+          "productionRevealAsOf20261103": "Apparently invisible friends do not constitute a seating chart."
+        },
+        {
+          "letter": "D",
+          "optionId": "31705478-f1f5-4764-97a1-d25578dae01f",
+          "position": 4,
+          "label": "One or two? Fine. Six is ridiculous.",
+          "productionRevealAsOf20261103": "You support seat saving. You simply believe it needs zoning laws."
+        }
+      ]
+    },
+    {
+      "num": 13,
+      "source": "B3-03",
+      "questionId": "f47d6fd8-a3dd-4552-8491-b3a160bf79de",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "99ae0194-c7d1-4586-b0e5-4b1b03320726",
+          "position": 1,
+          "label": "Picking a place and sending the address.",
+          "productionRevealAsOf20261103": "Congratulations. You have been promoted to decision-maker by exhaustion."
+        },
+        {
+          "letter": "B",
+          "optionId": "09456186-df6e-4405-be9d-e42484a79908",
+          "position": 2,
+          "label": "Sending a poll. Majority rules.",
+          "productionRevealAsOf20261103": "If nobody wants to decide, apparently democracy will."
+        },
+        {
+          "letter": "C",
+          "optionId": "d7a83d46-19f9-4c9b-96bd-20d234f34baa",
+          "position": 3,
+          "label": "Waiting. Somebody will eventually choose.",
+          "productionRevealAsOf20261103": "You refuse to accept a leadership position you did not apply for."
+        },
+        {
+          "letter": "D",
+          "optionId": "740878a1-f297-4f20-8fb5-c3cef5b00938",
+          "position": 4,
+          "label": "“I’m eating at ___ at 7. Come if you want.”",
+          "productionRevealAsOf20261103": "You solved the group decision by quietly removing the group decision."
+        }
+      ]
+    },
+    {
+      "num": 14,
+      "source": "B3-04",
+      "questionId": "81caa637-a32a-46a4-93c6-6f2220d5966c",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "ddc750d1-9d7a-49b6-a636-f7783d7a3e57",
+          "position": 1,
+          "label": "I accept it. People mess up.",
+          "productionRevealAsOf20261103": "You’re more interested in moving forward than making someone pay forever."
+        },
+        {
+          "letter": "B",
+          "optionId": "0422e592-adf6-42d7-9434-76be0a211955",
+          "position": 2,
+          "label": "I forgive them, but things are different now.",
+          "productionRevealAsOf20261103": "Forgiveness granted. Access level changed."
+        },
+        {
+          "letter": "C",
+          "optionId": "7b358f4f-b49e-416c-843a-d5820dfdd44e",
+          "position": 3,
+          "label": "I need changed behavior, not an apology.",
+          "productionRevealAsOf20261103": "Words can apply. Behavior has to submit the supporting documentation."
+        },
+        {
+          "letter": "D",
+          "optionId": "e5e2859c-4642-4913-9b48-5d1a91596ce0",
+          "position": 4,
+          "label": "Too late. You should’ve cared before I was done.",
+          "productionRevealAsOf20261103": "Apparently there is, in fact, an expiration date."
+        }
+      ]
+    },
+    {
+      "num": 15,
+      "source": "B3-05",
+      "questionId": "39f7f1f6-d737-4189-936b-d7bc5da9ed13",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "2aa026e5-2778-450a-9a97-56bd483a87b2",
+          "position": 1,
+          "label": "I stay exactly where I am. They can wait.",
+          "productionRevealAsOf20261103": "You will not be bullied out of your lane."
+        },
+        {
+          "letter": "B",
+          "optionId": "650194db-2247-4a70-bca3-a950bf6e0344",
+          "position": 2,
+          "label": "I move over and let them go be somebody else’s problem.",
+          "productionRevealAsOf20261103": "Go ahead. Be somebody else’s emergency."
+        },
+        {
+          "letter": "C",
+          "optionId": "30ed587d-5253-4303-a638-e87607d91452",
+          "position": 3,
+          "label": "I slow down a little. Since we’re apparently spending time together.",
+          "productionRevealAsOf20261103": "Petty has entered the vehicle. 😂"
+        },
+        {
+          "letter": "D",
+          "optionId": "762c2efa-cdb9-42f3-a482-1ede40360d73",
+          "position": 4,
+          "label": "I keep driving normally. A stranger is not controlling my mood OR my speed.",
+          "productionRevealAsOf20261103": "You refuse to let a stranger borrow your nervous system."
+        }
+      ]
+    },
+    {
+      "num": 16,
+      "source": "B3-06",
+      "questionId": "0fcb93a3-61d0-499b-a4da-6bf2f180e200",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "6c805dde-907e-42a7-8f72-9b48f2462d9d",
+          "position": 1,
+          "label": "I need to see what kind of car this is before I complete my investigation. 😂",
+          "productionRevealAsOf20261103": "You require additional evidence before sentencing. 😂"
+        },
+        {
+          "letter": "B",
+          "optionId": "e0cd62cc-ba09-4fa7-be85-93e1883aa3a1",
+          "position": 2,
+          "label": "Maybe there’s a reason I can’t see.",
+          "productionRevealAsOf20261103": "You are granting one unseen circumstance before judgment."
+        },
+        {
+          "letter": "C",
+          "optionId": "d661a8bb-2af1-4a7f-a94e-d6581d4183a0",
+          "position": 3,
+          "label": "Some people really do move through life like nobody else exists.",
+          "productionRevealAsOf20261103": "For you, the parking job is less about lines and more about character."
+        },
+        {
+          "letter": "D",
+          "optionId": "192a75b4-b2d2-4d74-887b-9eaea49496cf",
+          "position": 4,
+          "label": "Extremely annoying. I’m judging, but I’m moving on.",
+          "productionRevealAsOf20261103": "Judgment delivered. Day continued."
+        }
+      ]
+    },
+    {
+      "num": 17,
+      "source": "B3-07",
+      "questionId": "884d009c-b99f-400b-b213-f5e71ec9be7a",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "fec3e884-03cf-44b1-93f6-44eb2c109665",
+          "position": 1,
+          "label": "The exact number. I don’t care.",
+          "productionRevealAsOf20261103": "You asked a question. You got an answer. Apparently that simple."
+        },
+        {
+          "letter": "B",
+          "optionId": "5355204a-80a9-4d8b-b658-6ad44c482946",
+          "position": 2,
+          "label": "A general range.",
+          "productionRevealAsOf20261103": "You’ll answer the question. You’re just keeping a little mystery."
+        },
+        {
+          "letter": "C",
+          "optionId": "00adaac1-5c70-4def-8f78-476681e71998",
+          "position": 3,
+          "label": "I’m joking my way out of that question.",
+          "productionRevealAsOf20261103": "You heard “salary” and immediately deployed a diversion."
+        },
+        {
+          "letter": "D",
+          "optionId": "065b694e-4d79-4a9a-a1c4-1bb101ab1232",
+          "position": 4,
+          "label": "Absolutely nothing. Why do you need to know?",
+          "productionRevealAsOf20261103": "Your finances are not community property."
+        }
+      ]
+    },
+    {
+      "num": 18,
+      "source": "B3-08",
+      "questionId": "1ad9b3bd-892c-4962-8465-9a41093ab03c",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "5a8dd80f-e968-4c73-9773-c8c55852008e",
+          "position": 1,
+          "label": "Saying something about me you wouldn’t say to my face",
+          "productionRevealAsOf20261103": "Say it with your chest or leave it alone."
+        },
+        {
+          "letter": "B",
+          "optionId": "1f2c0a77-a300-44e2-a94e-9d60a685380a",
+          "position": 2,
+          "label": "Constantly interrupting me",
+          "productionRevealAsOf20261103": "Apparently finishing a sentence is one of your love languages."
+        },
+        {
+          "letter": "C",
+          "optionId": "1232a353-24f2-4fd2-8e1f-dc2927645883",
+          "position": 3,
+          "label": "Being late with no warning",
+          "productionRevealAsOf20261103": "Your time is not decorative."
+        },
+        {
+          "letter": "D",
+          "optionId": "39f17b27-f78b-4078-a965-31d594e3ae2f",
+          "position": 4,
+          "label": "Ignoring my text while clearly being on your phone",
+          "productionRevealAsOf20261103": "Being left on read while they are clearly online feels PERSONAL."
+        }
+      ]
+    },
+    {
+      "num": 19,
+      "source": "B3-09",
+      "questionId": "53315c67-86a2-469c-8cb8-5fac19f387ab",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "fbfe9bfa-5c2a-4bf3-ad67-558193015cc5",
+          "position": 1,
+          "label": "Experience rich",
+          "productionRevealAsOf20261103": "You want the stories."
+        },
+        {
+          "letter": "B",
+          "optionId": "fbff211d-5fee-4ae2-a0bc-83d055f87f20",
+          "position": 2,
+          "label": "Money rich",
+          "productionRevealAsOf20261103": "You would like the account balance to speak for itself."
+        },
+        {
+          "letter": "C",
+          "optionId": "e6dfb20b-24a7-4c07-b8a7-7d48b3f544ba",
+          "position": 3,
+          "label": "Relationship rich",
+          "productionRevealAsOf20261103": "Apparently being loved well has an excellent exchange rate."
+        },
+        {
+          "letter": "D",
+          "optionId": "acb032e1-179c-408c-ae6f-0b4ed4dfc381",
+          "position": 4,
+          "label": "Time rich",
+          "productionRevealAsOf20261103": "Keep the yacht. Give me my Tuesday back."
+        }
+      ]
+    },
+    {
+      "num": 20,
+      "source": "B3-10",
+      "questionId": "19dd3b23-9cca-47f7-a0f8-d2c7305f3e43",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "f092686f-1202-4fbe-bb7b-09ea3246e53d",
+          "position": 1,
+          "label": "Someone handling every annoying task for a week",
+          "productionRevealAsOf20261103": "Luxury, apparently, is nobody asking you where the charger is."
+        },
+        {
+          "letter": "B",
+          "optionId": "fa6602e3-b456-4605-a43b-195f54b81b98",
+          "position": 2,
+          "label": "A five-star vacation",
+          "productionRevealAsOf20261103": "You still believe luxury should come with room service. Respect."
+        },
+        {
+          "letter": "C",
+          "optionId": "858ebeb3-2f07-42b0-80d9-a5be4287f863",
+          "position": 3,
+          "label": "A completely empty calendar",
+          "productionRevealAsOf20261103": "Forget the yacht. Nobody needing anything from you is the new rich."
+        },
+        {
+          "letter": "D",
+          "optionId": "7e047303-24fa-4294-b044-b72612209450",
+          "position": 4,
+          "label": "A paid-off house",
+          "productionRevealAsOf20261103": "Apparently luxury is spelled MORTGAGE: DONE."
+        }
+      ]
+    },
+    {
+      "num": 21,
+      "source": "B4-01",
+      "questionId": "ad47aa58-caa5-4b54-b5b1-0a862a9112b6",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "2624fc7b-f85e-4406-9688-892f2eb72402",
+          "position": 1,
+          "label": "Own it immediately. “Well… since we’re here.”",
+          "productionRevealAsOf20261103": "The evidence is already in the chat. Might as well stand on it."
+        },
+        {
+          "letter": "B",
+          "optionId": "ad0c2d5e-7969-4f92-9acd-4e53de6c7230",
+          "position": 2,
+          "label": "Unsend it and pray they didn’t see it.",
+          "productionRevealAsOf20261103": "No screenshot. No witnesses. No further questions."
+        },
+        {
+          "letter": "C",
+          "optionId": "e27bcac6-a3ad-4853-8536-44e0273e9b80",
+          "position": 3,
+          "label": "Send “OMG WRONG PERSON” and disappear for a while.",
+          "productionRevealAsOf20261103": "Your crisis-management strategy includes distance and plausible confusion."
+        },
+        {
+          "letter": "D",
+          "optionId": "a48b3d9e-cf16-4e61-bf18-c702a7fcb202",
+          "position": 4,
+          "label": "Double down. “And I meant every word.”",
+          "productionRevealAsOf20261103": "The screenshot may have been an accident. The opinion was not."
+        }
+      ]
+    },
+    {
+      "num": 22,
+      "source": "B4-02",
+      "questionId": "8b0b45af-eaa6-4c1c-b6fb-e7c00ba00f3e",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "2f729eea-0bd4-4e45-a8f4-e29f24a4a98d",
+          "position": 1,
+          "label": "Traffic",
+          "productionRevealAsOf20261103": "Apparently you would like your life back one red light at a time."
+        },
+        {
+          "letter": "B",
+          "optionId": "4f35ab85-0f26-4c45-9489-5641bb17ad5e",
+          "position": 2,
+          "label": "Laundry",
+          "productionRevealAsOf20261103": "The hamper has won enough."
+        },
+        {
+          "letter": "C",
+          "optionId": "5a0cb3a5-8e39-41f4-95b4-32917f67961a",
+          "position": 3,
+          "label": "Waiting on hold",
+          "productionRevealAsOf20261103": "“Your call is very important to us” has apparently tested the wrong person."
+        },
+        {
+          "letter": "D",
+          "optionId": "cdae12e3-013b-43fd-9a4a-e199a31b9a53",
+          "position": 4,
+          "label": "Passwords",
+          "productionRevealAsOf20261103": "Apparently cybersecurity has become personal."
+        }
+      ]
+    },
+    {
+      "num": 23,
+      "source": "B4-03",
+      "questionId": "8aa3c30f-98d0-4dc3-a398-5a1cec3d0173",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "510bfd80-17f5-4be1-9507-57ff2970807d",
+          "position": 1,
+          "label": "Wait around a little and see if someone comes back looking panicked.",
+          "productionRevealAsOf20261103": "You are giving the universe a few minutes to send the panicked owner back."
+        },
+        {
+          "letter": "B",
+          "optionId": "c1accf2d-3ec0-4a32-889d-209febe05c67",
+          "position": 2,
+          "label": "Turn it in. If it’s theirs, hopefully they come looking for it.",
+          "productionRevealAsOf20261103": "Your conscience said, “Don’t make this complicated.”"
+        },
+        {
+          "letter": "C",
+          "optionId": "4b2d5e3c-8a01-4f2a-8f3e-2acbecc282c1",
+          "position": 3,
+          "label": "Ask customer service if anyone reported missing money before I hand anything over.",
+          "productionRevealAsOf20261103": "Trust, but with a verification step."
+        },
+        {
+          "letter": "D",
+          "optionId": "9f7b1c4d-619b-403e-96b5-96023fa13211",
+          "position": 4,
+          "label": "I’m not proud of how quickly “finders keepers” entered the conversation. 😂",
+          "productionRevealAsOf20261103": "That $200 started looking spiritually assigned very quickly. 😂"
+        }
+      ]
+    },
+    {
+      "num": 24,
+      "source": "B4-05",
+      "questionId": "ee4a9c48-82e9-4f82-8025-53397bf8a83a",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "e798c52a-10cb-4aa9-b474-b8b559b9a836",
+          "position": 1,
+          "label": "Asking them directly what’s wrong.",
+          "productionRevealAsOf20261103": "You’d rather deal with an awkward conversation than an imaginary one."
+        },
+        {
+          "letter": "B",
+          "optionId": "8489219e-88b1-4e92-8e46-62e70f184209",
+          "position": 2,
+          "label": "Giving them space. They’ll tell me when they’re ready.",
+          "productionRevealAsOf20261103": "You noticed. You’re just not forcing the conversation."
+        },
+        {
+          "letter": "C",
+          "optionId": "329940d2-f335-467c-a8c9-aa90a634a618",
+          "position": 3,
+          "label": "Acting normal, but I’m definitely watching.",
+          "productionRevealAsOf20261103": "Nothing has been said. Somehow, you still have notes."
+        },
+        {
+          "letter": "D",
+          "optionId": "4e9cefff-5ca1-4517-a0f8-a2b5de8ae00d",
+          "position": 4,
+          "label": "Oh, we’re being weird? I can be weird too.",
+          "productionRevealAsOf20261103": "You don’t start energy shifts. You are, however, willing to participate."
+        }
+      ]
+    },
+    {
+      "num": 25,
+      "source": "B4-06",
+      "questionId": "0ace59f9-6d87-467d-8643-8b25c34bb27b",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "1d3533fa-a3db-4e4f-b24f-22f678d7c763",
+          "position": 1,
+          "label": "Already packing.",
+          "productionRevealAsOf20261103": "You heard “mystery trip” and somehow that was enough information."
+        },
+        {
+          "letter": "B",
+          "optionId": "2f7cf318-6b23-4d88-9c53-04cae817bb0a",
+          "position": 2,
+          "label": "I’m in, but where are we going?",
+          "productionRevealAsOf20261103": "You’ll take the adventure. You just need one tiny crumb of information first."
+        },
+        {
+          "letter": "C",
+          "optionId": "4eb27666-828b-4bf2-9436-13429db3cf3c",
+          "position": 3,
+          "label": "I need the itinerary, address, and expected return time.",
+          "productionRevealAsOf20261103": "Adventure is welcome. Ambiguity is not."
+        },
+        {
+          "letter": "D",
+          "optionId": "13263cbd-fa9e-4943-96f5-63d1b58af65b",
+          "position": 4,
+          "label": "Absolutely not. Explain first.",
+          "productionRevealAsOf20261103": "You’re not getting in anybody’s car based on vibes and a text."
+        }
+      ]
+    },
+    {
+      "num": 26,
+      "source": "B4-04",
+      "questionId": "5c9a48bb-4606-43c7-8f3e-fac621ff6232",
+      "options": [
+        {
+          "letter": "A",
+          "optionId": "f403e7a3-fbd8-4d78-ae3c-d6366f718e9e",
+          "position": 1,
+          "label": "The women from Girlfriends",
+          "productionRevealAsOf20261103": "You chose friendship, fashion, opinions, and absolutely no shortage of plot."
+        },
+        {
+          "letter": "B",
+          "optionId": "bd4cdcaf-6404-4543-bccc-1c68006c1a4c",
+          "position": 2,
+          "label": "The crew from Martin",
+          "productionRevealAsOf20261103": "You chose laughter, foolishness, and at least one argument before dinner."
+        },
+        {
+          "letter": "C",
+          "optionId": "b84aaef2-e19f-40b6-9abf-21257fa60580",
+          "position": 3,
+          "label": "The Golden Girls",
+          "productionRevealAsOf20261103": "Cheesecake, shade, and a lanai. The Room understands."
+        },
+        {
+          "letter": "D",
+          "optionId": "68eec514-23a9-4d73-acb7-d1bdeacaeee6",
+          "position": 4,
+          "label": "The friends from Living Single",
+          "productionRevealAsOf20261103": "You chose friendship, ambition, and people who will absolutely be in your business."
+        }
+      ]
+    }
+  ]
+}

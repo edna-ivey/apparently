@@ -2,16 +2,25 @@
 -- correction, not a schema change -- requires its own owner review and sign-off.
 --
 -- V1 release execution (2026-11-05): corrects live production reveal text for the 26 already-
--- live canonical Daily questions against docs/DAILY_MASTER_CONSOLIDATED_REVIEW.md. Confirmed
--- programmatically, not assumed: 94 of 96 compared options had reveal text that does not
--- match the approved document at all (not formatting drift -- genuinely different copy, e.g.
--- live 'Apparently outside belongs outside.' vs approved 'Apparently, the front door is where
--- your tolerance for nonsense ends.' for the same answer). This is expected, not a sign the
--- master document is wrong: every Reassessment Round in docs/DAILY_PRODUCTION_OWNER_APPROVALS.md
--- explicitly states 'questions, answers and reveals remain unchanged' -- reveal text was never
--- touched by the rescoring process, and at least one batch's own notes record that its
--- approved reveal explicitly replaces 'the older production reveal' that was still live. The
--- correct, approved reveal text was evidently approved but never actually deployed.
+-- live canonical Daily questions against docs/DAILY_MASTER_CONSOLIDATED_REVIEW.md. The correct,
+-- approved reveal text was evidently approved but never actually deployed -- this is expected,
+-- not a sign the master document is wrong: every Reassessment Round in
+-- docs/DAILY_PRODUCTION_OWNER_APPROVALS.md explicitly states 'questions, answers and reveals
+-- remain unchanged' -- reveal text was never touched by the rescoring process, and at least one
+-- batch's own notes record that its approved reveal explicitly replaces 'the older production
+-- reveal' that was still live.
+--
+-- CORRECTED (V1 release execution, 2026-11-06): independent review found this file's own prior
+-- comparison undercounted its subject -- 26 live canonical questions have 104 answer choices,
+-- not 96, and comparing all of them found 102 genuine mismatches, not 94. The 8 missed here
+-- originally (Daily #12 "SIX empty seats" and #13 "group... pick where to eat", all 4 options
+-- each) were skipped by a prompt-matching bug, not a scoring/content judgment call: the live
+-- production prompts for both use a curly apostrophe/quote ('haven't', "I don't care") while
+-- the script comparing them against the master document did not normalize that difference
+-- before matching, so neither question's live row was ever found in the master document at
+-- all and both were silently skipped rather than flagged. Re-run with apostrophe/quote
+-- normalization added: confirmed exactly 8 additional mismatches, all in #12/#13, nothing else
+-- -- the other 94 already-corrected statements below were unaffected and are unchanged.
 --
 -- 2 near-identical 'label' differences (straight vs curly quotation marks, #11C/#11D) were
 -- found and are NOT corrected here -- cosmetic only, and the master document's own copy is the
@@ -112,6 +121,17 @@ update public.daily_options set apparently_feedback = 'Apparently, you want frie
 update public.daily_options set apparently_feedback = 'Apparently, you chose a year of laughter, foolishness, and at least three arguments that started over absolutely nothing.' where id = 'bd4cdcaf-6404-4543-bccc-1c68006c1a4c';
 update public.daily_options set apparently_feedback = 'Apparently, you''ve selected cheesecake, legendary shade, and a group of women who could roast you and comfort you in the same sentence.' where id = 'b84aaef2-e19f-40b6-9abf-21257fa60580';
 update public.daily_options set apparently_feedback = 'Apparently, you want ambitious friends, good conversation, and people who will support your dreams while staying all the way in your business.' where id = '68eec514-23a9-4d73-acb7-d1bdeacaeee6';
+
+-- #12 ("...saving SIX empty seats...") and #13 ("...pick where to eat...") -- the 8 answers
+-- missed by the original comparison's apostrophe-matching bug, see this file's own header.
+update public.daily_options set apparently_feedback = 'Apparently, you''re willing to hear both sides before deciding whether somebody needs to move their imaginary guests.' where id = '4e9fd7c1-89d8-4c7e-a178-a1cf2d2b32de';
+update public.daily_options set apparently_feedback = 'Apparently, you respect the sacred tradition of saving seats. Six empty chairs? That''s not a problem. That''s a family reunion with delayed arrivals.' where id = 'a2046dd7-b281-4497-a279-80e8217c7e82';
+update public.daily_options set apparently_feedback = 'Apparently, you''re not standing while six invisible people enjoy reserved seating. This isn''t a restaurant, and those chairs don''t have names on them.' where id = 'afeddd9c-2bc1-4963-a534-2f48c89f67f1';
+update public.daily_options set apparently_feedback = 'Apparently, you''re willing to compromise, but six chairs? At this point, somebody needs to start charging rent.' where id = '31705478-f1f5-4764-97a1-d25578dae01f';
+update public.daily_options set apparently_feedback = 'Apparently, you didn''t apply to be the group leader, but somebody had to rescue dinner from the committee of indecision.' where id = '99ae0194-c7d1-4586-b0e5-4b1b03320726';
+update public.daily_options set apparently_feedback = 'Apparently, if nobody has an opinion, democracy will assign them one. Voting closes in five minutes.' where id = '09456186-df6e-4405-be9d-e42484a79908';
+update public.daily_options set apparently_feedback = 'Apparently, you''re willing to starve before accepting a leadership position you never applied for.' where id = 'd7a83d46-19f9-4c9b-96bd-20d234f34baa';
+update public.daily_options set apparently_feedback = 'Apparently, you solved the group decision by removing the group. Dinner is at seven. Attendance is optional.' where id = '740878a1-f297-4f20-8fb5-c3cef5b00938';
 
 -- #18 ("Which feels MOST disrespectful to you?") specifically: content is now fully correct
 -- (reveal text above; scoring already corrected via the regenerated

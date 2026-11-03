@@ -47,16 +47,18 @@ try {
   // anything about the seed's own correctness. Verified instead by static structural checks:
   const seedSql = readFileSync(join(root, 'supabase/migrations/20261028060000_daily_trait_awards_seed.sql'), 'utf8');
   const seedRowMatches = [...seedSql.matchAll(/\('[0-9a-f-]{36}', \d+, \d+\)/g)];
-  // V1 final release execution (2026-11-05): 118 -> 120 (the #3C fix) -> 238 (the 13-question
-  // Reassessment Round correction pass) -> 232 after a from-scratch rebuild of the ENTIRE
-  // archived source covering every live, scored, non-rejected question (not just the
-  // previously-patched subset) -- independent review found the 238 figure still used the
-  // consolidated master document's scoring for several answers (notably #22 and #26) where the
-  // owner's own Reassessment Round explicitly assigns NONE; the master document's value there
-  // was a real scoring regression, not a formatting nit. See the archived source migration's
-  // own updated header and scripts/validate-daily-scoring-against-ledger.ts.
-  check('Daily seed file contains the expected 232 numeric award rows', seedRowMatches.length === 232, `found=${seedRowMatches.length}`);
-  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 232'), 'guard text present');
+  // V1 final release execution (2026-11-06): 118 -> 120 -> 238 -> 232 -> 259. The 232 figure
+  // (a from-scratch rebuild covering every live, scored question) turned out to still be
+  // short: independent review found the comparison it was built from only covered 96 of the
+  // 26 live questions' real 104 answer choices, silently excluding #12 and #13 (8 options)
+  // entirely -- those two questions had ZERO awards of any kind until this fix, not merely a
+  // wrong value. The archive is now generated deterministically by
+  // scripts/generate-daily-live-pole-awards-archive.ts from scripts/lib/daily-content-spec.ts
+  // (the one authoritative resolution shared with every other Daily content generator), closing
+  // both the missing-questions gap and the earlier risk of the archive and the 36-question
+  // generator silently drifting apart. See scripts/validate-daily-content-against-specification.ts.
+  check('Daily seed file contains the expected 259 numeric award rows', seedRowMatches.length === 259, `found=${seedRowMatches.length}`);
+  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 259'), 'guard text present');
   const u1 = (await db.query(`insert into auth.users default values returning id`)).rows[0].id;
 
   const publicLive = (await db.query(
