@@ -50,7 +50,12 @@ const wouldBePushed = migrationDirFiles.filter((f: string) => MIGRATION_FILENAME
 
 assert(wouldBePushed.length === migrationDirFiles.length, `every file directly inside supabase/migrations/ matches the real migration filename pattern (no stray non-migration file sitting where a push would find it) -- ${wouldBePushed.length}/${migrationDirFiles.length}`);
 
-const RESET_FILENAME = '20261102030000_clean_v1_prelaunch_data_reset.sql';
+// V1 release execution (2026-11-03): the owner's final "clean V1 launch" decision supersedes
+// the earlier, beta-preserving reset with a full prelaunch wipe (preserves exactly one admin
+// identity, deletes every consumer/tester identity via a single auth.users cascade). The old
+// file is retained for historical record in supabase/migrations_archive/, never applied; this
+// is now the one real, staged reset to check for isolation.
+const RESET_FILENAME = '20261103020000_clean_v1_full_prelaunch_wipe.sql';
 assert(!wouldBePushed.includes(RESET_FILENAME), `THE FIX: ${RESET_FILENAME} is NOT among the files a real \`supabase db push\` would find in supabase/migrations/ -- structurally absent, not merely excluded by a bookkeeping list`);
 
 assert(existsSync(join(MANUAL_OPS_DIR, RESET_FILENAME)), `${RESET_FILENAME} exists instead under supabase/manual_operations/ (outside the CLI's scan path entirely)`);

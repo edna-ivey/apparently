@@ -28,7 +28,19 @@ Placing a file here is the correct choice for a database change that is:
 
 ## Current contents
 
-- `20261102030000_clean_v1_prelaunch_data_reset.sql` — the one-time clean V1 prelaunch data
-  reset (Build 22 final cleanup). See `docs/BUILD_22_V1_RESET_INVENTORY.md` for the full
-  inventory and `scripts/pglite-harness/run-clean-v1-reset-rehearsal-test.mjs` for its local
-  rehearsal proof.
+- `20261103020000_clean_v1_full_prelaunch_wipe.sql` — the one-time clean V1 full prelaunch
+  wipe (V1 release execution, "Clean V1 Launch Directive," 2026-11-03). Deletes every
+  consumer/tester identity and everything linked to one via a single `auth.users` cascading
+  delete, preserving exactly one admin identity. See the file's own header for the full
+  inventory and `scripts/pglite-harness/run-clean-v1-full-wipe-rehearsal-test.mjs` for its
+  local rehearsal proof (25/25 checks).
+
+## Superseded (historical record only — never apply)
+
+- `supabase/migrations_archive/20261102030000_clean_v1_prelaunch_data_reset.sql` — the earlier,
+  selective-preserve reset (Build 22 final cleanup, 2026-11-02), which kept every consumer's
+  auth identity, profile, Daily history, and tester/entitlement grants. Superseded by an
+  owner-confirmed, later decision: "That is no longer the desired final launch state." Moved
+  to `supabase/migrations_archive/` rather than deleted, consistent with this repo's
+  "necessary platform/migration history" convention — it documents a real, once-approved
+  design, not dead code to discard.

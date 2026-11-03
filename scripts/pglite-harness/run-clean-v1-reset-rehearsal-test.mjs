@@ -245,10 +245,13 @@ try {
   // ==========================================================================================
   // APPLY THE RESET
   // ==========================================================================================
-  // Lives under supabase/manual_operations/ (structurally isolated from the normal
-  // `supabase db push` migration path -- see scripts/verify-reset-isolation.ts), not
-  // supabase/migrations/.
-  await run(join(root, 'supabase/manual_operations/20261102030000_clean_v1_prelaunch_data_reset.sql'));
+  // SUPERSEDED (V1 release execution, 2026-11-03): the owner's final "clean V1 launch"
+  // decision replaced this selective-preserve reset with a full prelaunch wipe -- see
+  // supabase/manual_operations/20261103020000_clean_v1_full_prelaunch_wipe.sql and
+  // run-clean-v1-full-wipe-rehearsal-test.mjs. This file is retained, pointed at the archived
+  // copy, purely as historical proof that the earlier design worked as specified at the time
+  // -- never applied, never the staged plan.
+  await run(join(root, 'supabase/migrations_archive/20261102030000_clean_v1_prelaunch_data_reset.sql'));
   check('the reset migration applies cleanly against representative seeded data', true);
 
   // --- 1. Old beta scoring data is removed. ---
