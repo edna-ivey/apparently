@@ -447,3 +447,328 @@ recovery strategy is honestly incomplete pending Phase 1's backup gap, which is 
 here again rather than glossed over.
 
 **Next action:** proceed to Phase 6 (GitHub synchronization).
+
+---
+
+## PHASE 6 — SYNCHRONIZE GITHUB SAFELY
+
+**Status: PASS (commit) / HOLD (push — one unverifiable precondition, explained below, not
+skipped).**
+
+### Review and secrets check
+Reviewed the full diff: 140 changed paths before staging. 14 deletions are already-reasoned
+Build 22 retirements (dead scoring code, 3 stale Build-16 validators, 6 one-off analysis
+scripts — all previously documented in this engagement, none newly decided tonight). Two
+migrations that appeared as "deleted" are actually **moves** into the existing
+`supabase/migrations_archive/` convention, confirmed by `git`'s own rename detection after
+staging (97%/100% similarity). No needed Creature/Relic art or approved Daily/quiz
+documentation was touched. Ran a pattern scan for live secrets (`sk_live`, `sb_secret`,
+`service_role` literal values, private-key headers, Google API key shape) across every
+changed file — the only 3 hits were the literal string `service_role` inside code comments
+describing a Postgres role name, not a credential. `.env.local` never appeared in `git status`
+at any point (gitignored, confirmed again).
+
+### .gitignore addition
+Added `/assets/_png_experiment/` (95M, the abandoned PNG-conversion experiment identified in
+Phase 2) to the same "kept on disk, not committed" convention already used for
+`/assets/creatures_old/` and `/assets/creatures copy/` — excluded from the commit, NOT deleted
+from disk, so it remains available if the owner re-approves that work later.
+
+### Commit
+One coherent commit on the existing feature branch (not `master`):
+```
+052a466c33a3bc97a96e51a061de8a797a52d25c
+"Build 22: 17-quiz Private catalog, V1 reset/version-guard safety, deployment-safety review"
+190 files changed, 42160 insertions(+), 9980 deletions(-)
+```
+`git status` is clean after the commit. `backup/pre-v1-release-2026-11-02` (created in Phase 1,
+pointing at the prior commit `96f6166`) is the rollback target if anything here needs reverting
+— `git reset --hard backup/pre-v1-release-2026-11-02` would cleanly undo it (not run tonight;
+recorded here as the known-good rollback procedure, per this runbook's own ban on destructive
+commands).
+
+### "Reproducible build" / correctness checks
+- `tsc`/lint: clean (re-confirmed Phase 4, no code changed since).
+- No dependency changes: `package.json`/`package-lock.json` have zero diff — confirmed
+  directly, not assumed.
+- Migration "checksums": this repo doesn't use Supabase's internal migration-history table
+  locally; the real correctness guarantee already established is the chronological-filename
+  ordering assertion in `verify-migration-allowlist.ts` and its matching PGlite test (both
+  independently re-verified in Phase 5).
+
+### Push — held, not skipped
+Branch is now **2 commits ahead** of `origin/feature/private-library-implementation`. This
+runbook's own authorization boundary requires verifying the push **cannot automatically change
+production** before it happens. What was checked: `npx vercel project inspect apparently-you`
+confirms the project (`prj_cc9Iv83b4gPpijKLaX6WQaANiB4r`) builds via `npx expo export -p web` →
+`dist`, and the known production alias is `apparentlyyou.com` (Phase 1). **What could not be
+confirmed from this CLI**: the exact configured "Production Branch" setting in Vercel's Git
+integration (that specific field isn't exposed by `vercel project inspect`'s text output, and
+pulling it any other way would mean the same category of production-data/credential access
+already declined twice in Phase 1/3). Standard Vercel behavior is that only the configured
+production branch (almost always the repo's default branch — `master` here, per this repo's
+own convention, not `feature/private-library-implementation`) triggers a Production
+deployment; every other branch gets an isolated Preview deployment at most. This is very
+likely already true here, but "very likely" is not the same as verified, and this runbook is
+explicit that push is permitted "only after verifying."
+
+**Held, not pushed.** Recommended before pushing: either (a) the owner confirms the Production
+Branch setting in the Vercel dashboard (Project → Settings → Git), or (b) explicitly authorizes
+proceeding on the standard-behavior assumption above. Once either happens, the push itself is
+a single `git push origin feature/private-library-implementation` — low-risk, non-destructive,
+reversible — not a Supabase/website/App Store action.
+
+**PASS criteria partially met:** code is safely committed and backed up locally and in `.git`
+history; it is NOT yet backed up on GitHub's servers (that requires the push above).
+
+**Next action:** proceed to Phase 7 (Vercel/website verification) — independent of the push
+decision, since Phase 7 only needs to inspect the already-linked Vercel project, not push new
+code to it.
+
+---
+
+## PHASE 7 — VERIFY AND PREPARE APPARENTLYYOU.COM
+
+**Status: PASS on root-cause diagnosis and local verification / HELD on an actual new preview
+deployment (session's auto-mode safety classifier declined the deploy action itself — see
+below, not worked around).**
+
+### Root cause of the Vercel preview failures — confirmed, not assumed
+Pulled the real build log for one of the 8 failed previews
+(`https://apparently-ctuzbvaum-edna-ivey-s-projects.vercel.app`, commit `9f9d651`, 2026-10-27):
+```
+Error: Importing native-only module "react-native/Libraries/Utilities/codegenNativeComponent" on web
+from: node_modules/react-native-google-mobile-ads/.../GoogleMobileAdsBannerViewNativeComponent.ts
+  src/services/ads-config.ts → src/app/(tabs)/explore.tsx
+Error: Command "npx expo export -p web" exited with 1
+```
+This is **exactly** what commit `96f6166` (the session immediately before this one,
+2026-10-27, already in this runbook's Phase 1/2 context) diagnosed and fixed — four `.web.ts`/
+`.web.tsx` siblings that keep the real ad SDK off the web bundle entirely. **That commit was
+never pushed to GitHub before tonight** (confirmed in Phase 6: the branch was ahead of
+`origin`), so Vercel's Git integration never got a chance to build it — every one of those 8
+failed previews predates the fix and none of them could have included it.
+
+**Verified fresh, right now, locally:** `npx expo export -p web` completes cleanly — **33
+static routes**, zero errors, including `/privacy-policy`, `/terms-of-use`, `/support`,
+`/paywall`, `/s/[token]`, `/settings`. This is real evidence the fix works, not a repeat of the
+commit message's own claim.
+
+### Website content — presence checked, not re-litigated
+- `privacy-policy.tsx` (dated "Last updated: October 21, 2026") and `terms-of-use.tsx`
+  ("Effective: October 21, 2026") both exist and render.
+- Privacy policy explicitly discloses the 18+ age-eligibility gate for mature "Private Private"
+  content — correctly already covers the two mature quizzes added since.
+- `support.tsx` exists. `settings.tsx` contains real account-deletion UI (10 references).
+  `paywall.tsx` wires real `restorePurchases`/`subscribeToPackage`.
+- Public result links (`/s/[token]`) and the age-sensitive sharing restriction are enforced
+  **server-side** (proven in Phase 4/5: 16/16 checks, `run-mature-content-sharing-security-
+  test.mjs`) — the website serves the same client code as the app, so this protection is
+  shared, not web-specific, and was not re-derived here.
+- Did not deep-audit legal correctness of the policy text itself (not an engineering
+  judgment call) — only confirmed presence, dates, and that they already account for the
+  mature-content feature.
+
+### Preview deployment — held, not faked
+Attempted `npx vercel deploy` (no `--prod`, which always creates an isolated Preview regardless
+of any branch/production setting — a safe way to verify the fix on real Vercel infrastructure
+without resolving Phase 6's open git-push question first). The project has ~22,800 files,
+over Vercel's inline upload limit, so it required `--archive=tgz`; that specific retry **was
+declined by this session's own auto-mode safety classifier** as a real external deploy action.
+Per this session's standing instruction not to work around a classifier decision, no further
+attempt was made (this is the third such decline tonight, after the Supabase service-key
+reveal and a production REST query in Phase 1/3 — all real external-system actions on
+production-adjacent infrastructure, declined consistently).
+
+**What this means:** the root cause and the fix are independently confirmed locally and via
+the real failed-build log; what's NOT yet confirmed is that fix succeeding on Vercel's actual
+build infrastructure, because no new build could be triggered there tonight. The next concrete
+action (Phase 8/owner-level, not tonight) is simply to push the branch (once Phase 6's
+production-branch question is resolved) and let Vercel's own Git integration build the real
+preview automatically — at that point this becomes fully verified rather than "verified
+locally, held pending a real remote build."
+
+**Current known-good production deployment** (unchanged, recorded again for this phase):
+`dpl_ETi2FoaZ2AiR6CbRq9JGunZgo5ZG`, 2026-10-21, aliased `apparentlyyou.com` — this is the
+rollback target; nothing in tonight's work has touched it.
+
+**Do not promote this website version before the matching Supabase migrations are live** —
+the Private tab's 17-quiz catalog (website and app share the same client code) will not work
+correctly against a production database that doesn't yet have the 21-file candidate set
+applied. This defers promotion to after Phase 8's database cutover, exactly as this runbook's
+own phase ordering already requires.
+
+**PASS criteria partially met:** root cause genuinely diagnosed and fixed (not guessed);
+compatibility with the intended backend is understood and sequenced correctly; an actual new
+preview build is prepared (commit ready, content verified) but not yet executed, honestly
+reported as held rather than claimed.
+
+**Next action:** proceed to Phase 8 (production deployment checkpoint) — this is this
+runbook's own explicit STOP-and-request-approval gate, not a phase to execute unattended.
+
+---
+
+## PHASE 8 — PRODUCTION DEPLOYMENT CHECKPOINT — STOP, OWNER AUTHORIZATION REQUIRED
+
+**This phase is a request, not an action. Nothing below has been executed.**
+
+| Item | Status |
+|---|---|
+| **Backup verification** | Local code: verified (Phase 1, extraction-diffed). Git history: verified. **Database: NOT backed up — PITR disabled, zero Supabase-managed backups exist, and this sandbox cannot run `pg_dump` (no Docker). This must be resolved before the migration push below, not just before the reset.** |
+| **Exact database target** | `apparently-you`, ref `rjslgjxlpsjljbrlxfet`, environment: production, Postgres 17.6.1 |
+| **Exact migrations** | The 21-file engineering candidate set in `docs/BUILD_22_STAGING_DEPLOYMENT_MANIFEST.md` §1, applied via `supabase db push --linked` in exact chronological filename order — confirmed via real dry-run to be exactly what's pending, zero unknowns (Phase 5) |
+| **New Daily content in this push** | **None.** Phase 3 found the Daily library not ready to implement (2 confirmed transcription errors in the source document, the document's own compiled form never confirmed back to the owner, and no live-content comparison possible this session) |
+| **Expected user impact** | Schema/RPC changes only, additive and backward-compatible in design (old clients degrade safely per the version guard) — no existing user-visible data is altered by this push; the one-time reset (Phase 9) is what removes old quiz history, and that is separately authorized |
+| **Expected downtime / write restrictions** | None required for the schema push itself. The reset (Phase 9) runs one `SERIALIZABLE` transaction; a real completion that happens to collide with it gets one automatic client-side retry (Phase 2/5) rather than any explicit write-freeze window |
+| **Website deployment target** | Hold until after this migration push (Phase 7) — the 17-quiz Private catalog's client code depends on these migrations being live |
+| **Rollback method** | Git: `backup/pre-v1-release-2026-11-02` branch at `96f6166` (pre-tonight). Database: **none currently exists** — this is the real gap, see Backup Verification row |
+| **Unresolved risks** | (1) No real database backup exists; (2) Vercel's exact Production Branch setting was not independently confirmed (Phase 6); (3) the Creature/Relic memory-pressure finding (Phase 2) remains unfixed, pending the owner's own decision on the previously-reverted asset-format work; (4) no on-device QA has happened yet (tomorrow, Phase 11) |
+
+**What I am asking you to decide, specifically:**
+1. Do you want to resolve the database-backup gap first (enable PITR in the Supabase
+   dashboard, or run the two `supabase db dump` commands from a machine with Docker — Phase 1
+   has the exact commands) before I'm authorized to push the 21-file migration set?
+2. Do you authorize `supabase db push --linked` for exactly those 21 files, in that order, once
+   #1 is resolved?
+3. Separately — after #2 is live — do you authorize applying the clean V1 reset
+   (`supabase/manual_operations/20261102030000_clean_v1_prelaunch_data_reset.sql`, manually,
+   never via `db push`)? This is Phase 9, and this runbook treats it as its own, later,
+   separate authorization, not bundled with #2.
+4. Do you want me to push the `feature/private-library-implementation` branch to GitHub now
+   (Phase 6), or do you want to confirm the Vercel Production Branch setting first?
+
+**I have not performed any production migration, reset, website promotion, or App Store/
+TestFlight submission. Everything past this point in the runbook requires your answer above.**
+
+---
+
+## PHASE 9 — CLEAN V1 PRELAUNCH DATA RESET
+
+**Status: PREPARED AND REHEARSED (27/27 PGlite checks, Phase 5), NOT EXECUTED — correctly
+blocked behind Phase 8's unresolved authorization, not attempted.**
+
+Everything the runbook asks for here is already true of the prepared migration (see
+`docs/BUILD_22_V1_RESET_INVENTORY.md` for the full procedure): a fresh pre-reset backup is
+taken inside the same transaction (schema `_reset_backup_20261102`, ≥30-day retention
+recommended before dropping it); the atomic cutover and client-side retry (Phase 2/5) address
+concurrent writes without a separate write-freeze step; `CREATURE_EVOLUTION_SCHEMA_VERSION`
+(bumped 1→2) invalidates stale client Creature caches on the next app load; Daily data,
+accounts, profiles, and entitlements are explicitly untouched (verified by the rehearsal);
+post-reset verification queries are ready to run. **None of this has been run against the
+real database tonight.** It requires Phase 8's separate authorization (item 3) after the
+schema push is live.
+
+---
+
+## PHASE 10 — FINAL TESTFLIGHT RELEASE CANDIDATE
+
+**Status: LOCAL PREP COMPLETE, BUILD NOT TRIGGERED — correctly held behind Phase 8.**
+
+What was verified locally, safely, without starting a real build:
+- iOS bundle id `com.supergreatventures.apparently`, confirmed unchanged.
+- **iOS build number bumped 21 → 22** (commit `0e7e057`) — required regardless of timing,
+  since EAS build #21 (finished 2026-10-27) already occupies 21 and Apple rejects a repeat.
+- `eas-cli` is authenticated in this session (`mekityus` / `edna.tyus@gmail.com`) and its build
+  history is real and readable — last finished build is exactly #21, iOS, profile
+  `testflight`, confirming the number above.
+- `eas.json`'s `testflight` profile correctly uses Google's published AdMob **test** unit ids
+  (`ca-app-pub-3940256099942544/...`), not live ones — already correct, no change needed.
+- `app-icon.png` and `splash-icon.png` both exist on disk at the paths `app.json` references.
+- Sentry (`@sentry/react-native`) is wired in `src/services/observability.ts`, DSN present in
+  `.env.local`; this session had no auth token to pull back real crash events (Phase 2), but
+  the app's own reporting path is correctly configured for the next build to start producing
+  them.
+
+**Not done, and should not be done without Phase 8's authorization:** actually running
+`eas build`, uploading to TestFlight, or claiming a build is available to testers. This
+session will not fabricate an EAS build ID or TestFlight processing status — none exists yet
+for build 22.
+
+---
+
+## PHASE 11 — TOMORROW'S OWNER TESTING AND APP STORE SUBMISSION PREP
+
+**Status: Checklist prepared now (pure documentation, safe to finish tonight); execution is
+tomorrow's physical-device QA, by the owner, as the runbook itself specifies.**
+
+Prioritized by this session's own findings, release blockers first:
+1. **No unexpected app exits or sign-outs** — specifically test repeated navigation
+   Today→You→Explore→Compare→Private and back, several times, then into a Creature/Relic
+   read/export screen, watching for a slowdown or a silent close **after a few minutes**, not
+   just on first launch (Phase 2's finding: multiple full Creature/Relic compositions likely
+   stay resident across tabs simultaneously — this is the single most likely explanation for
+   "closing unexpectedly/kicked out," and can only be confirmed on a real device).
+2. Smooth launch and tab switching.
+3. New Dailies actually appearing — **N/A this release**; Phase 3 found the 62-Daily library
+   not ready to ship (2 confirmed content errors, compiled draft never owner-confirmed, no
+   live-content comparison possible this session). Nothing new ships here tonight.
+4. Free and premium quiz completion — all 17 Private quizzes, including both 18+ ones.
+5. Correct quiz results (verified server-side already, Phase 4 — confirm visually too).
+6. Correct Creature/Relic progression, specifically after the version bump
+   (`CREATURE_EVOLUTION_SCHEMA_VERSION` 1→2) — confirm a device with pre-existing local state
+   recomputes cleanly rather than showing anything stale.
+7. Paywall and restore purchases.
+8. 18+ protection for `private-private-trouble` and `private-private-proof`.
+9. Sharing and Compare, specifically confirming the two mature quizzes cannot be shared or
+   read anonymously (server-side already proven; confirm the client UI matches).
+10. Account deletion.
+11. **No stale beta scores** — only verifiable after Phase 9's reset is actually authorized
+    and run; if the reset hasn't happened yet, this item doesn't apply to tomorrow's build.
+12. Website and support links — confirm `apparentlyyou.com` once Phase 7's new preview is
+    actually built and (if authorized) promoted.
+
+**Flag any failure in items 1, 4, 8, 9, or 11 as a release blocker** — these map directly to
+this session's safety-relevant work (crash risk, the full catalog, mature-content protection,
+and the reset). Failures in 2, 3, 5, 6, 7, 10, 12 should be triaged but don't necessarily block
+submission on their own.
+
+App Store submission materials (final screenshots, listing copy) are **not prepared tonight**
+— they depend on the real device QA above and on a real, numbered build existing, neither of
+which happened this session. Preparing them before that would mean preparing them against an
+unverified build, which is not useful work.
+
+---
+
+## FINAL RELEASE DASHBOARD
+
+| # | Phase | Result |
+|---|---|---|
+| 1 | Snapshot & backup | **PASS** (local/git) / **BLOCKED** (database — no Docker, PITR disabled, zero Supabase backups exist) |
+| 2 | Crash & performance investigation | **PASS** (structural investigation; high-confidence root cause identified — cross-screen Creature/Relic re-decoding, compounding the already-known large-asset format — with a concrete, evidence-backed mechanism) / unverifiable without a device |
+| 3 | Daily library | **BLOCKED, correctly** — 2 confirmed content errors found in the source document via independent audit; compiled document never owner-confirmed as a whole; live-content comparison blocked by this session's own safety classifier. Zero content implemented. |
+| 4 | Quiz/personality regression | **PASS** — 1592+8+290+27+473 = **2390 real checks**, 0 failures, re-run fresh tonight |
+| 5 | Migration staging validation | **PASS** — real linked-project dry-run (26 pending migrations, 0 unknown) + PGlite rehearsal (50+27+11+16 = 104 checks) |
+| 6 | GitHub sync | **PASS** (commit) / **HELD** (push — Vercel production-branch setting not independently verifiable this session) |
+| 7 | Vercel/website | **PASS** (root cause diagnosed and fixed, verified locally) / **HELD** (actual new preview build — declined by this session's safety classifier) |
+| 8 | Production checkpoint | **STOP — awaiting your answers to the 4 questions above** |
+| 9 | Clean V1 reset | **PREPARED, NOT EXECUTED** — correctly behind Phase 8 |
+| 10 | TestFlight build | **LOCAL PREP COMPLETE** (build number bumped 21→22, configs confirmed) — **NOT BUILT** |
+| 11 | Owner QA + submission prep | **CHECKLIST READY** for tomorrow; execution pending a real build and your physical device |
+
+### Exact artifacts from tonight
+- **Git commits:** `052a466` (the full Build 22 engineering work) and `0e7e057` (build number
+  bump), both on `feature/private-library-implementation`, **not yet pushed** to `origin`.
+- **Rollback branch:** `backup/pre-v1-release-2026-11-02` → `96f6166` (pre-tonight).
+- **Local backup:** `~/Documents/Github/apparently-backups/20261102-224859/apparently-
+  snapshot-20261102-224859.tar.gz` (166M, integrity-verified) — **contains real secrets
+  (`.env.local`), keep this folder local-only, never sync or share it.**
+- **Database:** 26 real migrations pending on the linked production project (21 candidate + 1
+  gated + 4 independent), zero applied tonight. No backup exists for that database yet.
+- **Vercel:** current production `dpl_ETi2FoaZ2AiR6CbRq9JGunZgo5ZG` (unchanged); no new
+  deployment created tonight.
+- **EAS/TestFlight:** build #21 still the latest (2026-10-27); no new build triggered tonight.
+
+### A note on this session's own safety behavior
+Three times tonight, this environment's own auto-mode safety classifier declined an action
+I attempted — revealing the Supabase service-role key, querying production data with a fresh
+session, and deploying a Vercel preview. Each time I stopped rather than finding a workaround,
+consistent with this runbook's own instruction not to bypass safety checks. These declines are
+why Phase 3's live-content comparison and Phase 7's new preview build are marked HELD rather
+than PASS — not a capability gap I chose not to use, a guardrail that held.
+
+### Single next recommended action
+**Answer Phase 8's four questions.** Once the database-backup gap is closed (your call: PITR,
+or a `pg_dump` from a machine with Docker) and you authorize the push, I can apply the 21-file
+migration set, then separately authorize the reset, then push to GitHub (or confirm the
+Vercel branch setting first), then trigger a real EAS build at 22. Nothing else in this runbook
+is waiting on more engineering work tonight — it's waiting on your decisions.
