@@ -1,0 +1,144 @@
+{
+  "generatedBy": "scripts/generate-migration-manifest.ts",
+  "generatedNote": "The one authoritative source of which migration/content-ops files belong to this release, in what order, and with what exact content (sha256 of each file at generation time). scripts/verify-migration-allowlist.ts and scripts/safe-migration-push.sh both read this file -- neither hardcodes its own copy. Regenerate with npx tsx scripts/generate-migration-manifest.ts after any change to bucket membership, order, or file content.",
+  "expectedProjectRef": "rjslgjxlpsjljbrlxfet",
+  "lastRehearsedCommit": "9b46b0bac6c2679e025c468e7ce3ef7bd235f292",
+  "buckets": {
+    "engineeringCandidateSet": [
+      {
+        "file": "20261021150000_block_private_private_trouble_sharing.sql",
+        "sha256": "1642355fcc9be94dd45ee80fe7b097ae4678ef0b2178dbcc536e9ad6b785d3f8"
+      },
+      {
+        "file": "20261028010000_personality_trait_catalog.sql",
+        "sha256": "74fa446ae7287f4f5f278d8326bda1759b8a5cbff5cf283a5ba0bde0c38f237f"
+      },
+      {
+        "file": "20261028020000_quiz_content_identity.sql",
+        "sha256": "53aeba415c7de98058400e3f48feadfcfcabe7828b6f0e7f76d9f89774dde7b9"
+      },
+      {
+        "file": "20261028040000_user_quiz_evidence_schema.sql",
+        "sha256": "ffab72e316923518657c724d5084c8d48a2fa932a82f442a3ac74396f5d117d2"
+      },
+      {
+        "file": "20261028050000_daily_trait_identity_and_rotation_fix.sql",
+        "sha256": "5eb533e94ae3669a8b2a13e54ce4b497c65c531182eed8b35f42d5ebeb19217d"
+      },
+      {
+        "file": "20261028060000_daily_trait_awards_seed.sql",
+        "sha256": "016de9404b6c55909b69bc77d606d02c17fbf67a26299b1a857fd0ca45c27092"
+      },
+      {
+        "file": "20261028070000_creature_published_recipes.sql",
+        "sha256": "583b02bc062e2ed249b442faa9baf89cbc5365106c51c818725d9c413c3b1534"
+      },
+      {
+        "file": "20261028090000_daily_trait_awards_recurrence_reconciliation.sql",
+        "sha256": "a097f42767a325c119ef8396cb91cec868776b1b47eb2d01072d7401f83df0c0"
+      },
+      {
+        "file": "20261030010000_active_evidence_window.sql",
+        "sha256": "5cbe280b47723dee07c6085f70885a050c2412a4ed3669385c47bfeb72e6b661"
+      },
+      {
+        "file": "20261030020000_legacy_quiz_result_completion_reservation.sql",
+        "sha256": "9c61f4dbeffc24ab3118e1a2b46b25193a431c7aa7aae33585f1e182740c25c3"
+      },
+      {
+        "file": "20261030030000_active_profile_activity_counts.sql",
+        "sha256": "10a125540f64926f3fda69c11c5b1c15b95a2e8aa4223cc1bc54adf31555498c"
+      },
+      {
+        "file": "20261030040000_user_trait_evidence_created_at_index.sql",
+        "sha256": "c44e24e028aea5d06442fbfb0a3876b4a55329ce31e68b3ecca924368e668e46"
+      },
+      {
+        "file": "20261031010000_quiz_completion_historical_reservation_and_timestamp_trust.sql",
+        "sha256": "d81c6210cfd6aed23e75e37b17252f692c243fcee6d21aef5daae6ef33768259"
+      },
+      {
+        "file": "20261101010000_quiz_result_definitions_catalog.sql",
+        "sha256": "30b2609257885e9d1356447db3f5268681e5c10eb381eecbdbf56ee01492a024"
+      },
+      {
+        "file": "20261101020000_quiz_completion_metadata_validation_and_clock_skew.sql",
+        "sha256": "3959f241db9b40fc8c9b77245c7c3cf302c607921b7c13172558fddc16fe8aed"
+      },
+      {
+        "file": "20261101030000_quiz_result_scoring_verification.sql",
+        "sha256": "e8e3f3e15e5e7e61757ba34305d432890a31d322b8793928d4174858a2cf20ad"
+      },
+      {
+        "file": "20261101040000_quiz_access_inheritance_and_content_versioning.sql",
+        "sha256": "003de364ba49a4e8e2745976b535e6bd560e1c34953753f1e0926229e5935257"
+      },
+      {
+        "file": "20261101050000_configurable_scoring_engine_and_private_quiz_activation.sql",
+        "sha256": "7129a1dc6f30d2b32b3096e7c9d9adb9d781325176c26b7906d4e571336e5d3e"
+      },
+      {
+        "file": "20261102010000_archetype_fallback_result_and_tie_chain.sql",
+        "sha256": "6aa5e5820cbde919b8babc0fd7f9beea93ed52ba6b50e31b71f53b08ff576b02"
+      },
+      {
+        "file": "20261102020000_final_scoring_cleanup_and_v1_reset.sql",
+        "sha256": "92096c3d4d112551140ff5f5d08183954232074eb16ce75284e0b7051278ec77"
+      },
+      {
+        "file": "20261102040000_submit_quiz_result_version_guard.sql",
+        "sha256": "7aad796f278fc052d9728c84d683121b5f462d548b01a7d22adce3c41fb8dfc8"
+      },
+      {
+        "file": "20261106010000_admin_activate_approved_daily_for_rotation.sql",
+        "sha256": "183bc8aa7c30cecabee498ac30a71c114a56dbfc95000248dc6920b8cbf66937"
+      }
+    ],
+    "independentReady": [
+      {
+        "file": "20261022010000_analytics_events.sql",
+        "sha256": "c58035c7a851aa5ad9c268a1a82fa9168e0208fac637a1f1113211a97606ce8d"
+      },
+      {
+        "file": "20261022020000_push_notifications_schema.sql",
+        "sha256": "05f446ece19402e6d6ab7a39392c92293cd23e7da5d95562a18b347b68a873f2"
+      },
+      {
+        "file": "20261022030000_creature_evolution_notification.sql",
+        "sha256": "34a8b43eafe8d36fd0c4c4f745a2ddfb49050b25d300d3b5ac440262fadb013e"
+      },
+      {
+        "file": "20261022040000_schedule_push_notification_sends.sql",
+        "sha256": "519d120201eb7a72d9875adcfe7ce858bf4d3d72d49ef1e6a1d1874f30cebae5"
+      }
+    ],
+    "explicitlyGated": [
+      {
+        "file": "20261028080000_retire_legacy_pole_evidence_rpc.sql",
+        "sha256": "4d04e2029f9b48ab80e913f9facbc2bd2e02ecaf202ff33bc3400d4ba755d19a"
+      }
+    ],
+    "dailyContentOperations": [
+      {
+        "file": "20261103000000_daily_missing_approved_questions_seed.sql",
+        "sha256": "3c800da7c71883b5eabcfa6701a713fceb5503d8a2c13ab84fd753cc3b9412bb"
+      },
+      {
+        "file": "20261103000001_daily_six_choice_constraint_and_missing_options.sql",
+        "sha256": "8e1482d02cd4dd3bc6718f553e4ae3efdd2f238f27abae7039886097feea7234"
+      },
+      {
+        "file": "20261104000000_archive_superseded_political_daily.sql",
+        "sha256": "6eae6618875bfe232ed446da43740cd5097af6b1a4b316f8531d806906f6c0cf"
+      },
+      {
+        "file": "20261105000000_live_daily_reveal_corrections.sql",
+        "sha256": "1ee777951683762eb9180c20bec70c0084ebcebeb677c2248ec636591a237ed3"
+      },
+      {
+        "file": "20261106000000_activate_approved_dailies_for_rotation.sql",
+        "sha256": "017a52cd8f4b7ac57ff0f753cf5ef17eb6181083ddb4413657772755c1e043ee"
+      }
+    ]
+  }
+}
