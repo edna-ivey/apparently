@@ -47,14 +47,14 @@ try {
   // anything about the seed's own correctness. Verified instead by static structural checks:
   const seedSql = readFileSync(join(root, 'supabase/migrations/20261028060000_daily_trait_awards_seed.sql'), 'utf8');
   const seedRowMatches = [...seedSql.matchAll(/\('[0-9a-f-]{36}', \d+, \d+\)/g)];
-  // V1 final release execution (2026-11-03): 118 -> 120 (the #3C fix) -> 196 after correcting
+  // V1 final release execution (2026-11-03): 118 -> 120 (the #3C fix) -> 262 after correcting
   // all 52 remaining live-scored options (13 questions) against the owner's own Reassessment
   // Round 1-4 of 4 rescoring plus the later Audit Round deltas -- an exhaustive programmatic
   // diff found the archived source had never incorporated that layer for ANY of them, not
   // just the two examples found in an earlier pass. See the archived source migration's own
   // updated header and docs/V1_FINAL_RELEASE_EXECUTION_2026-11-02.md.
-  check('Daily seed file contains the expected 196 numeric award rows', seedRowMatches.length === 196, `found=${seedRowMatches.length}`);
-  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 196'), 'guard text present');
+  check('Daily seed file contains the expected 262 numeric award rows', seedRowMatches.length === 262, `found=${seedRowMatches.length}`);
+  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 262'), 'guard text present');
   const u1 = (await db.query(`insert into auth.users default values returning id`)).rows[0].id;
 
   const publicLive = (await db.query(

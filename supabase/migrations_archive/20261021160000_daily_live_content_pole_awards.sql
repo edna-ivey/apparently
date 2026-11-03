@@ -271,3 +271,51 @@ comment on function public.advance_daily_rotation(public.daily_room) is
 revoke execute on function public.advance_daily_rotation(public.daily_room) from public;
 revoke execute on function public.advance_daily_rotation(public.daily_room) from anon;
 revoke execute on function public.advance_daily_rotation(public.daily_room) from authenticated;
+
+-- EXTENDED (V1 release execution, 2026-11-04): a real end-to-end integration rehearsal (not a
+-- document diff this time -- an actual rotation cycle, actual Daily answer, actual evidence
+-- check against a live, isolated Postgres instance) found 10 of the 26 live canonical
+-- questions have REAL owner-approved scoring in the master document but were NEVER
+-- implemented in this file at all (not merely wrong, like the 13 corrected above -- entirely
+-- absent). Confirmed programmatically: cross-referencing every approved question's own
+-- scoring (NONE vs real) against both this file's own option ids and the live legacy
+-- personality_effects column (also empty for all 10) -- these are not intentionally
+-- unscored/entertainment Dailies, they are a real implementation gap. Added below using the
+-- exact same resolution method as every other correction in this file (real dimension
+-- catalog, never guessed).
+
+update public.daily_options set pole_personality_effects = '[{"pole":"accountability_defensiveness:positive","points":3},{"pole":"rules_bending:positive","points":2},{"pole":"duty_first_self_preserving:positive","points":1}]'::jsonb where id = '913022ee-7fae-4fc0-b454-c90b53b16365';
+update public.daily_options set pole_personality_effects = '[{"pole":"boundary_holding_approval_seeking:positive","points":3},{"pole":"rules_bending:positive","points":2},{"pole":"control_allowing:positive","points":1}]'::jsonb where id = '57585104-9456-4597-9894-3b17ada0f356';
+update public.daily_options set pole_personality_effects = '[{"pole":"rules_bending:positive","points":2},{"pole":"planner_spontaneous:positive","points":1},{"pole":"control_allowing:positive","points":1}]'::jsonb where id = 'cfe31e6f-70f0-448b-8a1a-f38758809b7e';
+update public.daily_options set pole_personality_effects = '[{"pole":"rules_bending:positive","points":3},{"pole":"control_allowing:positive","points":2},{"pole":"planner_spontaneous:positive","points":1}]'::jsonb where id = '4528aed5-a8ad-404b-9fdc-b6ffcf85e1e5';
+update public.daily_options set pole_personality_effects = '[{"pole":"self_secure_reassurance:positive","points":2},{"pole":"independent_collaborative:positive","points":1}]'::jsonb where id = '39f9d84c-571a-421c-8613-7ed51b97641e';
+update public.daily_options set pole_personality_effects = '[{"pole":"duty_first_self_preserving:positive","points":1},{"pole":"supportive_challenging:positive","points":1}]'::jsonb where id = '9d96aad1-6a26-436c-bf6b-51265f03f51c';
+update public.daily_options set pole_personality_effects = '[{"pole":"protective_hands_off:positive","points":2},{"pole":"supportive_challenging:positive","points":2}]'::jsonb where id = '4195ecbe-236c-46a5-b36d-0c96c4a5b4a4';
+update public.daily_options set pole_personality_effects = '[{"pole":"ambitious_content:positive","points":1}]'::jsonb where id = 'd96fc00f-64bf-4523-b177-3cf2277f39a4';
+update public.daily_options set pole_personality_effects = '[{"pole":"conflict_peacekeeping:negative","points":1}]'::jsonb where id = '094860d7-4b7f-4f24-a6b2-230446c3e444';
+update public.daily_options set pole_personality_effects = '[{"pole":"practical_idealistic:positive","points":1}]'::jsonb where id = '94d77663-a67e-48f1-a744-1e609e9a2798';
+update public.daily_options set pole_personality_effects = '[{"pole":"trust_verify:negative","points":1}]'::jsonb where id = '92f42469-c931-46c6-8cce-8279c4c235e7';
+update public.daily_options set pole_personality_effects = '[{"pole":"curious_decisive:positive","points":3}]'::jsonb where id = '7b2edd4f-7c4d-4c6a-991f-87cd680b3eb2';
+update public.daily_options set pole_personality_effects = '[{"pole":"curious_decisive:positive","points":2},{"pole":"self_secure_reassurance:negative","points":1}]'::jsonb where id = '9d90c4c7-2b8a-467e-8ad8-1050c9d0e588';
+update public.daily_options set pole_personality_effects = '[{"pole":"reflective_reactive:positive","points":2},{"pole":"curious_decisive:positive","points":1}]'::jsonb where id = '7bd747d2-d47b-4950-8880-caa314c22bb7';
+update public.daily_options set pole_personality_effects = '[{"pole":"playful_serious:positive","points":1}]'::jsonb where id = 'a98b6f67-cd03-4954-a6fe-38a05027e639';
+update public.daily_options set pole_personality_effects = '[{"pole":"supportive_challenging:positive","points":3},{"pole":"gives_freely_keeps_score:positive","points":1}]'::jsonb where id = '0deacb4c-7377-4078-8d25-eaefe64f6500';
+update public.daily_options set pole_personality_effects = '[{"pole":"ambitious_content:positive","points":3}]'::jsonb where id = '057dac37-31e1-4ac7-beee-5952a5ac0859';
+update public.daily_options set pole_personality_effects = '[{"pole":"duty_first_self_preserving:positive","points":3}]'::jsonb where id = '5dfb2cac-202c-4d08-a8ba-7354a63b9ac5';
+update public.daily_options set pole_personality_effects = '[{"pole":"direct_indirect:positive","points":1},{"pole":"accountability_defensiveness:positive","points":1}]'::jsonb where id = '5a8dd80f-e968-4c73-9773-c8c55852008e';
+update public.daily_options set pole_personality_effects = '[{"pole":"boundary_holding_approval_seeking:positive","points":2},{"pole":"direct_indirect:positive","points":1}]'::jsonb where id = '1f2c0a77-a300-44e2-a94e-9d60a685380a';
+update public.daily_options set pole_personality_effects = '[{"pole":"accountability_defensiveness:positive","points":2},{"pole":"planner_spontaneous:positive","points":1}]'::jsonb where id = '1232a353-24f2-4fd2-8e1f-dc2927645883';
+update public.daily_options set pole_personality_effects = '[{"pole":"social_attunement:positive","points":2},{"pole":"self_secure_reassurance:negative","points":1}]'::jsonb where id = '39f17b27-f78b-4078-a965-31d594e3ae2f';
+update public.daily_options set pole_personality_effects = '[{"pole":"adventure_comfort:positive","points":1},{"pole":"curious_decisive:positive","points":1}]'::jsonb where id = 'fbfe9bfa-5c2a-4bf3-ad67-558193015cc5';
+update public.daily_options set pole_personality_effects = '[{"pole":"ambitious_content:positive","points":2},{"pole":"practical_idealistic:positive","points":1}]'::jsonb where id = 'fbff211d-5fee-4ae2-a0bc-83d055f87f20';
+update public.daily_options set pole_personality_effects = '[{"pole":"sentimental_thick_skinned:positive","points":2},{"pole":"independent_collaborative:negative","points":1}]'::jsonb where id = 'e6dfb20b-24a7-4c07-b8a7-7d48b3f544ba';
+update public.daily_options set pole_personality_effects = '[{"pole":"independent_collaborative:positive","points":2},{"pole":"duty_first_self_preserving:negative","points":2}]'::jsonb where id = 'acb032e1-179c-408c-ae6f-0b4ed4dfc381';
+update public.daily_options set pole_personality_effects = '[{"pole":"adventure_comfort:negative","points":2},{"pole":"adventure_comfort:positive","points":1}]'::jsonb where id = 'fa6602e3-b456-4605-a43b-195f54b81b98';
+update public.daily_options set pole_personality_effects = '[{"pole":"independent_collaborative:positive","points":2},{"pole":"duty_first_self_preserving:negative","points":2}]'::jsonb where id = '858ebeb3-2f07-42b0-80d9-a5be4287f863';
+update public.daily_options set pole_personality_effects = '[{"pole":"practical_idealistic:positive","points":2},{"pole":"planner_spontaneous:positive","points":2}]'::jsonb where id = '7e047303-24fa-4294-b044-b72612209450';
+update public.daily_options set pole_personality_effects = '[{"pole":"adventure_comfort:negative","points":2},{"pole":"practical_idealistic:positive","points":1}]'::jsonb where id = '4f35ab85-0f26-4c45-9489-5641bb17ad5e';
+update public.daily_options set pole_personality_effects = '[{"pole":"patient_urgent:negative","points":2},{"pole":"direct_indirect:positive","points":1}]'::jsonb where id = '5a0cb3a5-8e39-41f4-95b4-32917f67961a';
+update public.daily_options set pole_personality_effects = '[{"pole":"practical_idealistic:positive","points":2},{"pole":"adventure_comfort:negative","points":1}]'::jsonb where id = 'cdae12e3-013b-43fd-9a4a-e199a31b9a53';
+update public.daily_options set pole_personality_effects = '[{"pole":"playful_serious:positive","points":3},{"pole":"planner_spontaneous:negative","points":1}]'::jsonb where id = 'bd4cdcaf-6404-4543-bccc-1c68006c1a4c';
+update public.daily_options set pole_personality_effects = '[{"pole":"playful_serious:positive","points":2},{"pole":"adventure_comfort:negative","points":1}]'::jsonb where id = 'b84aaef2-e19f-40b6-9abf-21257fa60580';
+update public.daily_options set pole_personality_effects = '[{"pole":"ambitious_content:positive","points":2},{"pole":"independent_collaborative:negative","points":1}]'::jsonb where id = '68eec514-23a9-4d73-acb7-d1bdeacaeee6';

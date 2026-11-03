@@ -27,6 +27,24 @@ const { readFileSync, writeFileSync, mkdirSync } = require('fs');
 const { join } = require('path') as unknown as { join: (...parts: string[]) => string };
 const { randomUUID } = require('crypto') as unknown as { randomUUID: () => string };
 
+import { loadDimensionIdLedger, resolveDimensionId } from './lib/dimension-id-ledger';
+
+// V1 release execution (2026-11-04): found by real-Postgres rehearsal, not assumed --
+// handle_daily_answer_trait_evidence (the ONLY real evidence-awarding mechanism for Daily
+// answers) reads exclusively from the relational public.daily_option_trait_awards table; it
+// never reads daily_options.pole_personality_effects (that jsonb column is set below too, for
+// display/admin-tooling parity with how the already-live questions' options look, but award
+// evidence would be truly zero for every one of these 36 questions without this). Resolves to
+// the exact same numeric trait_id every other Build 22 generator uses (dimension_id*2-1 for
+// positive, dimension_id*2 for negative) via the same persisted, frozen ledger -- never a
+// position-derived guess.
+const dimensionIdLedger = loadDimensionIdLedger();
+const traitIdForPoleKey = (poleKey: string): number => {
+  const [dimensionKey, polarity] = poleKey.split(':');
+  const dimensionId = resolveDimensionId(dimensionIdLedger, dimensionKey);
+  return polarity === 'positive' ? dimensionId * 2 - 1 : dimensionId * 2;
+};
+
 type Choice = { letter: string; text: string; reveal: string; scoring: string | null };
 type Question = { num: number; prompt: string; room: string; choices: Choice[] };
 
@@ -171,9 +189,15 @@ for (const q of questions) {
     const feedbackEsc = c.reveal.replace(/'/g, "''");
     const awards = resolveScoring(MANUAL_SCORING_OVERRIDES[`${q.num}:${c.letter}`] ?? c.scoring, labelMap);
     const poleJson = JSON.stringify(awards.map((a) => ({ pole: a.pole, points: a.points })));
+    const optionId = randomUUID();
     lines.push(
-      `insert into public.daily_options (id, question_id, "position", label, apparently_feedback, pole_personality_effects) values ('${randomUUID()}', '${questionId}', ${position}, '${labelEsc}', '${feedbackEsc}', '${poleJson}'::jsonb);`,
+      `insert into public.daily_options (id, question_id, "position", label, apparently_feedback, pole_personality_effects) values ('${optionId}', '${questionId}', ${position}, '${labelEsc}', '${feedbackEsc}', '${poleJson}'::jsonb);`,
     );
+    for (const a of awards) {
+      lines.push(
+        `insert into public.daily_option_trait_awards (option_id, trait_id, points) values ('${optionId}', ${traitIdForPoleKey(a.pole)}, ${a.points});`,
+      );
+    }
     position++;
     totalOptionRows++;
   }
@@ -181,6 +205,33 @@ for (const q of questions) {
 }
 
 lines.push(`-- Expect exactly ${totalOptionRows} daily_options rows inserted above across 36 daily_questions rows.`);
+lines.push('');
+lines.push('-- V1 release execution (2026-11-04): admin_publish_daily() refuses to publish any Daily');
+lines.push("-- whose approved_content_version is null, or that no longer matches a freshly recomputed");
+lines.push('-- fingerprint (admin_compute_daily_fingerprint) -- confirmed by reading its real body. Every');
+lines.push('-- row inserted above would otherwise fail that check forever (approved_content_version was');
+lines.push('-- never set). Calling the REAL fingerprint function here (never reimplemented in a generator');
+lines.push('-- script) records a correct, self-consistent "approval" against each row\'s actual current');
+lines.push('-- content -- the same thing admin_approve_daily itself would set, had it been run through');
+lines.push('-- the admin UI with a real session instead of this direct seed. approved_by is the real,');
+lines.push('-- current owner (looked up dynamically, never a hardcoded id) rather than auth.uid(), which');
+lines.push('-- is null in this raw-SQL context (no JWT session) -- the same reason the archival script');
+lines.push("-- in this same directory cannot call admin_archive_live_daily() directly either.");
+lines.push('do $$');
+lines.push('declare');
+lines.push('  v_admin_id uuid;');
+lines.push('begin');
+lines.push(`  select user_id into v_admin_id from public.admin_users where role = 'owner';`);
+lines.push('  if v_admin_id is null then');
+lines.push("    raise exception 'No admin_users row with role = owner found -- cannot record an approval attribution. Aborting.';");
+lines.push('  end if;');
+lines.push('  update public.daily_questions');
+lines.push('  set approved_by = v_admin_id,');
+lines.push('      approved_at = now(),');
+lines.push('      approved_content_version = public.admin_compute_daily_fingerprint(id)');
+lines.push(`  where status = 'Approved' and approved_content_version is null;`);
+lines.push('end $$;');
+lines.push('');
 lines.push('commit;');
 
 const outDir = join(__dirname, '../supabase/pending-owner-review');

@@ -3,7 +3,7 @@
 -- PREREQUISITE: 20261028010000 (trait catalog) and 20261028050000 (daily_option_trait_awards
 -- table) must both be applied first.
 --
--- Numeric Daily trait-award SEED -- 196 rows across 60 real, live
+-- Numeric Daily trait-award SEED -- 262 rows across 95 real, live
 -- daily_options rows. Source: supabase/migrations/20261021160000_daily_live_content_pole_
 -- awards.sql's already-reviewed hand-authored mapping (never applied as jsonb; transcribed
 -- here numerically). Resolves each string pole key to its numeric trait_id via the same
@@ -12,7 +12,7 @@
 -- Generated mechanically by scripts/generate-daily-trait-awards-seed-sql.ts -- do not hand-
 -- edit; regenerate if the source mapping changes.
 --
--- VERIFICATION GUARD: raises if the actual row count inserted does not match 196 --
+-- VERIFICATION GUARD: raises if the actual row count inserted does not match 262 --
 -- protects against applying this against a database where any of these specific option ids
 -- no longer exist (same guard pattern 20261021160000 itself already used).
 -- ============================================================================================
@@ -219,13 +219,79 @@ begin
   ('d7a83d46-19f9-4c9b-96bd-20d234f34baa', 16, 2),
   ('d7a83d46-19f9-4c9b-96bd-20d234f34baa', 37, 1),
   ('740878a1-f297-4f20-8fb5-c3cef5b00938', 13, 2),
-  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 5, 1)
+  ('740878a1-f297-4f20-8fb5-c3cef5b00938', 5, 1),
+  ('913022ee-7fae-4fc0-b454-c90b53b16365', 41, 3),
+  ('913022ee-7fae-4fc0-b454-c90b53b16365', 21, 2),
+  ('913022ee-7fae-4fc0-b454-c90b53b16365', 55, 1),
+  ('57585104-9456-4597-9894-3b17ada0f356', 47, 3),
+  ('57585104-9456-4597-9894-3b17ada0f356', 21, 2),
+  ('57585104-9456-4597-9894-3b17ada0f356', 15, 1),
+  ('cfe31e6f-70f0-448b-8a1a-f38758809b7e', 21, 2),
+  ('cfe31e6f-70f0-448b-8a1a-f38758809b7e', 1, 1),
+  ('cfe31e6f-70f0-448b-8a1a-f38758809b7e', 15, 1),
+  ('4528aed5-a8ad-404b-9fdc-b6ffcf85e1e5', 21, 3),
+  ('4528aed5-a8ad-404b-9fdc-b6ffcf85e1e5', 15, 2),
+  ('4528aed5-a8ad-404b-9fdc-b6ffcf85e1e5', 1, 1),
+  ('39f9d84c-571a-421c-8613-7ed51b97641e', 45, 2),
+  ('39f9d84c-571a-421c-8613-7ed51b97641e', 13, 1),
+  ('9d96aad1-6a26-436c-bf6b-51265f03f51c', 55, 1),
+  ('9d96aad1-6a26-436c-bf6b-51265f03f51c', 57, 1),
+  ('4195ecbe-236c-46a5-b36d-0c96c4a5b4a4', 9, 2),
+  ('4195ecbe-236c-46a5-b36d-0c96c4a5b4a4', 57, 2),
+  ('d96fc00f-64bf-4523-b177-3cf2277f39a4', 39, 1),
+  ('094860d7-4b7f-4f24-a6b2-230446c3e444', 24, 1),
+  ('94d77663-a67e-48f1-a744-1e609e9a2798', 17, 1),
+  ('92f42469-c931-46c6-8cce-8279c4c235e7', 26, 1),
+  ('7b2edd4f-7c4d-4c6a-991f-87cd680b3eb2', 33, 3),
+  ('9d90c4c7-2b8a-467e-8ad8-1050c9d0e588', 33, 2),
+  ('9d90c4c7-2b8a-467e-8ad8-1050c9d0e588', 46, 1),
+  ('7bd747d2-d47b-4950-8880-caa314c22bb7', 43, 2),
+  ('7bd747d2-d47b-4950-8880-caa314c22bb7', 33, 1),
+  ('a98b6f67-cd03-4954-a6fe-38a05027e639', 29, 1),
+  ('0deacb4c-7377-4078-8d25-eaefe64f6500', 57, 3),
+  ('0deacb4c-7377-4078-8d25-eaefe64f6500', 59, 1),
+  ('057dac37-31e1-4ac7-beee-5952a5ac0859', 39, 3),
+  ('5dfb2cac-202c-4d08-a8ba-7354a63b9ac5', 55, 3),
+  ('5a8dd80f-e968-4c73-9773-c8c55852008e', 5, 1),
+  ('5a8dd80f-e968-4c73-9773-c8c55852008e', 41, 1),
+  ('1f2c0a77-a300-44e2-a94e-9d60a685380a', 47, 2),
+  ('1f2c0a77-a300-44e2-a94e-9d60a685380a', 5, 1),
+  ('1232a353-24f2-4fd2-8e1f-dc2927645883', 41, 2),
+  ('1232a353-24f2-4fd2-8e1f-dc2927645883', 1, 1),
+  ('39f17b27-f78b-4078-a965-31d594e3ae2f', 7, 2),
+  ('39f17b27-f78b-4078-a965-31d594e3ae2f', 46, 1),
+  ('fbfe9bfa-5c2a-4bf3-ad67-558193015cc5', 11, 1),
+  ('fbfe9bfa-5c2a-4bf3-ad67-558193015cc5', 33, 1),
+  ('fbff211d-5fee-4ae2-a0bc-83d055f87f20', 39, 2),
+  ('fbff211d-5fee-4ae2-a0bc-83d055f87f20', 17, 1),
+  ('e6dfb20b-24a7-4c07-b8a7-7d48b3f544ba', 19, 2),
+  ('e6dfb20b-24a7-4c07-b8a7-7d48b3f544ba', 14, 1),
+  ('acb032e1-179c-408c-ae6f-0b4ed4dfc381', 13, 2),
+  ('acb032e1-179c-408c-ae6f-0b4ed4dfc381', 56, 2),
+  ('fa6602e3-b456-4605-a43b-195f54b81b98', 12, 2),
+  ('fa6602e3-b456-4605-a43b-195f54b81b98', 11, 1),
+  ('858ebeb3-2f07-42b0-80d9-a5be4287f863', 13, 2),
+  ('858ebeb3-2f07-42b0-80d9-a5be4287f863', 56, 2),
+  ('7e047303-24fa-4294-b044-b72612209450', 17, 2),
+  ('7e047303-24fa-4294-b044-b72612209450', 1, 2),
+  ('4f35ab85-0f26-4c45-9489-5641bb17ad5e', 12, 2),
+  ('4f35ab85-0f26-4c45-9489-5641bb17ad5e', 17, 1),
+  ('5a0cb3a5-8e39-41f4-95b4-32917f67961a', 38, 2),
+  ('5a0cb3a5-8e39-41f4-95b4-32917f67961a', 5, 1),
+  ('cdae12e3-013b-43fd-9a4a-e199a31b9a53', 17, 2),
+  ('cdae12e3-013b-43fd-9a4a-e199a31b9a53', 12, 1),
+  ('bd4cdcaf-6404-4543-bccc-1c68006c1a4c', 29, 3),
+  ('bd4cdcaf-6404-4543-bccc-1c68006c1a4c', 2, 1),
+  ('b84aaef2-e19f-40b6-9abf-21257fa60580', 29, 2),
+  ('b84aaef2-e19f-40b6-9abf-21257fa60580', 12, 1),
+  ('68eec514-23a9-4d73-acb7-d1bdeacaeee6', 39, 2),
+  ('68eec514-23a9-4d73-acb7-d1bdeacaeee6', 14, 1)
     on conflict (option_id, trait_id) do nothing
     returning 1
   )
   select count(*) into v_inserted from inserted;
 
-  if v_inserted <> 196 then
-    raise exception 'Expected to insert exactly 196 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
+  if v_inserted <> 262 then
+    raise exception 'Expected to insert exactly 262 daily_option_trait_awards rows, inserted %. Aborting -- do not partially apply.', v_inserted;
   end if;
 end $$;
