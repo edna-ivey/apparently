@@ -29,10 +29,6 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: "You like nice things. There, we said it. The packaging matters. The quality matters. And yes, sometimes that little logo matters too. You're not necessarily buying everything expensive, but when something catches your eye, the budget version has a lot of explaining to do. You'll wear the same jacket for five years if it's the RIGHT jacket. You'll also spend twenty minutes convincing yourself the designer one is actually cheaper because it'll last longer. The math may be questionable, but the outfit? Immaculate.",
       kicker: 'Apparently, your taste has a higher credit limit than your common sense.',
       traits: ['Quality-Loving', 'Particular', 'Indulgent'],
-      profileSignals: [
-        { dimension: 'practical_idealistic', value: -1 },
-        { dimension: 'sentimental_thick_skinned', value: 1 },
-      ],
     },
     {
       id: 'bargain-hunter',
@@ -41,10 +37,6 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: "You don't mind spending money. You mind spending money STUPIDLY. There's a difference. You know which stores have the real sales, which ones raised their prices first, and exactly how much that thing cost last Tuesday. Someone could show you the most beautiful bag in the world, and your first question would still be, \"Does it come in a cheaper beautiful?\" The best part isn't even the purchase. It's telling somebody how much you saved. And you're going to tell them. Whether they asked or not.",
       kicker: 'Apparently, the discount is half the experience.',
       traits: ['Resourceful', 'Practical', 'Deal-Savvy'],
-      profileSignals: [
-        { dimension: 'practical_idealistic', value: 2 },
-        { dimension: 'trust_verify', value: -1 },
-      ],
     },
     {
       id: 'planner',
@@ -53,10 +45,6 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: "You don't just buy things. You conduct a small investigation first. Reviews, prices, return policies, and whether you'll still want it in three weeks. You've probably had something sitting in your cart so long it's gone out of stock, come back, and gone on clearance. Meanwhile, everybody else is already enjoying theirs. But here's the thing: when you finally make a purchase, you rarely regret it. You did the homework. You ran the numbers. You consulted the committee. And yes, the committee is just you.",
       kicker: 'Apparently, even your impulse purchases need prior approval.',
       traits: ['Intentional', 'Thorough', 'Disciplined'],
-      profileSignals: [
-        { dimension: 'planner_spontaneous', value: 2 },
-        { dimension: 'patient_urgent', value: 1 },
-      ],
     },
     {
       id: 'impulse-spender',
@@ -65,10 +53,6 @@ export const SPENDING_QUIZ: ArchetypeQuizDefinition = {
       body: "You weren't even looking for anything. That's the problem. One minute you're buying toothpaste, the next you're leaving with a throw blanket, a candle, and something from the seasonal aisle that you can't explain. You see it, you love it, and suddenly it's a necessity. Sometimes you regret it. Sometimes it's the best thing you've ever bought. And sometimes a package arrives and you genuinely have no idea what's inside. That's not a delivery. That's a surprise party you threw for yourself three days ago.",
       kicker: 'Apparently, your bank account needs parental controls.',
       traits: ['Spontaneous', 'Enthusiastic', 'Easily Tempted'],
-      profileSignals: [
-        { dimension: 'planner_spontaneous', value: -2 },
-        { dimension: 'emotional_intensity', value: 1 },
-      ],
     },
   ],
   questions: [

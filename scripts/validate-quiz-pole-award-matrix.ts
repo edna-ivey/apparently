@@ -1,10 +1,18 @@
-// Validates src/data/quiz-pole-awards/*.ts (the Build 16/V2 answer-level scoring matrix)
-// against the REAL quiz content in src/data/quizzes/*.ts -- every playable question and choice
-// across all 21 current quizzes must have exactly one calibration entry, every pole id must be
-// a real one of the 64 canonical poles, every point value must be in {1,2,3}, free quizzes must
-// never award a Private pole, and the recorded `wording` must still match the quiz's actual
-// current choice label (catches an editorial wording change made after calibration without
-// this matrix being revisited). Run with:
+// Validates src/data/quiz-pole-awards/*.ts (the Build 16/V2 answer-level scoring matrix, a
+// now-superseded TOOLING-ONLY calibration snapshot -- NOT read by generate-quiz-content-
+// identity-sql.ts or any runtime path; the live numeric pipeline reads
+// scripts/lib/private-quiz-trait-awards.ts and the free-quiz archived migration instead, see
+// scripts/lib/quiz-pole-award-rows.ts's own header) against the REAL quiz content in
+// src/data/quizzes/*.ts, for the fixed set of quizzes this legacy matrix actually tracks
+// (POLE_AWARD_MAPS's own keys -- the original Build 16/V2-era free quizzes plus the handful
+// of early Private replacements that got one; Build 22's later Private/free-preview rounds
+// author real award data directly in private-quiz-trait-awards.ts and were never retrofitted
+// into this older, narrower snapshot format, so their absence here is expected, not a defect).
+// Every TRACKED question and choice must have exactly one calibration entry, every pole id
+// must be a real one of the 64 canonical poles, every point value must be in {1,2,3}, free
+// quizzes must never award a Private pole, and the recorded `wording` must still match the
+// quiz's actual current choice label (catches an editorial wording change made after
+// calibration without this matrix being revisited). Run with:
 //
 //   npx tsx scripts/validate-quiz-pole-award-matrix.ts
 
@@ -53,9 +61,11 @@ const warn = (message: string): void => {
   console.warn(`WARN: ${message}`);
 };
 
-// quiz registry id -> its pole-award map. 'secretly-love' is deliberately excluded --
-// historicalOnly, not part of the current playable catalog (see QUIZ_REGISTRY's own comment
-// and src/data/quizzes/secretly-love.ts).
+// quiz registry id -> its pole-award map. This is the FIXED, closed set of ids this legacy
+// matrix tracks -- see this file's own header. 'secretly-love' (revived as an active free
+// preview, Build 22, 2026-11-02) and every other quiz introduced after this matrix was
+// superseded as the live source of truth were never retrofitted into it, so they correctly
+// have no entry here.
 const POLE_AWARD_MAPS: Record<string, QuizPoleAwardMap> = {
   dating: DATING_POLE_AWARDS,
   friendship: FRIENDSHIP_POLE_AWARDS,
@@ -80,9 +90,17 @@ const POLE_AWARD_MAPS: Record<string, QuizPoleAwardMap> = {
   'style-vibe-intimidating': STYLE_VIBE_INTIMIDATING_POLE_AWARDS,
 };
 
-const CURRENT_PLAYABLE_QUIZ_IDS = Object.keys(QUIZ_REGISTRY).filter((id) => !(QUIZ_REGISTRY[id] as QuizDefinition & { historicalOnly?: boolean }).historicalOnly);
-
-assert(CURRENT_PLAYABLE_QUIZ_IDS.length === 21, `exactly 21 current playable quizzes in QUIZ_REGISTRY (got ${CURRENT_PLAYABLE_QUIZ_IDS.length}: ${CURRENT_PLAYABLE_QUIZ_IDS.join(', ')})`);
+// Build 22 (2026-11-02): scoped to the fixed set of quizzes this legacy matrix actually
+// tracks (its own POLE_AWARD_MAPS keys), never the full, independently-growing QUIZ_REGISTRY
+// -- a quiz outside this set (every quiz added after the Build 16/V2 matrix was retired as the
+// live source of truth) is correctly untracked here, not a missing-file defect. Still asserts
+// every tracked id really is a real, currently playable (non-historicalOnly) registry entry.
+const CURRENT_PLAYABLE_QUIZ_IDS = Object.keys(POLE_AWARD_MAPS);
+for (const quizId of CURRENT_PLAYABLE_QUIZ_IDS) {
+  const definition = QUIZ_REGISTRY[quizId] as (QuizDefinition & { historicalOnly?: boolean }) | undefined;
+  assert(definition !== undefined, `tracked quiz "${quizId}" exists in QUIZ_REGISTRY`);
+  assert(!definition?.historicalOnly, `tracked quiz "${quizId}" is currently playable (not historicalOnly)`);
+}
 
 const POLE_ID_SET = new Set(ALL_POLE_IDS);
 

@@ -30,10 +30,6 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You are the friend people call when everything has officially gone left. Need a ride? You’re grabbing your keys. Need food? You’re asking what they want. Need somebody to help clean up a disaster you specifically warned them about? Unfortunately, you’re available for that too. Your loyalty is beautiful. Your inability to mind your business when somebody you love is struggling? A full-time unpaid position.',
       kicker: 'Apparently, being everybody’s backup plan wasn’t on your calendar. Yet here we are.',
       traits: ['Loyal', 'Dependable', 'Protective'],
-      profileSignals: [
-        { dimension: 'protective_hands_off', value: 2 },
-        { dimension: 'control_allowing', value: 1 },
-      ],
     },
     {
       id: 'reality-check',
@@ -42,10 +38,6 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You love your people. Deeply. Unfortunately for them, love does not come with a complimentary delusion package. You remember what happened last time, you notice what everybody else is pretending not to see, and you will absolutely interrupt a bad decision before it becomes a six-month healing journey. Your delivery could occasionally use a seatbelt, but your intentions are solid.',
       kicker: 'Apparently, the truth hurts. You just happen to deliver it express.',
       traits: ['Honest', 'Observant', 'Direct'],
-      profileSignals: [
-        { dimension: 'direct_indirect', value: 2 },
-        { dimension: 'trust_verify', value: -1 },
-      ],
     },
     {
       id: 'soft-place',
@@ -54,10 +46,6 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You’re the friend who makes somebody say, ‘I wasn’t even planning to tell anyone this,’ and then proceeds to hear their entire childhood backstory. You listen, you notice the little changes in people’s voices, and you somehow make difficult conversations feel safe. But here’s the thing: being everybody’s emotional safe place doesn’t mean you have to become their unpaid therapist. You’re allowed to have a bad day too.',
       kicker: 'Apparently, your emotional office hours are 24/7.',
       traits: ['Empathetic', 'Patient', 'Steady'],
-      profileSignals: [
-        { dimension: 'social_attunement', value: 2 },
-        { dimension: 'patient_urgent', value: 1 },
-      ],
     },
     {
       id: 'instigator',
@@ -66,11 +54,6 @@ export const FRIENDSHIP_QUIZ: ArchetypeQuizDefinition = {
       body: 'You bring the energy, the audacity, and the kind of encouragement that starts with ‘Hear me out’ and ends with everybody having a story they can’t tell at work. You don’t always create the chaos, but you have an impressive ability to recognize its entertainment potential. Your friends love having you around because life is never boring. Their decision-making skills, however, have filed a complaint.',
       kicker: 'Apparently, the group chat was peaceful before you logged on.',
       traits: ['Playful', 'Spontaneous', 'Bold'],
-      profileSignals: [
-        { dimension: 'playful_serious', value: 2 },
-        { dimension: 'planner_spontaneous', value: -1 },
-        { dimension: 'adventure_comfort', value: 1 },
-      ],
     },
   ],
   questions: [

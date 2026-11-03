@@ -39,8 +39,7 @@ import { getQuizDefinition } from '@/data/quizzes';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { hydrateQuizResults, useQuizResults } from '@/data/quizzes/results';
 import { resolveResultDisplayTitle } from '@/data/quizzes/scoring';
-import { rankPoles, type RankedPole } from '@/data/personality-v2/scoring-engine';
-import { mergeCoreTraitsWithV2Gaps, mergePrivateSignalsWithV2Gaps } from '@/data/personality-v2/activation';
+import { rankCoreSignatureTraitsFromTotals, rankPrivateSignalTraitsFromTotals, type UserTraitTotalRow } from '@/data/personality-v2/totals-ranking';
 import { selectRelicSlots, selectStrongestPrivateSignals, type PrivateSignalTrait, type RelicSlotAssignment } from '@/data/private-signals';
 import { resolveRelicIdentity, type ResolvedRelicIdentity } from '@/data/relic/relic-production-config';
 import { RelicAvatar } from '@/components/relic/relic-avatar';
@@ -48,18 +47,18 @@ import { buildYourSignatureCards } from '@/data/you-profile-cards';
 import { useResponsiveContentWidth, useResponsiveTopInset } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
-import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
 import { usePremiumStatus } from '@/services/purchases-service';
 import {
   computeProfileActivityCounts,
+  getMyActiveDailyAnswerCount,
+  getMyActiveQuizCompletions,
   getMyCommonality,
   getMyPersonalityEvidence,
-  getMyQuizResults,
   groupEvidenceIntoAnswers,
   type MyCommonalityRow,
   type ProfileActivityCounts,
 } from '@/services/personality-service';
-import { getMyPersonalityPoleEvidence, toEnginePoleEvidenceRows } from '@/services/personality-v2-service';
+import { getMyTraitTotals } from '@/services/personality-v2-service';
 
 // Celestial redesign (Option B, approved without spotlight rays): the real, approved
 // silhouette asset — same require() → Image path already established for Today's Creature
@@ -83,13 +82,13 @@ const formatDailyQuizBreakdown = (dailyAnswerCount: number, quizCompletionCount:
 type RemoteYouState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  // Build 16: `profile` is V1's own PersonalityProfile with ONLY topTraits possibly extended
-  // by Scoring V2 gap-filling (see activation.ts) -- profile.dimensions stays pure V1, so
-  // every reader of .dimensions (selectStrongestPrivateSignals included) is completely
-  // unaffected by this. `v2Ranked` is kept alongside so the separate Private/Relic merge
-  // below (which operates on PrivateSignalTrait[], not .dimensions) can apply the same V2
-  // gap-fill rule without a second fetch.
-  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts; v2Ranked: RankedPole[] };
+  // Build 22: `profile` is V1's own PersonalityProfile shape, used only for .dimensions/
+  // .answeredCount (still read by counts/the first-form/full-mixed-form thresholds) --
+  // profile.topTraits is populated from the numeric totals-ranking adapter, never from V1.
+  // `traitTotals` is kept alongside so the separate Private/Relic ranking below (which reads
+  // the identical small aggregate, filtered to Private instead of Core) needs no second
+  // fetch.
+  | { status: 'ready'; profile: PersonalityProfile; counts: ProfileActivityCounts; traitTotals: UserTraitTotalRow[] };
 
 type CommonalityState =
   | { status: 'loading' }
@@ -511,38 +510,66 @@ export default function YouScreen() {
     // spec calls for. Never blocks the read below even if it itself fails; a submission that
     // still can't go through just stays queued for the next opportunity.
     await flushPendingQuizSubmissions();
-    // Same idea for any local quiz history from an older TestFlight build that hasn't made it
-    // to Supabase yet (see legacy-quiz-backfill-service.ts) — a no-op once its own per-user
-    // marker is set.
-    await syncLegacyQuizResultsToRemote();
 
-    const [evidenceResult, quizResultsResult] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
-    // Both reads must succeed — a quiz-history fetch failure is NEVER treated as "zero
-    // quizzes completed" (that would silently under-report profileAnswerCount/the internal
-    // seven-trait threshold even though real quiz personality evidence already exists). Never
-    // falls back to demo data on either error — the same small retryable state either way.
+    // Build 22 owner audit (2026-10-30), item 5: activity counts (dailyAnswerCount/
+    // quizCompletionCount/profileAnswerCount) no longer read the user's full quiz_results
+    // history -- getMyActiveQuizCompletions() returns one lean row per ACTIVELY-completed
+    // quiz (first completion within 12 months), replacing both the full-history fetch and the
+    // client-side "first completion per quiz_id" reconstruction it required. evidenceResult is
+    // still fetched in full -- v1Profile.dimensions (Creature identity derivation, below)
+    // still depends on complete personality_evidence history; that is unrelated, pre-existing
+    // behavior this pass does not redesign.
+    const [evidenceResult, dailyAnswerCountResult, activeQuizCompletionsResult] = await Promise.all([
+      getMyPersonalityEvidence(),
+      getMyActiveDailyAnswerCount(),
+      getMyActiveQuizCompletions(),
+    ]);
+    // All three reads must succeed — a count fetch failure is NEVER treated as "zero
+    // quizzes/Dailies completed" (that would silently under-report profileAnswerCount/the
+    // internal seven-trait threshold even though real evidence already exists). Never falls
+    // back to demo data on any error — the same small retryable state either way.
+    //
+    // Build 22 owner audit (2026-10-30), item 4: none of these failure branches may overwrite
+    // an ALREADY-VERIFIED ready identity. useFocusEffect re-runs loadRemote on every screen
+    // refocus, so a single transient network blip on a refresh must never make a previously-
+    // shown Signature/Relic/Creature appear to have disappeared — behind either a hollow empty
+    // ranking (the old getMyTraitTotals bug) or a blocking "couldn't load" card replacing data
+    // that was already successfully shown. The functional setRemoteState form reads the LATEST
+    // state at failure time (not a stale closure), so: a failure on the very first load (no
+    // prior ready state) still shows the existing recoverable error screen; a failure on any
+    // later refresh instead preserves the last verified identity untouched — the next
+    // successful focus/retry naturally replaces it.
     if (!evidenceResult.ok) {
-      setRemoteState({ status: 'error', message: evidenceResult.message });
+      setRemoteState((prev) => (prev.status === 'ready' ? prev : { status: 'error', message: evidenceResult.message }));
       return;
     }
-    if (!quizResultsResult.ok) {
-      setRemoteState({ status: 'error', message: quizResultsResult.message });
+    if (!dailyAnswerCountResult.ok) {
+      setRemoteState((prev) => (prev.status === 'ready' ? prev : { status: 'error', message: dailyAnswerCountResult.message }));
+      return;
+    }
+    if (!activeQuizCompletionsResult.ok) {
+      setRemoteState((prev) => (prev.status === 'ready' ? prev : { status: 'error', message: activeQuizCompletionsResult.message }));
       return;
     }
     const answers = groupEvidenceIntoAnswers(evidenceResult.data);
     const v1Profile = scorePersonalityProfile(answers);
-    const counts = computeProfileActivityCounts(evidenceResult.data, quizResultsResult.data);
+    const counts = computeProfileActivityCounts(dailyAnswerCountResult.data, activeQuizCompletionsResult.data);
 
-    // Build 16: Scoring V2 gap-fill, additive only -- see activation.ts's own header comment.
-    // A V2 fetch failure (or simply zero V2 evidence yet) falls back to v1Profile completely
-    // unchanged -- never blocks or degrades the existing V1-only read.
-    const poleEvidenceResult = await getMyPersonalityPoleEvidence();
-    const v2Ranked = poleEvidenceResult.ok ? rankPoles(toEnginePoleEvidenceRows(poleEvidenceResult.data)) : [];
-    const profile: PersonalityProfile = poleEvidenceResult.ok
-      ? { ...v1Profile, topTraits: mergeCoreTraitsWithV2Gaps(v1Profile, v2Ranked) }
-      : v1Profile;
+    // Build 22: V2 is the sole, authoritative ranking engine, read from the small,
+    // precomputed user_trait_totals aggregate (<=64 rows) rather than reconstructed from raw
+    // evidence on every load. v1Profile is still computed above (its .dimensions/
+    // .answeredCount still feed `counts`/the first-form/full-mixed-form thresholds elsewhere
+    // in this screen), but its own topTraits are never read here. A totals fetch failure no
+    // longer collapses into an empty ranked list (see the comment above the first two checks
+    // in this function) — it follows the exact same preserve-or-error rule.
+    const traitTotalsResult = await getMyTraitTotals();
+    if (!traitTotalsResult.ok) {
+      setRemoteState((prev) => (prev.status === 'ready' ? prev : { status: 'error', message: traitTotalsResult.message }));
+      return;
+    }
+    const profile: PersonalityProfile = { ...v1Profile, topTraits: rankCoreSignatureTraitsFromTotals(traitTotalsResult.data) };
 
-    setRemoteState({ status: 'ready', profile, counts, v2Ranked });
+    setRemoteState({ status: 'ready', profile, counts, traitTotals: traitTotalsResult.data });
     void checkAndNotifyCreatureEvolution(profile.topTraits);
   }, []);
 
@@ -776,10 +803,9 @@ export default function YouScreen() {
     if (remoteState.status !== 'ready') {
       return [];
     }
-    const v1Signals = selectStrongestPrivateSignals(remoteState.profile);
-    // Build 16: same V2 gap-fill rule as profileCards/the Creature above, applied here to the
-    // simpler PrivateSignalTrait[] shape Relic's own slot selection reads -- see activation.ts.
-    return mergePrivateSignalsWithV2Gaps(v1Signals, remoteState.profile, remoteState.v2Ranked);
+    // Build 22: same unified V2 ranking as Your Signature/the Creature above, filtered to
+    // Private poles instead of Core -- see activation.ts.
+    return rankPrivateSignalTraitsFromTotals(remoteState.traitTotals);
   }, [remoteState]);
   const relicSlots: RelicSlotAssignment = useMemo(() => selectRelicSlots(privateSignals), [privateSignals]);
   const resolvedRelicSlotCount = [relicSlots.relicTrait, relicSlots.colorTrait, relicSlots.effectTrait].filter(Boolean).length;

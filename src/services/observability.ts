@@ -135,6 +135,10 @@ export type BackendOperation =
   | 'ensure_anonymous_session'
   | 'get_my_personality_pole_evidence'
   | 'submit_quiz_pole_evidence'
+  | 'submit_quiz_completion'
+  | 'get_my_active_daily_answer_count'
+  | 'get_my_active_quiz_completions'
+  | 'get_my_trait_totals'
   | 'delete_account';
 
 export type BackendFailureContext = {

@@ -1,4 +1,4 @@
-import { ALL_POLE_IDS, comparePoleOrder, type PersonalityPoleId } from './pole-ids';
+import { ALL_POLE_IDS, comparePoleOrder, poleDimensionId, type PersonalityPoleId } from './pole-ids';
 
 // Positive-only, independent-pole scoring engine (V2). Pure functions only -- no Supabase
 // import, no React, no app-level types -- so this can be unit tested in isolation and, later,
@@ -204,4 +204,35 @@ export const computeAllPoleStats = (rawRows: readonly PoleEvidenceRow[]): PoleSt
     byPole.get(row.poleId)?.push(row);
   }
   return ALL_POLE_IDS.map((poleId) => computePoleStats(poleId, byPole.get(poleId) ?? []));
+};
+
+// Build 22: the unified-ranking collapse step -- a dimension's two poles are independent
+// evidence accumulators (that's the whole point of the pole model), but Your Signature/the
+// Creature must never seat BOTH poles of one dimension as two separate ranked entries --
+// exactly one trait per dimension, matching the old V1 model's "one DimensionResult per
+// dimension" invariant, now reconstructed correctly on top of per-pole ranking. `ranked` is
+// assumed to already be `rankPoles`' own output (sorted strongest-first) -- this never
+// re-sorts, it only filters: keeping the FIRST (i.e. highest-ranked, since the input is
+// pre-sorted) pole seen for each dimension, and dropping every weaker pole of that same
+// dimension outright. `predicate` selects which half of the pole space this call is ranking
+// (poleIsCore for Your Signature/the Creature, poleIsPrivate for The Undercurrent/Relic) --
+// one implementation, not two, for the two dimension-type's identical collapse rule.
+export const collapseToOnePerDimension = (
+  ranked: readonly RankedPole[],
+  predicate: (poleId: PersonalityPoleId) => boolean,
+): RankedPole[] => {
+  const seenDimensions = new Set<string>();
+  const collapsed: RankedPole[] = [];
+  for (const pole of ranked) {
+    if (!predicate(pole.poleId)) {
+      continue;
+    }
+    const dimensionId = poleDimensionId(pole.poleId);
+    if (seenDimensions.has(dimensionId)) {
+      continue;
+    }
+    seenDimensions.add(dimensionId);
+    collapsed.push(pole);
+  }
+  return collapsed;
 };

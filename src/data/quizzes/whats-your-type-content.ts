@@ -1,5 +1,4 @@
-import { poleDimensionId, type PersonalityPoleId } from '@/data/personality-v2/pole-ids';
-import type { PersonalityEffect, PersonalityEffectValue } from '@/data/personality';
+import type { PersonalityPoleId } from '@/data/personality-v2/pole-ids';
 
 // "What's Your Type?" -- Free Explore quiz, owner-supplied content handoff (Build 16).
 //
@@ -220,38 +219,10 @@ export const WHATS_YOUR_TYPE_QUESTIONS: WhatsYourTypeQuestion[] = [
   },
 ];
 
-// Scoring V2 remains inert (not activated this pass -- see docs/personality-scoring-v2-design.md
-// section 11). The live personality-evidence system every one of the other 21 quizzes still
-// writes to is the OLD signed/dimension-keyed engine, so this quiz's own contribution follows
-// the SAME simple pattern most of those 21 already use: a small, authored-shaped set of
-// result-level profileSignals (max 3), not full answer-level evidence routed through
-// quiz-personality-awards.ts's qualification machinery (left completely untouched).
-//
-// Reduces the 5 Partner Energy (Q6-10) answers the user actually chose into at most 3 signed
-// PersonalityEffect entries -- summed per pole, converted to the old model's signed-per-
-// dimension shape (positive pole -> positive value, negative pole -> negative value), capped
-// at magnitude 2 (this quiz never claims the +-3 ranked-Private-award magnitude, which is
-// reserved for premium Private quizzes and would be meaningless here -- this is a Core-only
-// Free quiz). Q1-5 (Attraction) answers never reach this function at all.
-export function reduceWhatsYourTypeProfileSignals(chosenPartnerEnergyChoices: WhatsYourTypeChoice[]): PersonalityEffect[] {
-  const totalsByPole = new Map<PersonalityPoleId, number>();
-  for (const choice of chosenPartnerEnergyChoices) {
-    for (const award of choice.coreAwards) {
-      totalsByPole.set(award.pole, (totalsByPole.get(award.pole) ?? 0) + award.points);
-    }
-  }
-
-  const ranked = [...totalsByPole.entries()].sort((a, b) => b[1] - a[1]);
-  const seenDimensions = new Set<string>();
-  const effects: PersonalityEffect[] = [];
-  for (const [pole, total] of ranked) {
-    const dimension = poleDimensionId(pole);
-    if (seenDimensions.has(dimension)) continue; // one pole per dimension, matching the old signed model's own shape
-    seenDimensions.add(dimension);
-    const magnitude = (total >= 4 ? 2 : 1) as PersonalityEffectValue;
-    const signedValue = (pole.endsWith(':positive') ? magnitude : -magnitude) as PersonalityEffectValue;
-    effects.push({ dimension, value: signedValue });
-    if (effects.length === 3) break;
-  }
-  return effects;
-}
+// Build 22 final cleanup (owner-authorized clean V1 reset, 2026-11-02): the old ranked/top-N
+// result-level profileSignals reduction that used to live here (reduceWhatsYourTypeProfileSignals)
+// is retired -- it was already dead code (computed, never sent to the server; see the Build 22
+// final report). This quiz's real personality evidence comes exclusively from its own
+// per-choice `coreAwards` below, seeded numerically into quiz_choice_trait_awards
+// (scripts/generate-quiz-content-identity-sql.ts) and written by submit_quiz_completion on
+// the selected choice alone -- the same single authoritative mechanism every other quiz uses.

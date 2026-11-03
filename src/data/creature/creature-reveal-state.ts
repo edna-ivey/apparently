@@ -8,7 +8,18 @@ import {
 } from '@/data/creature/creature-identity';
 
 export const CREATURE_EVOLUTION_STORAGE_KEY = 'apparently:creature-evolution:v1';
-export const CREATURE_EVOLUTION_SCHEMA_VERSION = 1 as const;
+// Build 22 final cleanup (eighth round, deployment-safety correction): bumped 1 -> 2 for the
+// clean V1 prelaunch data reset. A device's locally-cached mixedSnapshot/firstFormRevealSeen
+// is a STICKY, device-local "first reveal" lock -- once set, it is never recomputed from
+// fresh server data except to check for FURTHER evolution (lastCheckedEvolutionDate), so a
+// pre-reset cache would otherwise keep showing a Creature form computed from personality
+// evidence the reset just deleted, indefinitely, with no natural refresh. Bumping this
+// version makes parseCreatureEvolutionState reject any pre-reset stored value (version
+// mismatch) and fall back to EMPTY_CREATURE_EVOLUTION_STATE, forcing a fresh computation from
+// the post-reset server data next time the Creature screen loads -- the same mechanism this
+// file already uses for any other incompatible-shape stored value, just intentionally
+// triggered for every device on this release rather than only a malformed one.
+export const CREATURE_EVOLUTION_SCHEMA_VERSION = 2 as const;
 
 export type CreatureEvolutionState = {
   version: typeof CREATURE_EVOLUTION_SCHEMA_VERSION;

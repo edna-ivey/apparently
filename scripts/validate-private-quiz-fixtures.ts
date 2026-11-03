@@ -169,30 +169,45 @@ for (const previewId of ['keep-you-around', 'be-so-serious']) {
 
 type Fixture = { quizId: string; label: string; resultId: string; sequence: string };
 
+// Build 22 owner audit (2026-11-02): the five quizzes below had fixture sequences that did
+// NOT actually reach their named result against the real engine (confirmed by this file's
+// own run -- raw totals showed a different winner leading). For career-ambition-how-bad,
+// career-ambition-proving, love-soulmates-ready, and style-vibe-intimidating (3 of 4
+// results), the quiz CONTENT was correct and unchanged -- only these hand-authored example
+// sequences were wrong. For hidden-you-wrong, the root cause was different and more serious:
+// Q5/Q6/Q7/Q8 had drifted to reworded prompt/choice text with different verdict weights
+// (while this quiz's real numeric trait awards, scripts/lib/private-quiz-trait-awards.ts,
+// were already correctly transcribed against the ORIGINAL approved document) -- fixed in
+// hidden-you-wrong.ts itself (restoring the approved text/weights verbatim), which is what
+// these four sequences now verify against. Every sequence below was independently
+// re-verified by running it through the REAL scoreArchetypeQuiz and confirming the named
+// result actually wins (not hand-recomputed) -- see this file's own "Reachability fixtures"
+// summary for the pass/fail proof.
 const FIXTURES: Fixture[] = [
   // docs/private-quizzes/APPROVED_PRIVATE_QUIZZES.md §1 "HOW BAD DO YOU ACTUALLY WANT IT?"
-  { quizId: 'career-ambition-how-bad', label: 'YOU WANT IT FOR REAL', resultId: 'want-it-for-real', sequence: '1B, 2A, 3A, 4C, 5A, 6A, 7A, 8A, 9A, 10A' },
-  { quizId: 'career-ambition-how-bad', label: 'YOU WANT IT, BUT COMFORT KEEPS WINNING', resultId: 'comfort-keeps-winning', sequence: '1A, 2C, 3C, 4D, 5B, 6D, 7D, 8A, 9C, 10B' },
-  { quizId: 'career-ambition-how-bad', label: 'YOU TALK A GREAT GAME', resultId: 'talk-great-game', sequence: '1D, 2D, 3B, 4B, 5D, 6C, 7C, 8B, 9C, 10C' },
-  { quizId: 'career-ambition-how-bad', label: 'LAZY. THERE, WE SAID IT.', resultId: 'lazy-there-we-said-it', sequence: '1A, 2D, 3D, 4A, 5C, 6D, 7C, 8D, 9D, 10D' },
+  { quizId: 'career-ambition-how-bad', label: 'YOU WANT IT FOR REAL', resultId: 'want-it-for-real', sequence: '1A, 2B, 3A, 4C, 5C, 6B, 7B, 8B, 9A, 10C' },
+  { quizId: 'career-ambition-how-bad', label: 'YOU WANT IT, BUT COMFORT KEEPS WINNING', resultId: 'comfort-keeps-winning', sequence: '1B, 2A, 3A, 4B, 5A, 6C, 7A, 8C, 9A, 10B' },
+  { quizId: 'career-ambition-how-bad', label: 'YOU TALK A GREAT GAME', resultId: 'talk-great-game', sequence: '1C, 2A, 3D, 4A, 5C, 6D, 7B, 8D, 9D, 10D' },
+  { quizId: 'career-ambition-how-bad', label: 'LAZY. THERE, WE SAID IT.', resultId: 'lazy-there-we-said-it', sequence: '1D, 2C, 3B, 4C, 5D, 6C, 7A, 8A, 9B, 10A' },
 
   // docs/private-quizzes/APPROVED_PRIVATE_QUIZZES.md §2 "ARE YOU AMBITIOUS... OR PROVING SOMETHING?"
-  { quizId: 'career-ambition-proving', label: 'CLAP', resultId: 'nobody-clapped', sequence: '1A, 2A, 3D, 4A, 5A, 6D, 7A, 8A, 9B, 10A' },
-  { quizId: 'career-ambition-proving', label: 'SEEN', resultId: 'want-it-seen', sequence: '1B, 2B, 3C, 4C, 5B, 6C, 7B, 8B, 9C, 10B' },
-  { quizId: 'career-ambition-proving', label: 'PROVE', resultId: 'proving-something', sequence: '1C, 2C, 3D, 4B, 5D, 6C, 7C, 8C, 9D, 10C' },
-  { quizId: 'career-ambition-proving', label: 'PERFORM', resultId: 'performing-for', sequence: '1D, 2A, 3C, 4C, 5C, 6C, 7A, 8D, 9C, 10D' },
+  { quizId: 'career-ambition-proving', label: 'CLAP', resultId: 'nobody-clapped', sequence: '1B, 2B, 3A, 4C, 5B, 6A, 7B, 8B, 9A, 10A' },
+  { quizId: 'career-ambition-proving', label: 'SEEN', resultId: 'want-it-seen', sequence: '1A, 2C, 3B, 4D, 5A, 6C, 7A, 8C, 9D, 10B' },
+  { quizId: 'career-ambition-proving', label: 'PROVE', resultId: 'proving-something', sequence: '1B, 2A, 3D, 4A, 5D, 6B, 7C, 8A, 9C, 10D' },
+  { quizId: 'career-ambition-proving', label: 'PERFORM', resultId: 'performing-for', sequence: '1C, 2A, 3B, 4D, 5C, 6D, 7A, 8A, 9B, 10A' },
 
   // docs/private-quizzes/APPROVED_PRIVATE_QUIZZES.md §3 "ARE YOU ACTUALLY READY FOR LOVE?"
-  { quizId: 'love-soulmates-ready', label: 'OPEN', resultId: 'open', sequence: '1B, 2C, 3C, 4B, 5D, 6C, 7B, 8B, 9D, 10D' },
-  { quizId: 'love-soulmates-ready', label: 'TERMS', resultId: 'terms', sequence: '1D, 2D, 3B, 4D, 5A, 6D, 7D, 8C, 9A, 10C' },
-  { quizId: 'love-soulmates-ready', label: 'WALLS', resultId: 'walls', sequence: '1A, 2B, 3D, 4A, 5C, 6A, 7C, 8A, 9C, 10A' },
-  { quizId: 'love-soulmates-ready', label: 'BAE', resultId: 'bae', sequence: '1C, 2A, 3A, 4C, 5B, 6B, 7A, 8D, 9B, 10B' },
+  { quizId: 'love-soulmates-ready', label: 'OPEN', resultId: 'open', sequence: '1A, 2C, 3B, 4D, 5D, 6D, 7B, 8C, 9A, 10D' },
+  { quizId: 'love-soulmates-ready', label: 'TERMS', resultId: 'terms', sequence: '1C, 2A, 3D, 4B, 5D, 6B, 7A, 8D, 9B, 10C' },
+  { quizId: 'love-soulmates-ready', label: 'WALLS', resultId: 'walls', sequence: '1B, 2D, 3C, 4B, 5D, 6C, 7D, 8A, 9C, 10B' },
+  { quizId: 'love-soulmates-ready', label: 'BAE', resultId: 'bae', sequence: '1D, 2B, 3A, 4C, 5B, 6A, 7C, 8B, 9D, 10A' },
 
-  // docs/private-quizzes/APPROVED_HIDDEN_YOU.md
-  { quizId: 'hidden-you-wrong', label: 'HIDDEN_FEELING', resultId: 'hidden-feeling', sequence: '1A, 2D, 3B, 4B, 5C, 6A, 7D, 8A, 9B, 10A' },
-  { quizId: 'hidden-you-wrong', label: 'FACE', resultId: 'face', sequence: '1B, 2C, 3C, 4D, 5B, 6B, 7A, 8C, 9C, 10C' },
-  { quizId: 'hidden-you-wrong', label: 'FINE', resultId: 'fine', sequence: '1C, 2A, 3D, 4C, 5D, 6D, 7C, 8D, 9A, 10B' },
-  { quizId: 'hidden-you-wrong', label: 'ATTENTION', resultId: 'attention', sequence: '1D, 2B, 3A, 4A, 5A, 6C, 7A, 8B, 9D, 10D' },
+  // docs/private-quizzes/HIDDEN_YOU_WRONG_APPROVED_LOCKED_2026-10-31.md (re-verified after
+  // this round's Q5/Q6/Q7/Q8 content fix -- see the note above this array)
+  { quizId: 'hidden-you-wrong', label: 'HIDDEN_FEELING', resultId: 'hidden-feeling', sequence: '1B, 2D, 3C, 4D, 5A, 6B, 7B, 8C, 9B, 10C' },
+  { quizId: 'hidden-you-wrong', label: 'FACE', resultId: 'face', sequence: '1A, 2C, 3B, 4B, 5D, 6A, 7C, 8A, 9A, 10D' },
+  { quizId: 'hidden-you-wrong', label: 'FINE', resultId: 'fine', sequence: '1D, 2A, 3A, 4C, 5B, 6D, 7D, 8A, 9D, 10D' },
+  { quizId: 'hidden-you-wrong', label: 'ATTENTION', resultId: 'attention', sequence: '1C, 2D, 3D, 4A, 5C, 6C, 7D, 8B, 9D, 10D' },
 
   // docs/private-quizzes/APPROVED_LIFE_MATCH.md
   { quizId: 'life-match-dream-life', label: 'FIT', resultId: 'fit', sequence: '1A, 2B, 3A, 4A, 5B, 6C, 7A, 8A, 9D, 10A' },
@@ -201,9 +216,9 @@ const FIXTURES: Fixture[] = [
   { quizId: 'life-match-dream-life', label: 'BORROWED', resultId: 'borrowed', sequence: '1D, 2A, 3D, 4C, 5C, 6D, 7D, 8C, 9A, 10C' },
 
   // docs/private-quizzes/APPROVED_STYLE_VIBE.md
-  { quizId: 'style-vibe-intimidating', label: 'APPROACHABLE', resultId: 'approachable', sequence: '1D, 2B, 3C, 4A, 5A, 6C, 7D, 8D, 9C, 10B' },
-  { quizId: 'style-vibe-intimidating', label: 'FACE', resultId: 'face', sequence: '1C, 2D, 3A, 4B, 5B, 6A, 7A, 8A, 9A, 10A' },
-  { quizId: 'style-vibe-intimidating', label: 'EVALUATIVE', resultId: 'evaluative', sequence: '1B, 2A, 3B, 4D, 5D, 6D, 7B, 8B, 9B, 10C' },
+  { quizId: 'style-vibe-intimidating', label: 'APPROACHABLE', resultId: 'approachable', sequence: '1A, 2B, 3A, 4A, 5B, 6A, 7A, 8A, 9A, 10B' },
+  { quizId: 'style-vibe-intimidating', label: 'FACE', resultId: 'face', sequence: '1C, 2D, 3B, 4B, 5C, 6D, 7C, 8C, 9B, 10A' },
+  { quizId: 'style-vibe-intimidating', label: 'EVALUATIVE', resultId: 'evaluative', sequence: '1C, 2C, 3C, 4C, 5A, 6A, 7C, 8B, 9C, 10C' },
   { quizId: 'style-vibe-intimidating', label: 'INTIMIDATING', resultId: 'intimidating', sequence: '1B, 2C, 3D, 4C, 5C, 6B, 7C, 8C, 9D, 10D' },
 
   // docs/private-quizzes/APPROVED_PRIVATE_PRIVATE.md

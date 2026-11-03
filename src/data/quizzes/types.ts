@@ -1,5 +1,3 @@
-import type { PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
-
 // The shared shape every Explore quiz conforms to. New quizzes should be almost entirely
 // data — one file like petty.ts plus a registry entry — not new UI. The runner screen
 // (src/app/quiz/[quizId].tsx) is generic over this shape.
@@ -15,12 +13,6 @@ export type QuizChoice = {
   // archetypes, keyed by QuizArchetype.id. Most choices contribute to exactly one archetype;
   // the shape allows more if a future quiz wants partial credit.
   resultWeights?: Record<string, number>;
-  // Optional, currently unused by any live scoring or display — a forward-looking hook so a
-  // future pass can feed quiz answers into scorePersonalityProfile's existing evidence model
-  // without redesigning quiz content. Uses the SAME PersonalityDimensionId/effect values
-  // personality.ts already defines; no parallel trait system. See quiz/[quizId].tsx and the
-  // implementation report for why this isn't wired into live scoring yet.
-  traitSignals?: { dimension: PersonalityDimensionId; value: -2 | -1 | 1 | 2 }[];
 };
 
 export type QuizQuestion = {
@@ -44,13 +36,6 @@ export type QuizResultBand = {
   // the other. Undefined for every result that only has a kicker.
   apparentlySignature?: string;
   traits: string[];
-  // Result-level (not per-choice) personality signals this result contributes to the living
-  // You profile, ONLY on a quiz's first completion — see src/services/quiz-service.ts and the
-  // submit_quiz_result RPC. Max 3, conservative, authored explicitly from this result's own
-  // title/heroRead/body/kicker/traits — never mechanically derived from `traits` at runtime,
-  // and never a second personality engine: these are exactly the same PersonalityEffect shape
-  // and PersonalityDimensionId values scorePersonalityProfile already consumes.
-  profileSignals?: PersonalityEffect[];
 };
 
 // One possible outcome of an archetype quiz (e.g. "THE COMMANDER"). Structurally identical
@@ -82,9 +67,6 @@ export type QuizArchetype = {
   // locked review specifies both a kicker AND a separate "Apparently," signature line.
   apparentlySignature?: string;
   traits?: string[];
-  // Same contract as QuizResultBand.profileSignals above — result-level, max 3, first-
-  // completion-only. See that field's comment for the full rationale.
-  profileSignals?: PersonalityEffect[];
   // Apparently Private's own structured result presentation (THE READ / THE CALL-OUT /
   // THE COST / TRY THIS — see keep-you-around.ts and quiz/[quizId].tsx's
   // PrivateStructuredResult). When present, this ENTIRELY REPLACES the standard
@@ -98,6 +80,12 @@ export type QuizArchetype = {
 // use). Exists so a quiz can carry its OWN authored Read structure distinct from the generic
 // hero/body/kicker/traits shape without inventing anything to fill unused fields.
 export type QuizStructuredRead = {
+  // Build 22 owner audit (2026-11-01), item 4: "Implement the approved premium reveal design:
+  // TITLE, THE VERDICT, THE PRIVATE READ, THE CALL-OUT, THE COST, TRY THIS, THE KICKER..."
+  // Optional -- every structuredRead quiz before this round (keep-you-around, be-so-serious,
+  // and the three still-under-review held quizzes) never set it, and the shared renderer only
+  // shows this section when present, so none of them render any differently than before.
+  theVerdict?: string[];
   theRead: string[];
   theCallOut: string[];
   theCost: string[];
@@ -149,16 +137,13 @@ type QuizBase = {
   introCta: string;
   introNote?: string;
   questions: QuizQuestion[];
-  // Opt in to Bible §15A answer-level personality evidence for this quiz.
-  answerLevelPersonalityEvidence?: boolean;
   // Whether a first completion of this quiz may contribute to the living You profile
   // (personality_evidence + profileAnswerCount/Your7). Defaults to true (existing behavior,
   // unchanged) when absent. Set to false ONLY for a quiz whose result→profile mapping hasn't
   // been approved yet — see computeProfileActivityCounts in personality-service.ts, which
   // reads this to exclude such a quiz's question_count from profileAnswerCount even though
   // its quiz_results row is real and its completion still counts toward
-  // quizCompletionCount/profileActivityCount. Independent of, and enforced in ADDITION to,
-  // simply not authoring profileSignals on the quiz's own results.
+  // quizCompletionCount/profileActivityCount.
   contributesToProfile?: boolean;
   // True ONLY for a quiz retired from the current playable surface (Explore/Private landing)
   // but kept registered so its own historical completions, "See result", and old
@@ -168,6 +153,20 @@ type QuizBase = {
   // playable quizzes" without needing to hardcode which ids are current; a newly added quiz
   // automatically participates with no admin-side change required.
   historicalOnly?: boolean;
+  // Build 22 owner audit (2026-11-01), item 3: "Establish the safe versioning and
+  // authorization contract first" -- set ONLY when this quiz's id is a genuine CONTENT
+  // VERSION REPLACEMENT of an already-shipped quiz (e.g. a locked editorial replacement under
+  // a new id like 'love-soulmates-ready-v2'), never for a brand-new, unrelated quiz. Value is
+  // the ORIGINAL quiz's own id -- the generator (scripts/generate-quiz-content-identity-sql.ts)
+  // reads this to set quizzes.logical_quiz_key, so submit_quiz_completion/submit_quiz_result
+  // can preserve ONE first-completion identity across versions (never letting a replacement
+  // earn a second "first completion") without any hardcoded version-specific list. Undefined
+  // for every quiz today (including both currently-locked, not-yet-implemented replacements)
+  // -- this field exists so that CONTRACT is established before either replacement ships, per
+  // explicit instruction not to implement them yet. access/category (already on every
+  // definition) are themselves the authoritative source for premium/age-gating -- this field
+  // is ONLY about first-completion identity continuity, nothing else.
+  contentVersionOf?: string;
 };
 
 // A single numeric spectrum with named bands (Petty: 0–24 → four bands). Unchanged shape
@@ -214,7 +213,11 @@ export type ArchetypeQuizDefinition = QuizBase & {
   // Optional primary-weight value counted by the tie-break (default 2 for legacy quizzes).
   primaryTieWeight?: number;
   // Optional final answer discriminator used after the normal high-signal/+weight tie steps.
-  finalTieQuestionId?: string;
+  // A single question id, or (Build 22 owner audit, 2026-11-02) an ORDERED LIST of question
+  // ids checked in sequence -- the first one whose own top-weight winner is still among the
+  // tied candidates wins. Every quiz before this round that set this field used exactly one
+  // id, which behaves identically whether read as a bare string or a one-element list.
+  finalTieQuestionId?: string | string[];
   // Optional extra tie step: compare count of questions where the candidate is the selected choice's primary result.
   countPrimaryMatchesTieBreak?: boolean;
 };
@@ -245,12 +248,11 @@ export type QuizCombinationResult = {
   body?: string;
   kicker?: string;
   traits?: string[];
-  profileSignals?: PersonalityEffect[];
 };
 
 // Deliberately NOT a member of QuizDefinition below -- every function that pattern-matches
 // over QuizDefinition (computeQuizResult, reconstructResultDisplay, resolveShareableResultContent,
-// resolveResultDisplayTitle, resolveStoredQuizProfileSignals, all in scoring.ts) assumes exactly
+// resolveResultDisplayTitle, all in scoring.ts) assumes exactly
 // two variants today and branches with a plain `if (scoringType === 'archetype') {...} else
 // {...}` rather than an exhaustive switch. Adding a third member here would force real,
 // untested changes to every one of those functions for a scoring type nothing uses yet --

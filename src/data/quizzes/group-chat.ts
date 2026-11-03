@@ -25,10 +25,6 @@ export const GROUP_CHAT_QUIZ: ArchetypeQuizDefinition = {
       body: "You're not checked out. You're just economical with your participation. You know who started the argument, who deleted their message, and exactly when the conversation went left. You simply don't feel the need to narrate your presence. Half the group probably thinks you have the chat muted. Meanwhile, you've read every single message, including the ones people wish they could take back. And when you finally do speak, everybody pays attention because apparently this must be serious.",
       kicker: 'Apparently, your read receipts do more talking than you do.',
       traits: ['Observant', 'Selective', 'Low-key'],
-      profileSignals: [
-        { dimension: 'private_open', value: 2 },
-        { dimension: 'social_attunement', value: 1 },
-      ],
     },
     {
       id: 'therapist',
@@ -37,10 +33,6 @@ export const GROUP_CHAT_QUIZ: ArchetypeQuizDefinition = {
       body: "You notice when somebody's energy changes, even through a screen. One unusual period at the end of a text and you're already wondering if they're okay. You're the one checking in privately, remembering important dates, and making sure nobody feels left out. People come to you for advice because you actually listen, and somehow you've become the emotional support department for a group of fully grown adults. The only question is who's checking on you while you're checking on everybody else.",
       kicker: "Apparently, you've been providing free emotional support with absolutely no benefits package.",
       traits: ['Empathetic', 'Attentive', 'Steady'],
-      profileSignals: [
-        { dimension: 'social_attunement', value: 2 },
-        { dimension: 'protective_hands_off', value: 1 },
-      ],
     },
     {
       id: 'meme-department',
@@ -49,10 +41,6 @@ export const GROUP_CHAT_QUIZ: ArchetypeQuizDefinition = {
       body: "You communicate in reaction images, questionable screenshots, and jokes that probably shouldn't be as funny as they are. Somebody could announce they're moving across the country, and within seconds you've found the perfect GIF. You know exactly when the chat needs a laugh, and you're usually the reason somebody is crying at their phone in public. Sometimes people have to remind you that the conversation is serious. You understand. You just happen to have a meme for that too.",
       kicker: 'Apparently, your screen time is 80% finding the perfect reaction.',
       traits: ['Playful', 'Quick', 'Perceptive'],
-      profileSignals: [
-        { dimension: 'playful_serious', value: 2 },
-        { dimension: 'curious_decisive', value: -1 },
-      ],
     },
     {
       id: 'chaos-coordinator',
@@ -61,10 +49,6 @@ export const GROUP_CHAT_QUIZ: ArchetypeQuizDefinition = {
       body: "Somebody casually mentions brunch, and suddenly you've picked a restaurant, checked the menu, made reservations, and asked who's driving. You're not necessarily trying to be in charge. You just know that without intervention, this group will spend four business days debating whether Saturday works for everybody. You love your people, but their inability to make a decision tests your patience regularly. They might complain about your bossiness, but somehow they're always sitting at the table you booked.",
       kicker: "Apparently, you're the unpaid CEO of people who can't even agree on where to eat.",
       traits: ['Decisive', 'Organized', 'Bold'],
-      profileSignals: [
-        { dimension: 'control_allowing', value: 2 },
-        { dimension: 'planner_spontaneous', value: 1 },
-      ],
     },
   ],
   questions: [

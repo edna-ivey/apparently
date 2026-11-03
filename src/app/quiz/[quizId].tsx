@@ -19,12 +19,16 @@ import { computeQuizResult, reconstructResultDisplay, type ResultDisplay } from 
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { createQuizShare } from '@/services/quiz-share-service';
-import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
-import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
+import { submitQuizCompletion, type SubmitQuizCompletionPayload } from '@/services/quiz-result-service';
 import { useEffectivePremium } from '@/services/purchases-service';
 import { useAdEligibility } from '@/services/ad-eligibility-service';
 import { showInterstitialIfDue } from '@/services/ad-interstitial-service';
 import { logAnalyticsEvent } from '@/services/analytics-service';
+
+// Both 'Private Private. 😈' category quizzes require server-enforced adult eligibility AND a
+// valid premium entitlement -- age never substitutes for entitlement and entitlement never
+// substitutes for age. Used both for the in-app age gate and for share restriction below.
+const MATURE_PRIVATE_PRIVATE_QUIZ_IDS = ['private-private-trouble', 'private-private-proof'];
 
 export default function QuizScreen() {
   const { quizId, view } = useLocalSearchParams<{ quizId: string; view?: string }>();
@@ -146,19 +150,20 @@ export default function QuizScreen() {
 
     if (isRemoteDailyEnabled) {
       // This marks the start of a real network submission this same effect is about to kick
-      // off a few lines below (submitQuizResultRemote) -- there is no render-time equivalent
+      // off a few lines below (submitQuizCompletion) -- there is no render-time equivalent
       // for "an imperative side effect just started," which is exactly what useEffect exists
       // for. Scoped to this one line, not the rule or file.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRemoteSubmitState('pending');
-      // Explicit code-level gate, independent of whether this result happens to author any
-      // profileSignals: a quiz marked contributesToProfile: false (its You-profile mapping
-      // isn't approved yet — see keep-you-around.ts) must never send profile_effects at all,
-      // so submit_quiz_result can never write personality_evidence for it regardless of
-      // future content changes to this quiz's results.
-      const contributesToProfile = definition.contributesToProfile !== false;
-      const payload: SubmitQuizResultPayload = {
-        quizId: definition.id,
+      // Build 22: ONE atomic call (submit_quiz_completion) replaces the old two-call pattern
+      // (submit_quiz_result + submit_quiz_pole_evidence, the latter now retired). Evidence is
+      // derived server-side solely from `answers` against the real, approved
+      // quiz_choice_trait_awards catalog -- a held/unapproved quiz simply has zero award rows
+      // there, so the old client-side contributesToProfile gate is no longer needed: there is
+      // no client-supplied signal left that could leak personality evidence for unapproved
+      // content, because none is ever sent in the first place.
+      const payload: SubmitQuizCompletionPayload = {
+        quizKey: definition.id,
         quizTitle: definition.title,
         quizCategory: definition.category,
         completedAt,
@@ -169,10 +174,10 @@ export default function QuizScreen() {
         resultTitle: liveResult.resultTitle,
         traits: liveResult.traits,
         mix,
-        profileSignals: contributesToProfile ? liveResult.profileSignals : undefined,
-        // Compare's exact-match-count needs the owner's raw answer map. `answers` (component
-        // state) is only ever populated on a FRESH completion — never sent on the ?view=result
-        // read-only path, since this whole branch only runs there in the first place.
+        // `answers` (component state) is only ever populated, complete, on a FRESH
+        // completion -- never sent on the ?view=result read-only path, since this whole
+        // branch only runs there in the first place. submit_quiz_completion rejects anything
+        // less than the quiz's exact full question set.
         answers,
       };
       // Never blocks the result screen — it already renders from local `result` state
@@ -183,18 +188,9 @@ export default function QuizScreen() {
       // completion of the same quiz (create_quiz_share pins the caller's latest quiz_results
       // row) instead of the one currently on screen.
       void (async () => {
-        const remoteResult = await submitQuizResultRemote(payload);
+        const remoteResult = await submitQuizCompletion(payload);
         if (remoteResult.ok) {
           setRemoteSubmitState('synced');
-          // Build 16: Scoring V2 additive write, alongside (never instead of) the
-          // submit_quiz_result completion above. Needs the real quiz_results row id that call
-          // just returned, so it can only run after that succeeds -- never blocks or affects
-          // remoteSubmitState, which already reflects the V1 completion that matters for
-          // sharing/history. A no-op for a quiz with no V2 calibration seeded; see
-          // personality-v2-service.ts.
-          if (remoteResult.quizResultId) {
-            void submitQuizPoleEvidence(definition.id, remoteResult.quizResultId, answers);
-          }
         } else {
           setRemoteSubmitState('failed');
           await queuePendingQuizSubmission(payload);
@@ -280,21 +276,25 @@ export default function QuizScreen() {
   }
 
   // A registered 'private' (premium-gated) quiz that this device doesn't have entitlement
-  // for — send to the paywall rather than rendering any question/result content. The 7
-  // premium Apparently Private quizzes (career-ambition-how-bad, career-ambition-proving,
-  // hidden-you-wrong, life-match-dream-life, love-soulmates-ready, private-private-trouble,
-  // style-vibe-intimidating) all use access: 'private' and hit this gate on web/unentitled
-  // devices today — see useEffectivePremium's own comment for how entitlement is determined.
+  // for — send to the paywall rather than rendering any question/result content. The 14
+  // premium Apparently Private quizzes all use access: 'private' and hit this gate on
+  // web/unentitled devices today — see useEffectivePremium's own comment for how entitlement
+  // is determined.
   if (definition.access === 'private' && !isPremium) {
     return <Redirect href="/paywall" />;
   }
 
-  // Build 16: the one 'Private Private. 😈' category quiz additionally requires 18+,
-  // independent of (and checked after) premium entitlement above. 'loading' briefly shows
-  // nothing extra -- the premium gate above has already resolved by the time this value is
-  // read, so this is a short, real loading window, not a stuck state. null (never asked, e.g.
-  // a pre-Build-16 account) gets a one-time confirmation prompt rather than a permanent block.
-  if (definition.id === 'private-private-trouble' && ageEligibility !== 'loading' && !isAdultEligible(ageEligibility)) {
+  // Build 16/22: both 'Private Private. 😈' category quizzes (private-private-trouble,
+  // private-private-proof) additionally require 18+, independent of (and checked after)
+  // premium entitlement above. 'loading' briefly shows nothing extra -- the premium gate
+  // above has already resolved by the time this value is read, so this is a short, real
+  // loading window, not a stuck state. null (never asked, e.g. a pre-Build-16 account) gets a
+  // one-time confirmation prompt rather than a permanent block.
+  if (
+    MATURE_PRIVATE_PRIVATE_QUIZ_IDS.includes(definition.id) &&
+    ageEligibility !== 'loading' &&
+    !isAdultEligible(ageEligibility)
+  ) {
     return <AgeEligibilityGate status={ageEligibility} />;
   }
 
@@ -325,15 +325,16 @@ export default function QuizScreen() {
     return shareUrl;
   };
 
-  // Audit finding (2026-10-21): 'private-private-trouble' is the one 18+-gated quiz, but
-  // /s/[token] (the public shared-result landing) has NO session or age check at all -- it's
-  // deliberately reachable by a fully anonymous web visitor of any age. A completed result
-  // here contains the quiz's own mature/suggestive-themed copy (flirting, attraction,
-  // chemistry -- see private-private-trouble.ts), so sharing it would hand that content to
-  // anyone with the link, bypassing the 18+ gate entirely. Blocked here (never offered) AND
-  // server-side in create_quiz_share/get_shared_quiz_result (see the staged migration) -- this
-  // client check alone would never be sufficient on its own.
-  const isShareRestricted = definition.id === 'private-private-trouble';
+  // Audit finding (2026-10-21, extended 2026-11-02): both 'private-private-trouble' and
+  // 'private-private-proof' are 18+-gated quizzes, but /s/[token] (the public shared-result
+  // landing) has NO session or age check at all -- it's deliberately reachable by a fully
+  // anonymous web visitor of any age. A completed result from either contains mature/
+  // suggestive-themed copy, so sharing it would hand that content to anyone with the link,
+  // bypassing the 18+ gate entirely. Blocked here (never offered) AND server-side in
+  // create_quiz_share/get_shared_quiz_result (see the staged migration, which needs a
+  // parallel private-private-proof entry) -- this client check alone would never be
+  // sufficient on its own.
+  const isShareRestricted = MATURE_PRIVATE_PRIVATE_QUIZ_IDS.includes(definition.id);
 
   const handleShare = async () => {
     if (!result || isShareRestricted) {
@@ -540,9 +541,10 @@ function ResultScreen({
     <View style={styles.stepGap}>
       {result.structuredRead ? <PrivateStructuredResult result={result} /> : <StandardResultCard result={result} />}
 
-      {/* canShare is false only for 'private-private-trouble' -- see isShareRestricted's
-          comment above. The public /s/[token] landing has no age check, so this 18+ result
-          is never offered a shareable link at all, not even a disabled-looking one. */}
+      {/* canShare is false only for the two MATURE_PRIVATE_PRIVATE_QUIZ_IDS -- see
+          isShareRestricted's comment above. The public /s/[token] landing has no age check,
+          so these 18+ results are never offered a shareable link at all, not even a
+          disabled-looking one. */}
       {canShare && (
         <Pressable onPress={onShare} style={styles.cta}>
           <ThemedText style={styles.ctaText}>Share this →</ThemedText>
@@ -613,11 +615,19 @@ function StandardResultCard({ result }: { result: ResultDisplay }) {
   );
 }
 
-// Apparently Private's own structured result layout (THE READ / THE CALL-OUT / THE COST /
-// TRY THIS) — used ONLY when result.structuredRead is set (currently keep-you-around).
-// Deliberately does not render result.mix/result.percent/any five-way breakdown — Apparently
-// Private shows exactly one primary result, plus an optional qualifying close second's TITLE
-// only (never invented prose for it — see scoring.ts's pickCloseSecond).
+// Apparently Private's own reusable structured result layout, shared by EVERY paid quiz that
+// sets result.structuredRead (never a one-off per quiz — see Build 22 owner audit, 2026-11-01,
+// item 4). Render order matches the approved premium reveal contract exactly: TITLE -> THE
+// VERDICT -> THE PRIVATE READ -> THE CALL-OUT -> THE COST -> TRY THIS -> THE KICKER (plus a
+// separate italic "Apparently," signature) -> YOUR TRAITS. Deliberately does not render
+// result.mix/result.percent/any five-way breakdown — Apparently Private shows exactly one
+// primary result, plus an optional qualifying close second's TITLE only (never invented prose
+// for it — see scoring.ts's pickCloseSecond).
+//
+// theVerdict/kicker/apparentlySignature/traits are each rendered only when non-empty, so the
+// quizzes that predate this round's reveal contract (keep-you-around, be-so-serious, and the
+// three still-under-review held quizzes, none of which set any of these four fields) render
+// byte-for-byte as before.
 function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
   const read = result.structuredRead!;
   return (
@@ -629,8 +639,19 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
       <ThemedText style={styles.verdictEyebrow}>THE VERDICT</ThemedText>
       <ThemedText style={styles.verdictTitle}>{result.resultTitle}</ThemedText>
 
+      {read.theVerdict && read.theVerdict.length > 0 && (
+        <View style={styles.privateSection}>
+          <ThemedText style={styles.privateSectionHeading}>THE VERDICT</ThemedText>
+          {read.theVerdict.map((line, index) => (
+            <ThemedText key={`the-verdict-${index}`} style={styles.privateSectionBody}>
+              {line}
+            </ThemedText>
+          ))}
+        </View>
+      )}
+
       <View style={styles.privateSection}>
-        <ThemedText style={styles.privateSectionHeading}>THE READ</ThemedText>
+        <ThemedText style={styles.privateSectionHeading}>THE PRIVATE READ</ThemedText>
         {read.theRead.map((line, index) => (
           <ThemedText key={`the-read-${index}`} style={styles.privateSectionBody}>
             {line}
@@ -672,6 +693,27 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
         </View>
       )}
 
+      {(result.kicker || result.apparentlySignature) && (
+        <View style={styles.privateSection}>
+          <ThemedText style={styles.privateSectionHeading}>THE KICKER</ThemedText>
+          {result.kicker ? <ThemedText style={styles.kicker}>{result.kicker}</ThemedText> : null}
+          {result.apparentlySignature ? <ThemedText style={styles.kicker}>{result.apparentlySignature}</ThemedText> : null}
+        </View>
+      )}
+
+      {result.traits.length > 0 && (
+        <View style={styles.privateSection}>
+          <ThemedText style={styles.privateSectionHeading}>YOUR TRAITS</ThemedText>
+          <View style={styles.traitRow}>
+            {result.traits.map((trait) => (
+              <View key={trait} style={styles.traitPill}>
+                <ThemedText style={styles.traitPillText}>{trait}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       {result.secondaryResult && (
         <View style={styles.closeSecondBlock}>
           <ThemedText style={styles.closeSecondEyebrow}>BUT THERE&apos;S ALSO THIS...</ThemedText>
@@ -688,12 +730,12 @@ function PrivateStructuredResult({ result }: { result: ResultDisplay }) {
 // this is a taste, not a menu.
 const PRIVATE_CURIOSITY_IDS = ['shadow-side-blind-spot', 'love-soulmates-destined', 'career-ambition-made-for', 'life-match-city'];
 
-// Build 16: renders in place of the quiz for 'private-private-trouble' whenever the device
-// isn't confirmed 18+ -- see the age-gate check above. status === null (never asked, e.g. a
-// pre-Build-16 account) gets a one-time self-attestation prompt rather than a permanent
-// block; status === '13to17' gets a plain, honest "this needs 18+" message with no prompt
-// (a 13-17 answer is final -- see setAgeEligibilityOnce's set-once semantics). This is a
-// CLIENT-SIDE UX gate only -- the real authorization is is_adult_eligible() inside
+// Build 16/22: renders in place of the quiz for either MATURE_PRIVATE_PRIVATE_QUIZ_IDS entry
+// whenever the device isn't confirmed 18+ -- see the age-gate check above. status === null
+// (never asked, e.g. a pre-Build-16 account) gets a one-time self-attestation prompt rather
+// than a permanent block; status === '13to17' gets a plain, honest "this needs 18+" message
+// with no prompt (a 13-17 answer is final -- see setAgeEligibilityOnce's set-once semantics).
+// This is a CLIENT-SIDE UX gate only -- the real authorization is is_adult_eligible() inside
 // submit_quiz_result (staged migration), which this screen's own answer selection can never
 // bypass even if someone patched this component out.
 function AgeEligibilityGate({ status }: { status: '13to17' | '18plus' | null }) {

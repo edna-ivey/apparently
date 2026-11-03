@@ -87,7 +87,9 @@ for (const file of quizPoleAwardFiles) {
 }
 assert(!negativePointsFound, 'no quiz-pole-award calibration file contains a zero or negative points literal anywhere');
 
-const dailyMigrationSource = read('../supabase/migrations/20261021160000_daily_live_content_pole_awards.sql');
+// Archived 2026-10-30 (never applied, superseded by the numeric design) -- see
+// supabase/migrations_archive/README.md. Still the real source this check validates against.
+const dailyMigrationSource = read('../supabase/migrations_archive/20261021160000_daily_live_content_pole_awards.sql');
 assert(!/"points":\s*-?\d*0|"points":\s*-\d/.test(dailyMigrationSource), 'the new Daily pole-award migration contains no zero or negative "points" value anywhere in its 60 UPDATE statements');
 assert((dailyMigrationSource.match(/"points": [123]/g) ?? []).length >= 60, 'the Daily pole-award migration contains at least 60 real, strictly-positive (1/2/3) point awards');
 

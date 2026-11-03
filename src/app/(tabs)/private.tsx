@@ -47,20 +47,31 @@ const CATEGORY_PILLS: CategoryFilter[] = ['All', ...PRIVATE_CATEGORIES];
 // never navigates into the quiz runner, never pretends a purchase happened, and never shows a
 // price — see the locked-info modal below.
 //
-// secretly-love was an earlier active preview; it's no longer listed here but stays fully
-// registered (see quizzes/index.ts) so its own historical completions, "See result", and old
-// shared-result links keep working exactly as before — removing an id from this array never
-// touches that quiz's own definition or history.
-const OPEN_PRIVATE_QUIZ_IDS = ['keep-you-around', 'be-so-serious'];
+// secretly-love: revived as an active free preview (Build 22 owner audit, 2026-11-02) with
+// rewritten content from the approved source pack.
+const OPEN_PRIVATE_QUIZ_IDS = ['keep-you-around', 'be-so-serious', 'secretly-love'];
 const PREMIUM_PRIVATE_QUIZ_IDS = [
   'love-soulmates-ready',
+  'love-soulmates-become',
   'career-ambition-how-bad',
   'career-ambition-proving',
   'hidden-you-wrong',
+  'hidden-you-hide',
+  'shadow-side-hypocrisy',
+  'good-stuff-trust',
   'life-match-dream-life',
+  'life-match-freedom',
   'style-vibe-intimidating',
+  'style-vibe-attention',
   'private-private-trouble',
+  'private-private-proof',
 ];
+// Both 'Private Private. 😈' quizzes require server-enforced adult eligibility AND a valid
+// premium entitlement -- age never substitutes for entitlement and entitlement never
+// substitutes for age. This screen's filter is a presentation convenience only; the quiz
+// runner's own gate (backed by the server-side is_adult_eligible() check) is the real
+// authorization either way.
+const MATURE_PRIVATE_PRIVATE_QUIZ_IDS = ['private-private-trouble', 'private-private-proof'];
 
 type OpenQuizCard = {
   id: string;
@@ -100,11 +111,11 @@ export default function PrivateScreen() {
   const premium = usePremiumStatus();
   const isSubscriber = premium.status === 'premium';
 
-  // Build 16: premium entitlement never substitutes for the 18+ gate on the one 'Private
-  // Private. 😈' category quiz -- a subscriber who isn't confirmed 18+ still doesn't get it
-  // listed as playable here (the quiz runner's own gate, backed by the server-side
-  // is_adult_eligible() check, is the real authorization either way -- this only controls
-  // what this screen shows).
+  // Build 16/22: premium entitlement never substitutes for the 18+ gate on either 'Private
+  // Private. 😈' category quiz (private-private-trouble, private-private-proof) -- a
+  // subscriber who isn't confirmed 18+ still doesn't get either listed as playable here (the
+  // quiz runner's own gate, backed by the server-side is_adult_eligible() check, is the real
+  // authorization either way -- this only controls what this screen shows).
   const ageEligibility = useAgeEligibility();
   const canAccessPrivatePrivate = isSubscriber && isAdultEligible(ageEligibility);
 
@@ -118,7 +129,9 @@ export default function PrivateScreen() {
   }, []);
 
   const openQuizCards: OpenQuizCard[] = useMemo(() => {
-    const premiumIds = isSubscriber ? PREMIUM_PRIVATE_QUIZ_IDS.filter((id) => id !== 'private-private-trouble' || canAccessPrivatePrivate) : [];
+    const premiumIds = isSubscriber
+      ? PREMIUM_PRIVATE_QUIZ_IDS.filter((id) => !MATURE_PRIVATE_PRIVATE_QUIZ_IDS.includes(id) || canAccessPrivatePrivate)
+      : [];
     const playableIds = [...OPEN_PRIVATE_QUIZ_IDS, ...premiumIds];
     return playableIds.map((id) => {
       const definition = getQuizDefinition(id);
@@ -173,9 +186,10 @@ export default function PrivateScreen() {
       PRIVATE_LOCKED_CATALOG.filter(
         (entry) =>
           (!isSubscriber || !PREMIUM_PRIVATE_QUIZ_IDS.includes(entry.id)) &&
-          // Build 16: every 'Private Private. 😈' teaser (not just the one real quiz behind
-          // it, 'private-private-trouble') is hidden from a non-adult-eligible device -- a
-          // 13-17 year old never sees so much as a locked tease for this category.
+          // Build 16: every 'Private Private. 😈' teaser (not just the real quizzes behind
+          // it, 'private-private-trouble' and 'private-private-proof') is hidden from a
+          // non-adult-eligible device -- a 13-17 year old never sees so much as a locked
+          // tease for this category.
           (entry.category !== 'Private Private. 😈' || isAdultEligible(ageEligibility)) &&
           (selectedCategory === 'All' || entry.category === selectedCategory),
       ),

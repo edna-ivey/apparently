@@ -12,6 +12,13 @@ import type { TodayRelicConnection } from '@/data/relic/use-today-relic-connecti
 // treatment in you.tsx's own RelicGlyph (same shape language — rotated square, glow fill,
 // counter-rotated sparkle accents), recolored from You's light sand/gold to Private's rose/
 // plum atmosphere rather than reusing You's literal light-surface colors.
+//
+// Build 22 owner audit (2026-10-30), item 4: 'error' previously fell into this exact same
+// veiled rendering, which to a user whose Relic had already formed in a past session reads as
+// "my Relic disappeared / reset to unformed" -- a false claim about a request failure, not
+// their real identity. 'error' now renders the same gem shape dimmed, with no sparkle accents
+// (the sparkles are specifically what read as "actively forming"), so a transient failure
+// never visually asserts either "fully formed" or "still forming."
 export function RelicStage({ connection, size }: { connection: TodayRelicConnection; size: number }) {
   if (connection.status === 'revealed') {
     return (
@@ -22,6 +29,7 @@ export function RelicStage({ connection, size }: { connection: TodayRelicConnect
     );
   }
 
+  const isError = connection.status === 'error';
   const gemSize = size * 0.78;
   return (
     <View style={[styles.bloomOuter, { width: size * 1.6, height: size * 1.6, borderRadius: (size * 1.6) / 2 }]}>
@@ -29,19 +37,24 @@ export function RelicStage({ connection, size }: { connection: TodayRelicConnect
       <View
         style={[
           styles.gem,
+          isError && styles.gemError,
           { width: gemSize, height: gemSize, borderRadius: gemSize * 0.17, transform: [{ rotate: '45deg' }] },
         ]}>
         <View style={[styles.gemGlow, { borderRadius: gemSize * 0.11 }]} />
       </View>
-      <ThemedText style={[styles.sparkleBig, { transform: [{ rotate: '-45deg' }] }]} accessibilityElementsHidden importantForAccessibility="no">
-        ✦
-      </ThemedText>
-      <ThemedText
-        style={[styles.sparkleSmall, { transform: [{ rotate: '-45deg' }] }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no">
-        ✦
-      </ThemedText>
+      {!isError && (
+        <>
+          <ThemedText style={[styles.sparkleBig, { transform: [{ rotate: '-45deg' }] }]} accessibilityElementsHidden importantForAccessibility="no">
+            ✦
+          </ThemedText>
+          <ThemedText
+            style={[styles.sparkleSmall, { transform: [{ rotate: '-45deg' }] }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no">
+            ✦
+          </ThemedText>
+        </>
+      )}
     </View>
   );
 }
@@ -66,6 +79,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
+  },
+  gemError: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: 'rgba(255,158,214,0.18)',
+    shadowOpacity: 0,
   },
   gemGlow: {
     position: 'absolute',

@@ -27,10 +27,6 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
       body: "Sudden money doesn't read as fun money to you. It reads as proof you should keep preparing. You're not scared of enjoying things. You just trust future-you more than a single lucky moment. While everybody else is planning vacations, you're calculating how many months of bills you could cover if life decided to get disrespectful. Watching your savings grow gives you a kind of satisfaction that a shopping spree never could. You might celebrate by transferring the money to an account you don't even have a debit card for.",
       kicker: "Apparently, your emergency fund gets spoiled more than you do.",
       traits: ['Prepared', 'Grounded', 'Responsible'],
-      profileSignals: [
-        { dimension: 'planner_spontaneous', value: 2 },
-        { dimension: 'patient_urgent', value: 1 },
-      ],
     },
     {
       id: 'little-treat',
@@ -39,10 +35,6 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
       body: "You don't need a five-year plan to know what makes you happy right now. Sudden money reveals what you actually want, not what you think you should want, and you go get it without the guilt tax. You've spent enough time being responsible, comparing prices, and talking yourself out of things that would genuinely make you smile. So when a little unexpected money appears, you see permission to enjoy being alive. You're not necessarily reckless. You just don't believe every blessing needs to become a spreadsheet before it can become a memory.",
       kicker: "Apparently, the universe said direct deposit and you heard dinner reservations.",
       traits: ['Present', 'Joyful', 'Spontaneous'],
-      profileSignals: [
-        { dimension: 'planner_spontaneous', value: -2 },
-        { dimension: 'emotional_intensity', value: 1 },
-      ],
     },
     {
       id: 'level-up',
@@ -51,11 +43,6 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
       body: "A course. Better equipment. A certification. Seed money for an idea. Something that makes you more capable, more valuable, or more able to earn. When extra money appears, your brain naturally asks how it could turn into more options later. You're the person who gets a surprise $1,500 and somehow turns it into a conversation about starting a business. People might tell you to relax and enjoy your money, but building something that could change your future genuinely excites you. The dangerous part is that you've probably got twelve ideas already, and now eleven of them think they've been funded.",
       kicker: "Apparently, you can't even receive free money without giving it a business plan.",
       traits: ['Ambitious', 'Resourceful', 'Growth-minded'],
-      profileSignals: [
-        { dimension: 'ambitious_content', value: 2 },
-        { dimension: 'practical_idealistic', value: 1 },
-        { dimension: 'planner_spontaneous', value: 1 },
-      ],
     },
     {
       id: 'master-plan',
@@ -64,10 +51,6 @@ export const UNEXPECTED_MONEY_QUIZ: ArchetypeQuizDefinition = {
       body: "You don't see a windfall, you see a multiplier. Where it goes depends on what moves you forward fastest, and you already had that answer before the money even cleared. You've got goals with deadlines, numbers attached to them, and probably a mental ranking of which one deserves the money first. You can enjoy a little unexpected cash, but you're not about to let a temporary impulse derail something you've been building for months. Somebody could hand you a thousand dollars at your birthday party, and before the cake is cut, that money has already been assigned a department.",
       kicker: "Apparently, even your surprise money has a scheduled performance review.",
       traits: ['Strategic', 'Ambitious', 'Decisive'],
-      profileSignals: [
-        { dimension: 'ambitious_content', value: 2 },
-        { dimension: 'curious_decisive', value: -1 },
-      ],
     },
   ],
   questions: [

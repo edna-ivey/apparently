@@ -8,14 +8,13 @@ import { ThemedView } from '@/components/themed-view';
 import { Celestial, CelestialType, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { Brand, Spacing } from '@/constants/theme';
 import { Radius } from '@/constants/design-system';
-import { reduceWhatsYourTypeProfileSignals, WHATS_YOUR_TYPE_QUESTIONS, type WhatsYourTypeQuestion } from '@/data/quizzes/whats-your-type-content';
+import { WHATS_YOUR_TYPE_QUESTIONS, type WhatsYourTypeQuestion } from '@/data/quizzes/whats-your-type-content';
 import { queuePendingQuizSubmission } from '@/data/quizzes/pending-quiz-submissions';
 import { ATTRACTION_RESULTS, COMBINATION_RESULTS, PARTNER_RESULTS, WHATS_YOUR_TYPE_DEFINITION } from '@/data/quizzes/whats-your-type-results';
 import { resolveCombinationKey, scoreDualDimensionQuiz } from '@/data/quizzes/scoring';
 import { saveQuizResult } from '@/data/quizzes/results';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
-import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
-import { submitQuizPoleEvidence } from '@/services/personality-v2-service';
+import { submitQuizCompletion, type SubmitQuizCompletionPayload } from '@/services/quiz-result-service';
 
 // A dedicated STATIC route (/quiz/whats-your-type) rather than a case inside the dynamic
 // [quizId].tsx runner -- Expo Router resolves a static route ahead of a same-prefix dynamic
@@ -64,11 +63,6 @@ export default function WhatsYourTypeScreen() {
     }
     savedResult.current = true;
     const completedAt = new Date().toISOString();
-    const partnerEnergyQuestionIds = new Set(WHATS_YOUR_TYPE_DEFINITION.dimensionBQuestionIds);
-    const chosenPartnerEnergyChoices = WHATS_YOUR_TYPE_QUESTIONS.filter((q) => partnerEnergyQuestionIds.has(q.id))
-      .map((q) => q.choices.find((c) => c.id === answers[q.id]))
-      .filter((c): c is NonNullable<typeof c> => !!c);
-    const profileSignals = reduceWhatsYourTypeProfileSignals(chosenPartnerEnergyChoices);
     const traits = [attractionResult?.title ?? '', partnerResult?.title ?? ''].filter(Boolean);
 
     void saveQuizResult({
@@ -82,8 +76,13 @@ export default function WhatsYourTypeScreen() {
     });
 
     if (isRemoteDailyEnabled) {
-      const payload: SubmitQuizResultPayload = {
-        quizId: WHATS_YOUR_TYPE_DEFINITION.id,
+      // Build 22: ONE atomic call, same as quiz/[quizId].tsx -- this quiz's own coreAwards
+      // (whats-your-type-content.ts) are seeded numerically into quiz_choice_trait_awards
+      // under quiz_key 'whats-your-type' (scripts/generate-quiz-content-identity-sql.ts);
+      // Q1-5 (Attraction) choices legitimately carry zero awards by design and still have a
+      // real catalog identity, so they are never rejected as "unknown."
+      const payload: SubmitQuizCompletionPayload = {
+        quizKey: WHATS_YOUR_TYPE_DEFINITION.id,
         quizTitle: WHATS_YOUR_TYPE_DEFINITION.title,
         quizCategory: WHATS_YOUR_TYPE_DEFINITION.category,
         completedAt,
@@ -93,19 +92,11 @@ export default function WhatsYourTypeScreen() {
         resultId: combinationResult.key,
         resultTitle: combinationResult.title,
         traits,
-        profileSignals,
         answers,
       };
       void (async () => {
-        const remoteResult = await submitQuizResultRemote(payload);
-        if (remoteResult.ok) {
-          // Build 16: Scoring V2 additive write -- same pattern as quiz/[quizId].tsx. This
-          // quiz's own coreAwards (whats-your-type-content.ts) are seeded into
-          // quiz_choice_pole_awards under quiz_id 'whats-your-type' (see
-          // scripts/generate-quiz-pole-award-seed-sql.ts), so this is a real write, not a
-          // no-op, once that seed migration is applied.
-          void submitQuizPoleEvidence(WHATS_YOUR_TYPE_DEFINITION.id, remoteResult.quizResultId, answers);
-        } else {
+        const remoteResult = await submitQuizCompletion(payload);
+        if (!remoteResult.ok) {
           await queuePendingQuizSubmission(payload);
         }
       })();

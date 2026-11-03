@@ -1,4 +1,23 @@
 -- ============================================================================================
+-- SUPERSEDED (Build 22, 2026-10-28), DESIGN ONLY -- CORRECTION (2026-10-29): this migration
+-- WAS ALREADY APPLIED to the live linked production database (confirmed via
+-- `supabase migration list --linked`: local timestamp 20261018010000 has a matching remote
+-- entry). An earlier version of this note incorrectly said "never applied" -- that was wrong
+-- and is corrected here per owner audit. "Superseded" below means only: this file's
+-- string-keyed DESIGN (personality_pole_evidence.pole_id as text, quiz_choice_pole_awards
+-- keyed by quiz_id/question_id/choice_id text, daily_options.pole_personality_effects as a
+-- jsonb string-pole array) is not used by any new Build 22 work, which instead uses the
+-- numeric design in 20261028010000_personality_trait_catalog.sql,
+-- 20261028020000_quiz_content_identity.sql, and 20261028040000_user_quiz_evidence_schema.sql.
+-- The tables and function THIS file created are live, contain real historical user data
+-- (personality_pole_evidence has real rows), and are never dropped by this plan -- see
+-- 20261028080000_retire_legacy_pole_evidence_rpc.sql, which only revokes execute on the RPC,
+-- never touches the tables. This file itself should never be RE-applied (running it again is
+-- a no-op against an already-migrated database in any case, since Supabase tracks applied
+-- migrations by timestamp and would simply skip it) -- it is kept exactly as originally
+-- written, as the accurate historical record of what was actually run.
+-- ============================================================================================
+--
 -- STAGED, NOT YET APPLIED. Prepared per the Build 16 "Complete Personality Scoring V2" task --
 -- do not run `supabase db push` (or any other apply step) against this file until the product
 -- owner has explicitly reviewed and approved it. See docs/personality-scoring-v2-design.md for

@@ -157,6 +157,13 @@ values
 commit;
 `;
 
-const outputPath = join(__dirname, '../supabase/migrations/20261026170000_reconcile_quiz_choice_pole_awards.sql');
+// Archived 2026-10-30, not the active migrations directory -- this file's own design
+// (string-keyed quiz_choice_pole_awards) is superseded by the numeric
+// 20261028020000_quiz_content_identity.sql; it is never applied, only read as the canonical
+// combined-calibration SOURCE by scripts/lib/quiz-pole-award-rows.ts. Writing here (not into
+// supabase/migrations/) means re-running this generator after a content change can never
+// resurrect a stray, superseded file in the active migrations directory. See
+// supabase/migrations_archive/README.md.
+const outputPath = join(__dirname, '../supabase/migrations_archive/20261026170000_reconcile_quiz_choice_pole_awards.sql');
 writeFileSync(outputPath, sql);
 console.log(`Wrote ${rows.length} rows across ${quizIds.length} quizzes to ${outputPath}`);

@@ -18,7 +18,13 @@ import { isFirstFormEligible } from '@/data/creature/creature-progression';
 import { scorePersonalityProfile, type PersonalityProfile } from '@/data/personality';
 import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width';
 import { ensureAnonymousSession } from '@/services/auth-service';
-import { computeProfileActivityCounts, getMyPersonalityEvidence, getMyQuizResults, groupEvidenceIntoAnswers } from '@/services/personality-service';
+import {
+  computeProfileActivityCounts,
+  getMyActiveDailyAnswerCount,
+  getMyActiveQuizCompletions,
+  getMyPersonalityEvidence,
+  groupEvidenceIntoAnswers,
+} from '@/services/personality-service';
 import {
   isSaveCreatureImageSupported,
   isShareCreatureImageSupported,
@@ -88,18 +94,30 @@ export default function CreatureReadScreen() {
   const load = useCallback(async () => {
     setLoadError(null);
     await ensureAnonymousSession();
-    const [evidenceResult, quizResultsResult] = await Promise.all([getMyPersonalityEvidence(), getMyQuizResults()]);
+    // Build 22 owner audit (2026-10-30), item 5: same lean, active-windowed activity-count
+    // inputs you.tsx now uses — see that screen's loadRemote for the full rationale. This
+    // screen's own header comment already requires its profileAnswerCount to match You's
+    // exactly; sharing the same computeProfileActivityCounts inputs is what keeps that true.
+    const [evidenceResult, dailyAnswerCountResult, activeQuizCompletionsResult] = await Promise.all([
+      getMyPersonalityEvidence(),
+      getMyActiveDailyAnswerCount(),
+      getMyActiveQuizCompletions(),
+    ]);
     if (!evidenceResult.ok) {
       setLoadError(evidenceResult.message);
       return;
     }
-    if (!quizResultsResult.ok) {
-      setLoadError(quizResultsResult.message);
+    if (!dailyAnswerCountResult.ok) {
+      setLoadError(dailyAnswerCountResult.message);
+      return;
+    }
+    if (!activeQuizCompletionsResult.ok) {
+      setLoadError(activeQuizCompletionsResult.message);
       return;
     }
     const answers = groupEvidenceIntoAnswers(evidenceResult.data);
     setProfile(scorePersonalityProfile(answers));
-    setProfileAnswerCount(computeProfileActivityCounts(evidenceResult.data, quizResultsResult.data).profileAnswerCount);
+    setProfileAnswerCount(computeProfileActivityCounts(dailyAnswerCountResult.data, activeQuizCompletionsResult.data).profileAnswerCount);
   }, []);
 
   useEffect(() => {

@@ -34,10 +34,6 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       kicker: 'You don’t need a time machine. You need people with home training.',
       traits: ['Intentional', 'Classic Standards', 'Keeps Their Word'],
       apparentlySignature: 'Apparently, you have standards, and society keeps acting like that’s a personality flaw.',
-      profileSignals: [
-        { dimension: 'private_open', value: 2 },
-        { dimension: 'planner_spontaneous', value: 1 },
-      ],
     },
     {
       id: 'retro-era',
@@ -48,11 +44,6 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       kicker: 'Your phone could die at noon and you’d still somehow have a better day than everybody else.',
       traits: ['Unbothered', 'Free Spirit', 'Offline Energy'],
       apparentlySignature: 'Apparently, you’re not hard to reach. You’re just not available for everybody’s nonsense.',
-      profileSignals: [
-        { dimension: 'independent_collaborative', value: 2 },
-        { dimension: 'planner_spontaneous', value: -1 },
-        { dimension: 'adventure_comfort', value: 1 },
-      ],
     },
     {
       id: 'y2k-era',
@@ -65,10 +56,6 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       kicker: 'Your away message was absolutely about somebody, and you know it.',
       traits: ['Main Character', 'Playfully Dramatic', 'Inside-Joke Royalty'],
       apparentlySignature: 'Apparently, you’ve never met a situation you couldn’t turn into a whole storyline.',
-      profileSignals: [
-        { dimension: 'private_open', value: -2 },
-        { dimension: 'playful_serious', value: 1 },
-      ],
     },
     {
       id: 'always-on-era',
@@ -82,10 +69,6 @@ export const ERA_QUIZ: ArchetypeQuizDefinition = {
       kicker: 'You’ve checked the delivery status four times. The order was placed six minutes ago.',
       traits: ['Instant Answers', 'Receipts Ready', 'Zero Patience'],
       apparentlySignature: 'Apparently, you want instant gratification with same-day shipping and a confirmation email.',
-      profileSignals: [
-        { dimension: 'patient_urgent', value: -2 },
-        { dimension: 'practical_idealistic', value: 1 },
-      ],
     },
   ],
   questions: [

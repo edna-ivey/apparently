@@ -1,6 +1,3 @@
-import type { PersonalityAnswerEvidence, PersonalityEffect } from '@/data/personality';
-import { applyPermanentQuizAwards } from '@/data/quiz-personality-awards';
-
 import type {
   ArchetypeQuizDefinition,
   DualDimensionQuizDefinition,
@@ -183,10 +180,17 @@ const pickPrimaryArchetypeByHighSignal = (
     afterPrimaryCount.splice(0, afterPrimaryCount.length, ...afterMatches);
   }
 
+  // Build 22 owner audit (2026-11-02): a single question id (every quiz before this round) or
+  // an ORDERED LIST of question ids checked in sequence -- the first one whose own top-weight
+  // winner is still among the survivors wins (e.g. keep-you-around's "last diagnostic among
+  // Q8, Q6, Q5, Q3, Q1"). A bare string is treated as a one-element list.
   if (definition.finalTieQuestionId) {
-    const finalEntry = perQuestionWeights.find((entry) => entry.questionId === definition.finalTieQuestionId);
-    const finalWinner = finalEntry ? primaryWeightEntry(finalEntry.weights)?.archetypeId : null;
-    if (finalWinner && afterPrimaryCount.includes(finalWinner)) return finalWinner;
+    const finalTieQuestionIds = Array.isArray(definition.finalTieQuestionId) ? definition.finalTieQuestionId : [definition.finalTieQuestionId];
+    for (const questionId of finalTieQuestionIds) {
+      const finalEntry = perQuestionWeights.find((entry) => entry.questionId === questionId);
+      const finalWinner = finalEntry ? primaryWeightEntry(finalEntry.weights)?.archetypeId : null;
+      if (finalWinner && afterPrimaryCount.includes(finalWinner)) return finalWinner;
+    }
   }
   const fallback = definition.tieFallbackOrder ?? definition.archetypes.map((a) => a.id);
   return fallback.find((id) => afterPrimaryCount.includes(id)) ?? afterPrimaryCount[0];
@@ -348,37 +352,23 @@ export type ResultDisplay = {
   // BESIDES the all-caps verdict heading (share text, and mix rows for archetype quizzes,
   // which now populate their own `title` with this same resolution — see below).
   resultDisplayTitle: string;
-  // Only ever populated by computeQuizResult (a FRESH completion) — reconstructResultDisplay
-  // (the ?view=result / "See result →" read-only path) deliberately leaves this undefined, so
-  // it is structurally impossible for viewing an old saved result to carry signals a caller
-  // could mistakenly submit as new profile evidence. See quiz/[quizId].tsx.
-  profileSignals?: PersonalityEffect[];
   // Apparently Private's own structured presentation (THE READ / THE CALL-OUT / THE COST /
   // TRY THIS) — passed through unchanged from QuizArchetype.structuredRead wherever that's
   // set, on EVERY path (fresh completion, "See result", and shared-result content) since it's
-  // static authored content, not scoring-sensitive like profileSignals. Undefined for every
-  // quiz that doesn't set it — the standard hero/body/kicker/traits rendering is untouched.
+  // static authored content. Undefined for every quiz that doesn't set it — the standard
+  // hero/body/kicker/traits rendering is untouched.
   structuredRead?: QuizStructuredRead;
   // Opt-in "close second" (see pickCloseSecond) — ONLY ever populated by computeQuizResult on
-  // a FRESH completion, same fresh-only convention as profileSignals above. Re-deriving it
-  // requires the original raw answers, which are never persisted (only score/percent/mix/
-  // resultId are) — reconstructResultDisplay and resolveShareableResultContent both leave this
-  // undefined rather than guess. null means "computed, no qualifying secondary this time";
-  // undefined means "not computed on this path at all."
+  // a FRESH completion. Re-deriving it requires the original raw answers, which are never
+  // persisted (only score/percent/mix/resultId are) — reconstructResultDisplay and
+  // resolveShareableResultContent both leave this undefined rather than guess. null means
+  // "computed, no qualifying secondary this time"; undefined means "not computed on this path
+  // at all."
   secondaryResult?: { resultId: string; resultDisplayTitle: string } | null;
 };
 
 // Scores fresh answers into a normalized ResultDisplay — the one place scoringType branching
 // happens for computing a NEW result. Called once, right when a quiz reaches its result step.
-
-const answerLevelProfileSignals = (definition: QuizDefinition, answers: Record<string, string>): PersonalityEffect[] | undefined => {
-  if (!definition.answerLevelPersonalityEvidence) return undefined;
-  const evidence: PersonalityAnswerEvidence[] = definition.questions.map((question) => {
-    const choice = question.choices.find((candidate) => candidate.id === answers[question.id]);
-    return { question: question.prompt, category: definition.category, chosenAnswer: choice?.label ?? '', effects: choice?.traitSignals ?? [] };
-  });
-  return applyPermanentQuizAwards(evidence, definition.access === 'free' ? 'public' : 'private');
-};
 
 export const computeQuizResult = (definition: QuizDefinition, answers: Record<string, string>): ResultDisplay => {
   if (definition.scoringType === 'archetype') {
@@ -402,7 +392,6 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
       mixLabel: definition.mixLabel,
       resultSubtitle: primary.resultSubtitle,
       resultDisplayTitle: resolveArchetypeDisplayTitle(primary),
-      profileSignals: answerLevelProfileSignals(definition, answers) ?? primary.profileSignals,
       structuredRead: primary.structuredRead,
       secondaryResult: secondary ? { resultId: secondary.id, resultDisplayTitle: resolveArchetypeDisplayTitle(secondary) } : null,
     };
@@ -422,7 +411,6 @@ export const computeQuizResult = (definition: QuizDefinition, answers: Record<st
     percent,
     meterLabel: definition.meterLabel,
     resultDisplayTitle: defaultTitleCase(band.title),
-    profileSignals: answerLevelProfileSignals(definition, answers) ?? band.profileSignals,
   };
 };
 
@@ -579,23 +567,6 @@ export const resolveResultDisplayTitle = (definition: QuizDefinition, resultId: 
   }
   const band = definition.resultBands.find((candidate) => candidate.id === resultId);
   return band ? defaultTitleCase(band.title) : null;
-};
-
-// LEGACY BACKFILL ONLY — see src/services/legacy-quiz-backfill-service.ts. Deliberately
-// separate from reconstructResultDisplay above, which intentionally does NOT return
-// profileSignals: merely viewing a saved result (?view=result) must never be able to create
-// new personality evidence, and reconstructResultDisplay is exactly the function that path
-// uses. This helper exists only for the one legitimate case where recovering a result's
-// authored signals is correct — resyncing a real historical completion from an older
-// TestFlight build that predates remote quiz submission. Returns undefined (not an error) if
-// the resultId no longer exists on the current definition (content changed since) or the
-// result never had any signals authored — the backfill still submits the quiz_results history
-// row either way, just without profile_effects.
-export const resolveStoredQuizProfileSignals = (definition: QuizDefinition, resultId: string): PersonalityEffect[] | undefined => {
-  if (definition.scoringType === 'archetype') {
-    return definition.archetypes.find((candidate) => candidate.id === resultId)?.profileSignals;
-  }
-  return definition.resultBands.find((candidate) => candidate.id === resultId)?.profileSignals;
 };
 
 // --- THEY HAVE NOTES. Compare — deterministic "THE PART YOU MISSED" selection -------------
