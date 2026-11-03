@@ -46,7 +46,7 @@ const traitIdForPoleKey = (poleKey: string): number => {
 };
 
 type Choice = { letter: string; text: string; reveal: string; scoring: string | null };
-type Question = { num: number; prompt: string; room: string; choices: Choice[] };
+type Question = { num: number; prompt: string; room: string; source: string | null; choices: Choice[] };
 
 const parseMasterDoc = (): Question[] => {
   const text = readFileSync(join(__dirname, '../docs/DAILY_MASTER_CONSOLIDATED_REVIEW.md'), 'utf8');
@@ -57,13 +57,18 @@ const parseMasterDoc = (): Question[] => {
     const qMatch = line.match(/^## (\d+)\.\s*(.+)$/);
     if (qMatch) {
       if (current) questions.push(current);
-      current = { num: Number(qMatch[1]), prompt: qMatch[2].trim(), room: '', choices: [] };
+      current = { num: Number(qMatch[1]), prompt: qMatch[2].trim(), room: '', source: null, choices: [] };
       continue;
     }
     if (!current) continue;
     const roomMatch = line.match(/^\*\*Room:\*\*\s*(.+?)\s*$/);
     if (roomMatch) {
       current.room = roomMatch[1].trim();
+      continue;
+    }
+    const sourceMatch = line.match(/^\*\*Source:\*\*\s*(.+?)\s*$/);
+    if (sourceMatch) {
+      current.source = sourceMatch[1].trim();
       continue;
     }
     const choiceMatch = line.match(/^\*\*([A-F])\.\s*(.+?)\*\*\s*$/);
@@ -89,6 +94,48 @@ const parseMasterDoc = (): Question[] => {
   return questions;
 };
 
+// V1 release execution (2026-11-05): CORRECTED -- independent review found this generator was
+// using ONLY the master document's own compiled scoring for all 36 questions, even for the ~11
+// of them (sources B5-01 through B5-10, B2-10 -- Dailies #27-37) that the owner's own later
+// Reassessment Round 1-4 of 4 (docs/DAILY_PRODUCTION_OWNER_APPROVALS.md) explicitly supersedes.
+// Confirmed by scripts/validate-daily-scoring-against-ledger.ts: the master doc disagrees with
+// the Reassessment Round value for multiple answers in this range. Same bug class, same fix, as
+// the one applied to the live-question archive (supabase/migrations_archive/
+// 20261021160000_daily_live_content_pole_awards.sql) -- precedence is now identical in both
+// generators: (1) MANUAL_SCORING_OVERRIDES / AUDIT_ROUND_FINAL (explicit, later, per-answer
+// owner corrections -- most authoritative), (2) the Reassessment Round value keyed by this
+// question's own Source id (only present for questions that were part of the original 37-
+// question reassessment), (3) the master document's own compiled value, used as-is only when a
+// question was never reassessed at all (approved later, in Batches 6/7/8, after the
+// reassessment rounds closed).
+const parseReassessmentRounds = (): Record<string, Record<string, string>> => {
+  const text = readFileSync(join(__dirname, '../docs/DAILY_PRODUCTION_OWNER_APPROVALS.md'), 'utf8');
+  const lines = text.split('\n');
+  const bySource: Record<string, Record<string, string>> = {};
+  let inReassessment = false;
+  let curSource: string | null = null;
+  for (const line of lines) {
+    if (/^## OWNER-APPROVED SCORING REASSESSMENT/.test(line)) { inReassessment = true; continue; }
+    if (/^## /.test(line) && !/SCORING REASSESSMENT/.test(line)) { inReassessment = false; continue; }
+    if (!inReassessment) continue;
+    const srcMatch = line.match(/^### (.+)$/);
+    if (srcMatch) { const src = srcMatch[1].trim(); curSource = src; bySource[src] = bySource[src] || {}; continue; }
+    const m = line.match(/^- \*\*([A-F]) revised approved mappings:\*\*\s*(.+)$/);
+    if (m && curSource) bySource[curSource][m[1]] = m[2].trim();
+  }
+  return bySource;
+};
+
+const reassessment = parseReassessmentRounds();
+
+// Explicit, later, per-answer Audit Round corrections (2026-10-22) layered ON TOP of the
+// Reassessment Round value -- the most authoritative layer of all, shared with
+// scripts/validate-daily-scoring-against-ledger.ts. None of the 4 known Audit Round deltas
+// (#3C, #10A, #21D, #23B) fall in the #27-62 range this generator covers -- kept here, empty for
+// that range, purely so the precedence chain is structurally identical to the live-question
+// generator and a future Audit Round correction in this range has an obvious place to go.
+const AUDIT_ROUND_FINAL: Record<string, string> = {};
+
 type Dimension = { id: string; positive: string; negative: string };
 
 const parseDimensionLabels = (): Dimension[] => {
@@ -113,13 +160,28 @@ const buildLabelMap = (dims: Dimension[]): Map<string, { id: string; polarity: '
 // review, 2026-11-03): the master doc's own compiled text is wrong (missing Even-Keeled +2,
 // wrong Perspective-Taking value) -- apply the ledger's own explicit final mapping instead of
 // the document's, per instruction, never silently trusting the document where a later,
-// explicit correction exists.
+// explicit correction exists. This sits ABOVE the Reassessment Round layer too (checked first,
+// below), since it is itself a correction to whatever #33's own reassessment entry says.
 const MANUAL_SCORING_OVERRIDES: Record<string, string> = {
   // Ledger: "OWNER-APPROVED SCORING AUDIT | Round 4 FINAL" -- final mapping "Perspective-
   // Taking +3; Even-Keeled +2; Forgiving +1; Thick-skinned +1". The master doc's own compiled
   // text ("Perspective-Taking +2; Forgiving +1; Thick-skinned +1") is missing Even-Keeled
   // entirely and has the wrong Perspective-Taking value -- same already-documented gap as #3C.
   '33:C': 'Perspective-taking +3; Even-Keeled +2; Forgiving +1; Thick-skinned +1',
+};
+
+// The single, shared precedence resolution: explicit correction -> Reassessment Round (if this
+// question's Source was ever reassessed) -> master doc's own value. Mirrors
+// scripts/validate-daily-scoring-against-ledger.ts exactly so the two can never silently drift
+// apart from each other.
+const resolveAuthoritativeScoring = (q: Question, c: Choice): string | null => {
+  const key = `${q.num}:${c.letter}`;
+  if (AUDIT_ROUND_FINAL[key]) return AUDIT_ROUND_FINAL[key];
+  if (MANUAL_SCORING_OVERRIDES[key]) return MANUAL_SCORING_OVERRIDES[key];
+  if (q.source && reassessment[q.source] && reassessment[q.source][c.letter] !== undefined) {
+    return reassessment[q.source][c.letter];
+  }
+  return c.scoring;
 };
 
 const resolveScoring = (
@@ -187,7 +249,7 @@ for (const q of questions) {
   for (const c of q.choices) {
     const labelEsc = c.text.replace(/'/g, "''");
     const feedbackEsc = c.reveal.replace(/'/g, "''");
-    const awards = resolveScoring(MANUAL_SCORING_OVERRIDES[`${q.num}:${c.letter}`] ?? c.scoring, labelMap);
+    const awards = resolveScoring(resolveAuthoritativeScoring(q, c), labelMap);
     const poleJson = JSON.stringify(awards.map((a) => ({ pole: a.pole, points: a.points })));
     const optionId = randomUUID();
     lines.push(

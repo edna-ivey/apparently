@@ -47,14 +47,16 @@ try {
   // anything about the seed's own correctness. Verified instead by static structural checks:
   const seedSql = readFileSync(join(root, 'supabase/migrations/20261028060000_daily_trait_awards_seed.sql'), 'utf8');
   const seedRowMatches = [...seedSql.matchAll(/\('[0-9a-f-]{36}', \d+, \d+\)/g)];
-  // V1 final release execution (2026-11-03): 118 -> 120 (the #3C fix) -> 262 after correcting
-  // all 52 remaining live-scored options (13 questions) against the owner's own Reassessment
-  // Round 1-4 of 4 rescoring plus the later Audit Round deltas -- an exhaustive programmatic
-  // diff found the archived source had never incorporated that layer for ANY of them, not
-  // just the two examples found in an earlier pass. See the archived source migration's own
-  // updated header and docs/V1_FINAL_RELEASE_EXECUTION_2026-11-02.md.
-  check('Daily seed file contains the expected 262 numeric award rows', seedRowMatches.length === 262, `found=${seedRowMatches.length}`);
-  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 262'), 'guard text present');
+  // V1 final release execution (2026-11-05): 118 -> 120 (the #3C fix) -> 238 (the 13-question
+  // Reassessment Round correction pass) -> 232 after a from-scratch rebuild of the ENTIRE
+  // archived source covering every live, scored, non-rejected question (not just the
+  // previously-patched subset) -- independent review found the 238 figure still used the
+  // consolidated master document's scoring for several answers (notably #22 and #26) where the
+  // owner's own Reassessment Round explicitly assigns NONE; the master document's value there
+  // was a real scoring regression, not a formatting nit. See the archived source migration's
+  // own updated header and scripts/validate-daily-scoring-against-ledger.ts.
+  check('Daily seed file contains the expected 232 numeric award rows', seedRowMatches.length === 232, `found=${seedRowMatches.length}`);
+  check('Daily seed file has a verification guard checking the exact inserted row count', seedSql.includes('Expected to insert exactly 232'), 'guard text present');
   const u1 = (await db.query(`insert into auth.users default values returning id`)).rows[0].id;
 
   const publicLive = (await db.query(
