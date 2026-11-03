@@ -121,6 +121,25 @@ create table _reset_backup_20261103.personality_evidence as table public.persona
 create table _reset_backup_20261103.personality_pole_evidence as table public.personality_pole_evidence;
 create table _reset_backup_20261103.creature_published_recipes as table public.creature_published_recipes;
 create table _reset_backup_20261103.creature_evolution_cycle_markers as table public.creature_evolution_cycle_markers;
+
+-- SECURITY: this schema now holds a full copy of auth.users (every deleted consumer's id,
+-- email if any, and other auth metadata) -- never leave it at whatever default/inherited
+-- privileges a schema gets. Explicitly deny every ordinary role before anything else touches
+-- this transaction; only a superuser/service_role connection (the same privilege level this
+-- migration itself requires to delete from auth.users directly) can read it.
+revoke all on schema _reset_backup_20261103 from public;
+revoke all on all tables in schema _reset_backup_20261103 from public;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    revoke all on schema _reset_backup_20261103 from anon;
+    revoke all on all tables in schema _reset_backup_20261103 from anon;
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    revoke all on schema _reset_backup_20261103 from authenticated;
+    revoke all on all tables in schema _reset_backup_20261103 from authenticated;
+  end if;
+end $$;
 create table _reset_backup_20261103.daily_answers as table public.daily_answers;
 
 -- STEP 2: the single cascading delete. Everything listed in this file's own header comment is
@@ -209,6 +228,22 @@ commit;
 -- ============================================================================================
 -- ROLLBACK (only before the retention window elapses, only if something is found wrong)
 -- ============================================================================================
+-- REAL CAPABILITY, STATED PLAINLY: inserting the backed-up rows below restores DATA (which
+-- quiz results, Daily answers, entitlement mirrors, etc. a given user_id had) into the public
+-- schema. It does NOT, and cannot, restore a Supabase Auth IDENTITY -- `auth.identities`,
+-- `auth.sessions`, `auth.refresh_tokens`, and any password/provider linkage live entirely in
+-- Supabase's own platform-managed auth schema, were never part of this backup (a standard
+-- `pg_dump` convention this migration follows deliberately, see this file's own earlier
+-- comments), and are not recreated by this or any `insert into auth.users` statement. Supabase
+-- itself documents that a deleted Auth user's account cannot be "undeleted" into its original,
+-- sign-in-able state -- a genuinely restored consumer must sign in fresh (a brand-new
+-- anonymous identity, same as any new install) and would need their DATA re-linked to that new
+-- id, not their old one, if recovery is ever actually needed. In practice this is close to
+-- moot for 244 of the 245 real users this reset removes: an anonymous Supabase Auth identity
+-- has no email, password, or external provider to begin with -- there was never anything
+-- "identity-shaped" to recover for them beyond the row's own existence as a stable foreign
+-- key, which the DATA backup below already preserves. The one non-anonymous identity (the
+-- preserved admin) is never deleted by this migration in the first place.
 -- insert into auth.users select * from _reset_backup_20261103.auth_users where id not in (select id from auth.users);
 -- insert into public.admin_users select * from _reset_backup_20261103.admin_users where user_id not in (select user_id from public.admin_users);
 -- insert into public.profiles select * from _reset_backup_20261103.profiles where user_id not in (select user_id from public.profiles);
