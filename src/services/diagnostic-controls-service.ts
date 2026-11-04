@@ -18,6 +18,18 @@
 //   3. Resets to ON/ON (normal) on a fresh install of the diagnostic build -- a tester cannot
 //      accidentally carry a stale "off" setting across builds, and nothing here ever reaches a
 //      production build's storage key (different AsyncStorage key, never read by one).
+//
+// HONEST LIMITATION (Build 23 P0 review, item 3): Ads-OFF prevents any NEW ad request, native
+// ad mount, or interstitial show from this point forward in the running process -- confirmed by
+// reading every real call site (ad-eligibility-service.ts's useAdEligibility, which every
+// placement component already gates on before ever touching the AdMob SDK). It CANNOT undo
+// MobileAds().initialize() or any native AdMob SDK state already established earlier in the
+// SAME process if the user reached an ad placement before flipping this off -- there is no
+// supported "un-initialize" API in this SDK family. A test comparing configurations therefore
+// requires a FULL APP RESTART (kill the app, not just background it, then relaunch) between
+// each configuration change -- toggling this switch while the app keeps running only isolates
+// behavior GOING FORWARD in that same process, not a clean-room comparison. See the Build 23
+// report's own test procedure for the exact steps.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
@@ -33,6 +45,12 @@ const DEFAULT_CONTROLS: DiagnosticControls = { adsDisabled: false, notifications
 
 let snapshot: DiagnosticControls = DEFAULT_CONTROLS;
 let hydrated = false;
+// The IN-FLIGHT promise itself, not just a boolean -- a second concurrent caller must await
+// the SAME read completing, not just see a "hydration started" flag and resolve immediately
+// against still-default data. This is exactly the race item 2 of the Build 23 review named:
+// a cold-launch startup effect calling this before AsyncStorage has actually resolved must get
+// the REAL persisted value, never a premature default.
+let hydrationPromise: Promise<DiagnosticControls> | null = null;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
 const subscribe = (listener: () => void) => {
@@ -41,28 +59,43 @@ const subscribe = (listener: () => void) => {
 };
 const getSnapshot = () => snapshot;
 
-const hydrate = async (): Promise<void> => {
-  if (hydrated || !isDiagnosticBuild) return;
-  hydrated = true;
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      snapshot = { ...DEFAULT_CONTROLS, ...JSON.parse(raw) };
+// Resolves once the real persisted toggle state (if any) has been read -- awaiting this twice
+// concurrently, or after it already completed, is always safe and always returns the current
+// real snapshot. Outside the diagnostic build this resolves immediately with the fixed, inert
+// default; callers never need their own build check first.
+export const ensureDiagnosticControlsHydrated = async (): Promise<DiagnosticControls> => {
+  if (!isDiagnosticBuild) return DEFAULT_CONTROLS;
+  if (hydrated) return snapshot;
+  if (!hydrationPromise) {
+    hydrationPromise = (async (): Promise<DiagnosticControls> => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          snapshot = { ...DEFAULT_CONTROLS, ...JSON.parse(raw) };
+        }
+      } catch {
+        // Best-effort -- a diagnostic build that fails to restore its last toggle state simply
+        // starts from ON/ON (normal), same as a fresh install.
+      }
+      hydrated = true;
       notify();
-    }
-  } catch {
-    // Best-effort -- a diagnostic build that fails to restore its last toggle state simply
-    // starts from ON/ON (normal), same as a fresh install.
+      return snapshot;
+    })();
   }
+  return hydrationPromise;
 };
 
 // Read-only everywhere except the diagnostic build's own hidden Settings section (below).
 // Returns the fixed, inert default immediately when !isDiagnosticBuild -- callers never need
-// their own build check before reading this.
+// their own build check before reading this. For the FIRST render of a diagnostic build before
+// hydration completes, this still returns the ON/ON default (React's own render must return
+// something synchronously) -- any startup effect that must not race ahead of the real value
+// should await ensureDiagnosticControlsHydrated() directly instead of reading this hook's first
+// render result, which is exactly how _layout.tsx's own notification-startup block does it.
 export const useDiagnosticControls = (): DiagnosticControls => {
   const current = useSyncExternalStore(subscribe, getSnapshot);
   if (isDiagnosticBuild && !hydrated) {
-    void hydrate();
+    void ensureDiagnosticControlsHydrated();
   }
   return isDiagnosticBuild ? current : DEFAULT_CONTROLS;
 };
@@ -71,6 +104,7 @@ export const useDiagnosticControls = (): DiagnosticControls => {
 // Settings section) already never renders unless isDiagnosticBuild is true.
 export const setDiagnosticControl = (key: keyof DiagnosticControls, value: boolean): void => {
   if (!isDiagnosticBuild) return;
+  hydrated = true; // an explicit user toggle is definitionally the current real value
   snapshot = { ...snapshot, [key]: value };
   notify();
   void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot)).catch(() => {});

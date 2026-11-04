@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -19,7 +19,7 @@ import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
 import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
 import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
 import { registerPushToken } from '@/services/push-token-service';
-import { useDiagnosticControls } from '@/services/diagnostic-controls-service';
+import { ensureDiagnosticControlsHydrated, useDiagnosticControls } from '@/services/diagnostic-controls-service';
 
 SplashScreen.preventAutoHideAsync();
 // Work Package 2: same "call once, at module scope, before anything else" convention as
@@ -78,14 +78,13 @@ export default function RootLayout() {
   const onboardingState = useOnboardingState();
   const onboardingComplete = onboardingState !== 'loading' && onboardingState.completed;
   // Inert (always false) outside the diagnostic EAS build profile -- see
-  // diagnostic-controls-service.ts's own header for the full safety reasoning. Read via a ref
-  // in the session-bootstrap effect below (that effect intentionally does not re-run on every
-  // diagnostic toggle -- it is the one-time-per-launch identity/purchases bootstrap, not a
-  // notifications concern on its own) and reactively in the daily-reminder effect, which SHOULD
-  // immediately reschedule/cancel when toggled.
+  // diagnostic-controls-service.ts's own header for the full safety reasoning. Used reactively
+  // in the daily-reminder and deep-link-listener effects below, which SHOULD immediately
+  // re-run when toggled. The session-bootstrap effect does NOT read this hook's render value at
+  // all -- see its own comment on why it instead awaits ensureDiagnosticControlsHydrated()
+  // directly, which is the actual fix for the cold-launch hydration race item 2 of the Build 23
+  // review named.
   const diagnostics = useDiagnosticControls();
-  const diagnosticsRef = useRef(diagnostics);
-  diagnosticsRef.current = diagnostics;
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -140,22 +139,40 @@ export default function RootLayout() {
         // exists -- same "app/session initializes" moment as everything else in this block.
         // No-op on web/unconfigured builds; never blocks rendering, never shows a splash.
         void initializePurchases();
-        // Notifications, 2026-10-22: re-registers this device's push token if permission was
-        // already granted in a prior session (never requests it here -- that only ever
-        // happens contextually, from a real in-app explainer flow, never from this launch
-        // effect) and re-derives/reschedules the next local Daily reminder from the user's own
-        // saved preferences. Same "app/session initializes" moment as everything else above.
-        void hydrateNotificationPreferences().then(async () => {
-          const permissionStatus = await getNotificationPermissionStatus();
-          if (permissionStatus === 'granted' && !diagnosticsRef.current.notificationsDisabled) {
-            void registerPushToken();
+        // Build 23 P0 diagnostic-isolation fix: the ENTIRE notification startup block below --
+        // not just registerPushToken() -- must be skippable for the diagnostic build's
+        // Notifications-OFF test to genuinely isolate the notification subsystem. Previously
+        // hydrateNotificationPreferences(), getNotificationPermissionStatus(), and
+        // syncDeviceTimeZone() all still ran regardless of the toggle; only the final
+        // registerPushToken() call was gated. awaiting ensureDiagnosticControlsHydrated() here
+        // (rather than reading the diagnostics hook's render value) is the actual fix for the
+        // cold-launch race: this component's first render can happen before AsyncStorage's
+        // real persisted toggle state has loaded, and this effect runs inside that same first
+        // pass -- without this await, a persisted OFF setting could be missed on exactly the
+        // cold launch it matters most for. Outside the diagnostic build this resolves
+        // immediately with the fixed ON/ON default, so production/testflight behavior and
+        // timing are completely unchanged.
+        void ensureDiagnosticControlsHydrated().then((diagnostics) => {
+          if (diagnostics.notificationsDisabled) {
+            return;
           }
+          // Notifications, 2026-10-22: re-registers this device's push token if permission was
+          // already granted in a prior session (never requests it here -- that only ever
+          // happens contextually, from a real in-app explainer flow, never from this launch
+          // effect) and re-derives/reschedules the next local Daily reminder from the user's own
+          // saved preferences. Same "app/session initializes" moment as everything else above.
+          void hydrateNotificationPreferences().then(async () => {
+            const permissionStatus = await getNotificationPermissionStatus();
+            if (permissionStatus === 'granted') {
+              void registerPushToken();
+            }
+          });
+          // Timezone correction, 2026-10-23: every launch/foreground re-sends the device's
+          // current IANA timezone, independent of whether the user ever opens Settings -- a
+          // travelling user's real zone change reaches the server promptly even if they never
+          // touch a notification preference.
+          void syncDeviceTimeZone();
         });
-        // Timezone correction, 2026-10-23: every launch/foreground re-sends the device's
-        // current IANA timezone, independent of whether the user ever opens Settings -- a
-        // travelling user's real zone change reaches the server promptly even if they never
-        // touch a notification preference.
-        void syncDeviceTimeZone();
       });
     }
   }, [segments, onboardingComplete]);
@@ -171,12 +188,22 @@ export default function RootLayout() {
   // be granted after a real contextual ask, which itself only happens post-onboarding.
   const notificationPreferences = useNotificationPreferences();
   useEffect(() => {
+    // Build 23 P0 diagnostic-isolation fix: getNotificationPermissionStatus() (a real native
+    // OS call) previously ran unconditionally here even with diagnostics.notificationsDisabled
+    // -- the user's own review correctly named "checks permissions" as one of the startup
+    // operations that must actually be skipped, not just gated at the final enabled flag.
+    // scheduleNextDailyReminder's own body always cancels any already-scheduled reminder first
+    // (see daily-reminder-service.ts) regardless of enabled/permissionGranted, so passing
+    // enabled:false, permissionGranted:false directly -- without ever calling the real
+    // permission check -- still correctly cancels a stale reminder while making zero native
+    // permission-status calls.
+    if (diagnostics.notificationsDisabled) {
+      void scheduleNextDailyReminder({ enabled: false, hour: 0, minute: 0, permissionGranted: false });
+      return;
+    }
     void getNotificationPermissionStatus().then((permissionStatus) => {
       void scheduleNextDailyReminder({
-        // diagnostics.notificationsDisabled is inert (always false) outside the diagnostic EAS
-        // build profile -- see diagnostic-controls-service.ts. ANDed with the user's own real
-        // preference, never a replacement for it.
-        enabled: notificationPreferences.dailyReminderEnabled && !diagnostics.notificationsDisabled,
+        enabled: notificationPreferences.dailyReminderEnabled,
         hour: notificationPreferences.dailyReminderHour,
         minute: notificationPreferences.dailyReminderMinute,
         permissionGranted: permissionStatus === 'granted',
@@ -197,6 +224,14 @@ export default function RootLayout() {
   // action the user should be able to back out of, not a redirect.
   const router = useRouter();
   useEffect(() => {
+    // Build 23 P0 diagnostic-isolation fix: both of these are real native
+    // expo-notifications calls (reading the last response, registering a native listener) --
+    // skipped entirely when diagnostics.notificationsDisabled, for the same genuine-isolation
+    // reason as the rest of this file's notification startup work. Inert (never true) outside
+    // the diagnostic build.
+    if (diagnostics.notificationsDisabled) {
+      return;
+    }
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
         router.push(resolveNotificationUrl(response) as never);
@@ -206,7 +241,7 @@ export default function RootLayout() {
       router.push(resolveNotificationUrl(response) as never);
     });
     return () => subscription.remove();
-  }, [router]);
+  }, [router, diagnostics.notificationsDisabled]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

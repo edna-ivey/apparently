@@ -15,6 +15,14 @@
 // own header comment is now actually enforced end to end, not just for the one step that had
 // always been timed.
 //
+// WHY 120s for the show-wait specifically does NOT mean "the user waits 120s for their result":
+// quiz/[quizId].tsx has its own SEPARATE 5-second safety timer that force-reveals the result
+// content regardless of whether THIS function has resolved yet -- confirmed directly, not
+// assumed (search that file for freshCompletionAdResolved). That timer is what actually bounds
+// the user's perceived wait; this function's own 120s bound only governs when ITS OWN promise
+// (session cap/cooldown bookkeeping, analytics) settles, and exists purely so that promise can
+// never hang forever, never to gate what the user sees.
+//
 // Caller contract: call this ONLY after the caller's own useAdEligibility(placement).eligible
 // is true -- this module does not re-check subscription status itself (ad-eligibility-service
 // is the one place that does). This module owns exactly three things no eligibility check can:
@@ -155,6 +163,20 @@ export const showInterstitialIfDue = async (placement: AdPlacementName, underAge
   );
   if (closedOrTimedOut === 'timeout') {
     cleanup();
+    // HONEST LIMITATION (Build 23 P0 review, correctly flagged): destroy() releases this app's
+    // OWN JS-side reference, listeners, and internal presence tracking -- confirmed by reading
+    // the installed SDK's real MobileAd.destroy() body, which calls the native module's own
+    // destroy function. It does NOT, and cannot, force-dismiss an already-presented native
+    // full-screen ad view: neither Google's iOS nor Android AdMob SDK expose a programmatic
+    // "close this ad" API once show() has genuinely presented it -- only the user's own tap on
+    // the ad's close control, or the ad finishing its own content, actually removes that native
+    // view. This timeout exists so this function's own JS PROMISE (and therefore the result
+    // screen awaiting it) can never hang forever -- it makes the REACT side of the app
+    // recoverable once the real overlay situation resolves by whatever means, but if the ad is
+    // genuinely stuck on-screen (the rare, real failure mode this guards against), the user may
+    // still see it until they interact with it or background/foreground the app. There is no
+    // code-level fix for that possible outcome; it is a platform constraint of this ad SDK.
+    void interstitial.destroy();
     logAnalyticsEvent({ name: 'ad_failed', properties: { placement, error_code: 'show_timeout' } });
     // Deliberately does NOT count toward interstitialsShownThisSession/cooldown -- an ad that
     // never confirmed it closed was never confirmed to have actually shown to completion; the
