@@ -214,9 +214,14 @@ if [ "$MODE" = "dry-run" ]; then
 fi
 
 echo ""
-echo "=== APPLYING: supabase db push --remote ==="
+echo "=== APPLYING: supabase db push --remote --yes ==="
 echo "(the gated/independent files are physically absent, so this can only apply the verified ${#ENGINEERING_FILES[@]}-file engineering candidate set)"
-if ! npx supabase db push --remote; then
+# --yes: the CLI refuses to mutate a hosted project non-interactively without it
+# (HostedMutationConsentRequiredError) -- its own built-in safety gate for exactly this kind
+# of automated run. Only ever pass --apply to THIS script after real, explicit owner
+# authorization of the apply itself; --yes here is not a separate decision, it is what lets
+# that already-given authorization actually execute non-interactively.
+if ! npx supabase db push --remote --yes; then
   echo "" >&2
   echo "ERROR: supabase db push failed or was interrupted mid-apply. STOP." >&2
   echo "Do not retry automatically. Run \`npx supabase migration list --remote\` to see exactly which of the ${#ENGINEERING_FILES[@]} migrations actually applied remotely before deciding what to do next." >&2
