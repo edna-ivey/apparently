@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useIsFocused, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -132,6 +132,16 @@ function IdentityHero({
   creature: VisibleCreature | null;
   onGetYourRead: (() => void) | null;
 }) {
+  // Build 23 stability fix: expo-router's NativeTabs mounts every tab's screen eagerly at
+  // app launch (confirmed directly in Expo's own documentation, not assumed) -- there is no
+  // way to defer mounting the screen itself. CreatureAvatar's composition is 5 simultaneous
+  // large/complex SVG layers (each individually 4-8MB of vector path data); decoding it on
+  // EVERY cold launch, before the user has ever opened this tab, is real, unnecessary memory
+  // and CPU pressure carried by every other screen in the app for the entire session. Gating
+  // the expensive sub-tree on isFocused (Expo's own documented pattern for exactly this case)
+  // defers that cost until the user actually visits You, and releases it again when they
+  // leave -- never a change to the Creature's calibration, artwork, or scoring.
+  const isFocused = useIsFocused();
   // Celestial redesign (approved Option B): "large Creature as the primary visual focal
   // point," restored here at Build 15's own explicit final direction -- the Creature is the
   // star of Apparently You and must be the largest, most visually exciting element on the
@@ -161,7 +171,7 @@ function IdentityHero({
   const avatar = (
     <View style={[styles.heroStage, { width: glowSize, height: glowSize }]}>
       {recipe && <AtmosphericGlow size={glowSize} />}
-      {recipe ? (
+      {recipe && isFocused ? (
         <View style={{ transform: [{ translateY: creatureOpticalShift }] }}>
           <CreatureAvatar recipe={recipe} size={creatureSize} />
         </View>

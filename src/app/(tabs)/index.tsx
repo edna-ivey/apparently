@@ -591,7 +591,16 @@ export default function HomeScreen() {
           readText={freeReadText}
           percentLine={freePercentLine}
           connectText={freeConnectText}
-          stage={<CreatureStage connection={creatureConnection} size={150} />}
+          // Build 23 stability fix: react-native's <Modal> mounts its children in the React
+          // tree immediately even while visible={false} (confirmed directly -- ReadModal
+          // always renders {stage} inside its own <Modal>, regardless of the visible prop) --
+          // it only hides the native overlay. For a user who has already revealed their
+          // Creature, CreatureStage renders the real, expensive multi-layer SVG composition,
+          // so it was decoding on every Today load whether or not this modal was ever opened.
+          // Only constructing the real element while this modal is actually the active one
+          // defers that cost to the moment the user actually opens it; never a change to the
+          // Creature's own calibration or artwork.
+          stage={activeModal === 'free' ? <CreatureStage connection={creatureConnection} size={150} /> : null}
           roomTitle="See the Room"
           room={freeRoomSlot}
           ctaLabel="Explore Your Identity →"
@@ -607,7 +616,8 @@ export default function HomeScreen() {
           variant="private"
           readText={privateReadText}
           connectText={PRIVATE_CONNECT_TEXT}
-          stage={<RelicStage connection={relicConnection} size={120} />}
+          // Same fix as the free ReadModal above -- see that comment for why.
+          stage={activeModal === 'private' ? <RelicStage connection={relicConnection} size={120} /> : null}
           roomTitle="See the Room · Private"
           room={privateRoomSlot}
           ctaLabel="Enter Private →"
