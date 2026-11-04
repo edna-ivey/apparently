@@ -104,11 +104,24 @@ echo "Confirmed: all ${#ENGINEERING_FILES[@]} engineering + ${#GATED_FILES[@]} g
 
 echo ""
 echo "=== 2. Target project verification ==="
-STATUS_OUTPUT="$(npx supabase status 2>&1 || true)"
-LINKED_REF="$(echo "$STATUS_OUTPUT" | grep -oE '"project_ref":"[a-z0-9]+"' | head -1 | cut -d'"' -f4)"
-if [ -z "$LINKED_REF" ]; then
-  echo "ERROR: could not determine the linked Supabase project ref from \`supabase status\`. Raw output:" >&2
-  echo "$STATUS_OUTPUT" >&2
+# \`supabase status\` inspects local Docker and fails on Macs without Docker.
+# Use the authenticated, read-only remote project listing instead, and require
+# exactly one linked project before comparing its ref to the release manifest.
+if ! PROJECTS_JSON="$(npx supabase projects list --output json 2>&1)"; then
+  echo "ERROR: could not list authenticated Supabase projects. Aborting." >&2
+  exit 1
+fi
+if ! LINKED_REF="$(printf '%s' "$PROJECTS_JSON" | jq -er '[.[] | select(.linked == true) | .ref] | if length == 1 and (.[0] | type == "string") then .[0] else empty end')"; then
+  echo "ERROR: could not determine exactly one linked project from the authenticated project listing. Aborting." >&2
+  exit 1
+fi
+if [ ! -f supabase/.temp/project-ref ]; then
+  echo "ERROR: local Supabase project link is missing. Aborting." >&2
+  exit 1
+fi
+LOCAL_LINKED_REF="$(tr -d '[:space:]' < supabase/.temp/project-ref)"
+if [ "$LOCAL_LINKED_REF" != "$LINKED_REF" ]; then
+  echo "ERROR: local link ($LOCAL_LINKED_REF) differs from the remote-linked project ($LINKED_REF). Aborting." >&2
   exit 1
 fi
 if [ "$LINKED_REF" != "$EXPECTED_PROJECT_REF" ]; then
