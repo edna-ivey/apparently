@@ -36,13 +36,17 @@ assets/creatures_old/
 # constraint as assets/creatures_old/.
 assets/creatures copy/
 
+# Old unreferenced PNG experiment exports, not the approved Creature/Relic SVG art.
+assets/_png_experiment/
+
 # Documentation -- never imported by app code.
 docs/
 *.md
 
-# Validation/QA scripts -- run via `npx tsx scripts/validate-*.ts` locally/in CI, never
-# imported by the Expo app itself.
-scripts/
+# Intentionally include scripts/ (about 2 MB) in the EAS archive because the
+# app imports its canonical numeric trait ledger from scripts/lib.
+# Excluding it breaks EAS Metro bundling. Do not copy the ledger: that
+# would introduce a second source of truth for published scoring IDs.
 
 # Supabase project (migrations, Edge Functions, local config) -- deployed separately via the
 # Supabase CLI; never part of the Expo client bundle.
