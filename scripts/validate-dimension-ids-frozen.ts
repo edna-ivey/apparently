@@ -175,8 +175,8 @@ for (const file of GENERATORS_REQUIRING_LEDGER) {
   const canonicalQuestionId = '00000000-0000-0000-0000-00000000a001';
   const cloneQuestionId = '00000000-0000-0000-0000-00000000a002';
   // A REAL option id from the real, approved, committed Daily award content
-  // (readDailyOptionPoleAwards()) -- its real awards are 'planner_spontaneous:negative' (2
-  // pts) and 'adventure_comfort:positive' (2 pts). planner_spontaneous is dimension_id 1 in
+  // (readDailyOptionPoleAwards()) -- its real awards are 'planner_spontaneous:negative' (3
+  // pts) and 'adventure_comfort:positive' (3 pts). planner_spontaneous is dimension_id 1 in
   // the real, committed ledger, so the negative pole's trait_id is deterministically 2 --
   // checked directly below, not just "ran without error."
   const canonicalOptionId = '1d3533fa-a3db-4e4f-b24f-22f678d7c763';
@@ -211,7 +211,7 @@ for (const file of GENERATORS_REQUIRING_LEDGER) {
     // REAL ledger value's literal presence in the REAL generator's output, not a guess.
     const expectedTraitId = loadDimensionIdLedger().dimensionIds['planner_spontaneous'] * 2;
     assert(
-      outputSql.includes(`('${cloneOptionId}', ${expectedTraitId}, 2)`),
+      outputSql.includes(`('${cloneOptionId}', ${expectedTraitId}, 3)`),
       `the regenerated SQL contains the clone option's inherited award with the REAL ledger-resolved trait_id (${expectedTraitId}) for planner_spontaneous:negative, not a position-derived guess`,
     );
   }
