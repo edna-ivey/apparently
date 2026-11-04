@@ -85,6 +85,17 @@ export const ensureDiagnosticControlsHydrated = async (): Promise<DiagnosticCont
   return hydrationPromise;
 };
 
+// On the first render, a diagnostic build must NEVER initiate an ad before the persisted
+// Ads-OFF flag is read. Consumers can use this reactive readiness hook to fail closed.
+const getHydratedSnapshot = () => hydrated;
+export const useDiagnosticControlsReady = (): boolean => {
+  const ready = useSyncExternalStore(subscribe, getHydratedSnapshot);
+  if (isDiagnosticBuild && !ready) {
+    void ensureDiagnosticControlsHydrated();
+  }
+  return !isDiagnosticBuild || ready;
+};
+
 // Read-only everywhere except the diagnostic build's own hidden Settings section (below).
 // Returns the fixed, inert default immediately when !isDiagnosticBuild -- callers never need
 // their own build check before reading this. For the FIRST render of a diagnostic build before

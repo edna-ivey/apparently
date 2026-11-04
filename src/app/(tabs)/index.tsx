@@ -28,6 +28,7 @@ import { showInterstitialIfDue } from '@/services/ad-interstitial-service';
 import { logAnalyticsEvent } from '@/services/analytics-service';
 import { cancelTodaysDailyReminder } from '@/services/daily-reminder-service';
 import { getNotificationPermissionStatus, hasShownContextualPermissionPrompt, markContextualPromptShown, requestNotificationPermission } from '@/services/notification-permission-service';
+import { isDiagnosticBuild, useDiagnosticControls, useDiagnosticControlsReady } from '@/services/diagnostic-controls-service';
 import { registerPushToken } from '@/services/push-token-service';
 import { NotificationPermissionPrompt } from '@/components/today/NotificationPermissionPrompt';
 
@@ -160,6 +161,11 @@ const tileStyles = StyleSheet.create({
 
 export default function HomeScreen() {
   const router = useRouter();
+  // Diagnostic OFF must suppress the Today's contextual notification prompt and
+  // per-answer reminder work, not only the app-root launch effects.
+  const diagnostics = useDiagnosticControls();
+  const diagnosticReady = useDiagnosticControlsReady();
+  const notificationsSuppressed = isDiagnosticBuild && (!diagnosticReady || diagnostics.notificationsDisabled);
   const contentWidth = useResponsiveContentWidth();
   const topInset = useResponsiveTopInset();
 
@@ -221,10 +227,10 @@ export default function HomeScreen() {
   // after that Daily has already been completed"). The NEXT day's reminder is scheduled
   // separately on launch/foreground -- see _layout.tsx.
   useEffect(() => {
-    if (isCommitted) {
+    if (isCommitted && !notificationsSuppressed) {
       void cancelTodaysDailyReminder();
     }
-  }, [isCommitted]);
+  }, [isCommitted, notificationsSuppressed]);
 
   // Notifications, 2026-10-22: the contextual explainer trigger point -- a completed Daily is
   // real, experienced value (the task's own bar for when to ask). Checked, not assumed: only
@@ -233,7 +239,8 @@ export default function HomeScreen() {
   // denied answer, e.g. restored from a backup, never sees this at all).
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   useEffect(() => {
-    if (!isCommitted) {
+    if (!isCommitted || notificationsSuppressed) {
+      setShowNotificationPrompt(false);
       return;
     }
     void (async () => {
@@ -245,7 +252,7 @@ export default function HomeScreen() {
         setShowNotificationPrompt(true);
       }
     })();
-  }, [isCommitted]);
+  }, [isCommitted, notificationsSuppressed]);
   const displayedOption = ready ? ready.committedIndex ?? draftIndex : null;
   const selectedChoice = ready ? ready.question.options[displayedOption ?? 0] ?? ready.question.options[0] : null;
   // A vote can be locked in while its distribution is still loading or has failed — that must

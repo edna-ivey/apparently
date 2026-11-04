@@ -16,7 +16,7 @@ import { isAdultEligible, useAgeEligibility } from '@/data/age-eligibility';
 import { AdsConfig, resolveQuizAdVariant } from '@/services/ads-config';
 import { usePremiumStatus } from '@/services/purchases-service';
 import { computeAdEligibility, type AdEligibility } from '@/services/ad-eligibility-logic';
-import { useDiagnosticControls } from '@/services/diagnostic-controls-service';
+import { useDiagnosticControls, useDiagnosticControlsReady } from '@/services/diagnostic-controls-service';
 
 export type AdPlacement = keyof typeof AdsConfig.placements;
 export type { AdEligibility };
@@ -30,11 +30,14 @@ export const useAdEligibility = (placement: AdPlacement): AdEligibility => {
   // eligible by this, only an otherwise-eligible free user can be temporarily suppressed for
   // the P0 freeze investigation.
   const diagnostics = useDiagnosticControls();
+  // Diagnostic cold-launch fail-closed: persistently disabled ads must never briefly
+  // initialize before their AsyncStorage state has loaded. Production is always ready.
+  const diagnosticReady = useDiagnosticControlsReady();
 
   return computeAdEligibility({
     premiumStatus: premium.status,
     placementEnabled: AdsConfig.placements[placement],
-    globalEnabled: AdsConfig.globalEnabled && !diagnostics.adsDisabled,
+    globalEnabled: AdsConfig.globalEnabled && diagnosticReady && !diagnostics.adsDisabled,
     isAdultEligible: isAdultEligible(ageEligibility),
   });
 };

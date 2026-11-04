@@ -19,7 +19,7 @@ import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
 import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
 import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
 import { registerPushToken } from '@/services/push-token-service';
-import { ensureDiagnosticControlsHydrated, useDiagnosticControls } from '@/services/diagnostic-controls-service';
+import { ensureDiagnosticControlsHydrated, isDiagnosticBuild, useDiagnosticControls, useDiagnosticControlsReady } from '@/services/diagnostic-controls-service';
 
 SplashScreen.preventAutoHideAsync();
 // Work Package 2: same "call once, at module scope, before anything else" convention as
@@ -85,6 +85,7 @@ export default function RootLayout() {
   // directly, which is the actual fix for the cold-launch hydration race item 2 of the Build 23
   // review named.
   const diagnostics = useDiagnosticControls();
+  const diagnosticReady = useDiagnosticControlsReady();
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -186,7 +187,9 @@ export default function RootLayout() {
   // nothing in this specific effect that the age-gate/anonymous-session concerns above apply
   // to; it simply does nothing useful before onboarding anyway since permission can only ever
   // be granted after a real contextual ask, which itself only happens post-onboarding.
-  const notificationPreferences = useNotificationPreferences();
+  const notificationPreferences = useNotificationPreferences(
+    isDiagnosticBuild && (!diagnosticReady || diagnostics.notificationsDisabled),
+  );
   useEffect(() => {
     // Build 23 P0 diagnostic-isolation fix: getNotificationPermissionStatus() (a real native
     // OS call) previously ran unconditionally here even with diagnostics.notificationsDisabled
@@ -197,7 +200,7 @@ export default function RootLayout() {
     // enabled:false, permissionGranted:false directly -- without ever calling the real
     // permission check -- still correctly cancels a stale reminder while making zero native
     // permission-status calls.
-    if (diagnostics.notificationsDisabled) {
+    if (diagnostics.notificationsDisabled || (isDiagnosticBuild && !diagnosticReady)) {
       void scheduleNextDailyReminder({ enabled: false, hour: 0, minute: 0, permissionGranted: false });
       return;
     }
@@ -214,6 +217,7 @@ export default function RootLayout() {
     notificationPreferences.dailyReminderHour,
     notificationPreferences.dailyReminderMinute,
     diagnostics.notificationsDisabled,
+    diagnosticReady,
   ]);
 
   // Notifications, 2026-10-22: deep-link handling for a tapped notification, covering all
@@ -229,7 +233,7 @@ export default function RootLayout() {
     // skipped entirely when diagnostics.notificationsDisabled, for the same genuine-isolation
     // reason as the rest of this file's notification startup work. Inert (never true) outside
     // the diagnostic build.
-    if (diagnostics.notificationsDisabled) {
+    if (diagnostics.notificationsDisabled || (isDiagnosticBuild && !diagnosticReady)) {
       return;
     }
     void Notifications.getLastNotificationResponseAsync().then((response) => {
@@ -241,7 +245,7 @@ export default function RootLayout() {
       router.push(resolveNotificationUrl(response) as never);
     });
     return () => subscription.remove();
-  }, [router, diagnostics.notificationsDisabled]);
+  }, [router, diagnostics.notificationsDisabled, diagnosticReady]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

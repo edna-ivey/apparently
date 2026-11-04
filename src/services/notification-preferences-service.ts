@@ -150,9 +150,11 @@ export const hydrateNotificationPreferences = async (): Promise<void> => {
   hydrationPromise = null;
 };
 
-export const useNotificationPreferences = (): NotificationPreferences => {
+// In the owner-only diagnostic build, Notifications OFF also suppresses the
+// hook's normal eager hydration (including the server request) on cold start.
+export const useNotificationPreferences = (suspendHydration = false): NotificationPreferences => {
   const current = useSyncExternalStore(subscribe, getSnapshot);
-  if (!snapshot.hydrated) {
+  if (!snapshot.hydrated && !suspendHydration) {
     void hydrateNotificationPreferences();
   }
   return current;

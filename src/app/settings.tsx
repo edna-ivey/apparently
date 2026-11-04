@@ -31,7 +31,7 @@ import {
 import { getNotificationPermissionStatus, requestNotificationPermission } from '@/services/notification-permission-service';
 import { registerPushToken, removeThisDevicePushToken } from '@/services/push-token-service';
 import { logAnalyticsEvent } from '@/services/analytics-service';
-import { isDiagnosticBuild, setDiagnosticControl, useDiagnosticControls } from '@/services/diagnostic-controls-service';
+import { isDiagnosticBuild, setDiagnosticControl, useDiagnosticControls, useDiagnosticControlsReady } from '@/services/diagnostic-controls-service';
 
 // Build 18: owner-confirmed real Zoho alias (docs/app-store/OWNER_APP_STORE_ACTIONS.md item 1)
 // -- replaces the earlier temporary edna.tyus@gmail.com placeholder now that the real
@@ -46,6 +46,7 @@ export default function SettingsScreen() {
   // renders nothing and this hook does nothing in production or the real TestFlight build. See
   // diagnostic-controls-service.ts's own header for the full safety reasoning.
   const diagnosticControls = useDiagnosticControls();
+  const diagnosticReady = useDiagnosticControlsReady();
 
   // The SAME reactive profile store You reads (useUserProfile) — every edit here goes through
   // updateUserProfile, which writes the same apparently:user-profile storage AND updates the
@@ -250,7 +251,15 @@ export default function SettingsScreen() {
 
           {/* --- NOTIFICATIONS --- */}
           <ThemedText style={styles.sectionEyebrow}>NOTIFICATIONS</ThemedText>
-          <NotificationSettingsCard />
+          {isDiagnosticBuild && (!diagnosticReady || diagnosticControls.notificationsDisabled) ? (
+            <View style={styles.card}>
+              <ThemedText style={styles.dangerExplainer}>
+                Notifications are suspended for this diagnostic test. Use the diagnostic switch below to re-enable them.
+              </ThemedText>
+            </View>
+          ) : (
+            <NotificationSettingsCard />
+          )}
 
           {/* --- SUPPORT --- */}
           <ThemedText style={styles.sectionEyebrow}>SUPPORT</ThemedText>
