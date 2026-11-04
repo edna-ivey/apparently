@@ -197,11 +197,14 @@ const styles = StyleSheet.create({
   resultSectionHeading: { color: Brand.violet, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
   resultSectionBody: { color: Brand.inkSecondary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
   matchLine: { color: Brand.ink, fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  classificationCard: { backgroundColor: Brand.violet, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
-  classificationHeading: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
-  classificationBody: { color: '#F1EEFF', fontSize: 15, lineHeight: 21, fontWeight: '700' },
-  classificationResult: { color: '#FFFFFF', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
-  classificationSub: { color: '#DCD6FF', fontSize: 14, lineHeight: 20, fontWeight: '700', fontStyle: 'italic', marginTop: Spacing.half },
+  // The comparison reveal card -- same dark-plum/cream/gold treatment as the quiz result's own
+  // verdict card (src/app/quiz/[quizId].tsx), not the bright-violet background tuned for an
+  // earlier build. Text colors below were sized for that violet background; updated together.
+  classificationCard: { backgroundColor: Brand.plum, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
+  classificationHeading: { color: Brand.cream, fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
+  classificationBody: { color: Brand.cream, fontSize: 15, lineHeight: 21, fontWeight: '700' },
+  classificationResult: { color: Brand.cream, fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
+  classificationSub: { color: Brand.gold, fontSize: 14, lineHeight: 20, fontWeight: '700', fontStyle: 'italic', marginTop: Spacing.half },
   noteCard: { backgroundColor: Brand.coral, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
   noteText: { color: '#FFFFFF', fontSize: 16, lineHeight: 22, fontWeight: '700', fontStyle: 'italic' },
 });

@@ -1131,8 +1131,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255,255,255,0.55)',
   },
+  // Eyebrow labels on the dark-plum verdict card use the app's established restrained-gold
+  // accent (same token as every other "eyebrow" label -- CelestialType.eyebrow/design-system.ts),
+  // not the pale lavender tuned for the old bright-violet background.
   verdictEyebrow: {
-    color: '#DCD6FF',
+    color: Brand.gold,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.6,
@@ -1148,7 +1151,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   verdictSubtitle: {
-    color: '#DCD6FF',
+    color: Celestial.textSecondary,
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.4,
@@ -1156,27 +1159,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   verdictHero: {
-    color: '#F1EEFF',
+    color: Celestial.textPrimary,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '700',
     textAlign: 'center',
   },
   // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
-  // TRY THIS) — same violet verdict card as every other quiz's hero read, just with an
+  // TRY THIS) -- same dark-plum verdict card as every other quiz's hero read, just with an
   // explicit heading per beat instead of one continuous hero/body/kicker flow.
   privateSection: {
     marginTop: Spacing.three,
     gap: Spacing.one,
   },
   privateSectionHeading: {
-    color: '#DCD6FF',
+    color: Brand.gold,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
   },
   privateSectionBody: {
-    color: '#F1EEFF',
+    color: Celestial.textPrimary,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '700',
@@ -1185,17 +1188,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
     paddingTop: Spacing.three,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.16)',
+    borderTopColor: Celestial.glassBorder,
     gap: 2,
   },
   closeSecondEyebrow: {
-    color: '#DCD6FF',
+    color: Brand.gold,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
   },
   closeSecondTitle: {
-    color: '#FFFFFF',
+    color: Celestial.textPrimary,
     fontSize: 20,
     lineHeight: 25,
     fontWeight: '900',

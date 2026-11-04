@@ -607,16 +607,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
-  verdictEyebrow: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3, textAlign: 'center' },
-  verdictTitle: { color: '#FFFFFF', fontSize: 30, lineHeight: 34, fontWeight: '900', letterSpacing: -0.6, marginTop: Spacing.one, textAlign: 'center' },
-  verdictSubtitle: { color: '#DCD6FF', fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: -Spacing.half, textAlign: 'center' },
-  verdictHero: { color: '#F1EEFF', fontSize: 18, lineHeight: 24, fontWeight: '700', textAlign: 'center' },
+  // Eyebrow/body colors inside the verdict card use the app's established restrained-gold
+  // accent and warm-cream text, not the pale lavender tuned for the old bright-violet
+  // background -- same fix, same reasoning, as quiz/[quizId].tsx's own verdict card.
+  verdictEyebrow: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.3, textAlign: 'center' },
+  verdictTitle: { color: Brand.cream, fontSize: 30, lineHeight: 34, fontWeight: '900', letterSpacing: -0.6, marginTop: Spacing.one, textAlign: 'center' },
+  verdictSubtitle: { color: 'rgba(255,249,245,0.7)', fontSize: 13, fontWeight: '800', letterSpacing: 0.4, marginTop: -Spacing.half, textAlign: 'center' },
+  verdictHero: { color: Brand.cream, fontSize: 18, lineHeight: 24, fontWeight: '700', textAlign: 'center' },
   // Apparently Private's structured result sections (THE READ / THE CALL-OUT / THE COST /
   // TRY THIS) — mirrors quiz/[quizId].tsx's PrivateStructuredResult styling exactly, so a
   // shared structuredRead result reads identically here as it does in the quiz runner itself.
   privateSection: { marginTop: Spacing.three, gap: Spacing.one },
-  privateSectionHeading: { color: '#DCD6FF', fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  privateSectionBody: { color: '#F1EEFF', fontSize: 16, lineHeight: 22, fontWeight: '700' },
+  privateSectionHeading: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  privateSectionBody: { color: Brand.cream, fontSize: 16, lineHeight: 22, fontWeight: '700' },
   whyCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
   whyBody: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
   traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one, justifyContent: 'center' },
