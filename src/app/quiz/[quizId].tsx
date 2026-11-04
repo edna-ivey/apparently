@@ -1006,11 +1006,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  // "THEY HAVE NOTES." invite — a distinct violet card (matching the Compare comparison
-  // panel's own palette, see compare-result-panel.tsx) between the standard share CTA and
-  // "See what else we know", so it visibly reads as its own beat rather than a fourth button.
+  // The private invitation uses the same dark-plum identity as the rest of the app.
+  // Preserve its separate-card layout without the bright violet block.
   notesCard: {
-    backgroundColor: Brand.violet,
+    backgroundColor: Brand.plum,
     borderRadius: 24,
     padding: Spacing.four,
     gap: Spacing.one,
@@ -1036,7 +1035,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   notesCtaText: {
-    color: Brand.violet,
+    color: Brand.plum,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -1098,26 +1097,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
-  // The result "verdict" card is the screenshot-worthy moment — a deliberately different
-  // treatment from Today's violet question card (same family, bigger occasion): violet base,
-  // a large percent readout, generous padding.
-  // Build 15 "share-worthy result": kept the violet base (the app's established "big occasion"
-  // card), added a soft radial glow + a decorative sparkle so the card reads as a collectible
-  // reveal moment rather than a flat information card -- the one thing in the app a user should
-  // want to screenshot.
+  // Match Apparently You's established dark-plum celestial surface, not the
+  // bright violet treatment from earlier builds. Never alter result content.
   verdictCard: {
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: Brand.violet,
+    backgroundColor: Brand.plum,
+    borderColor: 'rgba(246,184,63,0.25)',
+    borderWidth: 1,
     borderRadius: 28,
     padding: Spacing.four,
     gap: Spacing.one,
     alignItems: 'center',
-    shadowColor: Brand.violet,
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    shadowColor: Brand.plum,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
   },
   verdictGlow: {
     position: 'absolute',
