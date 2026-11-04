@@ -180,7 +180,7 @@ if [ "$MODE" = "apply-daily-content" ]; then
   echo "These are NOT schema migrations and are never touched by \`supabase db push\` -- requires its own, separate owner authorization from the engineering migration push above."
   for f in "${DAILY_CONTENT_FILES[@]}"; do
     echo "  -> $f"
-    npx supabase db query --remote --file "supabase/pending-owner-review/$f" || {
+    npx supabase db query --remote --yes --file "supabase/pending-owner-review/$f" || {
       echo "ERROR: $f failed to apply. STOP -- do not apply the remaining content-ops files until you have confirmed exactly what state $f left the database in." >&2
       exit 1
     }
