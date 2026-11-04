@@ -31,6 +31,7 @@ import {
 import { getNotificationPermissionStatus, requestNotificationPermission } from '@/services/notification-permission-service';
 import { registerPushToken, removeThisDevicePushToken } from '@/services/push-token-service';
 import { logAnalyticsEvent } from '@/services/analytics-service';
+import { isDiagnosticBuild, setDiagnosticControl, useDiagnosticControls } from '@/services/diagnostic-controls-service';
 
 // Build 18: owner-confirmed real Zoho alias (docs/app-store/OWNER_APP_STORE_ACTIONS.md item 1)
 // -- replaces the earlier temporary edna.tyus@gmail.com placeholder now that the real
@@ -40,6 +41,11 @@ const SUPPORT_EMAIL = 'support@apparentlyyou.com';
 export default function SettingsScreen() {
   const router = useRouter();
   const contentWidth = useResponsiveContentWidth();
+  // Build 23 P0 freeze investigation only -- useDiagnosticControls()/isDiagnosticBuild are
+  // both inert (false/default) outside the diagnostic EAS build profile, so this section
+  // renders nothing and this hook does nothing in production or the real TestFlight build. See
+  // diagnostic-controls-service.ts's own header for the full safety reasoning.
+  const diagnosticControls = useDiagnosticControls();
 
   // The SAME reactive profile store You reads (useUserProfile) — every edit here goes through
   // updateUserProfile, which writes the same apparently:user-profile storage AND updates the
@@ -314,6 +320,40 @@ export default function SettingsScreen() {
               <ThemedText style={styles.aboutValue}>{buildNumber}</ThemedText>
             </View>
           </View>
+
+          {/* --- DIAGNOSTIC (Build 23 P0 freeze investigation only) ---
+              Renders ONLY when EXPO_PUBLIC_DIAGNOSTIC_BUILD is set, which happens ONLY on the
+              `diagnostic` EAS build profile (eas.json) -- never on `production` or `testflight`,
+              so this never appears for a real user or an App Store build. Each toggle ANDs with
+              the real eligibility/config check at its own source (ad-eligibility-service.ts,
+              _layout.tsx) -- it can only ever suppress something otherwise-eligible, never grant
+              anything a subscriber/age/consent rule would deny. Resets to ON/ON on a fresh
+              install of this build; never read by, or written to, a production build's storage. */}
+          {isDiagnosticBuild && (
+            <>
+              <ThemedText style={styles.sectionEyebrow}>DIAGNOSTIC (not a real setting)</ThemedText>
+              <View style={styles.card}>
+                <ThemedText style={styles.dangerExplainer}>
+                  Only visible on the diagnostic test build. Toggling these never changes the real app for any other build or user.
+                </ThemedText>
+                <View style={styles.notificationRow}>
+                  <ThemedText style={styles.fieldLabel}>Ads enabled</ThemedText>
+                  <Switch
+                    value={!diagnosticControls.adsDisabled}
+                    onValueChange={(value) => setDiagnosticControl('adsDisabled', !value)}
+                  />
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.notificationRow}>
+                  <ThemedText style={styles.fieldLabel}>Notifications enabled</ThemedText>
+                  <Switch
+                    value={!diagnosticControls.notificationsDisabled}
+                    onValueChange={(value) => setDiagnosticControl('notificationsDisabled', !value)}
+                  />
+                </View>
+              </View>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

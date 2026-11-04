@@ -24,6 +24,12 @@
         "EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID": "ca-app-pub-3940256099942544/4411468910",
         "EXPO_PUBLIC_ADMOB_NATIVE_UNIT_ID": "ca-app-pub-3940256099942544/3986624511"
       }
+    },
+    "diagnostic": {
+      "extends": "testflight",
+      "env": {
+        "EXPO_PUBLIC_DIAGNOSTIC_BUILD": "true"
+      }
     }
   },
   "submit": {

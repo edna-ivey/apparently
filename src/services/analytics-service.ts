@@ -5,6 +5,14 @@
 // analytics_events table via the log_analytics_event RPC, which derives the user id from the
 // caller's own session server-side -- never trusts a client-submitted id.
 //
+// CURRENT STATE (Build 23 P0 stability review, confirmed directly against the real linked
+// production database, not assumed): 20261022010000_analytics_events.sql is one of the 5
+// independently-gated migrations (see supabase/release-manifest.json's independentReady
+// bucket) and has NOT been applied -- neither analytics_events nor log_analytics_event exist
+// in production yet. Every call below already fails safely (see logAnalyticsEvent's own
+// comment) -- this is a known, deliberate, temporary state, not an oversight, and requires its
+// own separate review/deployment before any event here is actually recorded server-side.
+//
 // PRIVACY RULE (enforced by convention here, not re-checked server-side -- see the migration's
 // own comment): properties must NEVER contain quiz answer text, personality trait/pole values,
 // Private content, or anything else this app's own Privacy Policy promises not to collect for

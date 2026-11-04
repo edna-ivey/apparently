@@ -68,6 +68,22 @@ export const AdsConfig = {
   // it. Applies to both interstitial and native loads -- never blocks the user's own content
   // past this window, no matter what the SDK is doing.
   adLoadTimeoutMs: 4000,
+
+  // Build 23 P0 stability fix: independent review found prepareAdsConsent (UMP consent, ATT,
+  // MobileAds().initialize()) and the interstitial's own "wait for CLOSED after show" step had
+  // NO bound at all -- only the ad load step did. These four values close that gap. The first
+  // two are deliberately generous, not aggressive: both UMP's consent form and iOS's ATT
+  // prompt are genuine user-interaction surfaces this app must never cut off mid-read just
+  // because a bug-free wait happens to take a while -- the bound exists only to guarantee this
+  // app can never wait literally forever if the SDK promise itself never settles (a real,
+  // documented failure mode on some installs, not a UI-pacing decision). The SDK init and
+  // show-dismiss bounds are shorter/longer respectively for the same reason: init is a pure
+  // SDK call with no legitimate reason to run long, while watching+closing an ad is itself a
+  // user-paced action that can legitimately take up to the ad's own runtime.
+  consentGatherTimeoutMs: 60000,
+  attRequestTimeoutMs: 60000,
+  adsSdkInitTimeoutMs: 5000,
+  interstitialShowTimeoutMs: 120000,
 } as const;
 
 // Deterministic, non-random A/B assignment -- the SAME user always lands in the SAME variant

@@ -13,6 +13,20 @@
 // DST shift within an UNCHANGED zone needs no re-sync at all, since the send function derives
 // the real local hour from the IANA zone name at send TIME (see supabase/functions/_shared/
 // push-notification-logic.ts), never from a stored numeric offset that could go stale.
+//
+// CURRENT STATE (Build 23 P0 stability review, confirmed directly against the real linked
+// production database, not assumed): the notification_preferences table and
+// upsert_notification_preferences RPC do NOT exist in production yet (one of the 5
+// independently-gated migrations -- see supabase/release-manifest.json). Every call site below
+// is fire-and-forget (`void`, never awaited by any caller -- confirmed in settings.tsx and
+// _layout.tsx) and the local cache/UI already updates from the LOCAL write alone, so this gap
+// cannot block a Settings toggle or freeze anything. It does mean: toggling a notification
+// category in Settings today changes this device's local state and the (currently nonexistent)
+// server intent, but nothing server-side can read it yet to actually gate a push send -- no UI
+// copy anywhere claims otherwise, and this must stay true until that migration is separately
+// reviewed and deployed. daily_reminder is the one category genuinely live end-to-end today,
+// since it is scheduled entirely locally (see daily-reminder-service.ts) and never depends on
+// this table at all.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
@@ -110,7 +124,10 @@ export const hydrateNotificationPreferences = async (): Promise<void> => {
     // above, which already resolved. A user with no server row yet (never changed a
     // preference) simply keeps the defaults until their first write.
     if (supabase) {
-      const { data } = await supabase.from('notification_preferences').select('*').maybeSingle();
+      const { data, error } = await supabase.from('notification_preferences').select('*').maybeSingle();
+      if (error && __DEV__) {
+        console.warn('[notification-preferences-service] server refresh failed (expected until that migration ships):', error.message);
+      }
       if (data) {
         const fromServer: NotificationPreferences = {
           dailyReminderEnabled: data.daily_reminder_enabled,
@@ -153,7 +170,7 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
   await storage.setItem(STORAGE_KEY, JSON.stringify(next));
 
   if (!supabase) return;
-  await supabase.rpc('upsert_notification_preferences', {
+  const { error } = await supabase.rpc('upsert_notification_preferences', {
     p_daily_reminder_enabled: patch.dailyReminderEnabled ?? null,
     p_daily_reminder_hour: patch.dailyReminderHour ?? null,
     p_daily_reminder_minute: patch.dailyReminderMinute ?? null,
@@ -165,6 +182,9 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
     p_quiet_hours_end_hour: next.quietHoursEndHour,
     p_timezone: getDeviceTimeZone(),
   });
+  if (error && __DEV__) {
+    console.warn('[notification-preferences-service] upsert_notification_preferences failed (expected until that migration ships):', error.message);
+  }
 };
 
 // Called on every app launch/foreground (see _layout.tsx) -- independent of any preference
@@ -175,5 +195,8 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
 // or displays it; quiet hours are shown/edited as plain hour-of-day, same as before).
 export const syncDeviceTimeZone = async (): Promise<void> => {
   if (!supabase) return;
-  await supabase.rpc('upsert_notification_preferences', { p_timezone: getDeviceTimeZone() });
+  const { error } = await supabase.rpc('upsert_notification_preferences', { p_timezone: getDeviceTimeZone() });
+  if (error && __DEV__) {
+    console.warn('[notification-preferences-service] syncDeviceTimeZone failed (expected until that migration ships):', error.message);
+  }
 };

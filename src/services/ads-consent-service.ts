@@ -23,6 +23,8 @@ import { Platform } from 'react-native';
 import { AdsConsent, AdsConsentStatus, MobileAds } from 'react-native-google-mobile-ads';
 import * as TrackingTransparency from 'expo-tracking-transparency';
 import { computeRequestNonPersonalizedAdsOnly } from '@/services/ad-eligibility-logic';
+import { AdsConfig } from '@/services/ads-config';
+import { withTimeout } from '@/services/with-timeout';
 
 export type AdsConsentResult = { requestNonPersonalizedAdsOnly: boolean };
 
@@ -46,10 +48,23 @@ export const prepareAdsConsent = async (options: { underAgeOfConsent: boolean })
   preparedForUnderAgeOfConsent = options.underAgeOfConsent;
 
   preparePromise = (async (): Promise<AdsConsentResult> => {
+    // Build 23 P0 stability fix: each step below previously had no bound at all -- if the UMP
+    // SDK, the OS ATT prompt, or MobileAds().initialize() ever failed to settle (confirmed as a
+    // real, documented failure mode for this SDK family on some installs, not hypothetical),
+    // this whole function -- and every caller awaiting it (the interstitial service, every
+    // native ad card) -- hung forever. withTimeout turns "never settles" into the exact same
+    // conservative fallback the existing catch block already used for a real error, so a timeout
+    // and a thrown error are indistinguishable to every caller; nothing downstream needed to
+    // change. See ads-config.ts's own comment for why these specific bounds were chosen.
     let consentObtainedOrNotRequired = false;
     try {
-      const consentInfo = await AdsConsent.gatherConsent({ tagForUnderAgeOfConsent: options.underAgeOfConsent });
-      consentObtainedOrNotRequired = consentInfo.status === AdsConsentStatus.OBTAINED || consentInfo.status === AdsConsentStatus.NOT_REQUIRED;
+      const consentInfo = await withTimeout(
+        AdsConsent.gatherConsent({ tagForUnderAgeOfConsent: options.underAgeOfConsent }),
+        AdsConfig.consentGatherTimeoutMs,
+      );
+      consentObtainedOrNotRequired =
+        consentInfo !== 'timeout' &&
+        (consentInfo.status === AdsConsentStatus.OBTAINED || consentInfo.status === AdsConsentStatus.NOT_REQUIRED);
     } catch {
       // Fail safe: any UMP error is treated as consent NOT obtained (never assumed granted).
       consentObtainedOrNotRequired = false;
@@ -58,19 +73,29 @@ export const prepareAdsConsent = async (options: { underAgeOfConsent: boolean })
     let attGranted = true; // Non-iOS platforms have no ATT concept; never withhold for that reason alone.
     if (Platform.OS === 'ios') {
       try {
-        const current = await TrackingTransparency.getTrackingPermissionsAsync();
-        // Only request if the OS itself reports this was never asked -- never re-prompt a user
-        // who already answered, and never request for a reason other than genuinely needing
-        // the answer (the task's own "do not ask unnecessarily" instruction).
-        const resolved = current.status === 'undetermined' ? await TrackingTransparency.requestTrackingPermissionsAsync() : current;
-        attGranted = resolved.status === 'granted';
+        const current = await withTimeout(TrackingTransparency.getTrackingPermissionsAsync(), AdsConfig.attRequestTimeoutMs);
+        if (current === 'timeout') {
+          attGranted = false;
+        } else {
+          // Only request if the OS itself reports this was never asked -- never re-prompt a user
+          // who already answered, and never request for a reason other than genuinely needing
+          // the answer (the task's own "do not ask unnecessarily" instruction).
+          const resolved =
+            current.status === 'undetermined'
+              ? await withTimeout(TrackingTransparency.requestTrackingPermissionsAsync(), AdsConfig.attRequestTimeoutMs)
+              : current;
+          attGranted = resolved !== 'timeout' && resolved.status === 'granted';
+        }
       } catch {
         attGranted = false;
       }
     }
 
     try {
-      await MobileAds().initialize();
+      const initResult = await withTimeout(MobileAds().initialize(), AdsConfig.adsSdkInitTimeoutMs);
+      if (initResult === 'timeout' && __DEV__) {
+        console.warn('[ads-consent-service] MobileAds().initialize() did not settle within the timeout -- proceeding anyway.');
+      }
     } catch {
       // Ad placements already handle a failed/timed-out load independently of this -- a failed
       // SDK init simply means every subsequent load attempt also fails, handled the same way.

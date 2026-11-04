@@ -16,6 +16,7 @@ import { isAdultEligible, useAgeEligibility } from '@/data/age-eligibility';
 import { AdsConfig, resolveQuizAdVariant } from '@/services/ads-config';
 import { usePremiumStatus } from '@/services/purchases-service';
 import { computeAdEligibility, type AdEligibility } from '@/services/ad-eligibility-logic';
+import { useDiagnosticControls } from '@/services/diagnostic-controls-service';
 
 export type AdPlacement = keyof typeof AdsConfig.placements;
 export type { AdEligibility };
@@ -23,11 +24,17 @@ export type { AdEligibility };
 export const useAdEligibility = (placement: AdPlacement): AdEligibility => {
   const premium = usePremiumStatus();
   const ageEligibility = useAgeEligibility();
+  // Inert (always false) outside the diagnostic EAS build profile -- see
+  // diagnostic-controls-service.ts's own header for the full safety reasoning. ANDed with the
+  // real config below, never a replacement for it: a subscriber/ineligible user is never made
+  // eligible by this, only an otherwise-eligible free user can be temporarily suppressed for
+  // the P0 freeze investigation.
+  const diagnostics = useDiagnosticControls();
 
   return computeAdEligibility({
     premiumStatus: premium.status,
     placementEnabled: AdsConfig.placements[placement],
-    globalEnabled: AdsConfig.globalEnabled,
+    globalEnabled: AdsConfig.globalEnabled && !diagnostics.adsDisabled,
     isAdultEligible: isAdultEligible(ageEligibility),
   });
 };

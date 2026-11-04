@@ -8,6 +8,13 @@
 // true: there is no code path in this module that can prevent its own promise from resolving
 // (every branch, including every error branch, reaches a `return`).
 //
+// CORRECTED (Build 23 P0 stability review): "always resolves" was not actually true before
+// this fix -- the load step had a timeout, but prepareAdsConsent (ads-consent-service.ts) and
+// the "wait for CLOSED after show" step below did not. Both are now bounded too (the former
+// inside ads-consent-service.ts itself; the latter via withTimeout below), so this function's
+// own header comment is now actually enforced end to end, not just for the one step that had
+// always been timed.
+//
 // Caller contract: call this ONLY after the caller's own useAdEligibility(placement).eligible
 // is true -- this module does not re-check subscription status itself (ad-eligibility-service
 // is the one place that does). This module owns exactly three things no eligibility check can:
@@ -18,6 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 
 import { logAnalyticsEvent, type AdPlacementName } from '@/services/analytics-service';
+import { withTimeout } from '@/services/with-timeout';
 import { AD_UNIT_IDS, AdsConfig } from '@/services/ads-config';
 import { prepareAdsConsent } from '@/services/ads-consent-service';
 
@@ -53,9 +61,6 @@ let interstitialsShownThisSession = 0;
 export const resetInterstitialSessionCapForTesting = (): void => {
   interstitialsShownThisSession = 0;
 };
-
-const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | 'timeout'> =>
-  Promise.race([promise, new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), ms))]);
 
 // Resolves true only when the ad genuinely showed (reached CLOSED after a real impression
 // opportunity) -- false for every skip/failure path (cap, cooldown, load timeout/error). The
@@ -101,38 +106,62 @@ export const showInterstitialIfDue = async (placement: AdPlacementName, underAge
   }
   logAnalyticsEvent({ name: 'ad_loaded', properties: { placement, load_time_ms: Date.now() - loadStartedAt } });
 
-  await new Promise<void>((resolve) => {
-    const unsubscribeImpression = interstitial.addAdEventListener(AdEventType.IMPRESSION, () => {
-      logAnalyticsEvent({ name: 'ad_impression', properties: { placement } });
-    });
-    const unsubscribePaid = interstitial.addAdEventListener(AdEventType.PAID, (payload) => {
-      // valueMicros (an exact decimal string the SDK itself provides) is preferred over
-      // deriving micros from the floating-point `value`, per the SDK's own documented
-      // guidance on this payload shape.
-      const estimatedRevenueMicros = payload.valueMicros ? Number(payload.valueMicros) : Math.round(payload.value * 1_000_000);
-      logAnalyticsEvent({
-        name: 'ad_revenue_paid',
-        properties: {
-          placement,
-          estimated_revenue_micros: estimatedRevenueMicros,
-          currency_code: payload.currency,
-          precision: String(payload.precision),
-        },
+  // CORRECTED (Build 23 P0 stability review): this previously had no bound at all -- if the ad
+  // showed but CLOSED never fired (a real, documented class of native event-delivery bug, not
+  // hypothetical), this function hung forever, and so did every caller awaiting it (both
+  // placements' result rendering). cleanup() is idempotent and shared by every exit path
+  // (closed, show() rejecting, and now timeout) so listeners are released exactly once no
+  // matter which path actually resolves first, and a late-arriving real CLOSED event after a
+  // timeout can never double-resolve or re-fire analytics.
+  let cleanup = () => {};
+  const closedOrTimedOut = await withTimeout(
+    new Promise<void>((resolve) => {
+      const unsubscribeImpression = interstitial.addAdEventListener(AdEventType.IMPRESSION, () => {
+        logAnalyticsEvent({ name: 'ad_impression', properties: { placement } });
       });
-    });
-    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      unsubscribeImpression();
-      unsubscribePaid();
-      unsubscribeClosed();
-      resolve();
-    });
-    interstitial.show().catch(() => {
-      unsubscribeImpression();
-      unsubscribePaid();
-      unsubscribeClosed();
-      resolve();
-    });
-  });
+      const unsubscribePaid = interstitial.addAdEventListener(AdEventType.PAID, (payload) => {
+        // valueMicros (an exact decimal string the SDK itself provides) is preferred over
+        // deriving micros from the floating-point `value`, per the SDK's own documented
+        // guidance on this payload shape.
+        const estimatedRevenueMicros = payload.valueMicros ? Number(payload.valueMicros) : Math.round(payload.value * 1_000_000);
+        logAnalyticsEvent({
+          name: 'ad_revenue_paid',
+          properties: {
+            placement,
+            estimated_revenue_micros: estimatedRevenueMicros,
+            currency_code: payload.currency,
+            precision: String(payload.precision),
+          },
+        });
+      });
+      const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+        cleanup();
+        resolve();
+      });
+      let cleaned = false;
+      cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        unsubscribeImpression();
+        unsubscribePaid();
+        unsubscribeClosed();
+      };
+      interstitial.show().catch(() => {
+        cleanup();
+        resolve();
+      });
+    }),
+    AdsConfig.interstitialShowTimeoutMs,
+  );
+  if (closedOrTimedOut === 'timeout') {
+    cleanup();
+    logAnalyticsEvent({ name: 'ad_failed', properties: { placement, error_code: 'show_timeout' } });
+    // Deliberately does NOT count toward interstitialsShownThisSession/cooldown -- an ad that
+    // never confirmed it closed was never confirmed to have actually shown to completion; the
+    // existing session cap and cooldown both exist to protect the USER from too many ads, which
+    // an ad this function gave up waiting on was not.
+    return false;
+  }
 
   interstitialsShownThisSession += 1;
   await setStoredLastShownAt(Date.now());

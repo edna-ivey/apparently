@@ -8,7 +8,7 @@
 // looking card. Only ever mounted for a free, ad-eligible user -- see explore.tsx's own
 // interleave logic, which checks useAdEligibility before rendering this at all.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeAd, NativeAdView, NativeAsset, NativeAssetType, useNativeAd } from 'react-native-google-mobile-ads';
 
@@ -52,11 +52,21 @@ export function NativeAdExploreCard({ underAgeOfConsent }: { underAgeOfConsent: 
 }
 
 function LoadedNativeAdCard({ nativeAd }: { nativeAd: NativeAd }) {
+  // Build 23 P0 stability fix: onLayout fires on every relayout (parent resize, scroll-driven
+  // recycling, orientation change), not just the first time this view appears -- the library
+  // exposes no dedicated impression callback on NativeAdView, so onLayout is still the closest
+  // available signal, but it must only count the FIRST one as the impression. This ref is
+  // per-mounted-instance (reset naturally when the card remounts for a new ad), never shared.
+  const impressionLoggedRef = useRef(false);
   return (
     <NativeAdView
       style={styles.card}
       nativeAd={nativeAd}
-      onLayout={() => logAnalyticsEvent({ name: 'ad_impression', properties: { placement: 'explore_native' } })}>
+      onLayout={() => {
+        if (impressionLoggedRef.current) return;
+        impressionLoggedRef.current = true;
+        logAnalyticsEvent({ name: 'ad_impression', properties: { placement: 'explore_native' } });
+      }}>
       <View style={styles.adBadgeRow}>
         <View style={styles.adBadge}>
           <Text style={styles.adBadgeText}>Ad</Text>

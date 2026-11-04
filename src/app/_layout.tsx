@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -19,6 +19,7 @@ import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
 import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
 import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
 import { registerPushToken } from '@/services/push-token-service';
+import { useDiagnosticControls } from '@/services/diagnostic-controls-service';
 
 SplashScreen.preventAutoHideAsync();
 // Work Package 2: same "call once, at module scope, before anything else" convention as
@@ -76,6 +77,15 @@ export default function RootLayout() {
   const segments = useSegments();
   const onboardingState = useOnboardingState();
   const onboardingComplete = onboardingState !== 'loading' && onboardingState.completed;
+  // Inert (always false) outside the diagnostic EAS build profile -- see
+  // diagnostic-controls-service.ts's own header for the full safety reasoning. Read via a ref
+  // in the session-bootstrap effect below (that effect intentionally does not re-run on every
+  // diagnostic toggle -- it is the one-time-per-launch identity/purchases bootstrap, not a
+  // notifications concern on its own) and reactively in the daily-reminder effect, which SHOULD
+  // immediately reschedule/cancel when toggled.
+  const diagnostics = useDiagnosticControls();
+  const diagnosticsRef = useRef(diagnostics);
+  diagnosticsRef.current = diagnostics;
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -137,7 +147,7 @@ export default function RootLayout() {
         // saved preferences. Same "app/session initializes" moment as everything else above.
         void hydrateNotificationPreferences().then(async () => {
           const permissionStatus = await getNotificationPermissionStatus();
-          if (permissionStatus === 'granted') {
+          if (permissionStatus === 'granted' && !diagnosticsRef.current.notificationsDisabled) {
             void registerPushToken();
           }
         });
@@ -163,13 +173,21 @@ export default function RootLayout() {
   useEffect(() => {
     void getNotificationPermissionStatus().then((permissionStatus) => {
       void scheduleNextDailyReminder({
-        enabled: notificationPreferences.dailyReminderEnabled,
+        // diagnostics.notificationsDisabled is inert (always false) outside the diagnostic EAS
+        // build profile -- see diagnostic-controls-service.ts. ANDed with the user's own real
+        // preference, never a replacement for it.
+        enabled: notificationPreferences.dailyReminderEnabled && !diagnostics.notificationsDisabled,
         hour: notificationPreferences.dailyReminderHour,
         minute: notificationPreferences.dailyReminderMinute,
         permissionGranted: permissionStatus === 'granted',
       });
     });
-  }, [notificationPreferences.dailyReminderEnabled, notificationPreferences.dailyReminderHour, notificationPreferences.dailyReminderMinute]);
+  }, [
+    notificationPreferences.dailyReminderEnabled,
+    notificationPreferences.dailyReminderHour,
+    notificationPreferences.dailyReminderMinute,
+    diagnostics.notificationsDisabled,
+  ]);
 
   // Notifications, 2026-10-22: deep-link handling for a tapped notification, covering all
   // three app states the task names explicitly -- foreground (addNotificationResponseReceived

@@ -12,6 +12,18 @@ import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
+// CURRENT STATE (Build 23 P0 stability review, confirmed directly against the real linked
+// production database, not assumed): the push_tokens table and upsert_push_token/
+// delete_push_token RPCs do NOT exist in production yet (one of the 5 independently-gated
+// migrations -- see supabase/release-manifest.json). Every function below is already called
+// fire-and-forget (`void`, never awaited -- confirmed in _layout.tsx and settings.tsx) and
+// already treats every failure as non-fatal, so this gap cannot block anything. It does mean:
+// no device's Expo push token is actually being stored server-side yet, so no server-sent push
+// notification (friend activity, Creature evolution, new quizzes, private updates) can reach
+// any device today, regardless of what a user has enabled in Settings -- this file makes no
+// claim otherwise, and that remains true until the migration is separately reviewed and
+// deployed.
+
 const EAS_PROJECT_ID = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
 
 let registeredSubscription: Notifications.Subscription | null = null;
@@ -47,7 +59,11 @@ export const registerPushToken = async (): Promise<void> => {
     registeredSubscription = Notifications.addPushTokenListener(() => {
       if (!supabase) return;
       void Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID }).then(({ data }) => {
-        void supabase?.rpc('upsert_push_token', { p_token: data, p_platform: Platform.OS });
+        void supabase?.rpc('upsert_push_token', { p_token: data, p_platform: Platform.OS }).then(({ error }) => {
+          if (error && __DEV__) {
+            console.warn('[push-token-service] upsert_push_token (rotation) failed (expected until that migration ships):', error.message);
+          }
+        });
       });
     });
   }
@@ -64,9 +80,15 @@ export const removeThisDevicePushToken = async (): Promise<void> => {
   }
   try {
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID });
-    await supabase.rpc('delete_push_token', { p_token: data });
-  } catch {
+    const { error } = await supabase.rpc('delete_push_token', { p_token: data });
+    if (error && __DEV__) {
+      console.warn('[push-token-service] delete_push_token failed (expected until that migration ships):', error.message);
+    }
+  } catch (error) {
     // Best-effort -- see registerPushToken's own comment on why a failure here never blocks
     // the caller's own flow (settings toggle, account deletion).
+    if (__DEV__) {
+      console.warn('[push-token-service] removeThisDevicePushToken failed:', error);
+    }
   }
 };
