@@ -1,3 +1,38 @@
+# RELEASE ADDENDUM — November 4, 2026 (supersedes pre-AdMob statements below)
+
+**Important: This worksheet's original October 21 findings are historical. Do NOT copy its claims "No advertising/attribution SDK" or "No tracking" into App Store Connect.** Since October 22, the app ships Google AdMob, first-party Supabase analytics, and optional Expo/Apple push notification handling. The actual iOS privacy-policy source and the public https://apparentlyyou.com/privacy page were corrected November 4.
+
+## Current App Store Connect disclosure review
+
+Apple requires all data collected by the app AND its third-party SDKs to be declared, with a per-data-type assessment of linkage, purpose, and tracking. These are source-informed **candidate answers to verify against the actual App Store Connect questionnaire and Google SDK privacy details**, not claims that the owner has entered or certified them:
+
+| Data / Apple category | Collection and linkage | Purpose or check |
+|---|---|---|
+| Identifiers: User ID | Yes, linked to anonymous Supabase account | App Functionality, Analytics |
+| Contact Info: Name | Yes, display name entered in profile and linked | App Functionality |
+| Other user-provided profile data | Yes, age range, gender, optional custom gender in profile | Classify accurately in live Apple categories; App Functionality |
+| User Content | Yes, stored quiz and Daily responses, results, compare shares | App Functionality |
+| Purchases | Yes, subscription entitlement/purchase records, linked | App Functionality |
+| Usage Data: Product Interaction | Yes, first-party quiz/ad/notification analytics; Google ad SDK may also collect interactions | Analytics; Third-Party Advertising where applicable |
+| Usage Data: Advertising Data | Yes, Google AdMob impressions/ads seen and app ad measurements | Third-Party Advertising, Analytics |
+| Identifiers: Device ID | Google AdMob may collect advertising/device identifiers; Expo device push token also stored after permission | App Functionality and advertising/measurement as applicable; classify tracking accurately |
+| Diagnostics: Crash / Performance | Sentry diagnostics and Google Mobile Ads SDK may collect diagnostic/performance data | App Functionality, Analytics, advertising as applicable |
+| Location: Coarse Location | Google Mobile Ads documentation says the SDK **may** collect IP-derived approximate location | Check SDK configuration/behavior and disclose if collected |
+
+**Tracking:** The production app requests Apple's App Tracking Transparency permission for eligible users and uses Google AdMob. Review Apple's definition of tracking and disclose which data types Google or other parties combine with third-party information for personalized advertising or ad measurement; a blanket pre-ads "No tracking" answer is not defensible. Consent/ATT restrictions and non-personalized ads must still be respected. Do not mark every field as tracked just because one SDK is present.
+
+**Notifications:** Push tokens, time zone and preference settings are stored server-side for notification functionality. Local Daily reminders can work without the server delivery cron. The remote sending schedule remains inactive until controlled verification.
+
+**Third-party recipients:** Apple, RevenueCat, Supabase, Sentry, Google AdMob and applicable advertising partners, Expo Push Service/APNs, and website/deployment hosts as relevant. Avoid inventing unsupported data-sharing claims.
+
+**Owner sign-off still required:** Select precise Apple data-type/purpose/linkage/tracking answers in the live dashboard, publish the App Privacy labels, and verify the real privacy policy matches the shipping behavior. The question about whether data is collected is **Yes**. The prior "No SDK"/"No tracking" assertions below are invalid for this build.
+
+Official sources:
+- https://developer.apple.com/app-store/app-privacy-details/
+- https://developers.google.com/admob/ios/privacy/data-disclosure
+
+---
+
 # Apparently You | App Privacy evidence and disclosure worksheet
 Updated October 21, 2026. NOT YET ENTERED OR CERTIFIED IN APP STORE CONNECT.
 
