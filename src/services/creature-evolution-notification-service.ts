@@ -22,5 +22,14 @@ export const checkAndNotifyCreatureEvolution = async (topTraits: readonly Signat
   if (!supabase || topTraits.length === 0) {
     return;
   }
-  await supabase.rpc('sync_creature_traits', { p_trait_keys: topTraits.map(traitKey) });
+  try {
+    const { error } = await supabase.rpc('sync_creature_traits', { p_trait_keys: topTraits.map(traitKey) });
+    if (error && __DEV__) {
+      console.warn('[creature-evolution-notification-service] sync_creature_traits failed:', error.message);
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[creature-evolution-notification-service] checkAndNotifyCreatureEvolution failed:', error);
+    }
+  }
 };

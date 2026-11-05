@@ -240,7 +240,6 @@ export default function HomeScreen() {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   useEffect(() => {
     if (!isCommitted || notificationsSuppressed) {
-      setShowNotificationPrompt(false);
       return;
     }
     void (async () => {
@@ -576,7 +575,7 @@ export default function HomeScreen() {
         <TodayWelcomeModal />
 
         <NotificationPermissionPrompt
-          visible={showNotificationPrompt}
+          visible={showNotificationPrompt && isCommitted && !notificationsSuppressed}
           onEnable={() => {
             setShowNotificationPrompt(false);
             void requestNotificationPermission().then((status) => {

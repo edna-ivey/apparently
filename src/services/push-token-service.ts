@@ -28,6 +28,36 @@ const EAS_PROJECT_ID = Constants.expoConfig?.extra?.eas?.projectId as string | u
 
 let registeredSubscription: Notifications.Subscription | null = null;
 
+// Dedup state for the upsert itself (not the native getExpoPushTokenAsync call, which is cheap
+// and always re-run) -- call registerPushToken() redundantly as often as every screen likes
+// (confirmed call sites: _layout.tsx, settings.tsx, index.tsx) without ever issuing a second
+// network round trip for a token that already upserted successfully. A token that failed last
+// time is NOT remembered as done, so the very next call retries normally -- this only skips
+// genuinely redundant repeats of already-confirmed work, never a real retry.
+let lastUpsertedToken: string | null = null;
+let lastUpsertSucceeded = false;
+
+const upsertTokenIfNeeded = async (token: string | undefined): Promise<void> => {
+  if (!supabase || !token) return;
+  if (token === lastUpsertedToken && lastUpsertSucceeded) {
+    return;
+  }
+  try {
+    const { error } = await supabase.rpc('upsert_push_token', { p_token: token, p_platform: Platform.OS });
+    lastUpsertedToken = token;
+    lastUpsertSucceeded = !error;
+    if (error && __DEV__) {
+      console.warn('[push-token-service] upsert_push_token failed:', error.message);
+    }
+  } catch (error) {
+    lastUpsertedToken = token;
+    lastUpsertSucceeded = false;
+    if (__DEV__) {
+      console.warn('[push-token-service] upsert_push_token threw:', error);
+    }
+  }
+};
+
 // Call once permission is confirmed granted. Fetches the real Expo push token for this device
 // and upserts it server-side under the caller's own session. Never throws -- a registration
 // failure (offline, Expo's push service unreachable) is reported the same way every other
@@ -38,10 +68,7 @@ export const registerPushToken = async (): Promise<void> => {
   }
   try {
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID });
-    const { error } = await supabase.rpc('upsert_push_token', { p_token: data, p_platform: Platform.OS });
-    if (error && __DEV__) {
-      console.warn('[push-token-service] upsert_push_token failed:', error.message);
-    }
+    await upsertTokenIfNeeded(data);
   } catch (error) {
     if (__DEV__) {
       console.warn('[push-token-service] registerPushToken failed:', error);
@@ -54,17 +81,23 @@ export const registerPushToken = async (): Promise<void> => {
   // deliberate: push_tokens.token must always hold the Expo-formatted token, since that's the
   // only format the send-push-notification Edge Function's call to Expo's push API accepts.
   // Only one listener ever attached, regardless of how many times this function is called
-  // (e.g. once at launch and again right after a fresh permission grant).
+  // (e.g. once at launch and again right after a fresh permission grant). Wrapped in its own
+  // try/catch (rather than bare .then() chains) so a failure here -- including
+  // getExpoPushTokenAsync() itself throwing, not just the RPC -- can never become an unhandled
+  // promise rejection; this listener has no caller to propagate a rejection to anyway.
   if (!registeredSubscription) {
     registeredSubscription = Notifications.addPushTokenListener(() => {
       if (!supabase) return;
-      void Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID }).then(({ data }) => {
-        void supabase?.rpc('upsert_push_token', { p_token: data, p_platform: Platform.OS }).then(({ error }) => {
-          if (error && __DEV__) {
-            console.warn('[push-token-service] upsert_push_token (rotation) failed (expected until that migration ships):', error.message);
+      void (async () => {
+        try {
+          const { data } = await Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID });
+          await upsertTokenIfNeeded(data);
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('[push-token-service] token-rotation handler failed:', error);
           }
-        });
-      });
+        }
+      })();
     });
   }
 };

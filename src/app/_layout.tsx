@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -86,6 +86,13 @@ export default function RootLayout() {
   // review named.
   const diagnostics = useDiagnosticControls();
   const diagnosticReady = useDiagnosticControlsReady();
+  // Build 24 stability fix: the session-bootstrap effect below re-runs on every `segments`
+  // change (i.e. every navigation/tab switch), but the notification-startup chain inside it --
+  // a real native getExpoPushTokenAsync() call plus upsert_push_token/syncDeviceTimeZone RPCs
+  // -- must only ever run once per app session. Without this guard, switching tabs repeatedly
+  // re-fires that chain every time, piling up overlapping native bridge calls and network
+  // requests purely from navigation, independent of any real state change.
+  const notificationStartupRanRef = useRef(false);
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -154,9 +161,10 @@ export default function RootLayout() {
         // immediately with the fixed ON/ON default, so production/testflight behavior and
         // timing are completely unchanged.
         void ensureDiagnosticControlsHydrated().then((diagnostics) => {
-          if (diagnostics.notificationsDisabled) {
+          if (diagnostics.notificationsDisabled || notificationStartupRanRef.current) {
             return;
           }
+          notificationStartupRanRef.current = true;
           // Notifications, 2026-10-22: re-registers this device's push token if permission was
           // already granted in a prior session (never requests it here -- that only ever
           // happens contextually, from a real in-app explainer flow, never from this launch

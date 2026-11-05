@@ -42,7 +42,10 @@ assert(/const timer = setTimeout\(\(\) => setFreshCompletionAdResolved\(true\), 
 const interstitialServiceSource = read('../src/services/ad-interstitial-service.ts');
 assert(/export const showInterstitialIfDue = async \(placement: AdPlacementName, underAgeOfConsent: boolean\): Promise<boolean> => {/.test(interstitialServiceSource), 'showInterstitialIfDue always resolves (never rejects) -- every branch, including every failure branch, reaches a return');
 assert(/if \(loadResult !== 'loaded'\) {\s*logAnalyticsEvent\({ name: 'ad_failed'/.test(interstitialServiceSource), 'a load failure/timeout is logged and resolves false -- never throws, never hangs the caller');
-assert(/const withTimeout = <T>\(promise: Promise<T>, ms: number\)/.test(interstitialServiceSource), 'ad loading is raced against a bounded timeout (AdsConfig.adLoadTimeoutMs) -- a slow/hanging SDK load can never block the caller past that bound');
+assert(
+  /import { withTimeout } from '@\/services\/with-timeout';/.test(interstitialServiceSource) && /withTimeout\(\s*new Promise<'loaded' \| 'error'>/.test(interstitialServiceSource) && /AdsConfig\.adLoadTimeoutMs/.test(interstitialServiceSource),
+  'ad loading is raced against a bounded timeout (the shared withTimeout helper, AdsConfig.adLoadTimeoutMs) -- a slow/hanging SDK load can never block the caller past that bound',
+);
 
 // ============================================================================================
 // Test case 3/4 -- Daily reveal appears before any ad; the Daily ad is never repeated for the
@@ -95,7 +98,7 @@ const permissionServiceSource = read('../src/services/notification-permission-se
 assert(/const before = await getNotificationPermissionStatus\(\);\s*if \(before !== 'undetermined'\) {\s*return before;/.test(permissionServiceSource), 'requesting permission is a no-op (never re-prompts) once the OS already has a real granted/denied answer');
 
 const todayContextualSource = todaySource;
-assert(/if \(!isCommitted\) {\s*return;/.test(todayContextualSource), 'the contextual explainer is only ever considered after a real completed Daily -- never on cold launch');
+assert(/if \(!isCommitted \|\| notificationsSuppressed\) {\s*return;/.test(todayContextualSource), 'the contextual explainer is only ever considered after a real completed Daily -- never on cold launch (and is inert under the diagnostic build\'s notifications-off switch)');
 assert(/if \(await hasShownContextualPermissionPrompt\(\)\) {\s*return;/.test(todayContextualSource), 'the explainer checks it has never been shown on this device before offering itself again');
 
 const sendFunctionSource = read('../supabase/functions/send-push-notification/index.ts');
@@ -108,7 +111,7 @@ assert(/if \(prefs && isWithinQuietHours\(now, prefs\)\) {/.test(sendFunctionSou
 
 const dailyReminderSource = read('../src/services/daily-reminder-service.ts');
 assert(/export const cancelTodaysDailyReminder = async \(\): Promise<void> => {/.test(dailyReminderSource), 'cancelTodaysDailyReminder exists as its own explicit cancellation path');
-assert(/useEffect\(\(\) => {\s*if \(isCommitted\) {\s*void cancelTodaysDailyReminder\(\);/.test(todaySource), 'Today cancels the pending reminder the moment isCommitted is true -- both for a fresh commit and for a device that opens the app with today\'s Daily already answered');
+assert(/useEffect\(\(\) => {\s*if \(isCommitted && !notificationsSuppressed\) {\s*void cancelTodaysDailyReminder\(\);/.test(todaySource), 'Today cancels the pending reminder the moment isCommitted is true -- both for a fresh commit and for a device that opens the app with today\'s Daily already answered');
 
 // ============================================================================================
 // Test case 14 -- Friend/Compare activity notifications are based on real authorized events,
@@ -140,9 +143,15 @@ assert(/void removeThisDevicePushToken\(\);\s*const result = await deleteAccount
 // ============================================================================================
 
 const consentServiceSource = read('../src/services/ads-consent-service.ts');
-assert(/const consentInfo = await AdsConsent\.gatherConsent\({ tagForUnderAgeOfConsent: options\.underAgeOfConsent }\);/.test(consentServiceSource), 'Google UMP consent is gathered before any ad request, tagged with the real existing age-eligibility signal -- never a hardcoded false');
+assert(
+  /AdsConsent\.gatherConsent\({ tagForUnderAgeOfConsent: options\.underAgeOfConsent }\),\s*AdsConfig\.consentGatherTimeoutMs,/.test(consentServiceSource),
+  'Google UMP consent is gathered (bounded by withTimeout/AdsConfig.consentGatherTimeoutMs) before any ad request, tagged with the real existing age-eligibility signal -- never a hardcoded false',
+);
 assert(/computeRequestNonPersonalizedAdsOnly\(\{/.test(consentServiceSource), 'the non-personalized-ads-only decision is delegated to the shared, exhaustively-tested pure function (see scripts/validate-ad-eligibility-logic.ts for the real behavioral proof that it forces non-personalized ads whenever ANY of under-age-of-consent/consent-not-obtained/ATT-not-granted is true)');
-assert(/current\.status === 'undetermined' \? await TrackingTransparency\.requestTrackingPermissionsAsync\(\) : current;/.test(consentServiceSource), 'ATT is only ever requested when the OS reports it as genuinely undetermined -- never assumed required, never re-requested');
+assert(
+  /current\.status === 'undetermined'\s*\?\s*await withTimeout\(TrackingTransparency\.requestTrackingPermissionsAsync\(\), AdsConfig\.attRequestTimeoutMs\)\s*:\s*current;/.test(consentServiceSource),
+  'ATT is only ever requested when the OS reports it as genuinely undetermined -- never assumed required, never re-requested (and is itself bounded by withTimeout/AdsConfig.attRequestTimeoutMs)',
+);
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED.`);

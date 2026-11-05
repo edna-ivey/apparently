@@ -124,25 +124,31 @@ export const hydrateNotificationPreferences = async (): Promise<void> => {
     // above, which already resolved. A user with no server row yet (never changed a
     // preference) simply keeps the defaults until their first write.
     if (supabase) {
-      const { data, error } = await supabase.from('notification_preferences').select('*').maybeSingle();
-      if (error && __DEV__) {
-        console.warn('[notification-preferences-service] server refresh failed (expected until that migration ships):', error.message);
-      }
-      if (data) {
-        const fromServer: NotificationPreferences = {
-          dailyReminderEnabled: data.daily_reminder_enabled,
-          dailyReminderHour: data.daily_reminder_hour,
-          dailyReminderMinute: data.daily_reminder_minute,
-          friendActivityEnabled: data.friend_activity_enabled,
-          creatureEvolutionEnabled: data.creature_evolution_enabled,
-          newQuizzesEnabled: data.new_quizzes_enabled,
-          privateUpdatesEnabled: data.private_updates_enabled,
-          quietHoursStartHour: data.quiet_hours_start_hour,
-          quietHoursEndHour: data.quiet_hours_end_hour,
-        };
-        snapshot = { hydrated: true, value: fromServer };
-        await storage.setItem(STORAGE_KEY, JSON.stringify(fromServer));
-        notify();
+      try {
+        const { data, error } = await supabase.from('notification_preferences').select('*').maybeSingle();
+        if (error && __DEV__) {
+          console.warn('[notification-preferences-service] server refresh failed (expected until that migration ships):', error.message);
+        }
+        if (data) {
+          const fromServer: NotificationPreferences = {
+            dailyReminderEnabled: data.daily_reminder_enabled,
+            dailyReminderHour: data.daily_reminder_hour,
+            dailyReminderMinute: data.daily_reminder_minute,
+            friendActivityEnabled: data.friend_activity_enabled,
+            creatureEvolutionEnabled: data.creature_evolution_enabled,
+            newQuizzesEnabled: data.new_quizzes_enabled,
+            privateUpdatesEnabled: data.private_updates_enabled,
+            quietHoursStartHour: data.quiet_hours_start_hour,
+            quietHoursEndHour: data.quiet_hours_end_hour,
+          };
+          snapshot = { hydrated: true, value: fromServer };
+          await storage.setItem(STORAGE_KEY, JSON.stringify(fromServer));
+          notify();
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('[notification-preferences-service] server refresh threw:', error);
+        }
       }
     }
   })();
@@ -172,20 +178,26 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
   await storage.setItem(STORAGE_KEY, JSON.stringify(next));
 
   if (!supabase) return;
-  const { error } = await supabase.rpc('upsert_notification_preferences', {
-    p_daily_reminder_enabled: patch.dailyReminderEnabled ?? null,
-    p_daily_reminder_hour: patch.dailyReminderHour ?? null,
-    p_daily_reminder_minute: patch.dailyReminderMinute ?? null,
-    p_friend_activity_enabled: patch.friendActivityEnabled ?? null,
-    p_creature_evolution_enabled: patch.creatureEvolutionEnabled ?? null,
-    p_new_quizzes_enabled: patch.newQuizzesEnabled ?? null,
-    p_private_updates_enabled: patch.privateUpdatesEnabled ?? null,
-    p_quiet_hours_start_hour: next.quietHoursStartHour,
-    p_quiet_hours_end_hour: next.quietHoursEndHour,
-    p_timezone: getDeviceTimeZone(),
-  });
-  if (error && __DEV__) {
-    console.warn('[notification-preferences-service] upsert_notification_preferences failed (expected until that migration ships):', error.message);
+  try {
+    const { error } = await supabase.rpc('upsert_notification_preferences', {
+      p_daily_reminder_enabled: patch.dailyReminderEnabled ?? null,
+      p_daily_reminder_hour: patch.dailyReminderHour ?? null,
+      p_daily_reminder_minute: patch.dailyReminderMinute ?? null,
+      p_friend_activity_enabled: patch.friendActivityEnabled ?? null,
+      p_creature_evolution_enabled: patch.creatureEvolutionEnabled ?? null,
+      p_new_quizzes_enabled: patch.newQuizzesEnabled ?? null,
+      p_private_updates_enabled: patch.privateUpdatesEnabled ?? null,
+      p_quiet_hours_start_hour: next.quietHoursStartHour,
+      p_quiet_hours_end_hour: next.quietHoursEndHour,
+      p_timezone: getDeviceTimeZone(),
+    });
+    if (error && __DEV__) {
+      console.warn('[notification-preferences-service] upsert_notification_preferences failed (expected until that migration ships):', error.message);
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[notification-preferences-service] upsert_notification_preferences threw:', error);
+    }
   }
 };
 
@@ -197,8 +209,14 @@ export const updateNotificationPreferences = async (patch: Partial<NotificationP
 // or displays it; quiet hours are shown/edited as plain hour-of-day, same as before).
 export const syncDeviceTimeZone = async (): Promise<void> => {
   if (!supabase) return;
-  const { error } = await supabase.rpc('upsert_notification_preferences', { p_timezone: getDeviceTimeZone() });
-  if (error && __DEV__) {
-    console.warn('[notification-preferences-service] syncDeviceTimeZone failed (expected until that migration ships):', error.message);
+  try {
+    const { error } = await supabase.rpc('upsert_notification_preferences', { p_timezone: getDeviceTimeZone() });
+    if (error && __DEV__) {
+      console.warn('[notification-preferences-service] syncDeviceTimeZone failed (expected until that migration ships):', error.message);
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[notification-preferences-service] syncDeviceTimeZone threw:', error);
+    }
   }
 };
