@@ -16,7 +16,7 @@ import { useResponsiveContentWidth } from '@/hooks/use-responsive-content-width'
 // directly from supabase/functions/delete-account/index.ts; Sentry's actual production
 // config read from src/services/observability.ts (sendDefaultPii/attachScreenshot/session-
 // replay/scrubbing); the full list of third-party services cross-checked against package.json
-// (no analytics/tracking SDK exists beyond what's listed below); share-link behavior checked
+// (AdMob, first-party analytics and push providers added in November 2026); share-link behavior checked
 // against the real schema (no manual revoke exists; a share is only invalidated by the
 // sharer's own account deletion, which cascades it away); the under-13 age gate confirmed in
 // onboarding.tsx (blocks immediately, no profile/session ever created). Governing-law/dispute
@@ -39,13 +39,14 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
       'Quiz and Daily responses, results, personality traits and evidence, Creature and Relic progression, and content you choose to share through comparison/sharing features.',
       'An anonymous account identifier (not tied to an email or phone number at signup) used to associate your saved responses, app state and purchases with your installation.',
       'Subscription status and purchase entitlement records from Apple and RevenueCat. We never see or store your payment card details — those are processed entirely by Apple.',
+      'App engagement events, ad placement and impression measurements, and notification permission and delivery events, associated with an anonymous app account identifier. When notifications are enabled, we also maintain push tokens and notification preference and time-zone settings.',
       'Technical diagnostic information, only when our error-monitoring service (Sentry) is active: app version, build number, environment, which backend operation failed, a structural error code, and a stack trace. We do not transmit quiz answer text, personality results, screenshots, session recordings, or your raw device IP address in these events — our Sentry configuration explicitly disables default PII collection, screenshot capture and session replay, and strips authorization headers and request bodies before anything is sent.',
     ],
   },
   {
     heading: 'Why we process it',
     paragraphs: [
-      'To provide the app, personalize your results, preserve your progress, support comparison and sharing, enforce age restrictions and subscription access, troubleshoot errors, prevent abuse, and meet legal obligations.',
+      'To provide the app, personalize your results, preserve your progress, support comparison and sharing, enforce age restrictions and subscription access, deliver notifications you enable, understand app usage, serve and measure advertising where permitted, troubleshoot errors, prevent abuse, and meet legal obligations.',
     ],
   },
   {
@@ -56,7 +57,10 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
       'RevenueCat: subscription status and entitlement synchronization. RevenueCat identifies you only by the same anonymous account identifier described above — never your name or email.',
       'Sentry: diagnostic/error monitoring, configured as described above, active in production builds.',
       'Expo/EAS and Vercel: app build/deployment and website hosting infrastructure.',
-      'We do not use any advertising, analytics, or behavioral-tracking SDK. No other third party receives your data.',
+      'Google AdMob: serves and measures advertisements for eligible free users. Google and its advertising partners may process device identifiers, advertising information, ad interactions, approximate location inferred from technical data, and consent choices according to their policies and applicable requirements.',
+      'First-party analytics: we record limited app events, such as quiz completion, ad delivery, and notification interactions, with event metadata and your anonymous account identifier in Supabase. These events are not intended to contain your raw quiz answers or personality trait values.',
+      'Expo Push Service and Apple Push Notification service: if you enable notifications, device push tokens, delivery metadata, and notification content may be processed to deliver requested alerts. Notification preferences and time-zone settings are stored to respect your choices.',
+      'We use Google consent prompts and Apple App Tracking Transparency where required. Declining tracking or personalized advertising does not prevent non-personalized ads where permitted.',
     ],
   },
   {
@@ -77,7 +81,7 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
   {
     heading: 'Your choices',
     paragraphs: [
-      'You can change your profile fields in Settings, manage or cancel your Apple subscription at any time, restore a prior purchase, and request account deletion — all from Settings. For any other request about your data, contact privacy@apparentlyyou.com.',
+      'You can change your profile fields and notification preferences in Settings, turn off iOS notification permission, respond to advertising consent and App Tracking Transparency prompts where presented, manage or cancel your Apple subscription, restore a prior purchase, and request account deletion. For other requests about your data, contact privacy@apparentlyyou.com.',
     ],
   },
   {
@@ -119,7 +123,7 @@ export default function PrivacyPolicyScreen() {
           </View>
 
           <ThemedText style={styles.pageTitle}>Privacy Policy</ThemedText>
-          <ThemedText style={styles.lastUpdated}>Last updated: October 21, 2026</ThemedText>
+          <ThemedText style={styles.lastUpdated}>Last updated: November 4, 2026</ThemedText>
 
           {SECTIONS.map((section) => (
             <View key={section.heading} style={styles.card}>
