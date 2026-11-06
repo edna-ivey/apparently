@@ -67,7 +67,6 @@ export const isPrivateDailyTesterAccessEnabled = process.env.EXPO_PUBLIC_PRIVATE
 if (__DEV__ && !isSupabaseConfigured) {
   // Loud, but never fatal — see the module-level comment on `supabase` below for why a
   // missing config must never crash the app or a static export.
-  // eslint-disable-next-line no-console
   console.warn(
     '[supabase] EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY are not set (or are still ' +
       'placeholder values from .env.example). Supabase-backed features are disabled; existing local/prototype ' +

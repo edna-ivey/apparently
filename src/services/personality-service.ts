@@ -3,7 +3,8 @@ import { getQuizResultsRemote, type GetQuizResultsResult } from './quiz-result-s
 import { getQuizDefinition } from '@/data/quizzes';
 import type { PersonalityAnswerEvidence, PersonalityDimensionId, PersonalityEffect } from '@/data/personality';
 import { supabase } from '@/lib/supabase';
-import type { PersonalityEvidenceRow, QuizResultRow } from '@/services/types';
+import { reportBackendFailure } from '@/services/observability';
+import type { PersonalityEvidenceRow } from '@/services/types';
 
 // Real remote personality evidence for the CURRENT signed-in consumer only. Uses the
 // consumer Supabase client exclusively (never src/lib/admin-supabase.ts, never
@@ -33,6 +34,10 @@ export const getMyPersonalityEvidence = async (): Promise<GetPersonalityEvidence
 
   if (error) {
     console.warn('[personality-service] getMyPersonalityEvidence failed:', error.message);
+    // This is the ONE read every identity surface (Your Signature, Undercurrent, Creature,
+    // Relic) ultimately depends on -- a failure here means the user's own already-earned
+    // identity can't be shown at all, not just a minor UI gap.
+    reportBackendFailure({ operation: 'get_my_personality_evidence', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   return { ok: true, data: (data ?? []) as PersonalityEvidenceRow[] };
@@ -92,79 +97,108 @@ export const groupEvidenceIntoAnswers = (rows: PersonalityEvidenceRow[]): Person
   return Array.from(bySource.values());
 };
 
-// The real Daily-answer count behind a profile. Deliberately NOT rows.length or any count
-// derived from personality_evidence row volume — one Daily answer can legally produce
-// multiple evidence rows (one per personality effect on the chosen option), which would
-// silently inflate this number. Counts unique source_id values scoped to source_type ===
-// 'daily_answer' specifically, so a future evidence source (e.g. quiz_result, already
-// accepted by the schema for forward compatibility) can never silently inflate this count.
-export const countRealDailyAnswers = (rows: PersonalityEvidenceRow[]): number => {
-  const sourceIds = new Set(rows.filter((row) => row.source_type === 'daily_answer').map((row) => row.source_id));
-  return sourceIds.size;
-};
-
 // The current user's own quiz_results, oldest first — RLS-scoped, never another user's rows.
 // A thin re-export of quiz-result-service.ts's reader kept here too so every You-profile
 // input (Daily evidence AND quiz history) is reachable from this one service module. Returns
 // ok:false on a genuine fetch failure — the caller (You) must treat that the same as a
 // personality-evidence load failure (the existing retryable error state), never as "zero
 // quizzes completed."
+//
+// NOTE: no longer used to derive ProfileActivityCounts (see get_my_active_daily_answer_count/
+// get_my_active_quiz_completions below) -- kept exported because v1Profile's own dimension
+// scoring (Creature identity derivation, unrelated to this migration's scope) still reads
+// full personality_evidence, and some callers still display real quiz_results history
+// directly. Build 22 owner audit (2026-10-30), item 5: the You-page/creature-read activity-
+// count read path specifically no longer calls this.
 export const getMyQuizResults = getQuizResultsRemote;
 export type { GetQuizResultsResult };
 
+export type GetActiveDailyAnswerCountResult = { ok: true; data: number } | { ok: false; message: string };
+
+// Build 22 owner audit (2026-10-30), item 5: authoritative, active-windowed replacement for
+// counting source_type='daily_answer' rows in the legacy personality_evidence table. See
+// get_my_active_daily_answer_count() in supabase/migrations/20261030030000_active_profile_
+// activity_counts.sql for the full rationale (ROOM_ONLY exclusion via daily_mode = 'profile',
+// matching the existing, unchanged eligibility rule; 12-month active window per the Bible's
+// locked 12-MONTH ACTIVE EVIDENCE WINDOW section).
+export const getMyActiveDailyAnswerCount = async (): Promise<GetActiveDailyAnswerCountResult> => {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' };
+  }
+  const { data, error } = await supabase.rpc('get_my_active_daily_answer_count');
+  if (error) {
+    console.warn('[personality-service] getMyActiveDailyAnswerCount failed:', error.message);
+    reportBackendFailure({ operation: 'get_my_active_daily_answer_count', errorCode: error.code, recoverable: true }, error);
+    return { ok: false, message: error.message };
+  }
+  return { ok: true, data: typeof data === 'number' ? data : 0 };
+};
+
+export type ActiveQuizCompletion = { quizKey: string; questionCount: number };
+export type GetActiveQuizCompletionsResult = { ok: true; data: ActiveQuizCompletion[] } | { ok: false; message: string };
+
+// Build 22 owner audit (2026-10-30), item 5: one row per quiz actively completed (first
+// completion within the trailing 12 months) -- never a row per retake, never the user's full
+// quiz_results history. Replaces client-side reconstruction of "first completion per quiz_id"
+// from the full history with a direct read of the same atomic, retake-proof gate
+// (user_quiz_completions) submit_quiz_completion itself relies on.
+export const getMyActiveQuizCompletions = async (): Promise<GetActiveQuizCompletionsResult> => {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' };
+  }
+  const { data, error } = await supabase.rpc('get_my_active_quiz_completions');
+  if (error) {
+    console.warn('[personality-service] getMyActiveQuizCompletions failed:', error.message);
+    reportBackendFailure({ operation: 'get_my_active_quiz_completions', errorCode: error.code, recoverable: true }, error);
+    return { ok: false, message: error.message };
+  }
+  const rows = (data ?? []) as { quiz_key: string; question_count: number | null }[];
+  return { ok: true, data: rows.map((row) => ({ quizKey: row.quiz_key, questionCount: row.question_count ?? 0 })) };
+};
+
 export type ProfileActivityCounts = {
-  // Real Daily answers — same definition countRealDailyAnswers already uses.
+  // Real, ACTIVE (trailing 12 months) Daily answers -- see getMyActiveDailyAnswerCount.
   dailyAnswerCount: number;
-  // DISTINCT quiz_ids with at least one completed remote result. A retake (a second row for
-  // a quiz_id already completed) never increases this — it is a count of quizzes, not rows.
+  // DISTINCT quizzes with an ACTIVE (first-completed within 12 months) completion. A retake
+  // never increases this, and never renews an already-inactive quiz back into the window
+  // (user_quiz_completions.completed_at is immutable once set).
   quizCompletionCount: number;
   // dailyAnswerCount + quizCompletionCount — "how many things have you done," not "how many
   // answers went in." Drives the zero/First Signals/We're Noticing/Your Patterns staging.
   profileActivityCount: number;
-  // dailyAnswerCount + the question_count of each quiz_id's FIRST completion only (a retake's
-  // question_count is never added again). Drives Your 7 — "N answers shaping your read."
+  // dailyAnswerCount + the question_count of each ACTIVE quiz completion (a retake's
+  // question_count is never added again, and an aged-out completion is already absent from
+  // activeQuizCompletions entirely). Drives Your 7 — "N answers shaping your read."
   profileAnswerCount: number;
 };
 
-// Pure — no network, no side effects. Takes exactly the two real inputs a You profile is
-// built from (the user's own personality_evidence rows and their own quiz_results rows) and
-// derives every count the You screen needs. quiz_results.question_count can be null for a
-// row that predates that column, or malformed data — treated as 0 rather than throwing, so
-// one bad row can never crash the whole profile.
+// Pure — no network, no side effects. Takes the two already-active-windowed, already-lean
+// inputs (see getMyActiveDailyAnswerCount/getMyActiveQuizCompletions above) and derives every
+// count the You/creature-read screens need.
 export const computeProfileActivityCounts = (
-  evidenceRows: PersonalityEvidenceRow[],
-  quizResults: QuizResultRow[],
+  activeDailyAnswerCount: number,
+  activeQuizCompletions: ActiveQuizCompletion[],
 ): ProfileActivityCounts => {
-  const dailyAnswerCount = countRealDailyAnswers(evidenceRows);
-
-  const firstCompletionByQuizId = new Map<string, QuizResultRow>();
-  for (const row of quizResults) {
-    const existing = firstCompletionByQuizId.get(row.quiz_id);
-    if (!existing || new Date(row.completed_at).getTime() < new Date(existing.completed_at).getTime()) {
-      firstCompletionByQuizId.set(row.quiz_id, row);
-    }
-  }
-
-  const quizCompletionCount = firstCompletionByQuizId.size;
+  const quizCompletionCount = activeQuizCompletions.length;
   // A quiz whose result→profile mapping isn't approved yet (QuizDefinition.contributesToProfile
   // === false, e.g. keep-you-around) still counts toward quizCompletionCount above — it WAS
   // completed — but its question_count is excluded here so it can never inflate
   // profileAnswerCount/Your7 ("answers shaping your read") before that mapping is approved.
   // Reads the CURRENT quiz definition (not anything snapshotted at completion time), so the
   // moment a mapping is approved and this flag is removed, past completions start counting
-  // immediately with no backfill needed. A quiz_id with no current definition (e.g. removed
+  // immediately with no backfill needed. A quiz_key with no current definition (e.g. removed
   // content) is treated as contributing, matching this function's existing behavior before
   // this flag existed.
-  const quizAnswerCount = Array.from(firstCompletionByQuizId.values()).reduce((sum, row) => {
-    const contributes = getQuizDefinition(row.quiz_id)?.contributesToProfile !== false;
-    return contributes ? sum + (row.question_count ?? 0) : sum;
+  const quizAnswerCount = activeQuizCompletions.reduce((sum, completion) => {
+    const contributes = getQuizDefinition(completion.quizKey)?.contributesToProfile !== false;
+    return contributes ? sum + completion.questionCount : sum;
   }, 0);
 
   return {
-    dailyAnswerCount,
+    dailyAnswerCount: activeDailyAnswerCount,
     quizCompletionCount,
-    profileActivityCount: dailyAnswerCount + quizCompletionCount,
-    profileAnswerCount: dailyAnswerCount + quizAnswerCount,
+    profileActivityCount: activeDailyAnswerCount + quizCompletionCount,
+    profileAnswerCount: activeDailyAnswerCount + quizAnswerCount,
   };
 };
 

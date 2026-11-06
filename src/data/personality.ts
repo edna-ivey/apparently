@@ -52,7 +52,10 @@ export type PersonalityDimensionId =
 // today's approved mappings, not a rule this type encodes.
 export type PersonalityDimensionType = 'core' | 'private';
 
-export type PersonalityEffectValue = -2 | -1 | 1 | 2;
+// Build 11: widened from -2|-1|1|2 to also allow -3|3. Daily signals use -2|-1|1|2; see
+// normalizeEffect below for how ±3 is folded into the existing -1..1 normalized scale without
+// changing what ±1/±2 already mean.
+export type PersonalityEffectValue = -3 | -2 | -1 | 1 | 2 | 3;
 
 export type PersonalityEffect = {
   dimension: PersonalityDimensionId;
@@ -555,8 +558,16 @@ export const isCoreDimension = (dimensionId: PersonalityDimensionId): boolean =>
 export const isPrivateDimension = (dimensionId: PersonalityDimensionId): boolean =>
   dimensionMap.get(dimensionId)?.type === 'private';
 
+// ±3 (Build 11's ranked Private quiz rank-#1 award) is folded onto the SAME -1..1 ceiling as
+// ±2, deliberately NOT extended further (-3/2 = -1.5 would overflow getDisplayedPole's percent
+// math and, worse, silently change what ±1/±2 already mean if the whole scale were rebased
+// around a new ±3 endpoint). A dimension already reads as "fully expressing that pole" at ±2;
+// ±3 expresses it just as fully for averaging purposes. The real extra weight of a ±3 award
+// shows up elsewhere — in raw point totals (resolveActiveBoardPole/WITHIN_QUIZ_QUALIFICATION_
+// THRESHOLD both sum signed magnitudes, not normalized values) and in evidenceCount — never
+// here. ±1/±2 are completely untouched from their pre-Build-11 values.
 const normalizeEffect = (value: PersonalityEffectValue): number => {
-  if (value === -2) return -1;
+  if (value <= -2) return -1;
   if (value === -1) return -0.5;
   if (value === 1) return 0.5;
   return 1;
@@ -643,11 +654,7 @@ export const getDisplayedPole = (normalizedScore: number, dimension: Personality
 //
 // This counts RAW POINTS (the signed effect magnitudes already stored on each DimensionEvidence
 // item), never distinct source_ids and never a plain evidence-item count -- a single +2 item is
-// 2 raw points, not "1 qualifying source." Deliberately dependency-free/pure so it can also
-// back the within-quiz raw-evidence pipeline's own pole resolution in
-// src/data/quiz-personality-awards.ts without a circular import (that module keeps its own
-// small copy scoped to a single quiz's temporary evidence -- see its header comment for why
-// these are two separate thresholds despite sharing the same current numeric value).
+// 2 raw points, not "1 qualifying source."
 // ---------------------------------------------------------------------------------------
 
 export const ACTIVE_BOARD_QUALIFICATION_THRESHOLD = 3;
@@ -1049,7 +1056,7 @@ export type ConsensusLanguage = {
   sentence: string;
 };
 
-export const getConsensusLanguage = (options: Array<{ percent: number }>, selectedIndex: number): ConsensusLanguage => {
+export const getConsensusLanguage = (options: { percent: number }[], selectedIndex: number): ConsensusLanguage => {
   const selected = options[selectedIndex];
   if (!selected) {
     throw new Error(`No answer option exists at index ${selectedIndex}.`);

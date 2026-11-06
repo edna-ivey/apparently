@@ -1,14 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { submitQuizResultRemote, type SubmitQuizResultPayload } from '@/services/quiz-result-service';
+import { submitQuizCompletion, type SubmitQuizCompletionPayload } from '@/services/quiz-result-service';
 
 // A network failure while submitting a freshly-completed quiz must never block the result
 // screen (that already works off local state — see quiz/[quizId].tsx), but the profile
 // contribution must not just silently vanish either. This is intentionally small: one flat
 // queue, retried opportunistically (You opening, app/session init) — not a general offline-
-// sync framework. submit_quiz_result is idempotent on (user_id, quiz_id, completed_at), so
-// retrying a submission that actually already succeeded server-side (response merely lost)
-// is always safe — it just comes back as was_retry: true.
+// sync framework. submit_quiz_completion is idempotent on (user_id, quiz_id, completed_at)
+// for the quiz_results row it writes, and its first-completion decision is a separate,
+// independently idempotent (user_id, quiz_id) insert -- retrying a submission that already
+// succeeded server-side (response merely lost) is always safe, just comes back as
+// was_retry: true / is_first_completion: false on the second attempt.
+//
+// Build 22 final cleanup (owner-authorized clean V1 reset, 2026-11-02): a payload already
+// sitting in this AsyncStorage queue from a build installed BEFORE the original Build 22
+// cutover is shaped like the now-retired SubmitQuizResultPayload (field `quizId`, no
+// `quizKey`). Previously this was routed to the legacy submitQuizResultRemote/submit_quiz_result
+// RPC to preserve it as V1 history. The owner has since authorized a clean V1 data reset --
+// "We do NOT need to preserve obsolete beta quiz scores... old TestFlight clients must fail
+// safely instead of allowing them to write incompatible scoring data after cutover." Such a
+// stale payload is now DISCARDED outright (never submitted through any RPC) rather than kept
+// queued or forced through a retired path -- this is the fail-safe behavior, not a bug.
+const isLegacyPayload = (payload: SubmitQuizCompletionPayload | Record<string, unknown>): boolean => !('quizKey' in payload);
 
 const STORAGE_KEY = 'apparently:pending-quiz-submissions';
 
@@ -36,7 +49,9 @@ const storage = {
   },
 };
 
-const readPending = async (): Promise<SubmitQuizResultPayload[]> => {
+type PendingPayload = SubmitQuizCompletionPayload | Record<string, unknown>;
+
+const readPending = async (): Promise<PendingPayload[]> => {
   try {
     const stored = await storage.getItem(STORAGE_KEY);
     if (!stored) {
@@ -49,11 +64,11 @@ const readPending = async (): Promise<SubmitQuizResultPayload[]> => {
   }
 };
 
-const writePending = async (payloads: SubmitQuizResultPayload[]): Promise<void> => {
+const writePending = async (payloads: PendingPayload[]): Promise<void> => {
   await storage.setItem(STORAGE_KEY, JSON.stringify(payloads));
 };
 
-export const queuePendingQuizSubmission = async (payload: SubmitQuizResultPayload): Promise<void> => {
+export const queuePendingQuizSubmission = async (payload: SubmitQuizCompletionPayload): Promise<void> => {
   const pending = await readPending();
   pending.push(payload);
   await writePending(pending);
@@ -68,9 +83,15 @@ export const flushPendingQuizSubmissions = async (): Promise<void> => {
     return;
   }
 
-  const stillPending: SubmitQuizResultPayload[] = [];
+  const stillPending: PendingPayload[] = [];
   for (const payload of pending) {
-    const result = await submitQuizResultRemote(payload);
+    if (isLegacyPayload(payload)) {
+      // See this file's header note -- a stale pre-cutover queued payload is discarded, not
+      // submitted through any RPC. Fail-safe by design: never retried, never blocks the queue.
+      console.warn('[pending-quiz-submissions] discarding a stale legacy-shaped queued payload (pre-V1-reset cutover)');
+      continue;
+    }
+    const result = await submitQuizCompletion(payload as SubmitQuizCompletionPayload);
     if (!result.ok) {
       stillPending.push(payload);
     }

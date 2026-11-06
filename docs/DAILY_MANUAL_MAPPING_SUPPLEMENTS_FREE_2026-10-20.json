@@ -1,0 +1,457 @@
+{
+  "free:1:D": [
+    [
+      "playful_serious",
+      2,
+      "Chooses an entertaining smooth-talker over a straight-laced role"
+    ]
+  ],
+  "free:1:E": [
+    [
+      "independent_collaborative",
+      2,
+      "Prefers competent specialist work without the spotlight"
+    ]
+  ],
+  "free:2:C": [
+    [
+      "private_open",
+      -3,
+      "An inner monologue broadcast removes all privacy"
+    ]
+  ],
+  "free:2:D": [
+    [
+      "sentimental_thick_skinned",
+      -1,
+      "Would endure an embarrassing past look being revisited"
+    ]
+  ],
+  "free:3:B": [
+    [
+      "private_open",
+      -2,
+      "Accepts weekly public exposure of private screen-time habits"
+    ]
+  ],
+  "free:4:C": [
+    [
+      "adventure_comfort",
+      -2,
+      "Values the familiar comfort of home-cooked taste"
+    ]
+  ],
+  "free:4:D": [
+    [
+      "control_allowing",
+      2,
+      "Wants the ability to control the environment's temperature"
+    ]
+  ],
+  "free:6:F": [
+    [
+      "ambitious_content",
+      2,
+      "Identifies with an underestimated person who proves others wrong"
+    ]
+  ],
+  "free:7:A": [
+    [
+      "practical_idealistic",
+      2,
+      "Chooses to remove a concrete everyday logistics problem"
+    ]
+  ],
+  "free:7:E": [
+    [
+      "patient_urgent",
+      -2,
+      "Cannot tolerate being forced to wait through ads"
+    ]
+  ],
+  "free:7:F": [
+    [
+      "control_allowing",
+      1,
+      "Wants to eliminate the uncertainty of choosing dinner"
+    ]
+  ],
+  "free:8:B": [
+    [
+      "control_allowing",
+      3,
+      "Wants to rewrite a past event"
+    ]
+  ],
+  "free:8:D": [
+    [
+      "practical_idealistic",
+      -1,
+      "Chooses fortune over a practical controllable outcome"
+    ]
+  ],
+  "free:8:F": [
+    [
+      "rules_bending",
+      -2,
+      "Is tempted by a forbidden button"
+    ]
+  ],
+  "free:10:A": [
+    [
+      "playful_serious",
+      1,
+      "Selects a socially embarrassing verbal slip"
+    ]
+  ],
+  "free:10:B": [
+    [
+      "social_attunement",
+      1,
+      "Notices the social awkwardness of a mistaken wave"
+    ]
+  ],
+  "free:10:E": [
+    [
+      "social_attunement",
+      1,
+      "Focuses on the social impact of forgetting a name"
+    ]
+  ],
+  "free:11:D": [
+    [
+      "social_attunement",
+      2,
+      "Identifies with a quiet observer who communicates through expressions"
+    ]
+  ],
+  "free:12:C": [
+    [
+      "reflective_reactive",
+      3,
+      "Wants insight into a habit that limits growth"
+    ]
+  ],
+  "free:12:D": [
+    [
+      "ambitious_content",
+      2,
+      "Wants to discover unrealized potential"
+    ]
+  ],
+  "free:12:E": [
+    [
+      "supportive_challenging",
+      2,
+      "Wants to know the positive impact they've had on others"
+    ]
+  ],
+  "free:13:B": [
+    [
+      "practical_idealistic",
+      -2,
+      "Chooses a world built around advanced innovation and imagination"
+    ]
+  ],
+  "free:13:C": [
+    [
+      "curious_decisive",
+      2,
+      "Is drawn to questioning the nature of reality"
+    ]
+  ],
+  "free:13:D": [
+    [
+      "protective_hands_off",
+      2,
+      "Identifies with a survival-focused protector"
+    ]
+  ],
+  "free:14:F": [
+    [
+      "control_allowing",
+      2,
+      "Has a preferred system for loading the dishwasher"
+    ]
+  ],
+  "free:15:A": [
+    [
+      "boundary_holding_approval_seeking",
+      2,
+      "Chooses a soundtrack about surviving and moving forward"
+    ]
+  ],
+  "free:15:B": [
+    [
+      "boundary_holding_approval_seeking",
+      3,
+      "Chooses a song about refusing to be treated as irreplaceable"
+    ]
+  ],
+  "free:15:D": [
+    [
+      "independent_collaborative",
+      2,
+      "Chooses a song celebrating freedom after a breakup"
+    ]
+  ],
+  "free:16:B": [
+    [
+      "control_allowing",
+      3,
+      "Wants direct control over which memories to keep"
+    ]
+  ],
+  "free:17:E": [
+    [
+      "adventure_comfort",
+      -2,
+      "Comfort is expressed by falling asleep on someone's couch"
+    ]
+  ],
+  "free:18:A": [
+    [
+      "practical_idealistic",
+      2,
+      "Wants to solve the practical problem of lost objects"
+    ]
+  ],
+  "free:18:F": [
+    [
+      "control_allowing",
+      3,
+      "Wants to erase socially uncomfortable moments"
+    ]
+  ],
+  "free:19:C": [
+    [
+      "trust_verify",
+      -2,
+      "Selects a trusted secret-keeper with legal and investigative experience"
+    ]
+  ],
+  "free:19:D": [
+    [
+      "private_open",
+      2,
+      "Selects someone unlikely to expose personal secrets"
+    ]
+  ],
+  "free:19:E": [
+    [
+      "trust_verify",
+      2,
+      "Selects a discreet and proven confidant"
+    ]
+  ],
+  "free:21:A": [
+    [
+      "adventure_comfort",
+      1,
+      "Willing to travel despite missing luggage"
+    ]
+  ],
+  "free:21:B": [
+    [
+      "adventure_comfort",
+      1,
+      "Accepts imperfect accommodations to get the trip"
+    ]
+  ],
+  "free:21:C": [
+    [
+      "adventure_comfort",
+      1,
+      "Accepts persistent rain in exchange for a vacation"
+    ]
+  ],
+  "free:21:E": [
+    [
+      "adventure_comfort",
+      1,
+      "Accepts a physically uncomfortable trip complication"
+    ]
+  ],
+  "free:24:D": [
+    [
+      "private_open",
+      2,
+      "Uses solitude to enjoy entertainment without judgment"
+    ]
+  ],
+  "free:24:E": [
+    [
+      "playful_serious",
+      2,
+      "Uses private time for uninhibited dancing"
+    ]
+  ],
+  "free:25:A": [
+    [
+      "practical_idealistic",
+      3,
+      "Identifies with financial obligations and bills"
+    ]
+  ],
+  "free:25:C": [
+    [
+      "ambitious_content",
+      2,
+      "Identifies with a song about being wealthy"
+    ]
+  ],
+  "free:25:F": [
+    [
+      "ambitious_content",
+      2,
+      "Identifies with a song about conspicuous wealth and spending"
+    ]
+  ],
+  "free:27:B": [
+    [
+      "control_allowing",
+      2,
+      "Rejects a roommate who would control the household social hierarchy"
+    ]
+  ],
+  "free:27:C": [
+    [
+      "rules_bending",
+      2,
+      "Rejects a roommate associated with chaos and rule-breaking"
+    ]
+  ],
+  "free:27:D": [
+    [
+      "control_allowing",
+      2,
+      "Rejects a roommate who would impose exacting household standards"
+    ]
+  ],
+  "free:27:E": [
+    [
+      "adventure_comfort",
+      -2,
+      "Rejects unpredictable animals and household chaos"
+    ]
+  ],
+  "free:31:A": [
+    [
+      "patient_urgent",
+      -2,
+      "A chewing habit quickly exhausts patience"
+    ]
+  ],
+  "free:31:E": [
+    [
+      "forgiving_receipts",
+      -2,
+      "Resents someone copying their work and taking credit"
+    ]
+  ],
+  "free:33:B": [
+    [
+      "patient_urgent",
+      -3,
+      "Cannot tolerate people blocking the walkway"
+    ]
+  ],
+  "free:33:D": [
+    [
+      "rules_bending",
+      2,
+      "Would criminalize a minor shared-household etiquette violation"
+    ]
+  ],
+  "free:33:E": [
+    [
+      "direct_indirect",
+      2,
+      "Wants more direct communication than a vague one-word greeting"
+    ]
+  ],
+  "free:33:F": [
+    [
+      "rules_bending",
+      2,
+      "Would enforce a rule against leaving empty containers"
+    ]
+  ],
+  "free:36:A": [
+    [
+      "direct_indirect",
+      -2,
+      "Uses an illness excuse rather than declining plans directly"
+    ]
+  ],
+  "free:36:D": [
+    [
+      "direct_indirect",
+      -2,
+      "Uses a sleep excuse to avoid plans"
+    ]
+  ],
+  "free:37:A": [
+    [
+      "forgiving_receipts",
+      -1,
+      "Resents a specific small household betrayal"
+    ]
+  ],
+  "free:37:E": [
+    [
+      "practical_idealistic",
+      2,
+      "Prefers efficient communication over unnecessary meetings"
+    ]
+  ],
+  "free:39:A": [
+    [
+      "practical_idealistic",
+      2,
+      "Evaluates weddings through cost and value"
+    ]
+  ],
+  "free:39:B": [
+    [
+      "tactful_blunt",
+      -3,
+      "Expresses an unfiltered socially unpopular opinion"
+    ]
+  ],
+  "free:39:E": [
+    [
+      "boundary_holding_approval_seeking",
+      3,
+      "Does not grant family members automatic emotional access"
+    ]
+  ],
+  "free:39:F": [
+    [
+      "perspective_taking_self_referencing",
+      2,
+      "Can consider a villain's perspective despite disapproval"
+    ]
+  ],
+  "free:40:D": [
+    [
+      "vulnerable_armored",
+      1,
+      "Is willing to attempt flirting despite embarrassing hiccups"
+    ]
+  ],
+  "free:42:B": [
+    [
+      "patient_urgent",
+      -2,
+      "Wants to interrupt a repeated story"
+    ]
+  ],
+  "free:43:B": [
+    [
+      "reflective_reactive",
+      -3,
+      "Responds to losing an argument by escalating volume"
+    ]
+  ]
+}

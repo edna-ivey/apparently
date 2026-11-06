@@ -1,0 +1,279 @@
+# Apparently You: Continuity, Evidence, and Backup Protocol
+
+Updated: 2026-10-19. Status: active project operating procedure.
+
+## Sources of truth
+1. `APPARENTLY_YOU_PRODUCT_CREATIVE_BIBLE.md`: product decisions and governing rules. Later dated owner-approved addenda override conflicting earlier text; reconcile earlier sections in a reviewed cleanup, not by silently deleting history.
+2. `docs/approved-content/`: exact approved copy, full answers, mappings, approval date, and version. Drafts belong separately under `docs/editorial-drafts/`; never label them approved.
+3. Code and Supabase migration files: implementation source, not evidence that production deployment succeeded.
+4. Git commit and remote: durable revision history. Confirm branch, commit, and push results; a local commit is not automatically a GitHub backup.
+5. Supabase live inspection and EAS/TestFlight: only sources for deployed/runtime status.
+
+## Mandatory work cycle
+- BEFORE: inspect Bible, latest decision addenda, approved content, repository status, and relevant source code. Identify contradictions explicitly.
+- DURING: capture user approvals verbatim in a dated, versioned file; preserve entire question, every answer, result, scoring map, and editorial status. Do not reconstruct approvals from memory.
+- AFTER: update Bible, approved-content registry or draft files, implementation where authorized, and audit log in the same change set. Run relevant checks, commit documentation/code selectively, push and verify remote when authorized.
+- Never silently overwrite a prior approved version. Preserve historical identity and approval records.
+- Never change production content or application logic solely to align an unapproved draft.
+- Never claim automatic future updates: this protocol runs when the assistant is working on the project with repository access.
+
+## Decision status
+LOCKED: owner explicitly fixed the rule. APPROVED: owner accepted exact content. WORKING: draft/proposal. OPEN: undecided. IMPLEMENTED: committed code. DEPLOYED: verified in target environment. These labels describe separate dimensions.
+
+## Daily and Private Daily decisions, 2026-10-19
+- LOCKED: One answer can award evidence to any number of genuinely supported traits/poles; no fixed three-trait cap. Each pole earns up to 3 points for that answer; do not conflate per-pole points with count of poles.
+- LOCKED: New approved Daily and Private Daily questions take scheduling priority over already scheduled repeats when published. Preserve historical answers, stable identities, and fallback rotation. Exact scheduler implementation pending audit.
+- WORKING: Target 90 new Free Daily and 90 new Private Daily questions, reviewed in batches of 15 per room. Audit and retire weak/boring existing content AFTER fun new questions are developed.
+- WORKING: Free Daily variety: this-or-that, character/archetype choices, would-you-rather, absurd situations, confessions, fun choices. Mix humor, originality, insight; avoid duplicating quiz scenarios.
+- WORKING: Private Daily: substantially more outrageous, bold, shady, surprising, revealing; respect 18+ Private Private gate as distinct from normal Private Daily.
+- WORKING: First 15 Free and 15 Private Daily question drafts were shown in chat on 2026-10-19, but NOT yet approved or inserted into the repository. Do not describe them as approved.
+- REQUIRED: Audit existing live Daily/Private Daily question pools and scoring mappings before claiming inventory completeness; check against quiz content registry for conceptual repetition.
+
+## Verified code discrepancy, 2026-10-19
+- `src/data/daily-questions.ts` has `MAX_PERSONALITY_EFFECTS_PER_OPTION = 3` and truncates effects in normalization and material edits.
+- `src/app/admin/(protected)/review/[id].tsx` also limits UI to three effects.
+- These constraints conflict with owner's unlimited number-of-traits rule. Not yet modified; fix in a separately authorized code change with tests.
+- V2 database evidence caps points per pole at 3; this is NOT a cap on number of poles.
+- The Bible's earlier Daily evidence +1/+2 language predates owner's clarified +1..3 rule. See dated addendum.
+
+## Known documentation audit items
+- `docs/personality-scoring-v2-design.md` opening status says V2 not connected and migrations not applied. Recheck code and actual Supabase before replacing with a verified status; code integration and production deployment are different.
+- `docs/Apparently You Bible UPDATED v1.4.rtf` is an older versioned artifact. Markdown Bible is canonical; update the RTF as a deliberate synced release, never imply it auto-updates.
+- Two untracked creature asset folders are present. Preserve without deletion or accidental add.
+
+## Audit trail
+2026-10-19: Continuity protocol established; Bible addendum written; no app code, live questions, migrations, or production data changed.
+
+
+## Repository and Bible reconciliation, 2026-10-20
+- Verified `feature/private-library-implementation` at `41afb2c` matches origin, working tree clean before documentation changes. `master` is older and not the authoritative latest branch for Build 17 follow-up work.
+- Build 17 artifact came from `8a42ace`; later branch commits are not necessarily included in the installed TestFlight binary.
+- Canonical Markdown Bible header updated to the October 20 governing edition, with dated §75 reconciliation. Historical v1.4 remains preserved.
+- 90-slot one-pass Daily workbook is a working review compilation, NOT approved release content. Preserve 428 proposed mappings and their review labels; do not publish without approval.
+- Two approved character collisions (Shuri, Cleo) remain unresolved. Daily multi-trait cap discrepancy remains open pending verified code correction.
+- No production app, database, content, or native build change was made in this documentation reconciliation.
+
+
+## Build 17 repository audit, 2026-10-20
+- Product-to-code audit saved as `docs/BUILD17_PRODUCT_CODE_AUDIT_2026-10-20.md` and linked from Bible §76.
+- Confirmed three-effect Daily cap and monthly-only purchase UI; annual/founder offer requires implementation and external store configuration review.
+- Targeted Settings check did not find account deletion. Physical-device and live-system checks remain open.
+- TypeScript and lint passed. No app code or production data changed in this audit.
+
+
+## Owner approval and Build 18 scope, 2026-10-20
+- Owner reports Build 17 device tests completed and Build 17 fully approved. Preserve screenshot evidence when received; distinguish owner attestation from assistant-run device tests.
+- Build 18 removes three-trait/effect-count cap, retains 3 points per pole; includes approved Oct 20 editorial content only after owner review.
+- Claude handles implementation; owner handles mapping review; App Store prepublication documentation lives under `docs/app-store/`.
+- Policy/terms drafts are NOT live or final; external accounts and Apple submission remain separate verification steps.
+
+## Build 18 implementation sprint, repository-verified, 2026-10-20
+- Daily trait-count cap: VERIFIED REMOVED client-side (`daily-questions.ts`, admin review editor); confirmed the server (trigger, `admin_update_daily_option`) never had a count cap at all. Duplicate-dimension prevention and the real -3..3 per-pole limit preserved. Additive server-side validation (dimension allow-list, range, duplicate rejection, NO count limit) is STAGED in `20261020010000_daily_option_effects_validation.sql`, NOT applied (no migration was run this session, per explicit instruction).
+- Subscriptions: monthly + annual + Founding Member selection IMPLEMENTED in `purchases-service.ts`/`paywall.tsx`, using a verified-real Apple mechanism (StoreKit Introductory Offer on the annual product, real eligibility check, fails closed). Zero product ids asserted to exist in App Store Connect/RevenueCat -- exact owner steps are in `docs/app-store/OWNER_APP_STORE_ACTIONS.md` items 2-3, UNEXECUTED pending the owner's App Store Connect/RevenueCat access.
+- Account deletion: IMPLEMENTED (`supabase/functions/delete-account`, `account-deletion-service.ts`, Settings UI, real in-app Privacy Policy/Terms of Use pages). Edge Function is NOT deployed this session (deployment is a separate `supabase functions deploy` step, not run). Full cascade chain verified against the actual migration SQL, not assumed.
+- Content boundary: VERIFIED HELD -- diffed `daily-questions.ts` and confirmed zero content/mapping lines changed, only normalization mechanism. Shuri/Cleo collisions and the Oct 20 workbook remain untouched and unresolved.
+- Validation executed this session: `npx tsc --noEmit` (clean), `npm run lint` (clean), all 39 `scripts/validate-*.ts` (green, including 3 new ones for this sprint's work and one pre-existing validator corrected for the newly-approved Privacy/Terms feature). No EAS build, no TestFlight submission, no migration apply, no Edge Function deploy, no physical-device test performed this session -- see the Build 18 completion report for the full remaining-work list.
+
+2026-10-20 email milestone: owner confirmed Zoho send-as aliases/display names and incoming/outgoing tests complete for Apparently You and Super Great Ventures. Updated owner App Store actions and governing Bible §79; remaining launch gates unchanged.
+
+2026-10-20 post-Claude handoff: verified local Git at 01903f9 clean/synced, reconciled uploaded sprint report with Build 18 un-deployed status; updated owner action checklist, critical-path timeline and Bible §80. Apple updated developer agreement may still need acceptance.
+
+2026-10-20: Owner confirms updated Apple developer agreement accepted. Updated action checklist and timeline; created three-way Build 18 handoff doc; Bible §81 records status.
+
+## Build 18 deployment-readiness re-verification, 2026-10-20 (not assumed from the sprint report)
+- Fresh re-check, not reused from memory: repo at `03e1aa6`, clean, matches origin; all four sprint commits' real files confirmed on disk; tsc/lint/39 validators re-run, all clean. Linked project confirmed `apparently-you` (`rjslgjxlpsjljbrlxfet`, ACTIVE_HEALTHY) via `supabase projects list`. `supabase migration list` confirms `20261020010000` still unapplied; `supabase functions list` confirms `delete-account` still undeployed -- nothing changed outside this session either.
+- NEW finding from fresh re-inspection: `daily_questions.approved_by`/`tester_access_grants.granted_by` had no `ON DELETE` clause on their `auth.users` reference (confirmed live via `pg_get_constraintdef`), which would block an admin's OWN self-deletion if they'd approved content/granted tester access. STAGED, NOT APPLIED fix: `20261021010000_admin_attribution_fk_set_null_on_delete.sql` (`ON DELETE SET NULL`, never cascade).
+- Prepared a real end-to-end integration test (`scripts/test-delete-account-integration.ts`) against the live project using a disposable account it creates itself -- not run yet, requires delete-account to be deployed first.
+- Addressed the Review Notes `[NEEDS CLAUDE]` item with the real `tester_access_grants` mechanism (additive to real entitlement, never a bypass). Verified Sentry config actually matches the privacy draft's diagnostic-data claim -- no mismatch found. Updated Settings' temporary support email to the real, owner-confirmed `support@apparentlyyou.com`. Added a real `/support` page and prepared (NOT deployed -- no `vercel` command run) `vercel.json` rewrites for public `/privacy` and `/terms`.
+- Still open, unchanged: annual/Founding Member live configuration, both staged migrations applied, delete-account deployed+tested, Build 18 EAS/TestFlight, legal/metadata finalization. No migration applied, no function deployed, no EAS build, no TestFlight submission, no real-money purchase, no live site deploy performed this session.
+
+## Subscription implementation completion, 2026-10-20
+- Owner states RevenueCat is now configured: entitlement `apparently_private`, offering `default`, packages `$rc_monthly`/`$rc_annual`, products `apparently_private_monthly`/`apparently_private_annual`. Not independently re-verified against the RevenueCat dashboard (same credential gap as the prior pass) -- owner attestation, not Claude verification. Confirmed by code re-read that `getApparentlyPrivateOfferings()` already reads this exact convention; no mapping code change needed.
+- Real gap found and fixed: the paywall gave an existing subscriber no way to see plan options (only "You're already in"), which also blocked capturing App Store review screenshots without cancelling. Added a real "View plans" toggle (`src/app/paywall.tsx`) -- same real PlanCards, a CURRENT PLAN badge read from CustomerInfo (never UI-inferred), Subscribe/Switch button disabled when the selection already matches the real active plan (no duplicate-purchase path), Restore Purchases now reachable from this state too.
+- `scripts/validate-subscription-plans.ts` extended (11 new checks); `docs/app-store/SUBSCRIPTION_TESTING_2026-10-20.md` created recording the full scenario matrix and which items are code-complete-but-blocked on a real sandbox/device. tsc/lint/39 validators all green.
+- EAS build/TestFlight status for this pass recorded separately once attempted -- see the Build 18 subscription completion report for exact build ID/commit.
+
+## Build 18 EAS/TestFlight deployment, freshly verified, 2026-10-20/21
+- A prior report described Build 18 as queuing; owner relayed that Forge independently checked EAS and still saw Build 17 as latest. Resolved by direct re-verification, not by re-asserting the earlier report: EAS build `ff9c78bb-3066-426d-9c70-551120e8ca7d` (profile `testflight`, buildNumber 18) was genuinely `IN_PROGRESS` at the time of Forge's check (archive upload done, native compile still running) and reached `FINISHED` shortly after -- never lost, failed, or abandoned. No restart performed; `app.json` buildNumber stayed `"18"`.
+- `gitCommitHash` on the finished build (`e9a688e804f3bcfd4562a17093c29cbbba656044`) confirmed identical to local `HEAD` and `origin/feature/private-library-implementation` at verification time.
+- Submitted to TestFlight with explicit build id (not `--latest`): EAS submission `d3e30415-9a08-4828-a3d6-82136e7db9bc`, status FINISHED, no error.
+- Apple-side TestFlight processing CONFIRMED on a follow-up independent check ~3 minutes later: `eas-cli submit:status` now lists `1.0.0 (18) -- internal: in beta testing, external: ready for beta submission`. Internal testers can install Build 18 now; external-group distribution still needs a separate manual App Store Connect step (normal Apple workflow, not a failure). See Bible §84.
+
+## Build 19: Settings "View Plans" + Creature Read editorial polish, 2026-10-21
+- Diagnosed the reported Settings bug as pure app-code navigation, not RevenueCat/App Store Connect/StoreKit: Settings' Apparently Private card had no path to the in-app paywall for an active subscriber, only Manage Subscription (Apple's external page). Fixed with a "View Plans →" action for both free and active subscribers (`settings.tsx`), landing an active subscriber directly on the real plan cards via `/paywall?view=plans` (paywall.tsx reads the param to pre-expand the existing "View plans" toggle from §83). Purchasing/eligibility logic itself untouched.
+- Creature Read: implemented the owner-approved Zorafox grammar rule (join via "and" when the first sentence is a complete clause; work "Apparently," into the closing thought when the shade doesn't already carry it) as general assembly logic in `creature-combined-read-copy.ts`, not a Zorafox special case. Verified exact match against the approved example. No authored content strings changed, only the formula joining them. See Bible §85 for the full writeup, the exact approved text, and four single-trait cases (Rule-bending, Private, Open, Patient as the FIRST trait) flagged for owner review as longer-but-valid 3-"and" sentences -- data left unchanged pending that review.
+- Age range (Settings demographic field) verified structurally independent of the 18+ content gate and of subscription entitlement, by code read -- no defect found, no change made.
+- tsc/lint/39 validators (two extended: validate-subscription-plans.ts §9, validate-combined-creature-read.ts) all green. Small-iPhone visual layout and on-device purchase/restore flows remain unverified -- no physical device/simulator available in this environment.
+
+## Build 19 cleanup pass, 2026-10-21: re-verification + Creature Read proposals (nothing applied)
+- Re-verified Task 1 fresh (not reused from the §85 report): entitlement/offering/package-mapping code in `purchases-service.ts` unchanged and correct, no hardcoded pricing anywhere, Founding Member gating still requires both real eligibility and a real introPrice, Settings "View Plans" path still intact. Confirmed this environment still has no RevenueCat dashboard/admin credential -- whether the LIVE `default` offering actually has `$rc_monthly`/`$rc_annual` attached to the right products remains unverifiable from here, same gap as every prior pass.
+- Reviewed the four flagged Creature Read first-trait passages (Rule-bending, Private, Open, Patient) in depth. Found no general code-level fix that would correct exactly these four without also changing ~25 other unflagged combinations sharing the same shape (a pre-existing "and" on one side of the join) -- concluded this is genuine per-passage editorial judgment, not a code defect. Presented original/proposed wording pairs as PROPOSALS in the session report; applied NONE of them -- `creature-combined-read-copy.ts` is unchanged this pass, pending explicit owner approval.
+- tsc/lint/39 validators re-run fresh, all clean, zero regressions. No code changed this pass (Task 1 verification-only, Task 2 proposals unapplied) -- only documentation updated and committed. Bible §86 has the full writeup.
+- Build 19 is still NOT created/submitted, per explicit instruction this pass.
+
+## Creature Read final editorial pass: four approved rewrites + full 40-trait review, 2026-10-21
+- Owner approved the four §86 proposals (Rule-bending, Private, Open, Patient) verbatim. Implemented via two new optional `CombinedReadComponents` fields (`commaJoin`, `skipOpeningJoin`) rather than hardcoding complete paragraph strings -- both default false, so the Zorafox fixture and every other untouched entry are provably unaffected. Content (`openingFragment`/`supportingCopy` only, never `header`/`shade`) updated to the owner's exact wording; verified programmatically against the approved text, exact match for all four.
+- `scripts/validate-combined-creature-read.ts` extended with pinned fixtures for the four approved texts (same treatment as Zorafox) plus dedicated `commaJoin`/`skipOpeningJoin` mechanism tests. Full 1,520-combination sweep and Zorafox fixture re-verified green.
+- Reviewed all 40 Core trait passages (both paragraph positions) end to end. Found six additional entries (Emotionally Intense, Conflict-forward, Adventurous, Holds the Receipt, Face value, Protective) that read slightly less smoothly -- all fixable with the same zero-wording-change comma mechanism, none applied, presented as proposals in the session report pending approval. Reviewed all "Apparently," transitions and shade endings separately -- all natural; two existing short-fragment closers are intentional voice choices, not defects.
+- tsc/lint/39 validators green. Build 19 still not created/submitted.
+
+## Build 19 copy lock (ten approved rewrites) + TestFlight prep, 2026-10-21
+- Owner approved the remaining six Creature Read proposals (Emotionally Intense, Conflict-forward, Adventurous, Holds the Receipt, Face value, Protective) verbatim. Four were zero-wording-change (only `commaJoin: true` added, confirming they were pure punctuation/flow fixes); Face value and Protective had real content updates (`openingFragment`/`supportingCopy`) plus `commaJoin`/`skipOpeningJoin` respectively. Face value's shade was also updated to the owner's proposal after checking it against all 39 other shades for duplication/conflict -- none found, so applied (not retained-with-conflict). All ten approved rewrites (four from the prior pass + six this pass) now verified exact via script, including a re-check that Zorafox and the earlier four are byte-for-byte unchanged.
+- `scripts/validate-combined-creature-read.ts` extended: pin list now covers all ten exact texts, plus a dedicated Face value shade uniqueness/no-double-injection check. Full 1,520-combination sweep green.
+- Subscription readiness (Task 4) reconfirmed fresh: `settings.tsx`/`paywall.tsx`/`purchases-service.ts` confirmed unchanged via `git diff` this pass; View Plans, offering/package mapping, pricing, and Founding Member gating all still correct. Live RevenueCat dashboard config still unverifiable from this environment (no admin credential).
+- Build 19 preparation only (not creation): fresh `eas-cli build:list` reconfirmed buildNumber 18 is the latest real build; bumped `app.json` ios.buildNumber to `"19"` (required -- the testflight EAS profile has `autoIncrement: false`, so without this the next build would silently duplicate 18). `eas-cli config` confirms the resolved profile now shows buildNumber 19 correctly. No EAS build or submission started.
+- tsc/lint/39 validators green. Awaiting owner authorization before creating/submitting Build 19.
+
+## Build 19 created and delivered to TestFlight, 2026-10-21
+- Owner authorized creation/submission. Executed from commit `287c648`, verified clean and synced with origin before starting; app.json/eas.json confirmed (version 1.0.0, buildNumber 19, testflight profile). tsc/lint/39 validators re-run clean immediately before building.
+- EAS build `5fcfac77-a51e-46c5-beb8-8682255f37e1` -- FINISHED, commit `287c648` confirmed matching HEAD, real .ipa artifact. EAS submission `39604f4b-79dc-4aee-ac75-489b2a85b135` -- FINISHED, no error.
+- Apple TestFlight listing (via `eas-cli submit:status`, Apple's own data) confirms `1.0.0 (19) -- internal: in beta testing, external: ready for beta submission`. Internal testers can install now; external distribution needs the usual separate manual step.
+- No subscription config, pricing, Creature Read copy, or other feature changed this pass. No public App Store action taken. No step failed.
+
+## Creature Read premium visual redesign ("Option A"), 2026-10-21
+- Owner selected "Option A, the premium magical reveal" as the approved visual direction -- visual-only; approved copy stays locked. Implemented in `src/app/creature-read.tsx` only (confirmed via `git status`, no other file touched). A new `CombinedReadReveal` component replaces the old floating-avatar-plus-flat-text-card presentation with one framed editorial reveal: two-layer bordered frame with corner washes (same plain-View/rgba technique as PortalRings/CelestialWash/AtmosphericGlow, no new dependency), eyebrow flanked by static sparkles, serif Creature name, the real avatar (smaller size for this compact frame via new optional props on `TappableCreatureAvatar`, First Form's own presentation unchanged), a divider, then the headline promoted to serif italic (now the visual star) and the two paragraphs made smaller/quieter/left-aligned for readability.
+- Same preview modal (save/share) still opens from the relocated avatar. Five Parts section below the frame completely unchanged.
+- tsc/lint/39 validators green. `creature-combined-read-copy.ts` confirmed untouched via `git diff --stat`; Zorafox fixture and all ten approved passages reconfirmed byte-for-byte unchanged via the validator.
+- No EAS build or TestFlight submission initiated -- owner wants to review screenshots before authorizing a new build.
+
+## Creature viewer close-button fix + legal/support pages published, 2026-10-21
+- Close button: root-caused to useSafeAreaInsets()/SafeAreaView read from inside the Modal's own subtree (a known iOS safe-area-context rough edge) -- fixed by measuring insets once on the always-mounted parent screen and passing them down as a prop; SafeAreaView now excludes the top edge, the button's own row gets an explicit `insets.top + gap` padding, touch target enlarged to 48x48, and a real pre-existing icon-centering bug fixed. Verified on web: formula executes correctly for whatever inset it's given, icon is centered, 4 open/close/reopen cycles work cleanly. NOT verified: the actual device pixel position on a notch/Dynamic-Island iPhone -- web always reports zero insets (confirmed empirically, a fake-inset injection didn't take effect), so the owner must re-test this specific scenario on their own iPhone. Creature enlargement from the prior pass preserved unchanged.
+- Legal pages (`privacy-policy.tsx`/`terms-of-use.tsx`/`support.tsx`) genuinely finalized and the PRE-PUBLICATION DRAFT banner removed -- every data-practice claim re-verified against the live app this pass: account deletion's cascade read from the real Edge Function AND live-tested end to end against production with a disposable account (`scripts/test-delete-account-integration.ts`, all checks passed, no existing user touched); Sentry's real production config read from `observability.ts`; full service inventory cross-checked against `package.json` (no analytics/tracking SDK exists); share-link behavior and the under-13 age gate confirmed from the real schema/onboarding code. Operator: Super Great Ventures LLC. Governing-law jurisdiction deliberately left unaddressed (would require inventing the LLC's formation state). `validate-account-deletion.ts`'s old "must show draft banner" assertion is now the opposite -- asserts no draft banner, no leftover [VERIFY] placeholders, real operator and date shown.
+- Settings: added a "Help & Support" link to the real, expanded /support page (previously only a bare mailto existed there).
+- Migration history reconciled: renamed the two staged local migration files to match the new remote version numbers Supabase's migration API actually assigned them (confirmed live via `supabase migration list`, zero mismatches now) -- a future `db push` will no longer risk reapplying them. Fixed the two validators that hardcoded the old filenames.
+- Website deployed via `npx vercel --prod --yes` (existing linked project, already-authenticated CLI) and independently verified live via fresh `curl` HTTPS requests AFTER deployment: `https://apparentlyyou.com/privacy`, `/terms`, `/support` all return HTTP 200 with the real finalized content (not a local preview, not assumed). Homepage, www redirect, and apple-app-site-association spot-checked afterward -- no regression.
+- tsc/lint/39 validators green. No EAS build/TestFlight submission. No new production database change (only renamed local files to match already-live migrations).
+
+## Real iOS Simulator verification + App Store answer sheets + Build 20, 2026-10-21
+- First real native iOS testing this engagement: Xcode + booted simulators found available (not assumed absent as in every prior pass). `npx expo run:ios` worked after installing CocoaPods via Homebrew and bypassing the (expected, pre-documented) Sentry source-map upload step with `SENTRY_DISABLE_AUTO_UPLOAD=true` for local testing only. Installed the same build on two simulators (Dynamic Island + notch). Close button: 5/5 then 1/1 single-tap closes, first try, on real devices via `idb ui tap`; measured position matched the fix's own formula almost exactly. Creature enlargement reconfirmed natively, full artwork, no clipping. Screenshots in `preview-screenshots/ios-simulator-close-button-*.png`.
+- Unplanned major finding: captured the real, live paywall on-device showing the real RevenueCat/StoreKit Founding Member offer ($19.99/$29.99 renewal) and monthly ($3.99) actually rendering -- first independent on-device confirmation this engagement that the live subscription configuration actually works end to end, not just code-verified. `preview-screenshots/ios-simulator-paywall-live-founding-member.png`.
+- Created `docs/app-store/APP_PRIVACY_CONNECT_ANSWERS.md` and `docs/app-store/AGE_RATING_CONNECT_ANSWERS.md`, both evidence-based against real SDK privacy manifests (read from `ios/Pods/` after a real `pod install`) and a real grep of the live quiz corpus. Found only one of four cataloged "Private Private" quiz titles has real implemented content; the other three are future placeholders whose titles suggest more explicit content -- age rating must be re-reviewed before those ship. Found the 18+ gate is keyed to one quiz ID, not the category generically -- a risk for whoever adds those quizzes next.
+- `app.json` buildNumber bumped 19 -> 20 (confirmed via fresh `eas-cli build:list` that Build 19's commit, 287c648, predates this and the prior two passes' work).
+- tsc/lint/39 validators green.
+
+## Build 20 created and delivered to TestFlight, 2026-10-21
+- EAS build `4544200b-3ea0-4a63-82b0-19305d083aa8` -- FINISHED (fresh `eas-cli build:view`, not just the queuing log), commit `4b65485` confirmed matching HEAD at build time, real Application Archive URL present. Archive size came back at 474MB (vs. the usual ~317MB baseline, and well below the 905MB broken attempt earlier in the same pass) -- investigated before letting it proceed: `node_modules`/`.git` are always excluded by eas-cli regardless of `.easignore` (confirmed from eas-cli's own `vcs/local.js` source), so the size increase is legitimate tracked-asset growth (`assets/creatures` 131MB + `assets/relics` 73MB, no duplicate SVG/PNG pairs), not a bug.
+- EAS submission `9dcf1d4a-b32b-4799-8e73-2c19ed3a8db7` -- finished per a fresh `eas-cli status` re-check (3 minutes after submission, unchanged). This confirms EAS delivered the binary to App Store Connect; Apple's own post-delivery TestFlight processing (export-compliance check, appearing under the TestFlight tab) could not be independently re-confirmed from this environment -- no ASC dashboard/API access, and this eas-cli version has no `submit:status`/`submission:view` command.
+- tsc clean, lint clean, all 39 validators passed. One unrelated pre-existing failure found and reported, not fixed (out of this task's scope): `scripts/check-four-answer-invariant.mjs` flags `whats-your-type-content.ts` having 10 questions with 6 answer choices instead of 4-5 -- predates this pass, no quiz content was touched.
+- No public App Store Review submission -- TestFlight only, per standing instruction.
+
+## App Privacy audit + two age-eligibility gaps found and fixed, 2026-10-21
+- Dedicated audit against the owner's locked age policy (minimum account age 13; 13-17 gets the
+  standard app incl. Apparently Private; "Private Private" fully hidden/inaccessible under 18;
+  no under-13 accounts; Apple's 9+ calculated rating not overridden). Full writeup:
+  `docs/app-store/APP_PRIVACY_AUDIT_2026-10-21.md`.
+- **Gap 1, fixed:** `src/app/_layout.tsx`'s background identity-bootstrap effect created a real
+  anonymous Supabase session on every launch regardless of onboarding progress -- including
+  before onboarding's own age-gate step ever rendered. Confirmed live in production (not
+  theoretical) via `eas-cli env:list --environment production` showing
+  `EXPO_PUBLIC_REMOTE_DAILY_ENABLED=true`. Fixed: the effect now also requires
+  `onboardingState.completed`. Residual, not fixed: any already-created anonymous row from
+  before this fix is indistinguishable from any other abandoned session (no PII ever attached)
+  -- recommended a general cleanup policy, not implemented.
+- **Gap 2, fixed:** the public, no-auth `/s/[token]` shared-result page had no restriction
+  preventing an 18+ subscriber from sharing `private-private-trouble`'s mature-themed result to
+  a recipient of any age. Fixed client-side (committed) in `src/app/quiz/[quizId].tsx`. Server
+  fix is `supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql` --
+  **STAGED, NOT APPLIED, requires explicit owner authorization**.
+- Corrected two stale docs found while verifying: `20261018020000_age_eligibility_gate.sql`'s
+  header wrongly still said "STAGED, NOT YET APPLIED" (it's live -- confirmed via
+  `supabase migration list` + a live RPC call); `APP_PRIVACY_DISCLOSURE_WORKSHEET.md`'s "Web
+  sharing" entry didn't flag gap 2.
+- Confirmed, no gap: every other of the 11 audited surfaces (discovery, deep links, backend
+  enforcement, immutability, local-storage clearing on deletion, no notification feature to
+  leak through). No advertising SDK exists anywhere (code/app.json/dependency list/SKAdNetwork
+  all checked). Flagged for owner decision, not published: Terms of Use has zero age-eligibility
+  language (unlike Privacy Policy) -- drafted wording provided in the audit doc.
+- tsc/lint clean, 39/39 validators green including 11 new assertions covering both fixes. No
+  native iOS device test run this pass -- code/validator-verified only.
+
+## Critical scoring correction: positive-only personality evidence, Build 21 held, 2026-10-21
+- Owner directive: all personality evidence must award positive points to the trait a answer
+  actually demonstrates -- never a dimension + signed value standing in for the opposite trait
+  (e.g. never "Spontaneous as Planner -2"). Full plan: `docs/BUILD21_SCORING_STANDARD_AND_
+  MIGRATION_PLAN_2026-10-21.md`. Bible §94 (LOCKED) records the product-level ruling.
+- **Headline finding**: the exact canonical positive-only system the owner asked for was
+  already designed and substantially built in an earlier pass under the working name "Scoring
+  V2" -- 64 canonical pole ids derived mechanically from the existing 32 dimensions, 991 rows of
+  already-calibrated positive-only content for all 21 quizzes, a full parallel DB schema, and a
+  tested ranking engine already wired into live client code (inert only because its schema
+  migration was never applied). Nothing here is new invention; this pass promotes it from
+  optional-parallel-experiment to mandatory standard and does the new work that was still
+  missing.
+- **New work this pass**: audited the actual LIVE production Daily content (27 canonical
+  questions pulled via direct, read-only `supabase db query --linked` access, NOT the unrelated
+  local prototype file `src/data/daily-questions.ts`) -- 15 questions/60 options carry a real
+  signed mapping, individually re-examined (not mechanically repolarized), turning up one
+  genuine evidence-mismatch correction (not just a sign flip). Full writeup: `docs/DAILY_LIVE_
+  CONTENT_POLE_RECALIBRATION_2026-10-21.md`. New staged migration (`20261021160000_daily_live_
+  content_pole_awards.sql`) writes the recalibrated awards onto the real production rows, plus
+  a bundled fix to `advance_daily_rotation` (which would otherwise have silently dropped V2
+  awards on every recycled Daily occurrence).
+- New validator `scripts/validate-positive-only-scoring-standard.ts` (18 assertions) proves the
+  owner's three named test requirements: negative awards rejected (type layer, DB CHECK
+  constraints, content scan), both opposing traits independently represented (against real
+  recalibrated content), and accumulated evidence produces the intended profile (end-to-end
+  fixture from this pass's own recalibrated content). 40/40 validators green overall.
+- Mechanically converted the not-yet-approved Build 21 Daily workbook's notation (`docs/DAILY_
+  ONE_PASS_FULL_WORKBOOK_2026-10-20.md`, 804 mapping tokens) from signed to positive-only pole
+  notation -- lossless, preserves every hand-reasoned dimension/magnitude exactly; this is a
+  notation fix only, NOT a fresh evidence-quality review, and the workbook remains explicitly
+  unapproved.
+- Flagged, not decided unilaterally (Bible §94, plan doc §4): whether both poles of one
+  dimension can simultaneously display as "current" traits (recommend: no, keep single-winner
+  display for now), and whether the existing LOCKED 3-point qualification threshold carries
+  forward or V2's 9-point threshold replaces it (recommend: keep 3). Both need explicit owner
+  confirmation.
+- **Nothing applied to production.** Three migrations staged (V2 schema, quiz seed, new Daily
+  content) in the recommended apply order in the plan doc; V1 (`personality_evidence`,
+  `scorePersonalityProfile`) completely untouched -- no existing user's Creature, Signature,
+  Relic, or quiz history can regress. **Build 21 is held** per the owner's explicit instruction
+  until the two open parameters are resolved and the migration plan is reviewed/authorized --
+  no build number bump, no EAS build, no submission attempted.
+- tsc/lint clean, 40/40 validators green (one new file).
+
+## Advertising (AdMob) + push notifications, full launch-architecture build, 2026-10-22
+- Implemented Google AdMob advertising and push notifications as core launch features, per
+  owner directive, after presenting the audit/plan and confirming three architecture decisions
+  with the owner first: build against Google's test ad units (no AdMob account exists yet),
+  Expo's push service over APNs (not Firebase, not raw APNs), first-party analytics table (no
+  new third-party SDK). Full writeup: Bible §95,
+  `docs/ADVERTISING_AND_NOTIFICATIONS_SETUP_2026-10-22.md`.
+- Advertising: `src/services/ads-config.ts`/`ad-eligibility-service.ts`/`ad-interstitial-
+  service.ts`/`ads-consent-service.ts`, `src/components/ads/native-ad-card.tsx`. Wired into
+  `quiz/[quizId].tsx` (pre-reveal interstitial, free quizzes only), `(tabs)/index.tsx` (Daily
+  interstitial after reveal, once per completed day), `(tabs)/explore.tsx` (native sponsored
+  cards, labeled, conservative spacing). Fails closed on uncertain subscription status; forces
+  non-personalized ads for any account not confirmed 18+; bounded safety timeout (5s) so the
+  quiz result can never be delayed indefinitely even if subscription-status resolution or the
+  ad flow itself hangs.
+- Notifications: `src/services/notification-permission-service.ts`/`notification-preferences-
+  service.ts`/`push-token-service.ts`/`daily-reminder-service.ts`/`creature-evolution-
+  notification-service.ts`, `src/components/today/NotificationPermissionPrompt.tsx`. Contextual
+  permission ask after first completed Daily (never cold launch). Local Daily reminders
+  scheduled/cancelled client-side in the device's own timezone. New Settings "Notifications"
+  section: 5 category toggles, reminder time, quiet hours.
+- Backend: 4 new staged migrations (analytics_events; push_tokens/notification_preferences/
+  notification_outbox + a real compare_responses trigger + admin broadcast RPC; the Creature-
+  evolution enqueue RPC; the send-cron wiring) and a new Edge Function,
+  send-push-notification, that reads the outbox and calls Expo's push API respecting
+  per-category preferences and quiet hours. **Nothing applied to production** -- same
+  authorization step every DB change this engagement has required.
+- Real architecture gaps found and resolved pragmatically, not glossed over: no analytics
+  system existed (built one, first-party, no new SDK); no friend/blocking system exists
+  (Compare is anonymous/share-link-based -- notifies the real share owner on a real
+  `compare_responses` event instead); quizzes/Private content are static app code with no
+  "publish" DB event (admin-invoked broadcast RPC instead of a fabricated trigger); Creature-
+  evolution detection reuses the real LOCKED scoring engine client-side rather than risking a
+  second, driftable SQL re-derivation.
+- Flagged for explicit owner action, not done this pass: the live Privacy Policy's "no
+  advertising/analytics/tracking SDK" sentence becomes false the moment this ships (needs a
+  real rewrite); the 2026-10-21 App Privacy audit's tracking/Usage-Data answers all need to
+  flip from No to Yes and have not been re-done; a real AdMob account, Apple Developer Push
+  capability, and EAS push credentials still need the owner's own setup (cannot be done from
+  this environment).
+- New validator `scripts/validate-ads-and-notifications.ts` (38 assertions, source-text
+  verified against the same react-native-native-module limitation every validator touching
+  these packages has). tsc/lint clean, 41/41 validators green. **No physical-device test was
+  performed** (unavailable in this environment) -- the final report enumerates exactly which
+  of the task's 17 required test cases are validator-covered vs. still need a real device.

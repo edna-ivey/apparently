@@ -188,20 +188,26 @@ export function CompareResultPanel({
 
 const styles = StyleSheet.create({
   stepGap: { gap: Spacing.four },
-  storyCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#F0E6E8' },
-  compareEyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  compareLabel: { color: Brand.violet, fontSize: 18, fontWeight: '900', letterSpacing: -0.3, marginBottom: Spacing.one },
+  // Dark-plum "raised card" treatment -- the rest of the public Compare experience (the
+  // share-landing page, src/app/s/[token].tsx) moved to this same plum/coral/gold palette;
+  // this card was the one piece still on the old white/violet build.
+  storyCard: { backgroundColor: '#391A36', borderRadius: 24, padding: Spacing.four, gap: Spacing.one, borderWidth: 1, borderColor: '#69415E' },
+  compareEyebrow: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
+  compareLabel: { color: Brand.coral, fontSize: 18, fontWeight: '900', letterSpacing: -0.3, marginBottom: Spacing.one },
   resultBlock: { gap: Spacing.one },
-  resultTitle: { color: Brand.ink, fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4 },
+  resultTitle: { color: Brand.cream, fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.4 },
   resultSection: { marginTop: Spacing.one, gap: Spacing.half },
-  resultSectionHeading: { color: Brand.violet, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
-  resultSectionBody: { color: Brand.inkSecondary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  matchLine: { color: Brand.ink, fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  classificationCard: { backgroundColor: Brand.violet, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
-  classificationHeading: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
-  classificationBody: { color: '#F1EEFF', fontSize: 15, lineHeight: 21, fontWeight: '700' },
-  classificationResult: { color: '#FFFFFF', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
-  classificationSub: { color: '#DCD6FF', fontSize: 14, lineHeight: 20, fontWeight: '700', fontStyle: 'italic', marginTop: Spacing.half },
-  noteCard: { backgroundColor: Brand.coral, borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
+  resultSectionHeading: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.1 },
+  resultSectionBody: { color: '#E6CDDF', fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  matchLine: { color: Brand.cream, fontSize: 16, fontWeight: '800', textAlign: 'center' },
+  // The comparison reveal card -- same dark-plum/cream/gold treatment as the quiz result's own
+  // verdict card (src/app/quiz/[quizId].tsx), not the bright-violet background tuned for an
+  // earlier build. Text colors below were sized for that violet background; updated together.
+  classificationCard: { backgroundColor: '#42163A', borderWidth: 1, borderColor: 'rgba(246,184,63,0.30)', borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
+  classificationHeading: { color: Brand.cream, fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
+  classificationBody: { color: Brand.cream, fontSize: 15, lineHeight: 21, fontWeight: '700' },
+  classificationResult: { color: Brand.cream, fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
+  classificationSub: { color: Brand.gold, fontSize: 14, lineHeight: 20, fontWeight: '700', fontStyle: 'italic', marginTop: Spacing.half },
+  noteCard: { backgroundColor: '#5B234B', borderWidth: 1, borderColor: 'rgba(255,121,95,0.45)', borderRadius: 24, padding: Spacing.four, gap: Spacing.one },
   noteText: { color: '#FFFFFF', fontSize: 16, lineHeight: 22, fontWeight: '700', fontStyle: 'italic' },
 });

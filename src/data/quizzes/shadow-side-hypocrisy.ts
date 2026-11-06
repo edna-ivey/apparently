@@ -1,0 +1,212 @@
+import type { ArchetypeQuizDefinition } from './types';
+
+// Build 22 owner audit (2026-11-02): new premium quiz, approved in full from
+// docs/private-quizzes/APPROVED_11_QUIZ_SOURCE_PACK_2026-11-02.md, source file 03, Quiz 2
+// ("What Are You Doing That You Swear You Hate?"). 5 choices per question (A-E).
+export const SHADOW_SIDE_HYPOCRISY_QUIZ: ArchetypeQuizDefinition = {
+  id: 'shadow-side-hypocrisy',
+  scoringType: 'archetype',
+  category: 'Shadow Side',
+  access: 'private',
+  title: 'What Are You Doing That You Swear You Hate?',
+  eyebrow: 'APPARENTLY PRIVATE · SHADOW SIDE',
+  introSupport: [
+    'The hypocrisy audit has entered the chat. 😂',
+    'You have standards. Strong opinions. Pet peeves. We have one small question: do those rules also apply when you are the person breaking them?',
+  ],
+  introNote: 'Choose what you actually do on your worst ordinary Tuesday, not what you would defend in court.',
+  meta: '10 questions · About 3 minutes',
+  introCta: 'Audit me →',
+  mixLabel: 'YOUR SHADOW SIDE MIX',
+  recentReadMetricLabel: 'your read',
+  highSignalQuestionIds: ['q2', 'q3', 'q5', 'q7', 'q8', 'q9', 'q10'],
+  tieFallbackOrder: ['consistent', 'owns', 'rationalizes', 'hypocrite', 'selfish'],
+  resultGates: {
+    hypocrite: { minSignals: 4, requiredGroups: [{ answers: ['q1-d', 'q2-c', 'q3-b', 'q4-a', 'q6-d', 'q8-b', 'q9-a', 'q10-e'], min: 3 }] },
+    selfish: { minSignals: 4, requiredGroups: [{ answers: ['q2-d', 'q3-c', 'q4-b', 'q5-a', 'q7-d', 'q8-c', 'q9-b', 'q10-a'], min: 3 }] },
+  },
+  archetypes: [
+    {
+      id: 'consistent',
+      title: 'CONSISTENT | YOUR STANDARDS HAVE A RETURN ADDRESS.',
+      kicker: 'Look at that. A rule that applies in both directions.',
+      apparentlySignature: 'Apparently, your standards survived contact with your own behavior.',
+      traits: ['Consistent', 'Accountable', 'Principled'],
+      structuredRead: {
+        theVerdict: ['You expect things from people. You also expect them from yourself.'],
+        theRead: ['Your answers show a willingness to follow the same rules even when breaking them would be convenient. You can dislike lateness and still apologize when you are late. You can ask for honesty and tell the truth when it makes you look worse. Consistency is not perfection; it is the refusal to pretend your mistakes have a completely different moral category.'],
+        theCallOut: ['Do not get superior about it. Consistency can turn into its own little throne if you start treating everyone else like a case study.'],
+        theCost: ['People may feel judged if your standards arrive with no room for context or growth.'],
+        tryThis: ['The next time someone breaks a standard you hold, separate the impact from their character. Then offer the accountability you would want.'],
+      },
+    },
+    {
+      id: 'owns',
+      title: 'OWNS | YOU CATCH YOURSELF. IT IS ANNOYINGLY MATURE.',
+      kicker: 'You caught your own hypocrisy before Apparently could invoice you.',
+      apparentlySignature: 'Apparently, self-awareness is useful when it comes with follow-through.',
+      traits: ['Reflective', 'Correctable', 'Accountable'],
+      structuredRead: {
+        theVerdict: ['You still have double standards sometimes. You are just willing to name them.'],
+        theRead: ['You can hear yourself saying something you criticized last month and stop mid-sentence. You can admit you wanted grace for something you were less forgiving about in others. That self-correction matters. You are not free of ego; you simply do not let ego write the final version of every disagreement.'],
+        theCallOut: ['Awareness without a behavior change is just commentary. You do not get unlimited points for admitting the problem and repeating it.'],
+        theCost: ['People can lose trust if your apologies get more sophisticated while the pattern stays identical.'],
+        tryThis: ['Choose the inconsistency that shows up most often and change the next concrete behavior. Fewer speeches, more receipts.'],
+      },
+    },
+    {
+      id: 'rationalizes',
+      title: 'RATIONALIZES | YOUR EXCUSES HAVE EXCELLENT VOCABULARY.',
+      kicker: 'Your accountability meeting keeps getting rescheduled for a clarification session.',
+      apparentlySignature: 'Apparently, you can cross-examine your own reflection.',
+      traits: ['Analytical', 'Defensive Under Pressure', 'Self-Justifying'],
+      structuredRead: {
+        theVerdict: ['You can explain almost anything. That is not the same as owning it.'],
+        theRead: ['You see nuance everywhere, especially when the questionable choice belongs to you. You are quick to explain why the situation was different, why you were stressed, why the timing mattered, why the other person started it. Some of those explanations may be true. But if there is always one more context paragraph before your part gets acknowledged, the context has become a shelter.'],
+        theCallOut: ['You do not need a better argument. You need one sentence with no “but” attached.'],
+        theCost: ['People start preparing exhibits before bringing you ordinary feedback. That is exhausting.'],
+        tryThis: ['Practice saying “I did the thing I criticize, and it affected you.” Discuss context after that sentence has actually landed.'],
+      },
+    },
+    {
+      id: 'hypocrite',
+      title: 'HYPOCRITE | HYPOCRITE. FULL STOP.',
+      kicker: 'The rulebook has your name on the cover and your exemptions in the back.',
+      apparentlySignature: 'Apparently, your double standard came with a lifetime membership.',
+      traits: ['Double-Standard-Prone', 'Defensive', 'Inconsistent'],
+      structuredRead: {
+        theVerdict: ['You condemn in other people what you repeatedly excuse in yourself.'],
+        theRead: ['Your answers do not describe one bad day or a harmless inconsistency. They describe a pattern: you want directness until someone is direct with you; you demand punctuality while treating your own delays as special; you despise gossip until you have a story worth telling. When somebody points out the mismatch, you argue about the circumstances instead of the rule.'],
+        theCallOut: ['You do not have standards. You have rules that change ownership depending on who is being judged. Calling it “different when I do it” is still hypocrisy.'],
+        theCost: ['People stop respecting your complaints, including the valid ones, because your actions keep undermining the person delivering them.'],
+        tryThis: ['Pick one rule you enforce loudly. Apply it to yourself for thirty days, and own every miss without a counterattack.'],
+      },
+    },
+    {
+      id: 'selfish',
+      title: 'SELFISH | SELFISH. THE RULES ARE FOR OTHER PEOPLE.',
+      kicker: 'You need flexibility. Everybody else apparently needs a time machine.',
+      apparentlySignature: 'Apparently, reciprocity keeps getting sent to your voicemail.',
+      traits: ['Self-Prioritizing', 'Low Reciprocity', 'Convenience-Led'],
+      structuredRead: {
+        theVerdict: ['You want consideration without consistently returning it.'],
+        theRead: ['Your answers show something more pointed than a theoretical double standard. You protect your time while treating other people’s time as available. You expect people to absorb inconvenience, rearrange plans, and understand your needs, but their equally real needs become annoying obstacles. You are willing to use fairness language when you benefit and disappear when fairness requires you to give something up.'],
+        theCallOut: ['That is not healthy self-care. That is letting other people pay the bill for your preferences.'],
+        theCost: ['People do not always confront selfishness. Sometimes they quietly stop offering the help, patience, and access you assumed would be there.'],
+        tryThis: ['Before requesting your next exception, ask who absorbs the cost. Then volunteer to absorb your fair share without being chased.'],
+      },
+    },
+  ],
+  questions: [
+    {
+      id: 'q1',
+      prompt: 'You are furious when people arrive late. Today YOU are running twenty minutes behind. What message goes out?',
+      choices: [
+        { id: 'a', label: '“I am late. I am sorry. Start without me.”', resultWeights: { consistent: 2 } },
+        { id: 'b', label: '“I owe you an apology. I complain about this when others do it.”', resultWeights: { owns: 2 } },
+        { id: 'c', label: '“Traffic was unreal.” I leave out that I also left late.', resultWeights: { rationalizes: 2 } },
+        { id: 'd', label: 'I expect grace, then lecture someone else next week for being ten minutes late.', resultWeights: { hypocrite: 3 } },
+        { id: 'e', label: 'They can wait. I already had enough to deal with today.', resultWeights: { selfish: 2 } },
+      ],
+    },
+    {
+      id: 'q2',
+      prompt: 'You hate when people cancel last-minute. Then you get a better invitation on the same night. You...',
+      choices: [
+        { id: 'a', label: 'Feel tempted, then admit I would hate this if someone did it to me.', resultWeights: { owns: 2 } },
+        { id: 'b', label: 'Call my old plan “flexible,” even though we agreed on a time.', resultWeights: { rationalizes: 2 } },
+        { id: 'c', label: 'Cancel, then complain bitterly when the same person cancels on me.', resultWeights: { hypocrite: 3 } },
+        { id: 'd', label: 'Take the better offer. Their evening is their problem now.', resultWeights: { selfish: 3 } },
+        { id: 'e', label: 'Keep my first plan or ask to reschedule honestly, with no pressure.', resultWeights: { consistent: 2 } },
+      ],
+    },
+    {
+      id: 'q3',
+      prompt: 'You say you cannot stand gossip. A delicious piece of information lands in your lap. What happens?',
+      choices: [
+        { id: 'a', label: 'I tell one person “for context.” It is still clearly gossip.', resultWeights: { rationalizes: 2 } },
+        { id: 'b', label: 'I share it, then call someone else messy for sharing a similar story.', resultWeights: { hypocrite: 3 } },
+        { id: 'c', label: 'I share it when it helps me, but expect everybody to protect my business.', resultWeights: { selfish: 3 } },
+        { id: 'd', label: 'I do not circulate it just because it is entertaining.', resultWeights: { consistent: 2 } },
+        { id: 'e', label: 'I feel tempted to tell somebody, then remember why I hated this last time.', resultWeights: { owns: 2 } },
+      ],
+    },
+    {
+      id: 'q4',
+      prompt: 'Someone respectfully tells you, “That thing you said hurt me.” Your first move?',
+      choices: [
+        { id: 'a', label: 'Say they are too sensitive, although I demand careful wording from them.', resultWeights: { hypocrite: 3 } },
+        { id: 'b', label: 'Tell them this is a bad time for their feelings. Mine are the priority today.', resultWeights: { selfish: 3 } },
+        { id: 'c', label: 'Ask what landed badly, even if it was not my intention.', resultWeights: { consistent: 2 } },
+        { id: 'd', label: 'Catch my defensiveness and acknowledge the impact.', resultWeights: { owns: 2 } },
+        { id: 'e', label: 'Start with three paragraphs about why I said it.', resultWeights: { rationalizes: 2 } },
+      ],
+    },
+    {
+      id: 'q5',
+      prompt: 'You frequently say, “People should pull their weight.” A group task goes sideways. What do you do?',
+      choices: [
+        { id: 'a', label: 'Assign the annoying pieces to others and call it “delegating.”', resultWeights: { selfish: 3 } },
+        { id: 'b', label: 'Handle my share and clearly name what is still unassigned.', resultWeights: { consistent: 2 } },
+        { id: 'c', label: 'Notice I dropped something, tell the group, and fix it.', resultWeights: { owns: 2 } },
+        { id: 'd', label: 'Explain how much other invisible work I have already done.', resultWeights: { rationalizes: 2 } },
+        { id: 'e', label: 'Keep a detailed count of their missed tasks while skipping my own.', resultWeights: { hypocrite: 2 } },
+      ],
+    },
+    {
+      id: 'q6',
+      prompt: 'You tell everyone not to be judgmental. Then a friend makes a choice you would never make. You...',
+      choices: [
+        { id: 'a', label: 'Ask how they reached it and respect that their life is theirs.', resultWeights: { consistent: 2 } },
+        { id: 'b', label: 'Catch myself judging, then ask whether I am missing part of the story.', resultWeights: { owns: 2 } },
+        { id: 'c', label: 'Call my criticism “just asking questions.” I know what I am implying.', resultWeights: { rationalizes: 2 } },
+        { id: 'd', label: 'Criticize them for the same messy choice I made last year.', resultWeights: { hypocrite: 3 } },
+        { id: 'e', label: 'Support their choices only while those choices are convenient for me.', resultWeights: { selfish: 2 } },
+      ],
+    },
+    {
+      id: 'q7',
+      prompt: 'Your friend asks for a favor on the exact day you ask THEM for help. What seems fair?',
+      choices: [
+        { id: 'a', label: 'I initially think my need is bigger, then listen to what they are dealing with.', resultWeights: { owns: 2 } },
+        { id: 'b', label: 'I give a long explanation of why my request is the more urgent one.', resultWeights: { rationalizes: 2 } },
+        { id: 'c', label: 'Remind them of everything I did for them, while dismissing what they did for me.', resultWeights: { hypocrite: 2 } },
+        { id: 'd', label: 'I expect them to rearrange their day. I am not changing mine.', resultWeights: { selfish: 3 } },
+        { id: 'e', label: 'We both explain our limits and work out a realistic trade.', resultWeights: { consistent: 2 } },
+      ],
+    },
+    {
+      id: 'q8',
+      prompt: 'You criticize people for posting performative apologies. Now YOU owe one. The first draft says...',
+      choices: [
+        { id: 'a', label: '“I am sorry you felt hurt, but here is all the context.”', resultWeights: { rationalizes: 2 } },
+        { id: 'b', label: 'I refuse to apologize, then repost a quote about people taking accountability.', resultWeights: { hypocrite: 3 } },
+        { id: 'c', label: 'I apologize only because I want access to something from them again.', resultWeights: { selfish: 3 } },
+        { id: 'd', label: '“I did this. It hurt you. Here is what I will do differently.”', resultWeights: { consistent: 2 } },
+        { id: 'e', label: '“I was wrong.” Then I delete the clever explanation I almost added.', resultWeights: { owns: 2 } },
+      ],
+    },
+    {
+      id: 'q9',
+      prompt: 'You say everyone deserves boundaries. Someone sets one that inconveniences you. What now?',
+      choices: [
+        { id: 'a', label: 'Call them selfish for enforcing a boundary I enforce all the time.', resultWeights: { hypocrite: 3 } },
+        { id: 'b', label: 'Keep negotiating because my plans depend on them saying yes.', resultWeights: { selfish: 3 } },
+        { id: 'c', label: 'I respect it, even if I am disappointed.', resultWeights: { consistent: 2 } },
+        { id: 'd', label: 'I push back once, hear myself, and apologize.', resultWeights: { owns: 2 } },
+        { id: 'e', label: 'Explain why this one boundary is uniquely unreasonable.', resultWeights: { rationalizes: 2 } },
+      ],
+    },
+    {
+      id: 'q10',
+      prompt: 'Finish honestly: the rule I most often bend for myself is...',
+      choices: [
+        { id: 'a', label: 'The one that requires me to sacrifice convenience for someone else.', resultWeights: { selfish: 3 } },
+        { id: 'b', label: 'None automatically. If I make an exception, I accept the same from others.', resultWeights: { consistent: 2 } },
+        { id: 'c', label: 'One I have caught and am actively trying to change.', resultWeights: { owns: 2 } },
+        { id: 'd', label: 'Usually the rule where my circumstances are “more complicated.”', resultWeights: { rationalizes: 2 } },
+        { id: 'e', label: 'Whatever I was just lecturing someone else about. I hate admitting that.', resultWeights: { hypocrite: 3 } },
+      ],
+    },
+  ],
+};

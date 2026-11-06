@@ -1,7 +1,8 @@
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 
-import { Radius, Surface } from '@/constants/design-system';
+import { Celestial } from '@/components/today/celestial';
+import { Radius } from '@/constants/design-system';
 import { Brand, MaxContentWidth, Spacing } from '@/constants/theme';
 
 // Private is the LOCKED center tab position (Today / Explore / Private / Compare / You) —
@@ -36,11 +37,11 @@ export default function AppTabs() {
   );
 }
 
-// Fixed brand colors, deliberately not theme-following (ThemedView/ThemedText): this bar
-// previously used `theme.backgroundElement`, which is a dark near-black in the device's
-// dark color scheme — that's what showed up as a "black nav bar" in QA. The brand does not
-// have a dark mode, so this shell always renders the same light/cream shell regardless of
-// device theme.
+// Celestial restyle: the approved Living Portal direction now applies to the whole app shell,
+// not just Today, so this bar moved from a light/cream pill (which read as a mismatched light
+// chip floating on Today's now-dark celestial page) to the same dark-glass/gold-accent
+// language as Celestial.* (src/components/today/celestial.ts) — still fixed brand colors, not
+// theme-following, just a different fixed palette than before.
 export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabButtonView, isFocused && styles.tabButtonActive, pressed && styles.pressed]}>
@@ -70,7 +71,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   innerContainer: {
-    backgroundColor: Surface.card,
+    backgroundColor: 'rgba(28,15,48,0.92)',
+    borderWidth: 1,
+    borderColor: Celestial.glassBorder,
     paddingVertical: Spacing.two,
     // Narrow horizontal padding/gap — at a 375px-wide viewport, generous padding/gap values
     // leave too little room for "apparently." plus every tab label, overflowing the page
@@ -90,10 +93,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     gap: Spacing.half,
     maxWidth: MaxContentWidth,
-    boxShadow: '0 8px 24px rgba(23, 21, 29, 0.10)',
+    boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
   },
   brandText: {
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     // Slightly smaller than before (14px) -- with Private now a 5th tab, this frees just
     // enough width to give tabButtonView real breathing room again instead of shrinking it
     // to the point where the last label sits flush against the pill's own rounded corner.
@@ -112,10 +115,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabButtonActive: {
-    backgroundColor: Surface.blush,
+    backgroundColor: 'rgba(243,60,131,0.16)',
   },
   tabButtonText: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },

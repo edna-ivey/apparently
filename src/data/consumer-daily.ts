@@ -130,9 +130,13 @@ export const useConsumerDailyExperience = (): UseConsumerDailyExperience => {
   }, []);
 
   // A fresh local Daily always starts with nothing drafted — matches existing behavior.
-  useEffect(() => {
+  // React's documented "adjusting state when a prop changes" pattern (setState during render,
+  // not in an effect) -- same trigger condition the effect this replaced had.
+  const [prevLocalQuestionIdentity, setPrevLocalQuestionIdentity] = useState([liveLocalQuestion?.id, localQuestion.id]);
+  if (prevLocalQuestionIdentity[0] !== liveLocalQuestion?.id || prevLocalQuestionIdentity[1] !== localQuestion.id) {
+    setPrevLocalQuestionIdentity([liveLocalQuestion?.id, localQuestion.id]);
     setLocalDraftIndex(null);
-  }, [liveLocalQuestion?.id, localQuestion.id]);
+  }
 
   const localExperience: ConsumerDailyExperience = useMemo(
     () => ({
@@ -277,6 +281,9 @@ export const useConsumerDailyExperience = (): UseConsumerDailyExperience => {
 
   useEffect(() => {
     if (isRemoteDailyEnabled) {
+      // Fetching data on mount is one of the canonical, documented uses of an effect -- there
+      // is no render-time equivalent for "go fetch this from the network." Scoped to this line.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadRemote();
     }
   }, [loadRemote]);

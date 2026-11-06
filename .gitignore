@@ -47,3 +47,23 @@ example
 
 # Supabase CLI local cache (created even by read-only CLI calls; never contains project data)
 supabase/.temp/
+
+# Local Creature artwork source folders (kept on disk, not committed)
+/assets/creatures_old/
+/assets/creatures copy/
+
+# V1 release runbook (2026-11-02), Phase 6: abandoned PNG-conversion experiment output (95M,
+# regeneratable from scripts/experiment-extract-embedded-png.ts) -- the conversion itself was
+# reverted (commit c9a3ca8, approval withdrawn), kept on disk only as a resumable starting
+# point if the owner re-approves that work; never committed, same convention as the two lines
+# above.
+/assets/_png_experiment/
+
+# Build 22: generated SQL/JSON derived from real, read-only production queries -- real user
+# UUIDs, real historical quiz/Daily answers. Never committed to this public repository.
+# Regenerate locally from scripts/backfill-*.ts / scripts/generate-*.ts against a fresh
+# read-only query any time it's needed; tracked tests use synthetic fixtures only (see
+# scripts/validate-*.ts and scripts/pglite-harness/, none of which embed real user data).
+/scripts/generated-sql-for-approval/
+*.real-data.json
+*.real-data.sql
