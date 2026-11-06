@@ -207,7 +207,7 @@ export default function SharedResultScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <BrandSignature variant="full" />
+          <BrandSignature variant="full" style={styles.brandPill} />
 
           {isIOSWebVisitor() && (
             <Pressable
@@ -350,7 +350,7 @@ export default function SharedResultScreen() {
                   value={nickname}
                   onChangeText={(value) => setNickname(value.slice(0, 60))}
                   placeholder="Your name"
-                  placeholderTextColor={Brand.inkSecondary}
+                  placeholderTextColor={'#C5AEC1'}
                   style={styles.textInput}
                   maxLength={60}
                 />
@@ -420,7 +420,7 @@ export default function SharedResultScreen() {
                   value={friendNote}
                   onChangeText={(value) => setFriendNote(value.slice(0, 240))}
                   placeholder="Leave a note…"
-                  placeholderTextColor={Brand.inkSecondary}
+                  placeholderTextColor={'#C5AEC1'}
                   style={[styles.textInput, styles.noteInput]}
                   maxLength={240}
                   multiline
@@ -557,51 +557,55 @@ function FriendQuestionStep({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0E8DD' },
+  container: { flex: 1, backgroundColor: '#170513' },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Brand.plum,
     ...Platform.select({
-      web: { marginVertical: 28, borderRadius: 28, boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)', overflow: 'hidden' },
+      web: { marginVertical: 28, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(246,184,63,0.23)', boxShadow: '0 24px 70px rgba(0,0,0,0.40)', overflow: 'hidden' },
       default: {},
     }),
   },
   content: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.six, gap: Spacing.five },
+  // BrandSignature's own wordmark text is dark ink, sized for a light page background --
+  // this cream pill gives it a light surface to sit on now that the page itself is dark plum,
+  // without changing the shared component other still-light-background screens also use.
+  brandPill: { alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: Brand.cream, borderRadius: 16 },
   stepGap: { gap: Spacing.four },
   introGap: { gap: Spacing.one },
   openInAppBanner: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F7F3FF',
+    backgroundColor: '#45213F',
     borderRadius: 99,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     marginTop: -Spacing.three,
   },
-  openInAppBannerText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
+  openInAppBannerText: { color: Brand.gold, fontSize: 13, fontWeight: '800' },
   stateCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#391A36',
     borderRadius: 24,
     padding: Spacing.four,
     gap: Spacing.two,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: '#69415E',
     alignItems: 'center',
   },
-  stateText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  eyebrow: { color: Brand.pink, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
-  sharerLine: { color: Brand.violet, fontSize: 15, fontWeight: '800' },
-  quizTitle: { color: Brand.ink, fontSize: 28, lineHeight: 33, fontWeight: '800', letterSpacing: -0.6 },
+  stateText: { color: Brand.cream, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  eyebrow: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
+  sharerLine: { color: Brand.coral, fontSize: 15, fontWeight: '800' },
+  quizTitle: { color: Brand.cream, fontSize: 28, lineHeight: 33, fontWeight: '800', letterSpacing: -0.6 },
   verdictCard: {
-    backgroundColor: Brand.plum,
+    backgroundColor: '#42163A',
     borderColor: 'rgba(246,184,63,0.25)',
     borderWidth: 1,
     borderRadius: 28,
     padding: Spacing.four,
     gap: Spacing.one,
     alignItems: 'center',
-    shadowColor: Brand.plum,
+    shadowColor: '#000000',
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
@@ -620,64 +624,65 @@ const styles = StyleSheet.create({
   privateSection: { marginTop: Spacing.three, gap: Spacing.one },
   privateSectionHeading: { color: Brand.gold, fontSize: 11, fontWeight: '800', letterSpacing: 1.3 },
   privateSectionBody: { color: Brand.cream, fontSize: 16, lineHeight: 22, fontWeight: '700' },
-  whyCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#F0E6E8' },
-  whyBody: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
+  whyCard: { backgroundColor: '#391A36', borderRadius: 24, padding: Spacing.four, gap: Spacing.two, borderWidth: 1, borderColor: '#69415E' },
+  whyBody: { color: Brand.cream, fontSize: 15, lineHeight: 22, fontWeight: '600', textAlign: 'center' },
   traitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one, justifyContent: 'center' },
-  traitPill: { backgroundColor: '#F7F3FF', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
-  traitPillText: { color: Brand.violet, fontSize: 13, fontWeight: '800' },
-  kicker: { color: Brand.inkSecondary, fontSize: 13, lineHeight: 18, fontWeight: '600', fontStyle: 'italic', marginTop: Spacing.one, textAlign: 'center' },
-  cta: { backgroundColor: Brand.pink, borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three },
+  traitPill: { backgroundColor: '#613352', borderRadius: 99, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
+  traitPillText: { color: Brand.gold, fontSize: 13, fontWeight: '800' },
+  kicker: { color: '#E1C1D7', fontSize: 13, lineHeight: 18, fontWeight: '600', fontStyle: 'italic', marginTop: Spacing.one, textAlign: 'center' },
+  cta: { backgroundColor: Brand.coral, borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  secondaryCta: { backgroundColor: '#FFFFFF', borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three, borderWidth: 1, borderColor: '#F0E6E8' },
-  secondaryCtaText: { color: Brand.violet, fontSize: 15, fontWeight: '800' },
+  ctaText: { color: Brand.plum, fontSize: 16, fontWeight: '800' },
+  secondaryCta: { backgroundColor: '#391A36', borderRadius: 16, alignItems: 'center', paddingVertical: Spacing.three, borderWidth: 1, borderColor: '#69415E' },
+  secondaryCtaText: { color: Brand.cream, fontSize: 15, fontWeight: '800' },
   tertiaryCta: { alignItems: 'center', paddingVertical: Spacing.two },
-  tertiaryCtaText: { color: Brand.inkSecondary, fontSize: 14, fontWeight: '700' },
-  compareRow: { color: Brand.ink, fontSize: 15, lineHeight: 22, fontWeight: '600' },
-  compareLabel: { color: Brand.violet, fontWeight: '800' },
-  metaLine: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700', marginTop: Spacing.one },
-  inputLabel: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
+  tertiaryCtaText: { color: '#E4C5D9', fontSize: 14, fontWeight: '700' },
+  compareRow: { color: Brand.cream, fontSize: 15, lineHeight: 22, fontWeight: '600' },
+  compareLabel: { color: Brand.gold, fontWeight: '800' },
+  metaLine: { color: '#DABFD2', fontSize: 13, fontWeight: '700', marginTop: Spacing.one },
+  inputLabel: { color: Brand.gold, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
   textInput: {
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: '#69415E',
     borderRadius: 14,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-    color: Brand.ink,
+    color: Brand.cream,
+    backgroundColor: '#271024',
   },
   noteInput: { minHeight: 96, textAlignVertical: 'top' },
-  charCount: { color: Brand.inkSecondary, fontSize: 12, fontWeight: '600', textAlign: 'right' },
-  privacyNote: { color: Brand.inkSecondary, fontSize: 12, lineHeight: 17, fontWeight: '600' },
+  charCount: { color: '#DABFD2', fontSize: 12, fontWeight: '600', textAlign: 'right' },
+  privacyNote: { color: '#DABFD2', fontSize: 12, lineHeight: 17, fontWeight: '600' },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { minWidth: 60 },
-  backText: { color: Brand.violet, fontSize: 14, fontWeight: '700' },
-  progress: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '700' },
-  questionPrompt: { color: Brand.ink, fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.4 },
+  backText: { color: Brand.coral, fontSize: 14, fontWeight: '700' },
+  progress: { color: Brand.gold, fontSize: 13, fontWeight: '700' },
+  questionPrompt: { color: Brand.cream, fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.4 },
   choiceList: { gap: Spacing.two },
   choiceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#391A36',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: '#69415E',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
-  choiceCardSelected: { borderColor: Brand.violet, backgroundColor: '#F7F3FF' },
+  choiceCardSelected: { borderColor: Brand.coral, backgroundColor: '#5A284E' },
   choiceBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F0E6E8',
+    backgroundColor: '#6B405E',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  choiceBadgeSelected: { backgroundColor: Brand.violet },
-  choiceBadgeText: { color: Brand.inkSecondary, fontSize: 13, fontWeight: '800' },
-  choiceBadgeTextSelected: { color: '#FFFFFF' },
-  choiceText: { flex: 1, color: Brand.ink, fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  choiceCheck: { color: Brand.violet, fontSize: 16, fontWeight: '800' },
+  choiceBadgeSelected: { backgroundColor: Brand.coral },
+  choiceBadgeText: { color: Brand.cream, fontSize: 13, fontWeight: '800' },
+  choiceBadgeTextSelected: { color: Brand.plum },
+  choiceText: { flex: 1, color: Brand.cream, fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  choiceCheck: { color: Brand.gold, fontSize: 16, fontWeight: '800' },
 });
