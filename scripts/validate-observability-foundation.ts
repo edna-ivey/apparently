@@ -160,7 +160,9 @@ if (/Sentry\.captureException\(error\)/.test(observability) && observability.inc
 // --- 5. Required operations are instrumented ------------------------------------------------
 console.log('\n--- Required backend operations instrumented ---');
 const requiredInstrumentation: { file: string; path: string; operation: string }[] = [
-  { file: 'src/services/quiz-result-service.ts', path: 'quiz-result-service.ts', operation: 'submit_quiz_result' },
+  // submit_quiz_result (legacy) was retired from this client in the Build 22 final cleanup --
+  // submit_quiz_completion is the one real, currently-called RPC this file instruments now.
+  { file: 'src/services/quiz-result-service.ts', path: 'quiz-result-service.ts', operation: 'submit_quiz_completion' },
   { file: 'src/services/daily-service.ts', path: 'daily-service.ts', operation: 'get_private_daily' },
   { file: 'src/services/daily-service.ts', path: 'daily-service.ts', operation: 'submit_private_daily_answer' },
   { file: 'src/services/purchases-service.ts', path: 'purchases-service.ts', operation: 'sync_revenuecat_entitlement' },

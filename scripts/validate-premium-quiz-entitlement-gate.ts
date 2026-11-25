@@ -4,6 +4,19 @@
 // Daily (supabase/migrations/20260924010000_secure_entitlement_authorization.sql) -- never a
 // client-supplied boolean.
 //
+// IMPORTANT (added 2026-11-24, after the Build 22 final cleanup retired submit_quiz_result from
+// the client -- see src/services/quiz-result-service.ts's own header): this file still tests
+// that retired function's own Build 13 gate, kept server-side only as defense-in-depth. The
+// REAL, currently-called path (submit_quiz_completion, supabase/migrations/
+// 20261101040000_quiz_access_inheritance_and_content_versioning.sql) reads premium/age gating
+// dynamically from quizzes.access_tier -- generated mechanically from every quiz's own
+// QuizDefinition.access, so it never goes stale the way a hardcoded id list does. 7 MORE
+// quizzes have shipped with access:'private' since Build 13 (confirmed, 2026-11-24: 14 total
+// now, all correctly covered by quizzes.access_tier -- not by this file's own subject). This
+// file's own "exactly 7" checks below are intentionally pinned to the original Build 13 set,
+// not "every current premium quiz" -- that would make this file fail every time new premium
+// content ships, for a code path nothing calls any more.
+//
 // IMPORTANT, read before trusting this file's PASS lines: this environment has no local
 // Postgres/Docker (confirmed: `docker --version` fails, no supabase/config.toml exists), so
 // NONE of this is proven by actually executing the SQL against a database. Every check below is
@@ -55,18 +68,29 @@ const inventory = deriveQuizInventory();
 const premiumIds = inventory.filter((q) => q.access === 'private').map((q) => q.id).sort();
 const nonPremiumIds = inventory.filter((q) => q.access !== 'private').map((q) => q.id).sort();
 
+// The exact 7 ids access:'private' covered AT BUILD 13, when this legacy gate was written --
+// a fixed historical set, never re-derived from current source (current source now has 14;
+// see this file's own header). This is what the legacy gate is actually allowed to be judged
+// against.
+const BUILD_13_PREMIUM_IDS = [
+  'career-ambition-how-bad', 'career-ambition-proving', 'hidden-you-wrong',
+  'life-match-dream-life', 'love-soulmates-ready', 'private-private-trouble',
+  'style-vibe-intimidating',
+].sort();
+
 info(`Derived ${inventory.length} real quiz definitions from src/data/quizzes/*.ts.`);
-info(`Premium (access:'private'): ${premiumIds.join(', ')}`);
+info(`Premium (access:'private') today: ${premiumIds.length} ids -- ${premiumIds.join(', ')}`);
 info(`Non-premium (free + private-preview): ${nonPremiumIds.length} ids.`);
 
-if (premiumIds.length !== 7) {
-  fail(`Expected exactly 7 premium quiz ids derived from source, found ${premiumIds.length}: ${premiumIds.join(', ')}`);
+const stillPremium = BUILD_13_PREMIUM_IDS.filter((id) => premiumIds.includes(id));
+if (stillPremium.length !== BUILD_13_PREMIUM_IDS.length) {
+  fail(`${BUILD_13_PREMIUM_IDS.filter((id) => !premiumIds.includes(id)).join(', ')} no longer has access:'private' in source -- the legacy gate below would be testing an id that isn't premium any more.`);
 } else {
-  pass('Exactly 7 quizzes have access:\'private\' in the real production source.');
+  pass('All 7 Build 13 premium quiz ids still have access:\'private\' in the real production source today.');
 }
 
-// --- Step 2: read the new migration and confirm the gate list matches that derived set exactly
-// (no premium id missing, no non-premium id wrongly included). ---
+// --- Step 2: read the new migration and confirm the gate list matches the Build 13 set exactly
+// (no Build 13 premium id missing, no non-premium id wrongly included). ---
 const newMigrationSource = readFileSync(join(MIGRATIONS_DIR, NEW_MIGRATION), 'utf8');
 
 const gateBlockMatch = newMigrationSource.match(/if p_quiz_id in \(([\s\S]*?)\)\s*then/);
@@ -74,12 +98,12 @@ if (!gateBlockMatch) {
   fail('Could not find the "if p_quiz_id in (...)" gate block in the new migration.');
 } else {
   const gateIds = [...gateBlockMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
-  const missing = premiumIds.filter((id) => !gateIds.includes(id));
-  const extra = gateIds.filter((id) => !premiumIds.includes(id));
+  const missing = BUILD_13_PREMIUM_IDS.filter((id) => !gateIds.includes(id));
+  const extra = gateIds.filter((id) => !BUILD_13_PREMIUM_IDS.includes(id));
   if (missing.length > 0) {
-    fail(`Gate list is missing premium quiz id(s): ${missing.join(', ')}`);
+    fail(`Gate list is missing Build 13 premium quiz id(s): ${missing.join(', ')}`);
   } else {
-    pass('Every premium quiz id derived from source is present in the SQL gate list.');
+    pass('Every Build 13 premium quiz id is present in the legacy SQL gate list.');
   }
   if (extra.length > 0) {
     fail(`Gate list wrongly includes non-premium id(s): ${extra.join(', ')}`);

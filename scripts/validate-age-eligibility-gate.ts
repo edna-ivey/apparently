@@ -103,8 +103,8 @@ assert(!/drop table|drop column|alter column .* type/.test(migrationSource), 'th
 // ============================================================================================
 
 assert(
-  /isShareRestricted = definition\.id === 'private-private-trouble'/.test(quizRunnerSource),
-  'the quiz runner computes a dedicated share-restriction flag for private-private-trouble',
+  /isShareRestricted = MATURE_PRIVATE_PRIVATE_QUIZ_IDS\.includes\(definition\.id\)/.test(quizRunnerSource),
+  'the quiz runner computes a dedicated share-restriction flag covering every MATURE_PRIVATE_PRIVATE_QUIZ_IDS entry (private-private-trouble and private-private-proof)',
 );
 assert(
   /handleShare = async \(\) => \{\s*if \(!result \|\| isShareRestricted\) \{/.test(quizRunnerSource),
@@ -122,12 +122,12 @@ assert(
 
 const shareMigrationSource = read('../supabase/migrations/20261021150000_block_private_private_trouble_sharing.sql');
 assert(
-  /create_quiz_share[\s\S]*if p_quiz_id = 'private-private-trouble' then\s*raise exception/.test(shareMigrationSource),
-  'create_quiz_share rejects private-private-trouble before reading or writing any row',
+  /create_quiz_share[\s\S]*if p_quiz_id in \('private-private-trouble', 'private-private-proof'\) then\s*raise exception/.test(shareMigrationSource),
+  'create_quiz_share rejects both mature Private Private quiz ids before reading or writing any row',
 );
 assert(
-  /and s\.quiz_id <> 'private-private-trouble'/.test(shareMigrationSource),
-  'get_shared_quiz_result excludes private-private-trouble even for a pre-existing share row, closing the retroactive case too',
+  /and s\.quiz_id not in \('private-private-trouble', 'private-private-proof'\)/.test(shareMigrationSource),
+  'get_shared_quiz_result excludes both mature Private Private quiz ids even for a pre-existing share row, closing the retroactive case too',
 );
 
 // ============================================================================================

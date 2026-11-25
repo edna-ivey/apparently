@@ -181,8 +181,8 @@ assert(
   "the non-subscriber locked badge ('PRIVATE · LOCKED') is unchanged -- free-tier access semantics are not being altered this pass",
 );
 assert(
-  /OPEN_PRIVATE_QUIZ_IDS = \['keep-you-around', 'be-so-serious'\]/.test(privateSource),
-  'no change to which quizzes are free-preview this pass -- that decision is explicitly deferred to when the six new premium quizzes ship',
+  /OPEN_PRIVATE_QUIZ_IDS = \['keep-you-around', 'be-so-serious', 'secretly-love'\]/.test(privateSource),
+  'the free-preview quiz list matches the Build 22 owner audit (2026-11-02) decision to revive secretly-love as a third free preview -- no OTHER unreviewed change to free-preview access this pass',
 );
 
 // --- Pass 1 corrections: subscriber CTA copy + coming-soon modal wording -------------------

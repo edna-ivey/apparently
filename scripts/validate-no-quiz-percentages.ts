@@ -88,7 +88,7 @@ assert(/row\.percent/.test(adminScreenSource), 'Admin analytics still renders re
 // ============================================================================================
 
 assert(
-  /Deliberately does not render result\.mix\/result\.percent/.test(quizRunnerSource),
+  /Deliberately does not render[\s\S]{0,10}result\.mix\/result\.percent/.test(quizRunnerSource),
   'PrivateStructuredResult\'s own "never renders mix/percent" documentation is still present (Private already avoided this presentation, unaffected by this fix)',
 );
 

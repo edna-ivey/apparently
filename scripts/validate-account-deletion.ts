@@ -180,8 +180,11 @@ assert(/export default function SupportScreen/.test(supportScreenSource), 'a rea
 assert(/support@apparentlyyou\.com/.test(supportScreenSource), 'Support shows the real, owner-confirmed support mailbox');
 
 const vercelConfigSource = read('../vercel.json');
-assert(/"source": "\/privacy", "destination": "\/privacy-policy"/.test(vercelConfigSource), 'vercel.json rewrites the public /privacy path to the real screen');
-assert(/"source": "\/terms", "destination": "\/terms-of-use"/.test(vercelConfigSource), 'vercel.json rewrites the public /terms path to the real screen');
+// /privacy and /terms moved from silent rewrites to real 308 redirects (2026-11-05, confirmed
+// live) so the canonical URL shows in the browser bar -- same destinations, different vercel.json
+// block (redirects, not rewrites) and pretty-printed across multiple lines.
+assert(/"source": "\/privacy",\s*"destination": "\/privacy-policy"/.test(vercelConfigSource), 'vercel.json redirects the public /privacy path to the real screen');
+assert(/"source": "\/terms",\s*"destination": "\/terms-of-use"/.test(vercelConfigSource), 'vercel.json redirects the public /terms path to the real screen');
 
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED.`);
