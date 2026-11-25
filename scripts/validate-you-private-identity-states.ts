@@ -78,16 +78,22 @@ for (const phrase of FORBIDDEN_ACQUISITION_PHRASES) {
 }
 
 // ============================================================================================
-// STATE 2 — active subscriber: up to 3 qualifying traits, never padded; Relic silhouette until
-// 3 qualify (unchanged Pass 3 logic, re-confirmed here since this pass touches the same file).
+// STATE 2 — active subscriber: up to 3 qualifying traits, never padded. The underlying slot
+// data (selectRelicSlots/resolveRelicIdentity) was ALWAYS progressive -- color/effect slots
+// stay unresolved (null) below 3 qualifying signals, unchanged since Pass 3. What Build 11
+// changed is purely the CONSUMER gate in you.tsx's RelicGlyph: Build 10 required all three
+// slots resolved before rendering anything but the locked silhouette; Build 11 renders the
+// real (partial) Relic through the shared production renderer the moment identity.base alone
+// resolves, adding color/effect as those ranks individually qualify -- see the assertion below
+// against the actual gate condition in source, plus "RELIC PROGRESSION (Build 11)" further down.
 // ============================================================================================
 
 assert(/signals\.map\(\(signal, index\) =>/.test(undercurrentSectionCode), 'the revealed state maps directly over real qualifying signals -- never pads to a fixed count');
 assert(/MAX_PRIVATE_SIGNALS = 3/.test(read('../src/data/private-signals.ts')), 'the selector itself still caps at 3, unchanged');
 
 // Real functional proof: 1, 2, and 3 qualifying signals render exactly that many cards' worth
-// of data, and the Relic only fully resolves at 3 -- the exact underlying data this pass's UI
-// consumes, unchanged from Pass 3/3.1/3.2.
+// of data, and the Relic only fully resolves (all 3 layers) at 3 -- the exact underlying data
+// this pass's UI consumes, unchanged from Pass 3/3.1/3.2.
 // Each dimension below is given >= 3 raw points (the Bible v1.4 active-board threshold -- see
 // personality.ts's ACTIVE_BOARD_QUALIFICATION_THRESHOLD) so it genuinely qualifies; a bare
 // single -2 (2 raw points) would no longer qualify under the reconciled rule.
@@ -96,7 +102,14 @@ const oneSignalProfile = scorePersonalityProfile([
 ]);
 const oneSignals = selectStrongestPrivateSignals(oneSignalProfile);
 assert(oneSignals.length === 1, 'active subscriber with 1 qualifying trait: selector returns exactly 1');
-assert(selectRelicSlots(oneSignals).colorTrait === null, 'with <3 qualifying traits, the Relic stays a silhouette (color/effect slots unresolved)');
+assert(selectRelicSlots(oneSignals).relicTrait !== null, 'with 1 qualifying trait, the base Relic slot IS resolved (Build 11: this alone is enough to reveal the real base object)');
+assert(selectRelicSlots(oneSignals).colorTrait === null, 'with <2 qualifying traits, the color slot stays genuinely unresolved -- never invented ahead of real evidence');
+
+// Build 11 progressive-reveal gate: RelicGlyph must key off identity.base (so 1 qualifying
+// signal already shows the real, partial Relic), and must NOT still require all three slots
+// before rendering anything but the locked placeholder.
+assert(/if \(identity\.base\)/.test(youCode), 'RelicGlyph gates on identity.base alone (Build 11 progressive reveal), not on all three slots being resolved');
+assert(!/resolvedSlotCount >= 3 &&/.test(youCode), 'the old Build 10 all-or-nothing gate (resolvedSlotCount >= 3 && base && color && effect) is gone');
 
 const threeSignalProfile = scorePersonalityProfile([
   { question: 'q1', category: 'c', chosenAnswer: 'a', sourceType: 'quiz_result', sourceId: 'quiz-2', effects: [{ dimension: 'tactful_blunt', value: -2 }, { dimension: 'tactful_blunt', value: -1 }] },
@@ -126,31 +139,38 @@ assert(
 );
 
 // ============================================================================================
-// IDENTITY HERO LAYOUT — Bible v1.4 / Creature-centerpiece pass: creature (now the large
-// Creature Avatar, not a small placeholder mark) before the name+Relic group in source order
-// on every layout branch; within that group, the character name still renders above the
-// Relic shape. The hero now has two layout branches (row on wide, column on narrow -- see
-// IdentityHero's own header comment for why) built from two shared JSX variables (`avatar`,
-// `nameAndRelic`) rather than one inline tree, so this checks those variables' own source
-// order plus that BOTH branches render avatar before nameAndRelic.
+// IDENTITY HERO LAYOUT — updated for the Build 15 "Make the Creature big again. Make the
+// unrevealed Relic significantly smaller." pass (see IdentityHero's own header comment and
+// RelicSection's, both in you.tsx): the Relic was deliberately pulled OUT of this hero entirely
+// and now lives in its own compact RelicSection, rendered after Undercurrent. This block
+// previously checked for the pre-Build-15 structure (a combined `nameAndRelic` JSX variable
+// containing a <RelicGlyph>/styles.relicShape) -- that structure no longer exists BY DESIGN,
+// not by regression; this was a stale check against an approved redesign, not a real failure.
+// Updated to check the CURRENT structure: creature (`avatar`) before the name-only `nameGroup`
+// in source order, on both layout branches, and that the Relic's own real presentation
+// (RelicSection, with its real revealed/teaser styles) still exists as its own component.
 // ============================================================================================
 
 assert(/heroRow.*flexDirection: 'row'/.test(youCode) || /flexDirection: 'row'/.test(youCode.match(/heroRow: \{[^}]*\}/)?.[0] ?? ''), 'the hero row style is a row layout, still used on wide viewports');
 const identityHeroBody = identityHeroMatch?.[0] ?? '';
 const avatarVarIndex = identityHeroBody.indexOf('const avatar =');
-const nameAndRelicVarIndex = identityHeroBody.indexOf('const nameAndRelic =');
-assert(avatarVarIndex !== -1 && nameAndRelicVarIndex !== -1 && avatarVarIndex < nameAndRelicVarIndex, 'the avatar (Creature) JSX is defined BEFORE the name+Relic JSX in source order');
-const nameAndRelicJsx = identityHeroBody.slice(nameAndRelicVarIndex);
-const nameIndexInGroup = nameAndRelicJsx.indexOf('characterNamePlaceholder');
-// Build 9: the Relic now renders through the dedicated <RelicGlyph> component (which itself
-// references styles.relicShape internally) rather than an inline styled View directly inside
-// nameAndRelic -- check for that component instead of the old inline style reference.
-const relicShapeIndexInGroup = nameAndRelicJsx.indexOf('<RelicGlyph');
-assert(nameIndexInGroup !== -1 && relicShapeIndexInGroup !== -1 && nameIndexInGroup < relicShapeIndexInGroup, 'within the name+Relic group, the character name renders ABOVE the Relic -- name large on top, Relic smaller below it');
-assert(/function RelicGlyph/.test(youCode) && /styles\.relicShape/.test(youCode), 'the RelicGlyph component (rendered inside nameAndRelic) itself still uses the real relicShape style');
+const nameGroupVarIndex = identityHeroBody.indexOf('const nameGroup =');
+assert(avatarVarIndex !== -1 && nameGroupVarIndex !== -1 && avatarVarIndex < nameGroupVarIndex, 'the avatar (Creature) JSX is defined BEFORE the nameGroup JSX in source order');
+const nameGroupJsx = identityHeroBody.slice(nameGroupVarIndex);
+assert(nameGroupJsx.includes('characterNameRevealed') || nameGroupJsx.includes('characterNameMystery'), 'nameGroup renders the character name (revealed or mystery placeholder)');
 assert(
-  /\{avatar\}\s*\{nameAndRelic\}/.test(identityHeroBody) && identityHeroBody.match(/\{avatar\}\s*\{nameAndRelic\}/g)?.length === 2,
-  'BOTH layout branches (wide row, narrow column) render {avatar} before {nameAndRelic} -- avatar/Creature always comes first, on every viewport',
+  !/<RelicGlyph|relicShape/.test(nameGroupJsx),
+  'nameGroup no longer renders a Relic at all (Build 15: the Relic moved out of this hero into its own RelicSection) -- confirms the redesign, not a stale leftover',
+);
+const relicSectionMatch = youCode.match(/function RelicSection\([\s\S]*?\n}\n/);
+assert(relicSectionMatch !== null, 'RelicSection (the Relic\'s own dedicated section, separate from IdentityHero since Build 15) exists in you.tsx');
+assert(
+  /relicRevealedWrap|RelicAvatar/.test(relicSectionMatch?.[0] ?? '') && /relicTeaserIconGem|relicTeaser/.test(relicSectionMatch?.[0] ?? ''),
+  'RelicSection renders both its revealed (RelicAvatar) and locked/teaser presentations',
+);
+assert(
+  /\{avatar\}\s*\{nameGroup\}/.test(identityHeroBody) && identityHeroBody.match(/\{avatar\}\s*\{nameGroup\}/g)?.length === 2,
+  'BOTH layout branches (wide row, narrow column) render {avatar} before {nameGroup} -- avatar/Creature always comes first, on every viewport',
 );
 assert(/CreatureAvatar/.test(youCode), 'the hero renders the real Creature through the production CreatureAvatar wrapper, not a duplicated compositing path');
 

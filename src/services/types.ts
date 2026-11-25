@@ -15,6 +15,8 @@
 // and prefer importing column-sensitive shapes from that generated file once it exists,
 // rather than these hand-written ones.
 
+import type { PersonalityEffectValue, PersonalityEvidenceSourceType } from '@/data/personality';
+
 export type DailyStatusRemote =
   | 'Idea'
   | 'Draft'
@@ -38,6 +40,11 @@ export type ProfileRow = {
   gender: string | null;
   self_perception: Record<string, unknown> | null;
   onboarding_completed_at: string | null;
+  // Build 16: null until the user has gone through the age-eligibility onboarding gate (or,
+  // for an existing pre-Build-16 account, the retroactive confirmation prompt) -- treat null
+  // as NOT adult-eligible everywhere (fail closed). Immutable once set -- see
+  // upsertAgeEligibility's own comment and the staged migration's trigger.
+  age_eligibility: '13to17' | '18plus' | null;
   created_at: string;
   updated_at: string;
 };
@@ -102,7 +109,6 @@ export type QuizResultRow = {
 // PersonalityAnswerEvidence/DimensionEvidence, which also carry it -- re-exported here so
 // existing importers of this file are unaffected.
 export type { PersonalityEvidenceSourceType } from '@/data/personality';
-import type { PersonalityEvidenceSourceType } from '@/data/personality';
 
 export type PersonalityEvidenceRow = {
   id: string;
@@ -113,7 +119,28 @@ export type PersonalityEvidenceRow = {
   answer_snapshot: string;
   category: string;
   dimension: string;
-  effect: -2 | -1 | 1 | 2;
+  // Reuses PersonalityEffectValue (-3|-2|-1|1|2|3 as of Build 11) rather than a second
+  // hand-typed union that could drift from it — see that type's own comment.
+  effect: PersonalityEffectValue;
+  created_at: string;
+};
+
+// Build 16: raw row shape of personality_pole_evidence (Scoring V2's parallel, positive-only
+// table -- see supabase/migrations/20261018010000_personality_scoring_v2_schema.sql and
+// docs/personality-scoring-v2-design.md). Snake_case DB columns, mapped to the engine's own
+// PoleEvidenceRow shape (src/data/personality-v2/scoring-engine.ts) by
+// src/services/personality-v2-service.ts -- never consumed directly by any screen.
+export type PersonalityPoleEvidenceRow = {
+  id: string;
+  user_id: string;
+  source_type: 'daily_answer' | 'quiz_result';
+  source_id: string;
+  question_stable_id: string;
+  choice_stable_id: string;
+  pole_id: string;
+  points_earned: number;
+  max_available: number;
+  scoring_version: string;
   created_at: string;
 };
 

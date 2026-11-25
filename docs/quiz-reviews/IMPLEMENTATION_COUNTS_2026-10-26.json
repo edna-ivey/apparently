@@ -1,0 +1,47 @@
+{
+  "petty": {
+    "answers": 32,
+    "awards": 69,
+    "points": 124
+  },
+  "crisis": {
+    "answers": 32,
+    "awards": 139,
+    "points": 279
+  },
+  "dating": {
+    "answers": 40,
+    "awards": 129,
+    "points": 243
+  },
+  "friendship": {
+    "answers": 32,
+    "awards": 104,
+    "points": 226
+  },
+  "food-order": {
+    "answers": 32,
+    "awards": 70,
+    "points": 147
+  },
+  "spending": {
+    "answers": 32,
+    "awards": 62,
+    "points": 112
+  },
+  "era": {
+    "answers": 32,
+    "awards": 131,
+    "points": 262
+  },
+  "ick": {
+    "answers": 32,
+    "awards": 108,
+    "points": 189
+  },
+  "group-chat": {
+    "answers": 32,
+    "awards": 102,
+    "points": 214
+  }
+}

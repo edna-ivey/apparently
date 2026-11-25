@@ -1,17 +1,59 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, useRouter, ThemeProvider, useSegments } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { hydrateOnboardingState } from '@/data/onboarding';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { hydrateOnboardingState, useOnboardingState } from '@/data/onboarding';
 import { flushPendingQuizSubmissions } from '@/data/quizzes/pending-quiz-submissions';
 import { isRemoteDailyEnabled } from '@/lib/supabase';
 import { ensureAnonymousSession } from '@/services/auth-service';
-import { syncLegacyQuizResultsToRemote } from '@/services/legacy-quiz-backfill-service';
+import { initErrorReporting } from '@/services/observability';
 import { initializePurchases } from '@/services/purchases-service';
+import { syncLocalProfileToRemote } from '@/services/profile-backfill-service';
+import { logAnalyticsEvent } from '@/services/analytics-service';
+import type { NotificationCategory } from '@/services/notifications-config';
+import { scheduleNextDailyReminder } from '@/services/daily-reminder-service';
+import { getNotificationPermissionStatus } from '@/services/notification-permission-service';
+import { hydrateNotificationPreferences, syncDeviceTimeZone, useNotificationPreferences } from '@/services/notification-preferences-service';
+import { registerPushToken } from '@/services/push-token-service';
+import { ensureDiagnosticControlsHydrated, isDiagnosticBuild, useDiagnosticControls, useDiagnosticControlsReady } from '@/services/diagnostic-controls-service';
 
 SplashScreen.preventAutoHideAsync();
+// Work Package 2: same "call once, at module scope, before anything else" convention as
+// SplashScreen.preventAutoHideAsync() above — must run before any render, so a crash during
+// the FIRST paint is still reportable. No-ops safely with no DSN configured (see
+// observability.ts's own header comment).
+initErrorReporting();
+
+// Notifications, 2026-10-22: controls whether/how a notification is presented while the app is
+// ALREADY in the foreground (iOS otherwise suppresses the banner entirely for a foregrounded
+// app unless a handler says to show it). Same "call once, at module scope" convention as
+// SplashScreen/initErrorReporting above. Every category in this app is a real, user-relevant
+// moment (a reminder, a friend's response, a Creature update) -- none are "silent" background
+// data pushes, so every category shows a real banner, plays sound, and updates the badge.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+// The real deep-link target for a tapped notification, derived from the payload this app
+// itself always sets (data.url) -- see daily-reminder-service.ts and the Edge Function that
+// sends Friend/Creature/new-quiz/Private pushes for where that field is populated. Falls back
+// to Today ('/') for a malformed/missing payload rather than doing nothing.
+const resolveNotificationUrl = (response: Notifications.NotificationResponse): string => {
+  const data = response.notification.request.content.data as { url?: string; category?: string } | undefined;
+  if (data?.category) {
+    logAnalyticsEvent({ name: 'notification_opened', properties: { category: data.category as NotificationCategory } });
+  }
+  return typeof data?.url === 'string' && data.url.length > 0 ? data.url : '/';
+};
 
 // This is the ONLY thing that decides which top-level branch of the route tree renders:
 // the (tabs) group (consumer screens, wrapped in AppTabs) or admin/* (internal editorial
@@ -33,6 +75,24 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
+  const onboardingState = useOnboardingState();
+  const onboardingComplete = onboardingState !== 'loading' && onboardingState.completed;
+  // Inert (always false) outside the diagnostic EAS build profile -- see
+  // diagnostic-controls-service.ts's own header for the full safety reasoning. Used reactively
+  // in the daily-reminder and deep-link-listener effects below, which SHOULD immediately
+  // re-run when toggled. The session-bootstrap effect does NOT read this hook's render value at
+  // all -- see its own comment on why it instead awaits ensureDiagnosticControlsHydrated()
+  // directly, which is the actual fix for the cold-launch hydration race item 2 of the Build 23
+  // review named.
+  const diagnostics = useDiagnosticControls();
+  const diagnosticReady = useDiagnosticControlsReady();
+  // Build 24 stability fix: the session-bootstrap effect below re-runs on every `segments`
+  // change (i.e. every navigation/tab switch), but the notification-startup chain inside it --
+  // a real native getExpoPushTokenAsync() call plus upsert_push_token/syncDeviceTimeZone RPCs
+  // -- must only ever run once per app session. Without this guard, switching tabs repeatedly
+  // re-fires that chain every time, piling up overlapping native bridge calls and network
+  // requests purely from navigation, independent of any real state change.
+  const notificationStartupRanRef = useRef(false);
 
   useEffect(() => {
     void hydrateOnboardingState();
@@ -57,8 +117,20 @@ export default function RootLayout() {
     // so it has none of the native-navigator-mounting race a conditional <Redirect/> at this
     // root level would — see the comment above this component for why THAT kind of gating
     // was deliberately moved out of the root layout.
+    //
+    // App Privacy audit (2026-10-21): also require onboardingState.completed. Without this,
+    // this effect fired on EVERY launch regardless of route or onboarding progress — including
+    // the very first launch, before the age-gate step (onboarding.tsx) had even rendered —
+    // which created a real anonymous auth.users row ahead of the user ever answering "under
+    // 13." (tabs)/_layout.tsx already blocks every consumer tab screen until onboarding
+    // completes, so this root effect was the ONE path that could establish a session before
+    // age verification. completeOnboarding() (data/onboarding.ts) establishes the session
+    // itself at the moment onboarding actually finishes — this effect no longer needs to (or
+    // should) race ahead of that. A device that already completed onboarding in a prior
+    // session is unaffected: onboardingState.completed is true from the first render after
+    // hydration, so this still fires on every normal relaunch exactly as before.
     const isAdminRoute = segments[0] === 'admin';
-    if (isRemoteDailyEnabled && !isAdminRoute) {
+    if (isRemoteDailyEnabled && !isAdminRoute && onboardingComplete) {
       void ensureAnonymousSession().then(() => {
         // Opportunistic retry for any quiz completion that failed to reach the server
         // earlier (see pending-quiz-submissions.ts) — "app/session initializes again" is
@@ -66,24 +138,129 @@ export default function RootLayout() {
         // loadRemote). A no-op fast path when the queue is empty, same idempotent-safe
         // shape as ensureAnonymousSession itself.
         void flushPendingQuizSubmissions();
-        // One-time (per consumer user id, via its own local marker) resync of any quiz
-        // history from an older TestFlight build that predates remote quiz submission — see
-        // legacy-quiz-backfill-service.ts. Session-established + local-history-hydrated is
-        // exactly this moment; it also safely retries when You opens (you.tsx's loadRemote).
-        void syncLegacyQuizResultsToRemote();
+        // Recovers a local onboarding/profile record with no public.profiles row yet --
+        // either a pre-fix historical device, or a completion/edit write that succeeded
+        // locally but failed to reach Supabase. See profile-backfill-service.ts.
+        void syncLocalProfileToRemote();
         // Establishes the RevenueCat identity (same anonymous Supabase auth.uid(), see
         // purchases-service.ts's own comment) and loads real CustomerInfo once a session
         // exists -- same "app/session initializes" moment as everything else in this block.
         // No-op on web/unconfigured builds; never blocks rendering, never shows a splash.
         void initializePurchases();
+        // Build 23 P0 diagnostic-isolation fix: the ENTIRE notification startup block below --
+        // not just registerPushToken() -- must be skippable for the diagnostic build's
+        // Notifications-OFF test to genuinely isolate the notification subsystem. Previously
+        // hydrateNotificationPreferences(), getNotificationPermissionStatus(), and
+        // syncDeviceTimeZone() all still ran regardless of the toggle; only the final
+        // registerPushToken() call was gated. awaiting ensureDiagnosticControlsHydrated() here
+        // (rather than reading the diagnostics hook's render value) is the actual fix for the
+        // cold-launch race: this component's first render can happen before AsyncStorage's
+        // real persisted toggle state has loaded, and this effect runs inside that same first
+        // pass -- without this await, a persisted OFF setting could be missed on exactly the
+        // cold launch it matters most for. Outside the diagnostic build this resolves
+        // immediately with the fixed ON/ON default, so production/testflight behavior and
+        // timing are completely unchanged.
+        void ensureDiagnosticControlsHydrated().then((diagnostics) => {
+          if (diagnostics.notificationsDisabled || notificationStartupRanRef.current) {
+            return;
+          }
+          notificationStartupRanRef.current = true;
+          // Notifications, 2026-10-22: re-registers this device's push token if permission was
+          // already granted in a prior session (never requests it here -- that only ever
+          // happens contextually, from a real in-app explainer flow, never from this launch
+          // effect) and re-derives/reschedules the next local Daily reminder from the user's own
+          // saved preferences. Same "app/session initializes" moment as everything else above.
+          void hydrateNotificationPreferences().then(async () => {
+            const permissionStatus = await getNotificationPermissionStatus();
+            if (permissionStatus === 'granted') {
+              void registerPushToken();
+            }
+          });
+          // Timezone correction, 2026-10-23: every launch/foreground re-sends the device's
+          // current IANA timezone, independent of whether the user ever opens Settings -- a
+          // travelling user's real zone change reaches the server promptly even if they never
+          // touch a notification preference.
+          void syncDeviceTimeZone();
+        });
       });
     }
-  }, [segments]);
+  }, [segments, onboardingComplete]);
+
+  // Notifications, 2026-10-22: reschedules the single next Daily-reminder notification on
+  // every launch/foreground AND whenever the user's own saved preference (enabled/hour/minute)
+  // changes -- recomputed fresh each time from the device's current local clock, so "respect
+  // the user's timezone" holds even across travel. Deliberately NOT gated on
+  // isRemoteDailyEnabled/onboardingComplete the way the session-bootstrap effect above is --
+  // local notification scheduling touches no backend and creates no account, so there is
+  // nothing in this specific effect that the age-gate/anonymous-session concerns above apply
+  // to; it simply does nothing useful before onboarding anyway since permission can only ever
+  // be granted after a real contextual ask, which itself only happens post-onboarding.
+  const notificationPreferences = useNotificationPreferences(
+    isDiagnosticBuild && (!diagnosticReady || diagnostics.notificationsDisabled),
+  );
+  useEffect(() => {
+    // Build 23 P0 diagnostic-isolation fix: getNotificationPermissionStatus() (a real native
+    // OS call) previously ran unconditionally here even with diagnostics.notificationsDisabled
+    // -- the user's own review correctly named "checks permissions" as one of the startup
+    // operations that must actually be skipped, not just gated at the final enabled flag.
+    // scheduleNextDailyReminder's own body always cancels any already-scheduled reminder first
+    // (see daily-reminder-service.ts) regardless of enabled/permissionGranted, so passing
+    // enabled:false, permissionGranted:false directly -- without ever calling the real
+    // permission check -- still correctly cancels a stale reminder while making zero native
+    // permission-status calls.
+    if (diagnostics.notificationsDisabled || (isDiagnosticBuild && !diagnosticReady)) {
+      void scheduleNextDailyReminder({ enabled: false, hour: 0, minute: 0, permissionGranted: false });
+      return;
+    }
+    void getNotificationPermissionStatus().then((permissionStatus) => {
+      void scheduleNextDailyReminder({
+        enabled: notificationPreferences.dailyReminderEnabled,
+        hour: notificationPreferences.dailyReminderHour,
+        minute: notificationPreferences.dailyReminderMinute,
+        permissionGranted: permissionStatus === 'granted',
+      });
+    });
+  }, [
+    notificationPreferences.dailyReminderEnabled,
+    notificationPreferences.dailyReminderHour,
+    notificationPreferences.dailyReminderMinute,
+    diagnostics.notificationsDisabled,
+    diagnosticReady,
+  ]);
+
+  // Notifications, 2026-10-22: deep-link handling for a tapped notification, covering all
+  // three app states the task names explicitly -- foreground (addNotificationResponseReceived
+  // Listener), background (the same listener, since expo-notifications/iOS resumes the app
+  // and fires it), and cold-start-from-notification (getLastNotificationResponseAsync, read
+  // once on mount). router.push (not replace) -- a notification tap is a real navigation
+  // action the user should be able to back out of, not a redirect.
+  const router = useRouter();
+  useEffect(() => {
+    // Build 23 P0 diagnostic-isolation fix: both of these are real native
+    // expo-notifications calls (reading the last response, registering a native listener) --
+    // skipped entirely when diagnostics.notificationsDisabled, for the same genuine-isolation
+    // reason as the rest of this file's notification startup work. Inert (never true) outside
+    // the diagnostic build.
+    if (diagnostics.notificationsDisabled || (isDiagnosticBuild && !diagnosticReady)) {
+      return;
+    }
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        router.push(resolveNotificationUrl(response) as never);
+      }
+    });
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      router.push(resolveNotificationUrl(response) as never);
+    });
+    return () => subscription.remove();
+  }, [router, diagnostics.notificationsDisabled, diagnosticReady]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

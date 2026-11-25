@@ -33,7 +33,9 @@ export type PrivateSignalTrait = {
   evidenceCount: number;
 };
 
-const MAX_PRIVATE_SIGNALS = 3;
+// Exported (Build 16) so src/data/personality-v2/activation.ts's V2 gap-filling merge can
+// respect the exact same cap rather than hand-duplicating the literal 3.
+export const MAX_PRIVATE_SIGNALS = 3;
 
 // ---------------------------------------------------------------------------------------
 // Qualification (Build 8 Pass 3.1, made source-ID-aware in Pass 3.2, RECONCILED with Bible

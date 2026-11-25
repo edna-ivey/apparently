@@ -1,0 +1,5888 @@
+{
+  "generatedBy": "scripts/generate-daily-content-specification.ts",
+  "generatedNote": "Authoritative. Supersedes docs/DAILY_MASTER_CONSOLIDATED_REVIEW.md's own compiled scoring wherever a later Reassessment Round or Audit Round correction applies -- see scripts/lib/daily-content-spec.ts for precedence. Regenerate, never hand-edit.",
+  "questionCount": 62,
+  "questions": [
+    {
+      "num": 1,
+      "prompt": "Pick the house rule you care about MOST.",
+      "room": "Free",
+      "source": "APPROVED 1",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "If you finish it, replace it.",
+          "reveal": "You are not asking for perfection. You are asking whoever finished the toilet paper to have a conscience.",
+          "rawScoring": "Accountability +3; Rule-oriented +2; Duty-First +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:positive",
+              "traitId": 55,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Don’t wear shoes inside.",
+          "reveal": "Apparently, the front door is where your tolerance for nonsense ends.",
+          "rawScoring": "Boundary-Holding +3; Rule-oriented +2; Control +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 2
+            },
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Don’t go to bed with a dirty kitchen.",
+          "reveal": "Apparently, some people can sleep peacefully while a pot of yesterday's spaghetti holds the kitchen hostage. You're not one of them.",
+          "rawScoring": "Rule-oriented +2; Planner +1; Control +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            },
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Put things back where they belong.",
+          "reveal": "Apparently “where you found it” is a complete address.",
+          "rawScoring": "Rule-oriented +3; Control +2; Planner +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "prompt": "Which compliment would mean the MOST to you?",
+      "room": "Apparently Private",
+      "source": "APPROVED 2",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "“You never stopped being yourself.”",
+          "reveal": "Apparently, you can achieve everything and still feel like you've lost if you had to become somebody else to get there.",
+          "rawScoring": "Self-Secure +2; Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "“You’re a great parent.”",
+          "reveal": "You could collect a hundred trophies and still get emotional over somebody noticing what you pour into the people you love. Apparently, that's the review that matters.",
+          "rawScoring": "Duty-First +1; Supportive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "duty_first_self_preserving:positive",
+              "traitId": 55,
+              "points": 1
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "“You make people feel safe.”",
+          "reveal": "Apparently, being the person everybody leans on is your greatest flex. Just curious, who do you get to lean on?",
+          "rawScoring": "Protective +2; Supportive +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "“You built an incredible life.”",
+          "reveal": "You didn't work this hard just to hear 'must be nice.' Apparently, you'd appreciate somebody acknowledging the years they didn't see.",
+          "rawScoring": "Ambitious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "prompt": "Your partner’s ex asks them to hold some money for them. What are you saying?",
+      "room": "Apparently Private",
+      "source": "B2-01",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "“Why are they comfortable asking you for that?”",
+          "reveal": "Apparently, the money isn't even the issue. You're wondering when your relationship became a branch office for somebody's ex.",
+          "rawScoring": "Verify first +3; Boundary-Holding +2; Vibe Checker +2; Curious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "“Actually, my hands hold money better. Send it over.” 😂",
+          "reveal": "Apparently, if we're all getting involved in this financial arrangement, you'd like to be promoted to treasurer.",
+          "rawScoring": "Playful +3; Direct +2; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "“I don’t care. If it’s innocent, it’s innocent.”",
+          "reveal": "You refuse to turn every harmless interaction into a crime scene. Apparently, peace is still an option.",
+          "rawScoring": "Trust first +3; Let it play out +2; Even-Keeled +1; Face Value +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:positive",
+              "traitId": 25,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            },
+            {
+              "pole": "social_attunement:negative",
+              "traitId": 8,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "“Do they need the number to the nearest bank?”",
+          "reveal": "Apparently, you've got boundaries and excellent customer service. Here's the bank's number. Please stop calling this relationship.",
+          "rawScoring": "Boundary-Holding +3; Blunt +2; Playful +2; Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 2
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "prompt": "Your partner says, “I don’t want you going through my phone.” What’s your reaction?",
+      "room": "Apparently Private",
+      "source": "B2-02",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "“Why did you feel the need to say that?”",
+          "reveal": "Nobody accused you of anything, but apparently your unsolicited privacy announcement just opened an investigation.",
+          "rawScoring": "Curious +3; Verify first +2; Vibe Checker +2; Direct +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Fair. Privacy still exists in relationships.",
+          "reveal": "Apparently, being in love doesn't mean surrendering your passwords and your last shred of individuality.",
+          "rawScoring": "Boundary-Holding +3; Trust first +2; Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:positive",
+              "traitId": 25,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "If I suddenly can’t touch your phone, now I definitely have questions.",
+          "reveal": "You were minding your business until they made a speech. Apparently, now the phone needs its own defense attorney.",
+          "rawScoring": "Verify first +3; Vibe Checker +2; Curious +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Fine, but secrecy and privacy are not the same thing.",
+          "reveal": "Apparently, you support privacy. You just don't support suspicious behavior wearing a privacy costume.",
+          "rawScoring": "Verify first +3; Direct +2; Boundary-Holding +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "prompt": "A close friend asks you to lie for them because they don’t want to deal with somebody’s reaction. What are you doing?",
+      "room": "Apparently Private",
+      "source": "B2-03",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Depends what the lie protects and who it hurts.",
+          "reveal": "Apparently, your loyalty comes with a terms-and-conditions page. You'd like to know who's getting hurt before you become an accessory.",
+          "rawScoring": "Perspective-Taking +3; Practical +2; Reflective +2; Protective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Absolutely not. Handle your own situation.",
+          "reveal": "You love your friends, but apparently your loyalty package does not include lying on command.",
+          "rawScoring": "Boundary-Holding +3; Direct +3; Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I’ll cover something small. Friends help friends.",
+          "reveal": "Apparently, you're willing to bend the truth for friendship. Just don't ask you to testify under oath.",
+          "rawScoring": "Rule-bending +3; Protective +2; Supportive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "rules_bending:negative",
+              "traitId": 22,
+              "points": 3
+            },
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I won’t lie, but I also don’t have to expose them.",
+          "reveal": "You found a way to mind your business without becoming a co-conspirator. Apparently, discretion is still free.",
+          "rawScoring": "Tactful +3; Boundary-Holding +2; Peacekeeping +2; Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 6,
+      "prompt": "Your friend gets back with the ex you spent six months helping them recover from. What do you say?",
+      "room": "Apparently Private",
+      "source": "B2-05",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Nothing at first. They already know how I feel.",
+          "reveal": "Apparently, your official statement is already on record. You will not be providing additional testimony.",
+          "rawScoring": "Patient +2; Responsive +1; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 1
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "“Respectfully, please return the emotional labor I invested.” 😂",
+          "reveal": "Six months of tears, screenshots, and midnight calls. Apparently, you'd like an itemized refund.",
+          "rawScoring": "Keeps Score +3; Playful +3; Direct +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "gives_freely_keeps_score:negative",
+              "traitId": 60,
+              "points": 3
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "“If you’re happy, I’m here.”",
+          "reveal": "Apparently, your friendship isn't a subscription they lose every time they make a questionable decision.",
+          "rawScoring": "Supportive +3; Forgiving +2; Gives Freely +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 3
+            },
+            {
+              "pole": "forgiving_receipts:positive",
+              "traitId": 27,
+              "points": 2
+            },
+            {
+              "pole": "gives_freely_keeps_score:positive",
+              "traitId": 59,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "“I love you. I am also not pretending I think this is a good idea.”",
+          "reveal": "You can support your friend without endorsing the sequel nobody asked for. Apparently, love and common sense can coexist.",
+          "rawScoring": "Direct +3; Supportive +2; Challenging +2; Blunt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 2
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 7,
+      "prompt": "You can guarantee ONE thing for the next 10 years. What are you choosing?",
+      "room": "Apparently Private",
+      "source": "B2-06",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "A relationship you never have to question",
+          "reveal": "Apparently, you're tired of needing detective skills to feel loved. You'd like a relationship that doesn't require surveillance.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Perfect health",
+          "reveal": "Money, romance, and success can wait. Apparently, you'd like your body to stop being an unpredictable business partner.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "A peaceful home",
+          "reveal": "Apparently, your dream home isn't a mansion. It's somewhere nobody makes you rehearse an argument before walking through the door.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "Financial security",
+          "reveal": "Apparently, your love language is bills paid, savings intact, and nobody calling about an overdue balance.",
+          "rawScoring": "Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 8,
+      "prompt": "If you could know the absolute truth about ONE thing, which would you choose?",
+      "room": "Apparently Private",
+      "source": "B2-08",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Who genuinely loves me",
+          "reveal": "Apparently, you'd rather have one uncomfortable truth than spend another year confusing attention with love.",
+          "rawScoring": "Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "What happens after we die",
+          "reveal": "The universe offered you one spoiler and you skipped straight to the series finale. Apparently, small talk is beneath you.",
+          "rawScoring": "Curious +3",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "What people really think of me",
+          "reveal": "Apparently, you want the unfiltered reviews, even though you know perfectly well some people should never be given a microphone.",
+          "rawScoring": "Curious +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Whether I chose the right life",
+          "reveal": "Apparently, you've been living your life while quietly wondering whether the alternate version of you has better benefits.",
+          "rawScoring": "Reflective +2; Curious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 9,
+      "prompt": "If your family could describe you with only ONE sentence, which would you WANT it to be?",
+      "room": "Apparently Private",
+      "source": "B2-09",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "“They made life fun.”",
+          "reveal": "Apparently, your goal is to leave people with memories, not a list of chores you made them finish.",
+          "rawScoring": "Playful +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "“They loved us really well.”",
+          "reveal": "You don't need a statue. Apparently, you just want the people you love to remember how it felt to be loved by you.",
+          "rawScoring": "Supportive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "“They built something that mattered.”",
+          "reveal": "Apparently, you're not trying to leave the world exactly how you found it. You'd like proof you were here.",
+          "rawScoring": "Ambitious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "“They always showed up.”",
+          "reveal": "Apparently, you don't need to be everybody's favorite. You'd rather be the person they knew would actually show up.",
+          "rawScoring": "Duty-First +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "duty_first_self_preserving:positive",
+              "traitId": 55,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 10,
+      "prompt": "Your partner’s family keeps making jokes at your expense, and your partner laughs along. What bothers you MOST?",
+      "room": "Apparently Private",
+      "source": "B2-04",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Honestly, I might joke back harder.",
+          "reveal": "Apparently, if humiliation is the family tradition, you've decided to bring your own microphone.",
+          "rawScoring": "Playful +3; Conflict-forward +2; Competitive +2; Reactive +1; Thick-skinned +3",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "competitive_cooperative:positive",
+              "traitId": 31,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            },
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "That my partner didn’t shut it down.",
+          "reveal": "The jokes were disrespectful. Watching your partner enjoy them? Apparently, that was the real punchline.",
+          "rawScoring": "Boundary-Holding +2; Protective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "The jokes themselves.",
+          "reveal": "Apparently, you're not interested in being the entertainment at somebody else's family gathering.",
+          "rawScoring": "Boundary-Holding +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "That y’all have now put ME in the position of having to address it.",
+          "reveal": "You gave your partner every opportunity to handle their people. Apparently, now everybody gets the version of you they were warned about.",
+          "rawScoring": "Direct +3; Conflict-forward +2; Boundary-Holding +2; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 11,
+      "prompt": "An unknown number calls you twice in a row. What are you doing?",
+      "room": "Free",
+      "source": "B3-01",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Answering. Twice means it might matter.",
+          "reveal": "Apparently, two missed calls and you're already mentally preparing to identify a body. Let's hope it's just somebody selling insurance.",
+          "rawScoring": "Responsive +3; Protective +1; Urgent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 3
+            },
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 1
+            },
+            {
+              "pole": "patient_urgent:negative",
+              "traitId": 38,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Letting it ring, then Googling the number.",
+          "reveal": "Apparently, before you get access to my ears, you must first pass a background check.",
+          "rawScoring": "Verify first +3; Practical +2; Private +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Texting, \"Who is this?\"",
+          "reveal": "Apparently, you can have my attention once you've identified yourself. This is a phone, not a surprise party.",
+          "rawScoring": "Direct +2; Verify first +2; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Blocking it. If it's important, they'll figure it out.",
+          "reveal": "Apparently, two calls from an unknown number isn't an emergency. It's a great way to become a blocked contact.",
+          "rawScoring": "Decisive +3; Boundary-Holding +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 12,
+      "prompt": "At a packed event, someone is saving SIX empty seats for people who haven't arrived. Fair or annoying?",
+      "room": "Free",
+      "source": "B3-02",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Depends how crowded it is.",
+          "reveal": "Apparently, you're willing to hear both sides before deciding whether somebody needs to move their imaginary guests.",
+          "rawScoring": "Practical +3; Perspective-Taking +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Fair. Their people are coming.",
+          "reveal": "Apparently, you respect the sacred tradition of saving seats. Six empty chairs? That's not a problem. That's a family reunion with delayed arrivals.",
+          "rawScoring": "Cooperative +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "competitive_cooperative:negative",
+              "traitId": 32,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "If people are standing, the reservation period has expired.",
+          "reveal": "Apparently, you're not standing while six invisible people enjoy reserved seating. This isn't a restaurant, and those chairs don't have names on them.",
+          "rawScoring": "Practical +3; Rule-oriented +2; Direct +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "One or two? Fine. Six is ridiculous.",
+          "reveal": "Apparently, you're willing to compromise, but six chairs? At this point, somebody needs to start charging rent.",
+          "rawScoring": "Practical +3; Cooperative +1; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "competitive_cooperative:negative",
+              "traitId": 32,
+              "points": 1
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 13,
+      "prompt": "Everyone in the group keeps saying \"I don't care\" when it's time to pick where to eat. What are you doing?",
+      "room": "Free",
+      "source": "B3-03",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Picking a place and sending the address.",
+          "reveal": "Apparently, you didn't apply to be the group leader, but somebody had to rescue dinner from the committee of indecision.",
+          "rawScoring": "Decisive +3; Initiating +3; Direct +2; Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 3
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Sending a poll. Majority rules.",
+          "reveal": "Apparently, if nobody has an opinion, democracy will assign them one. Voting closes in five minutes.",
+          "rawScoring": "Collaborative +3; Planner +2; Cooperative +2; Initiating +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:negative",
+              "traitId": 14,
+              "points": 3
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 2
+            },
+            {
+              "pole": "competitive_cooperative:negative",
+              "traitId": 32,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Waiting. Somebody will eventually choose.",
+          "reveal": "Apparently, you're willing to starve before accepting a leadership position you never applied for.",
+          "rawScoring": "Responsive +2; Let it play out +3; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 2
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 3
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"I'm eating at ___ at 7. Come if you want.\"",
+          "reveal": "Apparently, you solved the group decision by removing the group. Dinner is at seven. Attendance is optional.",
+          "rawScoring": "Independent +3; Decisive +3; Initiating +2; Direct +2; Self-Secure +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 3
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 14,
+      "prompt": "Someone apologizes only after they realize you’re actually done with them. Now what?",
+      "room": "Free",
+      "source": "B3-04",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "I accept it. People mess up.",
+          "reveal": "Apparently, you're not interested in sentencing someone to life without parole for making a mistake. Growth is allowed in your courtroom.",
+          "rawScoring": "Forgiving +3; Repair-Oriented +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "forgiving_receipts:positive",
+              "traitId": 27,
+              "points": 3
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I forgive them, but things are different now.",
+          "reveal": "Forgiveness granted. Access denied. Apparently, some people confuse being forgiven with getting their old parking spot back.",
+          "rawScoring": "Forgiving +2; Boundary-Holding +3; Self-Preserving +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "forgiving_receipts:positive",
+              "traitId": 27,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I need changed behavior, not an apology.",
+          "reveal": "Apparently, \"I'm sorry\" is the application. Changed behavior is the background check. And you're not skipping either step.",
+          "rawScoring": "Accountability +3; Verify first +2; Boundary-Holding +2; Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Too late. You should’ve cared before I was done.",
+          "reveal": "Apparently, they waited until the door closed to remember how to knock. Unfortunately, you've already changed the locks.",
+          "rawScoring": "Decisive +3; Boundary-Holding +3; Self-Preserving +2; Holds the Receipt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "forgiving_receipts:negative",
+              "traitId": 28,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 15,
+      "prompt": "Someone is aggressively tailgating you, and you’re already over the speed limit. What happens?",
+      "room": "Free",
+      "source": "B3-05",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "I stay exactly where I am. They can wait.",
+          "reveal": "Apparently, the closer they get, the more committed you become to maintaining your current speed. Pressure has never been your favorite motivator.",
+          "rawScoring": "Boundary-Holding +2; Independent +2; Decisive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I move over and let them go be somebody else’s problem.",
+          "reveal": "Apparently, you're not auditioning for a highway confrontation. Go ahead, superstar. The road is yours.",
+          "rawScoring": "Practical +3; Peacekeeping +2; Self-Preserving +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I slow down a little. Since we’re apparently spending time together.",
+          "reveal": "Apparently, you saw impatience in your rearview mirror and decided to offer a complimentary lesson in patience. Petty University has entered the highway.",
+          "rawScoring": "Reactive +3; Conflict-forward +2; Challenging +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I keep driving normally. A stranger is not controlling my mood OR my speed.",
+          "reveal": "Apparently, your peace isn't available for roadside pickup. They can tailgate your car, but they're not getting behind the wheel of your emotions.",
+          "rawScoring": "Even-Keeled +3; Self-Secure +2; Independent +2; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 3
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 16,
+      "prompt": "Someone parks across two spaces in a packed parking lot. Your immediate thought?",
+      "room": "Free",
+      "source": "B3-06",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "I need to see what kind of car this is before I complete my investigation. 😂",
+          "reveal": "Apparently, the parking violation wasn't enough. You need the make, model, and estimated monthly payment before delivering your final judgment.",
+          "rawScoring": "Curious +2; Playful +2; Vibe Checker +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Maybe there’s a reason I can’t see.",
+          "reveal": "Apparently, you're giving them the benefit of the doubt. Somewhere out there, a terrible parker is enjoying grace they didn't even know they received.",
+          "rawScoring": "Perspective-Taking +3; Reflective +2; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Some people really do move through life like nobody else exists.",
+          "reveal": "Apparently, you came for groceries and left with a character assessment. Two parking spaces told you everything you needed to know.",
+          "rawScoring": "Accountability +2; Vibe Checker +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Extremely annoying. I’m judging, but I’m moving on.",
+          "reveal": "Apparently, you've issued the citation in your head and closed the case. No paperwork. No confrontation. Just a brief loss of respect.",
+          "rawScoring": "Let it play out +2; Even-Keeled +2; Peacekeeping +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 17,
+      "prompt": "Someone you just met asks how much money you make. What are you telling them?",
+      "room": "Free",
+      "source": "B3-07",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "The exact number. I don’t care.",
+          "reveal": "Apparently, your salary isn't a classified document. They asked, you answered, and now they're the ones acting uncomfortable.",
+          "rawScoring": "Open +3; Direct +2; Self-Secure +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "A general range.",
+          "reveal": "Apparently, you're willing to open the financial curtains. Just not enough for somebody to start counting your furniture.",
+          "rawScoring": "Tactful +2; Boundary-Holding +2; Open +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I’m joking my way out of that question.",
+          "reveal": "Apparently, your bank account has a confidentiality agreement, and your sense of humor is the spokesperson.",
+          "rawScoring": "Playful +3; Private +2; Tactful +2; Indirect +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 3
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 2
+            },
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Absolutely nothing. Why do you need to know?",
+          "reveal": "Apparently, you just met this person and they're already requesting financial disclosures. What is this, a mortgage application?",
+          "rawScoring": "Boundary-Holding +3; Private +3; Direct +2; Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 18,
+      "prompt": "Which feels MOST disrespectful to you?",
+      "room": "Free",
+      "source": "B3-08",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Saying something about me you wouldn’t say to my face",
+          "reveal": "Apparently, you don't mind being discussed. You just think the conversation should come with an invitation for the person it's about.",
+          "rawScoring": "Direct +1; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Constantly interrupting me",
+          "reveal": "Apparently, you've been trying to finish the same sentence since Tuesday. At this point, you might need to submit your thoughts in writing.",
+          "rawScoring": "Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Being late with no warning",
+          "reveal": "Apparently, your time isn't a free trial subscription. A little communication would've prevented the entire cancellation.",
+          "rawScoring": "Accountability +1; Planner +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Ignoring my text while clearly being on your phone",
+          "reveal": "Apparently, you can see them posting stories, liking pictures, and living their best digital life. Your message, meanwhile, has entered witness protection.",
+          "rawScoring": "Vibe Checker +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 19,
+      "prompt": "Which kind of rich would you rather be?",
+      "room": "Free",
+      "source": "B3-09",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Experience rich",
+          "reveal": "Apparently, you'd rather collect passport stamps than possessions. Your bank account might disagree, but your photo gallery is thriving.",
+          "rawScoring": "Adventurous +1; Curious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 1
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Money rich",
+          "reveal": "Apparently, you don't need money to buy happiness. You just want enough to conduct your own research.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "Relationship rich",
+          "reveal": "Apparently, you'd rather have people who show up than money that shows off. Although, let's not pretend you wouldn't appreciate both.",
+          "rawScoring": "Sentimental +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "sentimental_thick_skinned:positive",
+              "traitId": 19,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Time rich",
+          "reveal": "Apparently, the ultimate luxury isn't a yacht. It's waking up on a Tuesday and realizing nobody owns your schedule.",
+          "rawScoring": "Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 20,
+      "prompt": "Which sounds the MOST luxurious to you right now?",
+      "room": "Free",
+      "source": "B3-10",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Someone handling every annoying task for a week",
+          "reveal": "Apparently, you don't need diamonds. You need somebody to figure out what's for dinner without asking you seventeen follow-up questions.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "A five-star vacation",
+          "reveal": "Apparently, your idea of rest involves room service, fluffy robes, and someone calling you \"ma'am\" without immediately asking for something.",
+          "rawScoring": "Comfort-seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:negative",
+              "traitId": 12,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "A completely empty calendar",
+          "reveal": "Apparently, your dream vacation is an entire week where the only thing on your calendar is absolutely none of anybody's business.",
+          "rawScoring": "Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "A paid-off house",
+          "reveal": "Apparently, you hear \"luxury\" and think \"no mortgage payment.\" Some people want a mansion. You want the bank to stop calling yours a partnership.",
+          "rawScoring": "Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 21,
+      "prompt": "You accidentally send the screenshot to the person you were screenshotting. What’s your next move?",
+      "room": "Free",
+      "source": "B4-01",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Own it immediately. “Well… since we’re here.”",
+          "reveal": "Apparently, the evidence has entered the chat, and so has your accountability. Might as well schedule the hearing.",
+          "rawScoring": "Accountability +3; Direct +3; Conflict-forward +2; Self-Secure +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Unsend it and pray they didn’t see it.",
+          "reveal": "Apparently, your entire defense strategy is built around the hope that nobody has notifications turned on.",
+          "rawScoring": "Self-Preserving +3; Peacekeeping +2; Indirect +2; Reactive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Send “OMG WRONG PERSON” and disappear for a while.",
+          "reveal": "Apparently, your crisis management plan consists of one emergency text and an immediate disappearance from society.",
+          "rawScoring": "Reactive +3; Indirect +3; Self-Preserving +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Double down. “And I meant every word.”",
+          "reveal": "Apparently, the screenshot was an accident. The opinion was not. Since we're all here, let's discuss it.",
+          "rawScoring": "Blunt +2; Conflict-forward +2; Thick-skinned +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 22,
+      "prompt": "You can permanently remove ONE annoyance from your life. Which one goes?",
+      "room": "Free",
+      "source": "B4-02",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Traffic",
+          "reveal": "Apparently, you've spent enough of your life staring at somebody else's brake lights. Your time has filed a formal complaint.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Laundry",
+          "reveal": "Apparently, the laundry basket is a magical portal where clothes multiply and your motivation disappears. You've had enough.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "Waiting on hold",
+          "reveal": "Apparently, if your call were actually important to them, you'd have spoken to a human sometime during the last three business days.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "Passwords",
+          "reveal": "Apparently, you need a capital letter, three symbols, your childhood pet's middle name, and a security code just to check your email.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 23,
+      "prompt": "You find $200 cash on the floor in a store. No wallet. No name. What are you doing?",
+      "room": "Free",
+      "source": "B4-03",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Wait around a little and see if someone comes back looking panicked.",
+          "reveal": "Apparently, your conscience has agreed to a brief stakeout. Somewhere, somebody is about to have either a very good or very bad day.",
+          "rawScoring": "Patient +3; Perspective-Taking +2; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 3
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Turn it in. If it’s theirs, hopefully they come looking for it.",
+          "reveal": "Apparently, your conscience didn't even let the money introduce itself before you started looking for its rightful owner.",
+          "rawScoring": "Accountability +2; Rule-oriented +3",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Ask customer service if anyone reported missing money before I hand anything over.",
+          "reveal": "Apparently, you believe in doing the right thing, but you're not handing $200 to the first person wearing a name tag.",
+          "rawScoring": "Verify first +3; Practical +3; Accountability +2; Protective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I’m not proud of how quickly “finders keepers” entered the conversation. 😂",
+          "reveal": "Apparently, your conscience and your wallet are currently in negotiations. And your wallet came prepared with a PowerPoint.",
+          "rawScoring": "Playful +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 24,
+      "prompt": "Your friend has been acting weird with you all day. What are you doing?",
+      "room": "Free",
+      "source": "B4-05",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Asking them directly what’s wrong.",
+          "reveal": "Apparently, you're not spending six hours decoding facial expressions when a thirty-second conversation could solve the mystery.",
+          "rawScoring": "Direct +3; Initiating +2; Curious +2; Repair-Oriented +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Giving them space. They’ll tell me when they’re ready.",
+          "reveal": "Apparently, you noticed the energy shift, but you're not issuing a subpoena for somebody else's feelings.",
+          "rawScoring": "Patient +3; Perspective-Taking +2; Responsive +2; Peacekeeping +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 3
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Acting normal, but I’m definitely watching.",
+          "reveal": "Apparently, you haven't said a word, but your internal investigation already has three witnesses and a timeline.",
+          "rawScoring": "Vibe Checker +3; Verify first +2; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Oh, we’re being weird? I can be weird too.",
+          "reveal": "Apparently, you believe in matching energy. Unfortunately, somebody forgot to tell the friendship this was now a competition.",
+          "rawScoring": "Reactive +3; Competitive +2; Indirect +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "competitive_cooperative:positive",
+              "traitId": 31,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 25,
+      "prompt": "Your friend texts: “Pack a bag. I’ll explain in the car.” What are you doing?",
+      "room": "Free",
+      "source": "B4-06",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Already packing.",
+          "reveal": "Apparently, you heard \"pack a bag\" and immediately started looking for your charger. Details are for people who don't trust the adventure.",
+          "rawScoring": "Spontaneous +3; Adventurous +3; Trust first +2; Responsive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 3
+            },
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:positive",
+              "traitId": 25,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I’m in, but where are we going?",
+          "reveal": "Apparently, you're down for an adventure. You'd just like to know whether to pack a swimsuit or bail money.",
+          "rawScoring": "Adventurous +3; Curious +2; Spontaneous +2; Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I need the itinerary, address, and expected return time.",
+          "reveal": "Apparently, spontaneity is welcome, provided it submits the proper paperwork at least three business days in advance.",
+          "rawScoring": "Planner +3; Verify first +3; Control +2; Practical +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Absolutely not. Explain first.",
+          "reveal": "Apparently, you're not getting into anybody's car based on vibes and a cryptic text. Even your surprises require informed consent.",
+          "rawScoring": "Verify first +3; Boundary-Holding +3; Practical +2; Direct +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 26,
+      "prompt": "You have to spend an entire year with ONE TV friend group. Who are you choosing?",
+      "room": "Free",
+      "source": "B4-04",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "The women from Girlfriends",
+          "reveal": "Apparently, you want friendship, fashion, and people who will analyze your love life like it's a federal investigation.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "The crew from Martin",
+          "reveal": "Apparently, you chose a year of laughter, foolishness, and at least three arguments that started over absolutely nothing.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "The Golden Girls",
+          "reveal": "Apparently, you've selected cheesecake, legendary shade, and a group of women who could roast you and comfort you in the same sentence.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "The friends from Living Single",
+          "reveal": "Apparently, you want ambitious friends, good conversation, and people who will support your dreams while staying all the way in your business.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "E",
+          "text": "The crew from Friends",
+          "reveal": "Apparently, you want a permanent coffee-shop table, friends who practically live in your apartment, and absolutely no concept of personal space.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "F",
+          "text": "The crew from New Girl",
+          "reveal": "Apparently, you want a house full of lovable chaos, questionable decisions, and roommates who treat every minor inconvenience like a season finale.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 27,
+      "prompt": "Your friend throws a party and invites everybody in the group chat except you. Two days later, they text, \"Hey stranger!\" What's your move?",
+      "room": "Free",
+      "source": "B5-01",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"So we're just pretending the party didn't happen?\"",
+          "reveal": "Apparently, you've brought the elephant into the room, pulled out a chair, and asked it to explain itself.",
+          "rawScoring": "Direct +3; Conflict-forward +2; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Heyyy!\" I'm acting normal while I figure out what's going on.",
+          "reveal": "Apparently, the friendship is under investigation. The suspect has not been notified.",
+          "rawScoring": "Vibe Checker +3; Verify first +2; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I respond normally. Not every event needs my name on the guest list.",
+          "reveal": "Apparently, your self-worth doesn't come with an RSVP requirement. Look at you, emotionally employed.",
+          "rawScoring": "Self-Secure +3; Independent +2; Even-Keeled +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 3
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I don't respond. They can enjoy that same exclusive energy.",
+          "reveal": "Apparently, you've launched your own private event. It's called Access Revoked, and attendance is extremely limited.",
+          "rawScoring": "Self-Preserving +2; Indirect +2; Reactive +1; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 28,
+      "prompt": "Your single friend, whose dating life is a five-season disaster, starts giving you relationship advice. What are you thinking?",
+      "room": "Free",
+      "source": "B5-02",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Interesting advice from someone whose love life needs a fire extinguisher.\"",
+          "reveal": "Apparently, you're having trouble hearing the sermon over the sound of the preacher's house burning down.",
+          "rawScoring": "Blunt +3; Playful +2; Challenging +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 3
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Sometimes people give good advice they don't follow themselves.",
+          "reveal": "Apparently, you can separate the message from the messenger. Even when the messenger is a walking cautionary tale.",
+          "rawScoring": "Perspective-Taking +3; Reflective +2; Open +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm listening, but I'm absolutely fact-checking the source.",
+          "reveal": "Apparently, you're accepting relationship advice with the same confidence you'd give a restaurant with seventeen health violations.",
+          "rawScoring": "Verify first +3; Practical +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I'm asking follow-up questions. Maybe they've learned something from all that chaos.",
+          "reveal": "Apparently, you see five failed relationships and think, \"Excellent. A longitudinal study.\"",
+          "rawScoring": "Curious +3; Open +2; Perspective-Taking +2; Collaborative +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 3
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:negative",
+              "traitId": 14,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 29,
+      "prompt": "You ordered a salad and water. Everybody else ordered steak, cocktails, and dessert. Somebody says, \"Let's just split the bill evenly.\"",
+      "room": "Free",
+      "source": "B5-03",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Absolutely not. My lettuce is not financing your lobster.\"",
+          "reveal": "Apparently, you're happy to split the friendship. The check, however, will be itemized.",
+          "rawScoring": "Direct +3; Boundary-Holding +3; Practical +2; Blunt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I'll pay this time, but we're never doing this again.",
+          "reveal": "Apparently, you just purchased a $94 salad and a valuable lesson about group dining.",
+          "rawScoring": "Peacekeeping +2; Self-Preserving +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'll quietly ask the server for separate checks.",
+          "reveal": "Apparently, you've found a solution that requires neither confrontation nor sponsorship of somebody else's filet mignon.",
+          "rawScoring": "Practical +3; Tactful +3; Boundary-Holding +2; Peacekeeping +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I don't mind. It all balances out eventually.",
+          "reveal": "Apparently, you're trusting the universe to reimburse you in appetizers. Bold financial strategy.",
+          "rawScoring": "Gives Freely +3; Let it play out +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "gives_freely_keeps_score:positive",
+              "traitId": 59,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 30,
+      "prompt": "Someone texts, \"I'm outside!\" You didn't invite anybody over. What's happening next?",
+      "room": "Free",
+      "source": "B5-04",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "I'm opening the door. Come on in!",
+          "reveal": "Apparently, your home has an unofficial revolving-door policy. Hospitality has defeated the concept of notice.",
+          "rawScoring": "Spontaneous +3; Open +3; Responsive +2; Trust first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 3
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 3
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:positive",
+              "traitId": 25,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Outside where? Because surely not MY house.\"",
+          "reveal": "Apparently, your front porch isn't a public attraction. Visiting hours require prior authorization.",
+          "rawScoring": "Boundary-Holding +3; Direct +3; Private +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm checking who's outside before deciding.",
+          "reveal": "Apparently, you need a name, a reason, and possibly a witness before unlocking anything.",
+          "rawScoring": "Verify first +3; Practical +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I'm pretending I'm not home. Even if my car is in the driveway.",
+          "reveal": "Apparently, your vehicle is home. You, unfortunately, are unavailable for comment.",
+          "rawScoring": "Private +3; Self-Preserving +2; Indirect +2; Comfort-seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "adventure_comfort:negative",
+              "traitId": 12,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 31,
+      "prompt": "Somebody sends a shady message to the group chat, then immediately deletes it. What's your reaction?",
+      "room": "Free",
+      "source": "B5-05",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Too late. I saw it. Let's discuss.\"",
+          "reveal": "Apparently, deleting the message only removed the evidence from your screen. Your memory has cloud backup.",
+          "rawScoring": "Direct +3; Conflict-forward +3; Accountability +1; Holds the Receipt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            },
+            {
+              "pole": "forgiving_receipts:negative",
+              "traitId": 28,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I'm asking what happened. I need context.",
+          "reveal": "Apparently, you refuse to solve a mystery with half the clues. The group chat will remain in session.",
+          "rawScoring": "Curious +3; Verify first +3; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm saying nothing, but I took a screenshot.",
+          "reveal": "Apparently, the message was deleted from the chat, not from the archives of the Department of You.",
+          "rawScoring": "Verify first +2; Private +2; Planner +1; Holds the Receipt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            },
+            {
+              "pole": "forgiving_receipts:negative",
+              "traitId": 28,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Nothing. They deleted it, so I'm letting it go.",
+          "reveal": "Apparently, you've decided not every deleted message deserves a congressional hearing. Remarkable restraint.",
+          "rawScoring": "Let it play out +3; Peacekeeping +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 32,
+      "prompt": "It's your birthday. Which one sounds like the best celebration?",
+      "room": "Free",
+      "source": "B5-06",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "A huge surprise party where everybody shows up for me.",
+          "reveal": "Apparently, you want the room full, the cameras rolling, and at least three people crying during the speeches.",
+          "rawScoring": "Open +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "A luxury trip with absolutely no responsibilities.",
+          "reveal": "Apparently, another year older means another year less interested in doing dishes on your birthday.",
+          "rawScoring": "Comfort-seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:negative",
+              "traitId": 12,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "A quiet day doing exactly what I want.",
+          "reveal": "Apparently, the greatest gift anyone can give you is the freedom to be unavailable.",
+          "rawScoring": "Independent +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Something thoughtful with my favorite people.",
+          "reveal": "Apparently, you don't need the whole city celebrating. Just the people who actually know how you take your coffee.",
+          "rawScoring": "Sentimental +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "sentimental_thick_skinned:positive",
+              "traitId": 19,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 33,
+      "prompt": "Someone says, \"You look SO much better than you used to!\" How are you taking that?",
+      "room": "Free",
+      "source": "B5-07",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Thank you… wait. What was wrong with me before?\"",
+          "reveal": "Apparently, you received the compliment, located the hidden insult, and would now like a full explanation.",
+          "rawScoring": "Vibe Checker +3; Curious +2; Direct +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"I know, right? The upgrade is undeniable.\"",
+          "reveal": "Apparently, your confidence didn't even allow the insult to clear customs. Only the compliment was admitted.",
+          "rawScoring": "Self-Secure +3; Playful +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 3
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I laugh it off. They probably meant well.",
+          "reveal": "Apparently, you've chosen to assume good intentions. The accidental roast has been pardoned.",
+          "rawScoring": "Perspective-taking +3; Even-Keeled +2; Forgiving +1; Thick-skinned +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 2
+            },
+            {
+              "pole": "forgiving_receipts:positive",
+              "traitId": 27,
+              "points": 1
+            },
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"That was a weird way to compliment somebody.\"",
+          "reveal": "Apparently, you're accepting the praise but returning the packaging. Please try again with less disrespect.",
+          "rawScoring": "Direct +3; Boundary-Holding +2; Blunt +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 34,
+      "prompt": "You win $10 million tomorrow. What's the FIRST thing you're doing?",
+      "room": "Free",
+      "source": "B5-08",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Calling a financial advisor. Nobody is touching a dollar yet.",
+          "reveal": "Apparently, you've become a millionaire and immediately scheduled a meeting. Even your fantasies have spreadsheets.",
+          "rawScoring": "Planner +3; Practical +3; Verify first +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Booking the most ridiculous vacation of my life.",
+          "reveal": "Apparently, you've been rich for twelve minutes and already need a passport extension.",
+          "rawScoring": "Spontaneous +2; Adventurous +2; Playful +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 2
+            },
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 2
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Taking care of the people I love.",
+          "reveal": "Apparently, your first luxury purchase is somebody else's peace of mind. That's a pretty expensive love language.",
+          "rawScoring": "Gives Freely +3; Supportive +3; Duty-First +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "gives_freely_keeps_score:positive",
+              "traitId": 59,
+              "points": 3
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:positive",
+              "traitId": 55,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Telling absolutely nobody. I'm going to work like nothing happened.",
+          "reveal": "Apparently, you're sitting in a meeting worth eight figures and still pretending to care about the office printer.",
+          "rawScoring": "Private +3; Self-Preserving +2; Control +2; Planner +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 35,
+      "prompt": "Someone cuts in front of you after you've been waiting in line for 25 minutes. What happens?",
+      "room": "Free",
+      "source": "B5-09",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Excuse me. The line starts back there.\"",
+          "reveal": "Apparently, you didn't spend 25 minutes developing a relationship with this floor tile just to be disrespected.",
+          "rawScoring": "Direct +3; Rule-oriented +3; Boundary-Holding +2; Conflict-forward +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I let it go. I'm not ruining my day over one person.",
+          "reveal": "Apparently, your peace costs more than 25 minutes. Congratulations, you've priced yourself out of unnecessary drama.",
+          "rawScoring": "Peacekeeping +3; Even-Keeled +3; Let it play out +2; Self-Secure +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 3
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I look around to see if anybody else noticed.",
+          "reveal": "Apparently, before you confront the defendant, you'd like to know whether the jury witnessed the crime.",
+          "rawScoring": "Vibe Checker +2; Verify first +2; Responsive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I tell the employee managing the line.",
+          "reveal": "Apparently, you're not arguing with strangers when there's a perfectly good manager available to enforce civilization.",
+          "rawScoring": "Rule-oriented +3; Practical +3; Indirect +2; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 36,
+      "prompt": "You notice somebody who never likes your posts watches EVERY story you upload. What's your theory?",
+      "room": "Free",
+      "source": "B5-10",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "They're nosy. Welcome to the fan club.",
+          "reveal": "Apparently, you have a silent subscriber. No likes, no comments, just perfect attendance.",
+          "rawScoring": "Playful +2; Vibe Checker +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Maybe they just enjoy watching stories. It's not that deep.",
+          "reveal": "Apparently, you've decided not to turn Instagram analytics into a psychological thriller.",
+          "rawScoring": "Face Value +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "social_attunement:negative",
+              "traitId": 8,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm checking their profile. Let's see who's studying whom.",
+          "reveal": "Apparently, the surveillance department has detected suspicious activity and launched a reciprocal investigation.",
+          "rawScoring": "Curious +2; Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I don't care. My content is public for a reason.",
+          "reveal": "Apparently, your audience is welcome to lurk, observe, and take notes. The show goes on.",
+          "rawScoring": "Let it play out +2; Self-Secure +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 37,
+      "prompt": "Your favorite politician gets caught doing the EXACT thing they've been criticizing everyone else for. What's your reaction?",
+      "room": "Apparently Private",
+      "source": "B2-10",
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Oh, we're definitely talking about this. Same rules for everybody.",
+          "reveal": "Apparently, your standards don't change depending on who's standing at the podium. How inconvenient for the hypocrites.",
+          "rawScoring": "Accountability +3; Direct +2; Rule-oriented +2; Conflict-forward +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "rules_bending:positive",
+              "traitId": 21,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I need the whole story. Headlines have a way of leaving things out.",
+          "reveal": "Apparently, you prefer facts over a good scandal. The internet finds that deeply inconvenient.",
+          "rawScoring": "Verify first +3; Reflective +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm disappointed, but I'm not handing the other side a victory lap.",
+          "reveal": "Apparently, your principles are having a disagreement with your loyalty. And loyalty has requested that this conversation remain private.",
+          "rawScoring": "Protective +2; Private +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "protective_hands_off:positive",
+              "traitId": 9,
+              "points": 2
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Honestly? They're all hypocrites. Why is anybody surprised?",
+          "reveal": "Apparently, your expectations for politicians are so low they're practically underground. At least nobody can accuse you of being easily disappointed.",
+          "rawScoring": "Thick-skinned +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 38,
+      "prompt": "Your friend says, \"You've been quiet lately. You good?\"",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Actually, no. You got a minute?",
+          "reveal": "Apparently, the emotional vault just opened. Somebody get a chair. We're finally discussing the contents.",
+          "rawScoring": "Vulnerable +3; Open +3; Direct +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 3
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I'm fine! I am absolutely not fine.",
+          "reveal": "Apparently, your mouth and your emotional headquarters are issuing two very different press releases.",
+          "rawScoring": "Armored +3; Private +2; Indirect +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 3
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "It's been a lot, but I'll figure it out.",
+          "reveal": "Apparently, you've acknowledged the storm and immediately promoted yourself to emergency management.",
+          "rawScoring": "Independent +2; Self-Preserving +1; Armored +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Why? Have I been acting weird?",
+          "reveal": "Apparently, somebody checked on your feelings and accidentally launched a full performance review.",
+          "rawScoring": "Reassurance-Seeking +2; Vibe Checker +2; Curious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 2
+            },
+            {
+              "pole": "social_attunement:positive",
+              "traitId": 7,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 39,
+      "prompt": "Your best friend forgets your birthday. Again.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Not gonna lie, that hurt my feelings.",
+          "reveal": "Apparently, you're delivering emotional honesty with a side of calendar accountability. Google Calendar is free, beloved.",
+          "rawScoring": "Vulnerable +3; Direct +3; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Say nothing. Remember everything.",
+          "reveal": "Apparently, your birthday has been entered into evidence. The prosecution will revisit this in December.",
+          "rawScoring": "Holds the Receipt +3; Armored +2; Indirect +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "forgiving_receipts:negative",
+              "traitId": 28,
+              "points": 3
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "It's okay. People have lives.",
+          "reveal": "Apparently, you've granted a birthday pardon. The defendant may proceed with their regularly scheduled life.",
+          "rawScoring": "Forgiving +2; Perspective-Taking +2; Even-Keeled +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "forgiving_receipts:positive",
+              "traitId": 27,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I remembered yours. Just saying.",
+          "reveal": "Apparently, the friendship accounting department has discovered a discrepancy. An invoice may follow.",
+          "rawScoring": "Keeps Score +3; Direct +2; Challenging +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "gives_freely_keeps_score:negative",
+              "traitId": 60,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 40,
+      "prompt": "Someone tells you, \"You're too sensitive.\"",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "And you're too comfortable being rude.",
+          "reveal": "Apparently, your feelings have legal representation, and counsel has entered the chat.",
+          "rawScoring": "Direct +3; Boundary-Holding +3; Blunt +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Maybe. But what you said still hurt.",
+          "reveal": "Apparently, you're not pretending the emotional damage didn't happen just because somebody dislikes the invoice.",
+          "rawScoring": "Vulnerable +3; Reflective +2; Direct +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Laugh it off, then think about it for three business days.",
+          "reveal": "Apparently, your face said LOL while your brain opened a 72-hour investigation.",
+          "rawScoring": "Reflective +2; Armored +2; Emotionally Intense +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "emotional_intensity:positive",
+              "traitId": 3,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Okay. Conversation over.",
+          "reveal": "Apparently, you've closed the emotional customer-service window. Please do not knock on the glass.",
+          "rawScoring": "Boundary-Holding +2; Armored +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 41,
+      "prompt": "You finally get a weekend with absolutely NOTHING to do.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Sleep, snacks, silence. Don't threaten me with a good time.",
+          "reveal": "Apparently, your weekend itinerary is three naps wearing a trench coat. Luxury.",
+          "rawScoring": "Comfort-seeking +2; Content +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:negative",
+              "traitId": 12,
+              "points": 2
+            },
+            {
+              "pole": "ambitious_content:negative",
+              "traitId": 40,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Find a project. Surely something needs improving.",
+          "reveal": "Apparently, relaxation tried to visit, but you handed it a paintbrush and a to-do list.",
+          "rawScoring": "Initiating +2; Planner +2; Ambitious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 2
+            },
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Call everybody. We're doing SOMETHING.",
+          "reveal": "Apparently, your empty calendar has offended you personally. The group chat is now under emergency activation.",
+          "rawScoring": "Initiating +3; Spontaneous +2; Open +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 3
+            },
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 2
+            },
+            {
+              "pole": "private_open:negative",
+              "traitId": 36,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Do whatever feels good when I wake up.",
+          "reveal": "Apparently, you've placed your entire weekend under the management of Future You. Current You has no questions.",
+          "rawScoring": "Spontaneous +3; Let it play out +2; Content +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 3
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "ambitious_content:negative",
+              "traitId": 40,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 42,
+      "prompt": "Your friend wants to quit a stable job to chase a dream.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "DO IT. You only get one life!",
+          "reveal": "Apparently, you've already quit their job, booked the launch party, and designed the motivational T-shirts.",
+          "rawScoring": "Idealistic +3; Adventurous +2; Supportive +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:negative",
+              "traitId": 18,
+              "points": 3
+            },
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Love the dream. Where's the financial plan?",
+          "reveal": "Apparently, you believe in dreams, but you'd also like those dreams to survive the electric bill.",
+          "rawScoring": "Practical +3; Planner +3; Supportive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 3
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Keep the job while you build it.",
+          "reveal": "Apparently, you're not against the leap. You'd just prefer a parachute, a savings account, and dental coverage.",
+          "rawScoring": "Practical +3; Self-Preserving +2; Planner +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "What would make you happy even if it doesn't work out?",
+          "reveal": "Apparently, you're conducting an exit interview with somebody's soul. HR could never.",
+          "rawScoring": "Reflective +3; Perspective-Taking +3; Curious +2; Idealistic +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 3
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:negative",
+              "traitId": 18,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 43,
+      "prompt": "Somebody starts crying in the middle of an argument with you.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Stop arguing. Hey, talk to me.",
+          "reveal": "Apparently, the argument has been temporarily suspended due to unexpected emotional weather conditions.",
+          "rawScoring": "Supportive +3; Repair-Oriented +3; Perspective-Taking +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 3
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 3
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "We can take a break, but we still need to finish this.",
+          "reveal": "Apparently, you've approved an emotional intermission. The meeting, however, is not canceled.",
+          "rawScoring": "Accountability +3; Repair-Oriented +2; Boundary-Holding +2; Tactful +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Why are YOU crying? I'm the one who's upset!",
+          "reveal": "Apparently, you've filed an objection. The emotional spotlight was already booked, and somebody's double-parked in it.",
+          "rawScoring": "Self-Referencing +3; Reactive +3; Emotionally Intense +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:negative",
+              "traitId": 62,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "emotional_intensity:positive",
+              "traitId": 3,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Shut down. I cannot handle crying AND arguing.",
+          "reveal": "Apparently, your emotional operating system has encountered two simultaneous errors and requested an immediate restart.",
+          "rawScoring": "Armored +2; Self-Preserving +2; Hands-off +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "protective_hands_off:negative",
+              "traitId": 10,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 44,
+      "prompt": "Your friend keeps dating people who treat them terribly.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Keep listening. They'll figure it out when they're ready.",
+          "reveal": "Apparently, you've renewed your subscription to Season Seven of Please Leave That Person. No spoilers.",
+          "rawScoring": "Patient +3; Supportive +2; Responsive +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 3
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 2
+            },
+            {
+              "pole": "initiating_responsive:negative",
+              "traitId": 64,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I love you, but I'm not having this conversation again.",
+          "reveal": "Apparently, the emotional help desk has closed this ticket due to excessive duplicate submissions.",
+          "rawScoring": "Boundary-Holding +3; Direct +3; Self-Preserving +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Tell them exactly what they're doing wrong. Again.",
+          "reveal": "Apparently, your friendship comes with unlimited honesty and absolutely no complimentary sugarcoating.",
+          "rawScoring": "Challenging +3; Blunt +3; Serious +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 3
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 3
+            },
+            {
+              "pole": "playful_serious:negative",
+              "traitId": 30,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Stop giving advice. They know how I feel.",
+          "reveal": "Apparently, you've retired from relationship consulting. The office plants are being distributed to other departments.",
+          "rawScoring": "Hands-off +3; Self-Preserving +2; Let it play out +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "protective_hands_off:negative",
+              "traitId": 10,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 45,
+      "prompt": "You find out someone has been talking badly about you.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Let's discuss it. Right now.",
+          "reveal": "Apparently, you've scheduled a surprise meeting with the Department of Keep My Name Out Your Mouth.",
+          "rawScoring": "Conflict-forward +3; Direct +3; Urgent +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "patient_urgent:negative",
+              "traitId": 38,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Ask what they actually said before reacting.",
+          "reveal": "Apparently, the rumor has been placed on administrative hold pending verification of the transcript.",
+          "rawScoring": "Verify first +3; Reflective +3; Even-Keeled +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 3
+            },
+            {
+              "pole": "emotional_intensity:negative",
+              "traitId": 4,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Tell everybody what THEY did last year.",
+          "reveal": "Apparently, you've opened the archives and selected the nuclear option. The group chat may not survive.",
+          "rawScoring": "Punishing +3; Reactive +3; Holds the Receipt +3; Conflict-forward +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "repair_punishing:negative",
+              "traitId": 52,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "forgiving_receipts:negative",
+              "traitId": 28,
+              "points": 3
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "People are allowed to have opinions. Whatever.",
+          "reveal": "Apparently, your reputation has a comment section, but you've disabled notifications.",
+          "rawScoring": "Thick-skinned +3; Self-Secure +2; Hands-off +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 3
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 2
+            },
+            {
+              "pole": "protective_hands_off:negative",
+              "traitId": 10,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 46,
+      "prompt": "You spend months working toward something, and it doesn't happen.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Cry, be dramatic for a day, then get back to work.",
+          "reveal": "Apparently, your comeback story requires one emotional support blanket, a dramatic soundtrack, and exactly 24 hours.",
+          "rawScoring": "Emotionally Intense +2; Ambitious +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "emotional_intensity:positive",
+              "traitId": 3,
+              "points": 2
+            },
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Clearly, I wasn't meant to have it. Move on.",
+          "reveal": "Apparently, you've handed the rejection to the universe and asked it to deal with customer service.",
+          "rawScoring": "Let it play out +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Figure out what went wrong and try again.",
+          "reveal": "Apparently, failure has been promoted to research assistant. It will be working unpaid until further notice.",
+          "rawScoring": "Accountability +2; Reflective +3; Ambitious +3; Planner +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 3
+            },
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 3
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "I'm proud I tried. Maybe it's time for something else.",
+          "reveal": "Apparently, you've decided the plot twist isn't a personal attack. Character development looks good on you.",
+          "rawScoring": "Content +3; Self-Secure +2; Reflective +2; Decisive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "ambitious_content:negative",
+              "traitId": 40,
+              "points": 3
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "curious_decisive:negative",
+              "traitId": 34,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 47,
+      "prompt": "Someone asks, \"Are you mad at me?\" You actually ARE.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Yes. And here's why.",
+          "reveal": "Apparently, you've skipped the emotional scavenger hunt and handed them the answer key.",
+          "rawScoring": "Direct +3; Accountability +2; Repair-Oriented +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Nope. But my face has already told the whole story.",
+          "reveal": "Apparently, your mouth signed a confidentiality agreement that your facial expressions never agreed to.",
+          "rawScoring": "Indirect +3; Armored +2; Reactive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 3
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "I'm not ready to talk about it yet.",
+          "reveal": "Apparently, your feelings are currently in a closed-door meeting. They'll issue a statement when they're ready.",
+          "rawScoring": "Reflective +2; Boundary-Holding +3; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "What do YOU think?",
+          "reveal": "Apparently, you've turned a yes-or-no question into an open-book exam. Unfortunately, they didn't study.",
+          "rawScoring": "Challenging +3; Indirect +2; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 48,
+      "prompt": "You tell somebody they hurt your feelings. Their response? \"Well, I'm sorry you feel that way.\"",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"That's not an apology. Try again.\"",
+          "reveal": "Apparently, you've rejected the apology package. Please resubmit with actual accountability attached.",
+          "rawScoring": "Direct +3; Accountability +3; Boundary-Holding +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Maybe I'm being too sensitive.\"",
+          "reveal": "Apparently, somebody handed you a non-apology and you immediately started investigating yourself. Interesting customer-service policy.",
+          "rawScoring": "Self-Referencing +2; Reassurance-Seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:negative",
+              "traitId": 62,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"Forget it.\" I'm done explaining.",
+          "reveal": "Apparently, you've closed the complaint department. Management will not be responding to further inquiries.",
+          "rawScoring": "Armored +2; Self-Preserving +2; Boundary-Holding +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"I don't think you understand why I'm upset.\"",
+          "reveal": "Apparently, you've scheduled a second emotional briefing. The first one clearly went over somebody's head.",
+          "rawScoring": "Repair-Oriented +3; Direct +2; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 49,
+      "prompt": "Your friend asks for your honest opinion on an outfit. It's terrible.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Absolutely not. Go change.\"",
+          "reveal": "Apparently, your friendship comes with free fashion emergencies and absolutely no return policy on the truth.",
+          "rawScoring": "Blunt +3; Direct +3; Challenging +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"It's not my favorite. What else do you have?\"",
+          "reveal": "Apparently, you've delivered the truth in protective packaging. Customer satisfaction remains surprisingly high.",
+          "rawScoring": "Tactful +3; Direct +2; Supportive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:positive",
+              "traitId": 53,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"If YOU love it, that's what matters.\"",
+          "reveal": "Apparently, you've decided fashion crimes are outside your jurisdiction. The defendant looks thrilled.",
+          "rawScoring": "Hands-off +2; Approval-Seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "protective_hands_off:negative",
+              "traitId": 10,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:negative",
+              "traitId": 48,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"Where are we going? Because that changes everything.\"",
+          "reveal": "Apparently, the outfit has been placed on hold pending additional evidence. Fashion court is now in session.",
+          "rawScoring": "Practical +3; Curious +2; Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 50,
+      "prompt": "You accidentally break something expensive at somebody's house. They haven't noticed.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Tell them immediately and offer to replace it.",
+          "reveal": "Apparently, you've confessed before the investigation even started. The insurance adjuster appreciates your cooperation.",
+          "rawScoring": "Accountability +3; Direct +3; Duty-First +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:positive",
+              "traitId": 55,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Try to fix it first, then tell them.",
+          "reveal": "Apparently, you've opened an unauthorized repair shop in somebody else's living room. Business is not going well.",
+          "rawScoring": "Practical +2; Self-Preserving +1; Accountability +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"Are you SURE that wasn't already broken?\"",
+          "reveal": "Apparently, you've arrived at the scene of your own crime and immediately requested a second opinion.",
+          "rawScoring": "Defensiveness +3; Self-Preserving +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:negative",
+              "traitId": 42,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Quietly put it back and hope nobody touches it.",
+          "reveal": "Apparently, you've chosen the ancient repair technique known as Moving It Two Inches to the Left.",
+          "rawScoring": "Self-Preserving +3; Indirect +2; Armored +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:negative",
+              "traitId": 6,
+              "points": 2
+            },
+            {
+              "pole": "vulnerable_armored:negative",
+              "traitId": 50,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 51,
+      "prompt": "You post a picture you LOVE. Somebody comments, \"That's the one you picked?\"",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Yep. And I'd pick it again.\"",
+          "reveal": "Apparently, your confidence has reviewed the complaint and found absolutely nothing requiring correction.",
+          "rawScoring": "Self-Secure +3; Direct +2; Thick-skinned +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "sentimental_thick_skinned:negative",
+              "traitId": 20,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Delete it. Maybe it wasn't that cute.",
+          "reveal": "Apparently, one unsolicited comment just overruled an entire photoshoot. The committee is ruthless.",
+          "rawScoring": "Approval-Seeking +3; Reassurance-Seeking +2; Reactive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:negative",
+              "traitId": 48,
+              "points": 3
+            },
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"Wait, what's wrong with it?\"",
+          "reveal": "Apparently, your selfie has entered peer review. Please provide detailed feedback with supporting documentation.",
+          "rawScoring": "Curious +2; Reassurance-Seeking +1; Verify first +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 1
+            },
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"And that's why nobody asked you.\"",
+          "reveal": "Apparently, you've reminded the audience that the comment section is not an elected governing body.",
+          "rawScoring": "Blunt +3; Boundary-Holding +2; Reactive +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 52,
+      "prompt": "You get invited to a fancy event. Dress code says \"formal.\" You own absolutely nothing formal.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Buy something fabulous. This is my moment.",
+          "reveal": "Apparently, you've turned a wardrobe emergency into a red-carpet debut. The budget has requested privacy.",
+          "rawScoring": "Spontaneous +2; Playful +2; Adventurous +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "planner_spontaneous:negative",
+              "traitId": 2,
+              "points": 2
+            },
+            {
+              "pole": "playful_serious:positive",
+              "traitId": 29,
+              "points": 2
+            },
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "Borrow something. I'm not spending $300 to eat chicken.",
+          "reveal": "Apparently, you've successfully negotiated luxury attendance at an extremely reasonable operating cost.",
+          "rawScoring": "Practical +3",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Wear my nicest outfit and hope for the best.",
+          "reveal": "Apparently, you've interpreted formal as \"I made an effort, and that's between me and the Lord.\"",
+          "rawScoring": "Rule-bending +2; Let it play out +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "rules_bending:negative",
+              "traitId": 22,
+              "points": 2
+            },
+            {
+              "pole": "control_allowing:negative",
+              "traitId": 16,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Respectfully decline. Too much production.",
+          "reveal": "Apparently, the invitation required a costume department, and you've declined the entire theatrical engagement.",
+          "rawScoring": "Comfort-seeking +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:negative",
+              "traitId": 12,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 53,
+      "prompt": "Somebody asks you to lead a project you've NEVER done before.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Absolutely. I'll figure it out.\"",
+          "reveal": "Apparently, your qualifications include confidence, Wi-Fi, and a willingness to Google aggressively.",
+          "rawScoring": "Adventurous +3; Initiating +3; Self-Secure +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "adventure_comfort:positive",
+              "traitId": 11,
+              "points": 3
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 3
+            },
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Can I shadow somebody first?\"",
+          "reveal": "Apparently, you've requested the tutorial before entering boss level. Sensible gaming strategy.",
+          "rawScoring": "Verify first +2; Collaborative +2; Practical +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "trust_verify:negative",
+              "traitId": 26,
+              "points": 2
+            },
+            {
+              "pole": "independent_collaborative:negative",
+              "traitId": 14,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"Why me? There are people way more qualified.\"",
+          "reveal": "Apparently, you've received an opportunity and immediately submitted a list of reasons somebody else deserves it.",
+          "rawScoring": "Reassurance-Seeking +2; Approval-Seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:negative",
+              "traitId": 48,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"Only if I get to build my own team.\"",
+          "reveal": "Apparently, you've accepted the assignment and immediately started your own little corporate empire.",
+          "rawScoring": "Control +3; Collaborative +2; Planner +1; Initiating +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "control_allowing:positive",
+              "traitId": 15,
+              "points": 3
+            },
+            {
+              "pole": "independent_collaborative:negative",
+              "traitId": 14,
+              "points": 2
+            },
+            {
+              "pole": "planner_spontaneous:positive",
+              "traitId": 1,
+              "points": 1
+            },
+            {
+              "pole": "initiating_responsive:positive",
+              "traitId": 63,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 54,
+      "prompt": "Your friend gets an opportunity you've been working toward for YEARS.",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Celebrate them. My turn will come.",
+          "reveal": "Apparently, you're throwing confetti while your own dreams wait patiently in the parking lot. That's range.",
+          "rawScoring": "Supportive +3; Idealistic +2; Patient +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "supportive_challenging:positive",
+              "traitId": 57,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:negative",
+              "traitId": 18,
+              "points": 2
+            },
+            {
+              "pole": "patient_urgent:positive",
+              "traitId": 37,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "I'm happy for them AND a little jealous.",
+          "reveal": "Apparently, two emotions have checked into the same hotel room. Neither one plans to leave.",
+          "rawScoring": "Vulnerable +3; Emotionally Intense +1; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 3
+            },
+            {
+              "pole": "emotional_intensity:positive",
+              "traitId": 3,
+              "points": 1
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Ask what they did differently. I need the blueprint.",
+          "reveal": "Apparently, somebody else's breakthrough has become your unauthorized professional development seminar.",
+          "rawScoring": "Ambitious +3; Curious +3; Practical +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "ambitious_content:positive",
+              "traitId": 39,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "Take a little space. I need to process.",
+          "reveal": "Apparently, you're happy for them, but your feelings have requested a separate dressing room.",
+          "rawScoring": "Reflective +3; Boundary-Holding +2; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 3
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 55,
+      "prompt": "Your family says, \"You're different now that you're doing better.\"",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"That's kind of the point. Growth changes people.\"",
+          "reveal": "Apparently, you've upgraded your operating system and some relatives are demanding the old version.",
+          "rawScoring": "Self-Secure +3; Independent +2; Direct +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "self_secure_reassurance:positive",
+              "traitId": 45,
+              "points": 3
+            },
+            {
+              "pole": "independent_collaborative:positive",
+              "traitId": 13,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Different how? Did I do something?\"",
+          "reveal": "Apparently, the family feedback department has opened an investigation. Please submit examples.",
+          "rawScoring": "Curious +2; Reflective +2; Reassurance-Seeking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 2
+            },
+            {
+              "pole": "self_secure_reassurance:negative",
+              "traitId": 46,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Start making myself smaller so nobody feels left behind.",
+          "reveal": "Apparently, you've achieved personal growth and immediately attempted to fold it into the overhead compartment.",
+          "rawScoring": "Approval-Seeking +3; Self-Preserving +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:negative",
+              "traitId": 48,
+              "points": 3
+            },
+            {
+              "pole": "duty_first_self_preserving:negative",
+              "traitId": 56,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"I'm still me. I just have different priorities.\"",
+          "reveal": "Apparently, you've updated your priorities, not your personality. Some people are just upset they no longer have administrator access.",
+          "rawScoring": "Boundary-Holding +2; Direct +2; Reflective +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 56,
+      "prompt": "Your partner tells you, \"I feel like I can't do anything right with you.\"",
+      "room": "Apparently Private",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"What am I doing that makes you feel that way?\"",
+          "reveal": "Apparently, you've paused the argument to request actual feedback. Emotional quality assurance is officially underway.",
+          "rawScoring": "Reflective +3; Curious +2; Repair-Oriented +2; Perspective-Taking +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "reflective_reactive:positive",
+              "traitId": 43,
+              "points": 3
+            },
+            {
+              "pole": "curious_decisive:positive",
+              "traitId": 33,
+              "points": 2
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"Maybe if you actually DID something right, we wouldn't be here.\"",
+          "reveal": "Apparently, your partner brought feelings to the conversation and you brought a performance evaluation. Nobody's getting a raise.",
+          "rawScoring": "Defensiveness +3; Blunt +3; Reactive +2; Self-Referencing +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:negative",
+              "traitId": 42,
+              "points": 3
+            },
+            {
+              "pole": "tactful_blunt:negative",
+              "traitId": 54,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:negative",
+              "traitId": 62,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "\"I'm sorry you feel that way. I really am trying.\"",
+          "reveal": "Apparently, you've offered an emotional olive branch. Whether anybody accepts it remains under negotiation.",
+          "rawScoring": "Repair-Oriented +2; Vulnerable +2; Peacekeeping +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 2
+            },
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:negative",
+              "traitId": 24,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"Then tell me what you need instead of making me guess.\"",
+          "reveal": "Apparently, you've requested instructions, examples, and possibly a user manual. The guessing department is closed.",
+          "rawScoring": "Direct +3; Accountability +2; Challenging +2; Practical +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 3
+            },
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 2
+            },
+            {
+              "pole": "supportive_challenging:negative",
+              "traitId": 58,
+              "points": 2
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 57,
+      "prompt": "You discover your partner has been telling their friends about your private arguments.",
+      "room": "Apparently Private",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Our problems aren't group-chat entertainment. We need boundaries.\"",
+          "reveal": "Apparently, your relationship has a privacy policy, and somebody just shared the password with the entire neighborhood.",
+          "rawScoring": "Boundary-Holding +3; Private +3; Direct +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 3
+            },
+            {
+              "pole": "private_open:positive",
+              "traitId": 35,
+              "points": 3
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "B",
+          "text": "\"I get needing advice, but why didn't you tell me?\"",
+          "reveal": "Apparently, you understand the need for outside counsel. You just weren't expecting to discover an entire advisory board.",
+          "rawScoring": "Perspective-Taking +3; Repair-Oriented +2; Direct +2; Vulnerable +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 3
+            },
+            {
+              "pole": "repair_punishing:positive",
+              "traitId": 51,
+              "points": 2
+            },
+            {
+              "pole": "direct_indirect:positive",
+              "traitId": 5,
+              "points": 2
+            },
+            {
+              "pole": "vulnerable_armored:positive",
+              "traitId": 49,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "letter": "C",
+          "text": "Call my friends and tell them EVERYTHING. Since we're sharing.",
+          "reveal": "Apparently, you've responded to a privacy breach by launching your own competing podcast. Episode one is already trending.",
+          "rawScoring": "Punishing +3; Reactive +3; Keeps Score +2; Conflict-forward +2",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "repair_punishing:negative",
+              "traitId": 52,
+              "points": 3
+            },
+            {
+              "pole": "reflective_reactive:negative",
+              "traitId": 44,
+              "points": 3
+            },
+            {
+              "pole": "gives_freely_keeps_score:negative",
+              "traitId": 60,
+              "points": 2
+            },
+            {
+              "pole": "conflict_peacekeeping:positive",
+              "traitId": 23,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "letter": "D",
+          "text": "\"I don't care who you talk to, but don't tell only your side.\"",
+          "reveal": "Apparently, you're not against relationship witnesses. You just want the court to hear from both parties.",
+          "rawScoring": "Accountability +3; Practical +2; Boundary-Holding +2; Perspective-Taking +1",
+          "isNone": false,
+          "awards": [
+            {
+              "pole": "accountability_defensiveness:positive",
+              "traitId": 41,
+              "points": 3
+            },
+            {
+              "pole": "practical_idealistic:positive",
+              "traitId": 17,
+              "points": 2
+            },
+            {
+              "pole": "boundary_holding_approval_seeking:positive",
+              "traitId": 47,
+              "points": 2
+            },
+            {
+              "pole": "perspective_taking_self_referencing:positive",
+              "traitId": 61,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 58,
+      "prompt": "You can bring ONE fictional villain to Thanksgiving dinner. Who's getting a plate?",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Ursula from The Little Mermaid.",
+          "reveal": "Apparently, you've invited a woman who steals voices, makes shady contracts, and would absolutely ask why you're still single before passing the gravy.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Loki from Marvel.",
+          "reveal": "Apparently, you've invited the god of mischief to a family gathering that was already one comment away from becoming a crime scene.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "The Grinch.",
+          "reveal": "Apparently, you've invited somebody who hates gatherings, steals decorations, and somehow still has better holiday boundaries than half your relatives.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "Cruella de Vil from 101 Dalmatians.",
+          "reveal": "Apparently, you've invited a woman who'll insult the curtains, judge everybody's outfits, and arrive wearing something that requires a police investigation.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 59,
+      "prompt": "You get to live in ONE fictional universe for a year. Where are you moving?",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Hogwarts from Harry Potter.",
+          "reveal": "Apparently, you're willing to risk your life for a castle, a wand, and a school with a suspiciously high mortality rate.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Wakanda from Black Panther.",
+          "reveal": "Apparently, you've chosen futuristic technology, breathtaking architecture, and a country that actually minds its business. Excellent relocation package.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "Barbie Land from Barbie.",
+          "reveal": "Apparently, you've accepted a world where the outfits are immaculate and the mortgage apparently doesn't exist.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "The Shire from The Lord of the Rings.",
+          "reveal": "Apparently, you've chosen second breakfast, beautiful scenery, and absolutely no interest in anybody's corporate ladder.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 60,
+      "prompt": "You're handed the AUX cord. Which song are you playing FIRST?",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "\"Before I Let Go\" by Beyoncé.",
+          "reveal": "Apparently, you've turned the entire car into a family reunion. Somebody's auntie is already doing the Electric Slide.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "\"Yeah!\" by Usher.",
+          "reveal": "Apparently, the vehicle is now a 2004 nightclub. Please keep your hands, feet, and nostalgia inside the car.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "\"Mr. Brightside\" by The Killers.",
+          "reveal": "Apparently, you've activated a car full of people screaming about a relationship none of them were actually in.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "\"September\" by Earth, Wind & Fire.",
+          "reveal": "Apparently, you've chosen a song that can make three generations forget they're arguing about the thermostat.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 61,
+      "prompt": "You can have ONE fictional character as your personal assistant. Who's getting hired?",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Olivia Pope from Scandal.",
+          "reveal": "Apparently, you've hired a woman who can erase a scandal, intimidate Congress, and still find time for an expensive coat.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Hermione Granger from Harry Potter.",
+          "reveal": "Apparently, you've hired somebody who actually read the instructions. All of them. Twice. With footnotes.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "Tony Stark from Iron Man.",
+          "reveal": "Apparently, your assistant has a billion-dollar budget, an attitude problem, and absolutely no concept of a normal Tuesday.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "Mary Poppins.",
+          "reveal": "Apparently, you've hired someone who can organize your entire life with a song and a handbag that violates several laws of physics.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    },
+    {
+      "num": 62,
+      "prompt": "You have to delete ONE forever. The others stay. What's getting sacrificed?",
+      "room": "Free",
+      "source": null,
+      "choices": [
+        {
+          "letter": "A",
+          "text": "Pizza.",
+          "reveal": "Apparently, you've informed Italy that its services are no longer required. International relations are deteriorating.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "B",
+          "text": "Tacos.",
+          "reveal": "Apparently, Taco Tuesday has filed for unemployment. The entire week is devastated.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "C",
+          "text": "French fries.",
+          "reveal": "Apparently, you've looked a perfectly good potato in the face and told it to find another career.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        },
+        {
+          "letter": "D",
+          "text": "Ice cream.",
+          "reveal": "Apparently, you've canceled frozen happiness. The waffle cones are organizing a protest.",
+          "rawScoring": "NONE",
+          "isNone": true,
+          "awards": []
+        }
+      ]
+    }
+  ]
+}

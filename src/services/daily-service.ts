@@ -1,6 +1,7 @@
 import { getCurrentUserId } from './auth-service';
 import type { DailyAnswerRow, DailyDistributionRow, DailyOptionRow, DailyQuestionRow, PrivateDailyRow } from './types';
 import { supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 
 // Thin Supabase-facing layer over daily_questions/daily_options/daily_answers and the
 // get_daily_distribution RPC. Consumed by src/data/consumer-daily.ts (Sprint 1B-A), which is
@@ -110,6 +111,11 @@ export const commitDailyAnswerRemote = async (questionId: string, optionId: stri
 
   if (error) {
     console.warn('[daily-service] commitDailyAnswerRemote failed:', error.message);
+    // Same 23505-is-expected reasoning as submitPrivateDailyAnswer above -- see this
+    // function's own header comment on reconciling to the server's existing row.
+    if (error.code !== '23505') {
+      reportBackendFailure({ operation: 'commit_daily_answer', errorCode: error.code }, error);
+    }
     return { ok: false, reason: 'insert_failed', message: error.message, code: error.code };
   }
   return { ok: true };
@@ -161,6 +167,7 @@ export const getPrivateDaily = async (): Promise<GetPrivateDailyResult> => {
   const { data, error } = await supabase.rpc('get_private_daily');
   if (error) {
     console.warn('[daily-service] getPrivateDaily failed:', error.message);
+    reportBackendFailure({ operation: 'get_private_daily', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   const rows = (data ?? []) as PrivateDailyRow[];
@@ -189,6 +196,13 @@ export const submitPrivateDailyAnswer = async (
   });
   if (error) {
     console.warn('[daily-service] submitPrivateDailyAnswer failed:', error.message);
+    // Postgres 23505 (unique_violation) here means "already answered" -- an expected,
+    // already-reconciled state (see this function's own header comment), never an unexpected
+    // production error. Everything else (including a rejected-as-locked exception) IS worth
+    // knowing about if it keeps happening.
+    if (error.code !== '23505') {
+      reportBackendFailure({ operation: 'submit_private_daily_answer', errorCode: error.code }, error);
+    }
     return { ok: false, reason: 'insert_failed', message: error.message, code: error.code };
   }
   const row = (Array.isArray(data) ? data[0] : data) as { answer_id: string; option_id: string } | undefined;

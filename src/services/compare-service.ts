@@ -1,5 +1,6 @@
 import { getCurrentUserId } from './auth-service';
 import { supabase } from '@/lib/supabase';
+import { reportBackendFailure } from '@/services/observability';
 
 // Thin Supabase-facing layer over compare_responses and its RPCs — see the migration
 // (20260921010000_compare_they_have_notes.sql) for the full security/privacy design. Never
@@ -35,6 +36,7 @@ export const submitCompareResponse = async (
   });
   if (error) {
     console.warn('[compare-service] submitCompareResponse failed:', error.message);
+    reportBackendFailure({ operation: 'submit_compare_response', errorCode: error.code }, error);
     return { ok: false, message: error.message };
   }
   const row = (Array.isArray(data) ? data[0] : data) as { response_id: string } | undefined;
@@ -71,6 +73,7 @@ export const getCompareResult = async (shareId: string, respondentToken: string 
   const { data, error } = await supabase.rpc('get_compare_result', { p_share_id: shareId, p_respondent_token: respondentToken });
   if (error) {
     console.warn('[compare-service] getCompareResult failed:', error.message);
+    reportBackendFailure({ operation: 'get_compare_result', errorCode: error.code, recoverable: true }, error);
     return { ok: false, message: error.message };
   }
   const rows = (data ?? []) as CompareResultRow[];

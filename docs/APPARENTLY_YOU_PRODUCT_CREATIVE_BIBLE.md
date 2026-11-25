@@ -1,34 +1,12 @@
 # Apparently You Product + Creative Bible
 
-**Current governing version: v1.4**
+**Current governing product specification | November 2, 2026**
 
-This document is the canonical implementation-readable repository copy of the Apparently You Product + Creative Bible.
+This file contains CURRENT requirements. If a feature is not yet built, its status is tracked in engineering manifests rather than old rules or obsolete drafts here.
 
-When implementation behavior conflicts with this Bible, stop and surface the conflict for review rather than silently changing the product.
+**Decision status:** LOCKED = decided; APPROVED = accepted content; WORKING = open to refinement; OPEN = not decided. Approved content must never be silently rewritten.
 
-The decision-status meanings in the Bible remain authoritative:
-
-- **LOCKED** = decided; do not change without Michelle explicitly changing it
-- **APPROVED** = reviewed and accepted
-- **WORKING** = current direction that may still be refined
-- **OPEN** = deliberately undecided
-
----
-
-## Apparently You — Product + Creative Bible
-
-*Version 1.4 • September 27, 2026 • Build 8 starting point*
-
-This document is the governing vision for Apparently You.
-
-When a future idea conflicts with this bible, we stop and make a deliberate decision. We do not quietly change the product because something was convenient to code.
-
-### Decision status
-
-- **LOCKED** = decided. Do not change without Michelle explicitly changing it.
-- **APPROVED** = content/design Michelle has reviewed and accepted.
-- **WORKING** = current direction, but may still be refined.
-- **OPEN** = deliberately undecided.
+For exact approved questions, answer choices, reveal copy, result weights, and mappings, use the current approved quiz source documents in `docs/private-quizzes/`. This Bible defines behavior and architecture, not duplicate or historical copies of quizzes.
 
 ---
 
@@ -817,112 +795,24 @@ A Private answer may generate both types of evidence when the behavior genuinely
 
 ---
 
-## 15A. QUIZ PERSONALITY EVIDENCE AWARDS
+## 15A. ANSWER-LEVEL PERSONALITY SCORING
 
-**LOCKED**
+**LOCKED | Owner-confirmed November 2, 2026. Applies to ALL Daily and quiz questions, public and Private.**
 
-Quiz-result scoring and personality-trait evidence are related but separate systems. An answer may affect the quiz result, Core evidence, Private evidence, both identity layers, or neither identity layer when the answer does not genuinely support a personality trait.
+1. **Only a selected answer earns personality trait points.** The selected answer is scored using its individually approved mappings to the 64 frozen trait poles (40 Core, 24 Private). This is the ONLY source of Core/Private trait points. Nothing earns extra identity points at quiz completion, from a result title, a verdict, an archetype, a display tag, a milestone, or a completed quiz as a whole.
+2. **Point values are positive +1, +2, or +3 for each supported pole on that answer.** +1 = supporting evidence; +2 = strong evidence; +3 = especially clear, high-confidence behavioral evidence. There is no restriction reserving +3 for any special quiz, ranking, or completion.
+3. **No artificial trait-count cap per answer.** One answer may support zero, one, or any number of distinct Core/Private poles when individually justified. Do not pad mappings; never infer a mapping from a joke or result label; do not award both opposite poles of the same dimension from the same choice.
+4. **No quiz-level reduction or ranked award.** No top-3/top-5 selection, qualification-before-writing, flattening, multiplier, fixed result-level bonus, or cap on the number of supported traits earned across an answered quiz. Write only the selected answers' approved points, independently, exactly once per eligible answered question.
+5. **Result/verdict scoring is distinct and adds ZERO trait points.** Answer-specific result weights determine which quiz reveal the user earns, subject to approved outcome gates and tie-breaking. The earned result is saved as the quiz result. Its text, title, visual tags and result score NEVER award traits.
+6. **Core vs Private is determined by the trait dimension, not by where the question appears.** A Private quiz answer may award both Core and Private traits; a public/Daily answer only awards poles that are explicitly approved for that specific answer. There is no automatic Core/Private award because a quiz belongs to a category.
+7. **Frozen numeric identity.** Each of the 32 dimensions has two distinct poles and a frozen numeric trait ID (1–64). All evidence records identify the actual pole directly, with a positive magnitude. A negative pole such as Spontaneous or Blunt is not a negative point or penalty.
+8. **Profile display is downstream, not another scoring event.** The active profile reads saved answer evidence, resolves the higher qualifying pole per dimension, and ranks qualifying poles for Your Signature, The Undercurrent, Creature and Relic. The approved current eligibility threshold is 9 earned points; up to 7 Core and 3 Private qualifying poles may be displayed. This does not alter, recalculate or award the original answer points. Resolve score ties with the approved earliest-reached timestamp rule.
+9. **First completion and retakes.** On the first valid completion of a specific semantic quiz version, each completed question's selected answer may write its approved trait evidence once. A retake can produce a new displayed quiz verdict but NEVER writes additional personality points for that version. A material semantic revision must not reinterpret old answer IDs or previously awarded points.
+10. **Daily recurrence.** A specific published Daily occurrence is a scoring opportunity; answering a newly published occurrence can earn its own answer-level evidence. Replaying an already recorded occurrence cannot generate duplicate points.
+11. **Active identity window.** Answer evidence remains recorded for audit and lifetime totals; only unexpired evidence influences the current rolling identity according to the locked 12-month active-window rule. This is an eligibility/display calculation, not a new award.
+12. **Server authority.** Validate selected choices, the frozen IDs, points, entitlement, version and first-completion uniqueness on the server; the client must agree with server scoring. No unapproved production migrations or data rewrites.
 
-Core and Private are separate identity systems. Core evidence feeds the Creature. Private evidence feeds the Undercurrent and Relic.
-
-A single answer may contribute to both systems when strongly justified. For example, the same answer may earn Direct +2 in Core and Blunt +2 in Private.
-
-### RAW EVIDENCE SCALE
-
-**LOCKED**
-
-+1 = supporting evidence for that specific trait pole.
-+2 = strong/direct evidence for that specific trait pole.
-
-An individual answer may award zero, one, or multiple trait-pole scores when each mapping is genuinely supported.
-
-Raw answer evidence is temporary within the quiz for ranking purposes; the approved permanent award is applied only after completion.
-
-### MINIMUM TO MAKE THE BOARD
-
-**LOCKED**
-
-A trait pole must accumulate at least 3 raw points before it is eligible to make the board or receive a permanent quiz award.
-
-The 3-point minimum may be reached as +2 and +1 from separate answers, or +1 +1 +1 from separate answers.
-
-Because a single answer can award at most +2 to one trait pole, one answer alone can never qualify a trait.
-
-If a trait received zero evidence, it receives zero permanent points regardless of how many ranking slots remain.
-
-### OPPOSITE-POLE MATH
-
-**LOCKED**
-
-Evidence may accumulate toward both poles of the same dimension.
-
-Within a quiz, the higher raw-evidence pole is the eligible pole for that dimension when quiz awards are ranked.
-
-Across the active identity ledger, the higher active cumulative score is the current winning expression and may rank on the board.
-
-The losing pole does not appear beside the winning pole as a separate current trait.
-
-If opposing poles are tied at the relevant scoring layer, the pole that first reached that tied high score by timestamp wins the dimension.
-
-### RANKING TIES
-
-**LOCKED**
-
-When two qualifying winning trait poles have the same score, the trait that first reached that high score by timestamp ranks higher.
-
-### EVIDENCE MUST EXIST
-
-A ranking position does not create evidence. We never invent, pad, or force traits merely to fill Top 3, Top 5, Top 7, or Top 3 Private positions.
-
-### ACTIVE BOARD QUALIFICATION
-
-**LOCKED**
-
-The active identity ledger combines unexpired permanent quiz awards and approved Daily evidence for each trait pole.
-
-A trait pole must have at least 3 active cumulative evidence points before it may appear in Your Signature or The Undercurrent or drive a Creature or Relic characteristic.
-
-This active-board threshold is separate from the within-quiz raw-evidence threshold used to decide whether a quiz may award that trait.
-
-After the threshold is met, opposite-pole and ranking rules determine the current winning expression and order.
-
-### PUBLIC / FREE QUIZZES
-
-Core / Creature permanent awards:
-
-- Top 3 qualifying supported Core traits: +2 each.
-- 4th and 5th qualifying supported Core traits: +1 each.
-- If fewer than five Core traits qualify, only the qualifying traits receive awards.
-
-Public / Free quizzes do not generate Private / Relic personality awards unless Michelle explicitly approves a future exception.
-
-### APPARENTLY PRIVATE QUIZZES
-
-Core / Creature permanent awards:
-
-- Top 3 qualifying supported Core traits: +1 each.
-
-Private / Relic permanent awards:
-
-- Top 3 qualifying supported Private traits: +2 each.
-
-If fewer than three traits qualify in either layer, only the qualifying traits receive awards.
-
-### COMPLETION AND VERSIONING
-
-**LOCKED**
-
-The first fully submitted completion of a specific quiz version creates permanent personality evidence.
-
-Retakes may show a different quiz result, but retakes do not add or replace permanent personality evidence.
-
-A material quiz version change that is released to users is treated as a new quiz version and may create new permanent evidence when completed.
-
-### SCORING FLOW
-
-Answers -> temporary raw trait evidence -> 3-point qualification check -> resolve opposite poles -> rank qualifying winning poles -> apply permanent profile awards.
-
-Quiz-result logic is calculated separately from permanent personality awards.
+**Single rule to remember: selected answer → approved +1/+2/+3 pole evidence once. Quiz verdict → display/result history only, zero extra trait points.**
 
 ---
 
@@ -1091,13 +981,27 @@ Actual trait-to-Relic mappings are OPEN until reviewed and approved by Michelle.
 
 ### RELIC REVEAL
 
-**LOCKED**
+**LOCKED (Build 11 — progressive, replaces the earlier all-or-nothing reveal)**
 
-The Relic remains a silhouette until the user has three qualifying Private trait characteristics.
+The Relic is no longer all-or-nothing. It forms over time, visibly, as real qualifying Private
+evidence accumulates — the same production renderer and the same locked global calibration at
+every stage, never a separate visual path for a partial Relic:
 
-Once three qualifying Private traits exist, the Relic is revealed using #1 object, #2 color, and #3 effect.
+- 0 qualifying Private traits: the Relic stays the intentional locked/mysterious silhouette.
+- 1 qualifying Private trait (the strongest): the real BASE RELIC OBJECT reveals, in an
+  intentionally early/forming presentation (base layer only — no color tint, no effect yet).
+- 2 qualifying Private traits: the COLOR layer joins the base.
+- 3 qualifying Private traits: the EFFECT layer joins — the user's complete first Relic, a
+  meaningful collectible reveal moment.
 
-Do not invent a missing Private trait to complete the Relic.
+Mapping stays exactly as before: #1 qualifying trait -> object, #2 -> color, #3 -> effect.
+
+Do not invent a missing Private trait to complete, or advance, the Relic at any stage.
+
+Target pacing (evidence-driven, not a quiz-count quota): a typical engaged user should normally
+begin seeing a Relic forming within roughly 2-3 Apparently Private quizzes, have multiple layers
+by roughly 3-5, and have earned a complete first Relic by roughly 5-7 — see
+scripts/simulate-relic-pacing.ts for the simulation this is calibrated against.
 
 ---
 
@@ -1404,108 +1308,47 @@ Apparently Private has eight categories:
 
 ---
 
-## 31. CURRENT PLAYABLE PRIVATE QUIZZES
+## 31. APPARENTLY PRIVATE LAUNCH CONTENT
 
-Approved/playable before Build 8:
+**LOCKED owner-approved editorial target | Local implementation / device QA must still be verified.**
 
-**THE GOOD STUFF**
-So why do people keep you around?
+17 playable quizzes total: 3 free previews and 14 premium quizzes. This is the launch scope; additional concepts are not active quizzes.
 
-**SHADOW SIDE**
-Be So Serious Right Now.
+**Free previews (3):** `keep-you-around`, `be-so-serious`, `secretly-love` (restored as active without duplicating historical completion evidence).
 
----
+**Premium (14):**
+- Love & Soulmates: `love-soulmates-ready`, `love-soulmates-become`
+- Career & Ambition: `career-ambition-how-bad`, `career-ambition-proving`
+- Hidden You: `hidden-you-wrong`, `hidden-you-hide`
+- Shadow Side: `shadow-side-hypocrisy`
+- The Good Stuff: `good-stuff-trust`
+- Life Match: `life-match-dream-life`, `life-match-freedom`
+- Style & Vibe: `style-vibe-intimidating`, `style-vibe-attention`
+- Private Private. 😈: `private-private-trouble`, `private-private-proof` (**both adult-eligible subscribers only, enforced server-side; no anonymous mature-result sharing**).
 
-## 32. BUILD 8 MINIMUM PRIVATE CONTENT
+**Approved source:** the full locked 11-change source pack in `docs/private-quizzes/APPROVED_11_QUIZ_SOURCE_PACK_2026-11-02.md`, plus the six separately owner-approved premium specs already in `docs/private-quizzes/`.
 
-**LOCKED IMMEDIATE GOAL**
+Replacing an approved quiz's obsolete definition means editing its active content in place with version-safe user data preservation. Do NOT insert its old questions, old results, or old draft copy as additional active database catalog rows or as extra playable quizzes.
 
-At least one playable Private quiz in every category.
-
-Therefore six new ones are required:
-
-### LOVE & SOULMATES
-
-Are you actually ready for love?
-**APPROVED.**
-
-### CAREER & AMBITION
-
-How bad do you actually want it?
-Result philosophy revised. Questions must now be rewritten to support the stronger result spectrum.
-
-### HIDDEN YOU
-
-Current candidate:
-What do people keep getting wrong about you?
-
-### LIFE MATCH
-
-Current candidate:
-Would your dream life actually fit you?
-
-### STYLE & VIBE
-
-Current candidate:
-Are you actually intimidating?
-
-### PRIVATE PRIVATE. 😈
-
-Current candidate:
-How much trouble are you after dark?
-
-These last four titles are current choices but their actual content has not been reviewed.
+**New quiz writing standard:** aim for 5 genuinely different A–E choices when appropriate; realistic distinct human voices, no predictable letter/result positions, no forced trait mappings; at least 1–2 strong, earned call-out results in each newly approved quiz. Never change the approved copy or approved choice positions without fresh owner authorization.
 
 ---
 
-## 33. APPROVED LOVE QUIZ
+## 32. ACTIVE CONTENT AUTHORITY
 
-Are you actually ready for love?
-
-Subtitle:
-
-Wanting a relationship and being ready for one are not the same thing.
-
-Approved result family:
-
-**THE DOOR IS OPEN**
-Actually available for real intimacy.
-
-**READY, WITH FINE PRINT**
-Capable of love, but security conditions matter.
-
-**YOU WANT IT. YOU'RE STILL PROTECTING YOURSELF.**
-Connection wanted, armor still operating.
-
-**YOU LIKE LOVE BETTER IN THEORY**
-Wants relationship benefits more readily than some of the demands of real intimacy.
-
-The full 10-question draft and overall result concept were approved.
-
-Michelle noted it had less shade than some Private content but agreed that the subject may appropriately require a softer touch.
+Approved quiz copy, answer choices, result scores, answer-level trait awards, result gates and tie-breaks are locked in their canonical current-source files. Code may implement the approved source; it may not rewrite it. An obsolete draft is not an alternative implementation option.
 
 ---
 
-## 34. CAREER QUIZ CORRECTION
+## 33. LOVE & SOULMATES SOURCE
 
-The initial Career results were rejected because they were too kind and middle-ground.
+The one approved `love-soulmates-ready` quiz source is `docs/private-quizzes/LOVE_READY_APPROVED_LOCKED_2026-10-31.md`. Do not reproduce alternate older result families inside this Bible.
 
-The new direction is:
+---
 
-- YOU WANT IT FOR REAL
-- YOU WANT IT, BUT COMFORT KEEPS WINNING
-- YOU TALK A GREAT GAME
-- LAZY. THERE, WE SAID IT.
+## 34. CAREER & AMBITION SOURCE
 
-Michelle specifically identified with:
-
-YOU TALK A GREAT GAME
-
-and emphasized an important product truth:
-
-People often already know their flaws and may relate more strongly to being accurately called out than to receiving another flattering result.
-
-The Career questions and answer choices therefore need to be rewritten.
+The one approved `career-ambition-how-bad` quiz source is `docs/private-quizzes/CAREER_HOW_BAD_APPROVED_LOCKED_2026-10-31.md`. Its strict LAZY gate and its complete answer-level mappings are implemented from that document without embellishing or softening any result.
 
 ---
 
@@ -1535,114 +1378,19 @@ Material edits after approval require reapproval.
 
 ---
 
-## 35A. APPROVED CONTENT REGISTRY
+## 35A. CURRENT APPROVED CONTENT REGISTRY
 
-**LOCKED**
+**LOCKED.** Keep one current, authoritative definition for each playable quiz key and each published Daily occurrence.
 
-Apparently You maintains one canonical Approved Content Registry.
-
-The registry is the source of truth for playable quiz and Daily content.
-
-Approved content should not live only in chat history, code, implementation notes, or scattered documents.
-
-The registry contains three distinct canonical libraries: Public Quiz Library, Private Quiz Library, and Daily Library.
-
-The libraries remain logically separate for organization, but all three must be searchable together for duplication and overlap checks.
-
-### 1. PUBLIC QUIZ LIBRARY
-
-Contains all approved free/public quizzes.
-
-Each quiz record must include, where applicable: unique quiz ID; version number; category; title; subtitle; status; questions; answer choices; result set; quiz-result scoring logic; Core personality mappings; result thresholds and gates; tie-break logic; simulated response profiles proving every result is reachable; publish date; expiration date; prior-version reference when applicable; and approval date/status.
-
-Public quizzes do not generate Private personality evidence unless Michelle explicitly changes that rule in the future.
-
-### 2. PRIVATE QUIZ LIBRARY
-
-Contains all approved Apparently Private quizzes.
-
-Each quiz record must include: unique quiz ID; version number; Private category; title; subtitle; status; questions; answer choices; full result set; Reads; Call-Outs; Costs where used; Try This where used; quiz-result scoring logic; Core personality mappings where genuinely supported; Private personality mappings where genuinely supported; result thresholds and gates; harsh-result evidence requirements; tie-break logic; simulated response profiles proving every result is reachable; publish date; expiration date; prior-version reference when applicable; and Michelle approval status.
-
-A Private quiz is not implementation-ready until its required content and scoring components have been reviewed and approved.
-
-### 3. DAILY LIBRARY
-
-Contains all approved Daily questions. Every Daily is marked PUBLIC or PRIVATE.
-
-Each Daily record should include: unique Daily ID; Public or Private classification; prompt; answer choices; status; Core personality mappings if any; Private personality mappings if any; whether the Daily contributes personality evidence; publish/use history; approval status; and duplication/overlap notes where relevant.
-
-Not every Daily must contribute personality evidence. A Daily may exist purely because it is interesting, funny, social, revealing, comparative, or worth answering.
-
-If a Daily does contribute personality evidence, only mappings genuinely supported by the answer are used.
-
-### CONTENT STATUS
-
-Canonical content uses clear status labels:
-
-- **DRAFT** — Still being created or reviewed. Not implementation-ready.
-- **APPROVED** — Reviewed and approved by Michelle. May be implemented.
-- **LIVE** — Approved and currently available to users.
-- **RETIRED** — No longer active or presented to users.
-
-A retired quiz or Daily remains preserved in the registry so its history, versioning, prior mappings, and duplication footprint are not lost.
-
-### CROSS-LIBRARY DUPLICATION CHECK
-
-**LOCKED**
-
-Before any quiz question or Daily is approved, it must be checked against the entire Approved Content Registry.
-
-This check is not limited to exact wording.
-
-Also check for substantial conceptual duplication, including: the same question rewritten with different words; the same scenario with cosmetic changes; the same forced choice; the same joke or reveal mechanism; the same behavioral distinction being tested too similarly; a Daily duplicating a quiz question; a Public quiz duplicating a Private quiz; or one quiz repeating another quiz too closely.
-
-Apparently You may explore the same broad personality theme more than once. It should not repeatedly ask essentially the same question and pretend it learned something new.
-
-A similar question may be approved when the context, tradeoff, motive, or behavior being examined is meaningfully different.
-
-### QUIZ VERSIONING
-
-**LOCKED**
-
-Every approved quiz has a version.
-
-The first fully submitted completion of a specific quiz version may create permanent personality evidence.
-
-Retaking that same version may produce a different quiz result for the user, but it does not create additional permanent personality evidence.
-
-A materially changed quiz is published as a new version. A new version is treated as a new quiz for personality-evidence purposes.
-
-Material changes include changes that meaningfully alter questions, answer choices, scoring logic, result thresholds, personality mappings, or result definitions.
-
-Cosmetic corrections that do not change meaning or scoring do not require a new evidence-producing version.
-
-Prior versions remain preserved in the registry.
-
-### CONTENT EXPIRATION VS. CONTENT HISTORY
-
-Quiz content may have a defined expiration or retirement date.
-
-A quiz leaving active circulation does not erase its canonical record from the Approved Content Registry.
-
-User-facing result history and active personality evidence follow the separate 12-month evidence expiration rule.
-
-The registry preserves retired content so Apparently can avoid accidentally recreating old questions, understand previous scoring decisions, audit historical personality mappings, maintain version history, and distinguish genuinely new content from recycled content.
-
-### IMPLEMENTATION AUTHORITY
-
-**LOCKED**
-
-Claude Code implements only the approved canonical version stored in the Approved Content Registry.
-
-If code and the registry disagree, the registry is the creative/content authority unless Michelle explicitly approves a change.
-
-Claude does not silently rewrite approved questions; reorder answers in a way that changes meaning or scoring; change personality mappings; change result thresholds; substitute a newer draft for an approved version; revive retired content; or create missing content.
-
-Missing or contradictory registry information is surfaced for review rather than invented.
-
-### CORE PRINCIPLE
-
-One source of truth for what Apparently has already asked, what it learned from those answers, and what users are actually allowed to play.
+- The canonical editorial libraries are Public Quiz, Apparently Private Quiz and Daily. Check all three for duplicated scenarios and formulaic answer choices before adding content.
+- Approved questions, choices, results, verdict weights and numeric evidence mappings must match the current owner-approved source exactly. No creative edits during engineering implementation.
+- The active quiz registry and database catalog contain ONLY current playable definitions. Replace superseded question/choice/result definitions rather than duplicating an obsolete version as another playable row.
+- Historical user completions, their earned evidence, and any required content fingerprint/semantic identity are data-integrity records, NOT obsolete playable quiz content. Keep them safe against reinterpretation or duplication. Use Git history for obsolete editorial drafts; do not republish or seed them as active quizzes.
+- Do not perform destructive production deletes against actual user records. Any necessary schema migration must reconcile foreign keys and historical completion identity and pass migration tests before separately authorized production execution.
+- A material content change has a distinct immutable semantic-version/fingerprint identity for scoring and audit, but does not introduce an extra active copy of the quiz. Retakes cannot inflate evidence.
+- Only selected answers generate personality points. Saved quiz verdicts do not award trait points. The first-completion rule and the 12-month active identity window apply.
+- The owner has APPROVED the 11 changes in the current source pack, including the revised After Dark content and the new `private-private-proof`. These are ready for local implementation without repeated editorial sign-off.
+- Implementation, passing tests, staging, deployment, and App Store release are separate states. Local implementation is authorized; production migrations, live backfills, commit/push and distribution remain separately gated until approved.
 
 ---
 
@@ -2056,49 +1804,19 @@ Apparently has receipts.
 
 ---
 
-## 43. PROFILE EVIDENCE
+## 43. PROFILE EVIDENCE AND TIME WINDOW
 
-**LOCKED**
+**LOCKED.** Personality identity comes from selected answers only; the winning quiz result never adds trait points.
 
-Personality should evolve from actual user behavior and should represent the person the app is learning now, not an unlimited lifetime average.
+**Quizzes:** Each answered question on the first valid completion of a specific quiz semantic version writes its approved +1, +2 or +3 evidence once, for each genuinely supported trait pole. Retakes may update the user's displayed result but cannot add any more points for that version.
 
-### QUIZ COMPLETIONS
+**Dailies:** Each first valid answer to a particular published Daily occurrence independently earns its approved +1, +2 or +3 trait evidence when any mapping is supported. A repeated template on a different publication date is a distinct occurrence. Dailies without supported mappings earn zero points.
 
-Only the first fully submitted completion of a specific quiz version creates permanent personality evidence.
+**Active identity:** Identity display uses the 12-month rolling evidence window and the approved 9-point eligibility threshold, one displayed winning pole per dimension, up to 7 Signature and 3 Undercurrent traits. Lifetime evidence and historical user submissions may be retained without affecting expired active display. No profile ranking event writes points.
 
-Retakes may show a new result but do not add or replace permanent personality evidence.
+**Unlocks:** Once the Creature and Relic reveal milestones are unlocked they remain unlocked even if old evidence expires. Current appearance may evolve as the active answer-evidence window changes.
 
-A materially changed released quiz version is treated as a new quiz version and may create new evidence when completed.
-
-### DAILY EVIDENCE
-
-Not every Daily contributes personality evidence.
-
-When an approved Daily answer genuinely supports a Core trait pole, it contributes directly to the cumulative Core evidence ledger using the same answer-level scale: +1 supporting or +2 strong/direct.
-
-A Private Daily may also contribute +1 or +2 to approved Private trait poles when genuinely supported and explicitly mapped.
-
-Daily evidence is not forced merely because the user answered a Daily.
-
-### 12-MONTH ACTIVE EVIDENCE WINDOW
-
-**LOCKED**
-
-Personality evidence expires from the active identity calculation 12 months after it was created, regardless of whether it came from a quiz or a Daily.
-
-When evidence expires, Core and Private totals are recalculated without that expired contribution so the identity can evolve over time.
-
-Active quiz-result history also drops results from the current app experience after 12 months.
-
-A future Past You / archive experience may preserve old identity history in a later build, but it is not part of the current build.
-
-Aggregate/anonymized response data may remain available for Commonality and product analytics even after an individual completion stops influencing that user's active identity, subject to the product's data/privacy rules.
-
-### UNLOCKS DO NOT RELOCK
-
-Once the user has earned the 50-answer Creature reveal, that feature remains unlocked even as older evidence expires.
-
-Once the Relic has been revealed by achieving three qualifying Private traits, the feature remains unlocked; the active trait expression may continue to evolve with current evidence.
+**History and safety:** Never reaward the same question/occurrence, remap historical answer text to a new meaning, or delete user evidence to clean up obsolete content. No retroactive rewriting of production records without separate explicit authorization.
 
 ---
 
@@ -2160,7 +1878,7 @@ Not:
 
 “I paid $3.99 and got two quizzes and 30 advertisements for future quizzes.”
 
-This is why Build 8 requires at least one playable quiz in each Private category before we feel good about testing the subscription experience.
+The approved launch library contains 17 Apparently Private quizzes, including 14 premium and 3 free previews. Do not market metadata-only coming-soon entries as playable content.
 
 ---
 
@@ -2209,85 +1927,15 @@ It should not make the free product feel abandoned.
 
 ## 49. LAUNCH
 
-**LOCKED TARGET**
+**CURRENT GOAL:** Ship the approved, functioning Apparently You experience through device QA, staging verification, TestFlight and App Store review. Use the current deployment manifest for release dates.
 
-October 1, 2026
+**Scope:** Implement the 17 approved Apparently Private quizzes (3 previews and 14 premium), preserve the existing public and Daily experiences, and verify subscriptions, restores, age gating, result privacy, score integrity, analytics/ads disclosure and on-device accessibility before release.
 
-We do not move the target merely because the work expanded.
-
-We change scope intelligently.
-
-The goal is not to force unfinished garbage into the build.
-
-The goal is to protect the date by knowing what is actually essential.
+Local implementation and tests are authorized. Do not deploy production migrations, production backfills, pushes, store submissions or live releases without explicit authorization.
 
 ---
 
-## 50. BUILD 8 PURPOSE
-
-Build 8 is the transition from:
-
-functional personality quiz app
-
-to:
-
-Apparently You as an identity product.
-
-Major Build 8 areas:
-
-**Product foundation**
-Core vs Private architecture.
-
-**Subscription**
-Immediate unlock and proper subscriber states.
-
-**Settings**
-Actual account/profile utilities.
-
-**You**
-New identity-centered experience.
-
-**Avatar**
-Working prototype.
-
-**Relic**
-Separate working prototype.
-
-**Character naming**
-Logic prototype after mappings are approved.
-
-**Commonality**
-Real respondent data only.
-
-**Private**
-At least one playable quiz in every category.
-
-**Design**
-Beginning of the app-wide new visual language.
-
----
-
-## 51. BUILD 8 DOES NOT REQUIRE FINAL ART
-
-We do not need final creatures to test the avatar system.
-
-Circles. Triangles. Bean bodies. Cloud wings. Lightning tails. Stars. Blocks. Ridiculous placeholder objects.
-
-All acceptable.
-
-The purpose is to answer:
-
-- Does the logic work?
-- Is it fun seeing my creature?
-- Does each trait visibly change something?
-- Does the relic make sense beside it?
-- Does the character name feel collectible?
-
-Then we create beautiful final assets.
-
----
-
-## 52. SHADE CALIBRATION
+## 50. SHADE CALIBRATION
 
 Different quizzes deserve different amounts of shade.
 
@@ -2315,7 +1963,7 @@ It should not sound like the same comedian wrote every result at the same volume
 
 ---
 
-## 53. THE FINAL TEST FOR A PRIVATE RESULT
+## 51. THE FINAL TEST FOR A PRIVATE RESULT
 
 Before approving a result, ask:
 
@@ -2330,7 +1978,7 @@ If not, the result probably needs another pass.
 
 ---
 
-## 54. THE APPARENTLY TEST
+## 52. THE APPARENTLY TEST
 
 Before shipping any major feature or piece of copy, ask:
 
@@ -2346,7 +1994,7 @@ If yes, we're close.
 
 ---
 
-## 55. THE NORTH STAR SENTENCE
+## 53. THE NORTH STAR SENTENCE
 
 If we forget everything else:
 
@@ -2356,4 +2004,24 @@ And Apparently Private adds:
 
 We don't have to be nice. We do have to be right.
 
-That is the bible. 🔥
+---
+
+## 54. CURRENT DAILY EXPERIENCE RULES
+
+**LOCKED.** Daily content should be fresh, surprising and varied. Free Daily mixes funny, cinematic, introspective, practical, imaginative and social questions. Private Daily can be provocative and sharper, with genuine nuance and a wide range of life topics, not repetitive relationship-only questions.
+
+Fresh approved Daily occurrences get publishing priority over scheduled repeats. A question explicitly called "This or That" has exactly two meaningful options. No Daily question has to generate trait points; if it does, only the selected answer's individually approved +1/+2/+3 mappings count, without an arbitrary count cap.
+
+Full Daily editorial status, approved content and rotation schedules live in their respective current Daily content documents, not as conflicting dated build logs here.
+
+## 55. ADS, NOTIFICATIONS AND PRIVACY
+
+**LOCKED product rules; verify current deployment status separately.** Premium subscribers see zero advertising. Eligible free placements may include a maximum of one public-quiz interstitial, a completed Free Daily interstitial and clearly labeled sponsored Explore cards. No ads on Apparently Private, You/Creature, paywalls, Settings or mature content. If premium entitlement is uncertain, fail closed and show no ad.
+
+Push permissions are requested contextually, not on cold launch. Daily reminders use the device's timezone; activity and Creature notifications derive from real user events and real profile data, not invented event triggers. Ad SDK disclosure, ATT/privacy answers, notification permissions and purchase restoration must be verified against the shipped app and current store submissions.
+
+## 56. FROZEN IDENTITY AND ACCESS CONTRACT
+
+The 32 personality dimensions comprise 20 Core and 12 Private dimensions. Each has two distinct poles, for 64 immutable numeric trait IDs. Every awarded point belongs to an actual chosen-answer trait ID. The 9-point display threshold and 12-month active window affect CURRENT identity presentation, never grant extra points. Approved mature Private quizzes require server-side subscription and 18+ eligibility, with sharing restrictions enforced server-side.
+
+**Engineering status belongs in the current deployment manifest and test reports, not in this product specification.**

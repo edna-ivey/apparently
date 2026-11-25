@@ -15,7 +15,7 @@ import { buildInitialAssetCorrections, buildInitialSlotDefaults } from '@/data/c
 //     are Creature Lab (/creature-lab) calibration concerns only
 //
 // Computed once per app session (not per render) -- buildInitialSlotDefaults/
-// buildInitialAssetCorrections read+parse assets/creatures-test/creature-config.json via
+// buildInitialAssetCorrections read+parse assets/creatures/creature-config.json via
 // require(), which only needs to happen once; every consumer of this component shares the
 // same production calibration, which is the whole point of it being production calibration.
 const PRODUCTION_SLOT_DEFAULTS = buildInitialSlotDefaults();

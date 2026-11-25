@@ -1,26 +1,35 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { Surface } from '@/constants/design-system';
 import { Brand } from '@/constants/theme';
 
-// Fixed brand colors, deliberately not device-theme-following: the brand does not have a
-// dark mode, so this bar always renders the same light/cream shell with a pink active
-// state regardless of the device's color scheme. Sourced from the shared Build 8
-// design-system tokens (Surface.card/Surface.blush) rather than repeated hex literals, so
-// this bar and every card/surface in the app draw from the same palette definition.
+// Celestial restyle, Build 15 "Proposal A" revision: fixed brand colors, deliberately not
+// device-theme-following (the brand does not have a separate system dark mode — this IS the
+// one fixed brand appearance now). NativeTabs renders real native tab-bar chrome, so
+// customization is limited to its own supported props — no arbitrary decoration (portal
+// rings, gradients, floating/rounded shape) is possible here, unlike the custom-built web bar
+// in app-tabs.web.tsx.
+//
+// IMPORTANT, found this pass: `indicatorColor` (the previous pink pill-highlight prop) is
+// documented by expo-router's own NativeTabsProps type as Android/web ONLY — it has zero
+// effect on iOS and was dead code here. The only real iOS levers for the selected state are
+// `iconColor.selected` and `labelStyle.selected`; removed the dead prop rather than keep
+// something that visibly does nothing. Selected tint moved from pink to gold — pink is
+// already the app's own default CTA/action color everywhere else (Lock it in, confirm
+// buttons, etc.), so a gold-selected tab reads as "special/premium," distinct from "press
+// this to act," matching the brief's "restrained pink-gold" direction without competing with
+// every other pink button on screen. `shadowColor` matched to the background removes the
+// default system hairline between content and bar for a more seamless, glass-like edge.
+// `minimizeBehavior="never"` is additive/safe (iOS 26+) — keeps the bar's presentation
+// constant regardless of scroll direction, rather than risking yet another iOS 26 auto-
+// behavior inconsistency.
 //
 // Icons: SF Symbols on iOS (`sf`), Material Symbols on Android (`md`) — both are built into
-// the OS, so this is one cohesive, premium icon family with zero added dependencies. Every
-// icon previously reused the same two boilerplate PNGs (Today/You shared "home", Explore/
-// Compare shared "explore"), which is why they read as inconsistent placeholders; each tab
-// now has its own icon, matched to what it actually is: Today gets the app's own "drop"
-// language (SF `drop`/`drop.fill`, Android `water_drop`), Explore a 2x2 grid of quiz cards,
-// Private an eye (matches the brand's own existing 👀 voice in its approved copy — "seeing
-// more/deeper" rather than a padlock, which would read as a permissions error, not a
-// premium destination), Compare two people (reads clearly differently from Explore's grid),
-// You a single person. `iconColor` here is the single place tinting is set for all five —
-// inactive Brand.ink, active Brand.pink — replacing the unconfigured system default (iOS's
-// stock blue).
+// the OS, so this is one cohesive, premium icon family with zero added dependencies. Each tab
+// has its own icon, matched to what it actually is: Today gets the app's own "drop" language
+// (SF `drop`/`drop.fill`, Android `water_drop`), Explore a 2x2 grid of quiz cards, Private an
+// eye (matches the brand's own existing 👀 voice in its approved copy — "seeing more/deeper"
+// rather than a padlock, which would read as a permissions error, not a premium destination),
+// Compare two people (reads clearly differently from Explore's grid), You a single person.
 //
 // Private is the LOCKED center tab position (Today / Explore / Private / Compare / You) —
 // same navigation for free users and subscribers; see src/app/(tabs)/private.tsx for the
@@ -30,10 +39,30 @@ import { Brand } from '@/constants/theme';
 export default function AppTabs() {
   return (
     <NativeTabs
-      backgroundColor={Surface.card}
-      indicatorColor={Surface.blush}
-      iconColor={{ default: Brand.ink, selected: Brand.pink }}
-      labelStyle={{ selected: { color: Brand.pink } }}>
+      // The actual root cause of the cross-screen inconsistency: iOS's UITabBar has TWO
+      // separate appearance slots -- standardAppearance and scrollEdgeAppearance -- and by
+      // default only switches to the solid standardAppearance once content is scrolled away
+      // from the top; at the "scroll edge" (every tab's initial/resting position) it reverts
+      // to a transparent appearance that composites over whatever that screen's own top
+      // content looks like. blurEffect="none" alone only configures ONE of those two slots.
+      // Verified directly in react-native-screens' own native source
+      // (RNSTabBarAppearanceCoordinator.mm sets both standardAppearance and
+      // scrollEdgeAppearance from separately-computed properties) and in expo-router's own
+      // NativeTabsProps type/doc comment. Both props are real and already compiled into the
+      // installed react-native-screens native pod -- a JS-only change, no native rebuild
+      // needed. Now that every screen behind the bar is uniformly dark celestial, both slots
+      // resolve to the same solid plum regardless, which is what finally made the bar read
+      // consistently across all five tabs.
+      blurEffect="none"
+      disableTransparentOnScrollEdge
+      minimizeBehavior="never"
+      backgroundColor={Brand.plum}
+      shadowColor={Brand.plum}
+      iconColor={{ default: 'rgba(255,249,245,0.5)', selected: Brand.gold }}
+      labelStyle={{
+        default: { color: 'rgba(255,249,245,0.5)', fontSize: 10.5, fontWeight: '600' },
+        selected: { color: Brand.gold, fontSize: 10.5, fontWeight: '800' },
+      }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'drop', selected: 'drop.fill' }} md="water_drop" />

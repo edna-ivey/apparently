@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandSignature } from '@/components/brand-signature';
+import { Celestial, CelestialWash, PortalRings } from '@/components/today/celestial';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, Spacing } from '@/constants/theme';
+import { Brand, Fonts, Spacing } from '@/constants/theme';
+import { setAgeEligibilityOnce, type AgeEligibility } from '@/data/age-eligibility';
 import {
   AGE_RANGES,
   completeOnboarding,
@@ -71,8 +72,33 @@ const QUESTIONS: QuestionDef[] = [
   },
 ];
 
-type Step = 'welcome' | 'basic' | 'transition' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'final';
-const STEP_ORDER: Step[] = ['welcome', 'basic', 'transition', 'q1', 'q2', 'q3', 'q4', 'q5', 'final'];
+// 'age-gate' is the first real question after Welcome, deliberately before any other data
+// collection -- a self-identified under-13 answer diverts to 'age-blocked' (handled as its
+// own standalone render branch, like 'welcome', never entering STEP_ORDER's forward
+// progression at all) rather than continuing onboarding. Apparently You is 13+; see
+// src/data/age-eligibility.ts for why this is tracked completely separately from the
+// demographic AgeRange field below (personalization only, never a legal gate -- a 13-17
+// eligible user needs an accurate bucket to pick here too, so AgeRange includes '13-17'
+// alongside the adult ranges; selecting it can never grant/deny access to anything on its own).
+type Step = 'welcome' | 'age-gate' | 'basic' | 'transition' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'final';
+const STEP_ORDER: Step[] = ['welcome', 'age-gate', 'basic', 'transition', 'q1', 'q2', 'q3', 'q4', 'q5', 'final'];
+// Every step after the standalone Welcome screen shares one chrome and one progress read —
+// basic info, the transition card, all five questions, and final all count as real forward
+// progress now (not just the 5 questions, which is all the old "N of M" text ever reflected).
+const CHROME_STEPS = STEP_ORDER.length - 1;
+
+// A real visual progress read across the whole post-welcome flow — segmented bar, filled gold
+// up to (and including) the current step. Replaces the old plain "N of M" text, which only
+// ever appeared during the 5 question steps and said nothing on basic/transition/final.
+function StepProgress({ current, total }: { current: number; total: number }) {
+  return (
+    <View style={styles.progressRow} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: total, now: current + 1 }}>
+      {Array.from({ length: total }, (_, index) => (
+        <View key={index} style={[styles.progressSegment, index <= current && styles.progressSegmentFilled]} />
+      ))}
+    </View>
+  );
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -87,6 +113,12 @@ export default function OnboardingScreen() {
   const [customGender, setCustomGender] = useState('');
   const [answers, setAnswers] = useState<Partial<SelfPerceptionAnswers>>({});
   const [submitting, setSubmitting] = useState(false);
+  // 'blocked' is a terminal state, never advanced past -- see the age-gate comment above.
+  // Deliberately NOT persisted anywhere: a self-identified under-13 answer never creates a
+  // session or writes any data (see handleAgeGateAnswer below), so there's nothing to recover
+  // on relaunch either -- the gate simply asks again, which is the correct, privacy-conscious
+  // behavior for an answer that was never supposed to leave this screen.
+  const [ageGateResult, setAgeGateResult] = useState<'answering' | 'blocked' | 'cleared'>('answering');
 
   // Mirrors the (tabs) layout's own gate in the opposite direction: a device that has
   // already completed onboarding but manually lands here again (a stale web bookmark, a
@@ -98,6 +130,20 @@ export default function OnboardingScreen() {
 
   const goNext = () => setStepIndex((index) => Math.min(index + 1, STEP_ORDER.length - 1));
   const goBack = () => setStepIndex((index) => Math.max(index - 1, 0));
+
+  // 'under13': block immediately, never call setAgeEligibilityOnce (which itself calls
+  // ensureAnonymousSession) -- no session, no profile row, no data retained for a
+  // self-identified minor, anywhere, ever. '13to17'/'18plus': persist (local + best-effort
+  // server sync) and continue into the rest of onboarding exactly as before this gate existed.
+  const handleAgeGateAnswer = (answer: 'under13' | AgeEligibility) => {
+    if (answer === 'under13') {
+      setAgeGateResult('blocked');
+      return;
+    }
+    setAgeGateResult('cleared');
+    void setAgeEligibilityOnce(answer);
+    goNext();
+  };
 
   const basicComplete = firstName.trim().length > 0 && ageRange !== null && gender !== null;
 
@@ -142,9 +188,15 @@ export default function OnboardingScreen() {
     return <WelcomeStep onContinue={goNext} />;
   }
 
+  if (ageGateResult === 'blocked') {
+    return <AgeBlockedStep />;
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={[styles.safeArea, contentWidth ? { maxWidth: contentWidth } : null]}>
+        <PortalRings />
+        <CelestialWash />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
             {stepIndex > 0 ? (
@@ -154,12 +206,11 @@ export default function OnboardingScreen() {
             ) : (
               <View style={styles.backButton} />
             )}
-            {currentQuestion ? (
-              <ThemedText style={styles.progress}>
-                {questionIndex + 1} of {QUESTIONS.length}
-              </ThemedText>
-            ) : null}
+            <StepProgress current={stepIndex - 1} total={CHROME_STEPS} />
+            <View style={styles.backButton} />
           </View>
+
+          {step === 'age-gate' && <AgeGateStep onAnswer={handleAgeGateAnswer} />}
 
           {step === 'basic' && (
             <BasicInfoStep
@@ -235,7 +286,9 @@ function WelcomeStep({ onContinue }: { onContinue: () => void }) {
 const welcomeStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.plum,
+    // Unchanged value (Celestial.background === Brand.plum) — switched to the shared token so
+    // this screen references the same source every other celestial screen does.
+    backgroundColor: Celestial.background,
   },
   safeArea: {
     flex: 1,
@@ -276,6 +329,58 @@ const welcomeStyles = StyleSheet.create({
   },
 });
 
+// The 13+ eligibility gate -- deliberately the first real question, before any other data
+// collection. Three plain options, no birthdate, no exact age: the minimum information that
+// actually answers the two legally-relevant thresholds (13, 18) -- see
+// src/data/age-eligibility.ts's own header comment for why this is intentionally coarser than
+// the existing demographic AgeRange question later in the flow.
+function AgeGateStep({ onAnswer }: { onAnswer: (answer: 'under13' | AgeEligibility) => void }) {
+  return (
+    <View style={styles.stepGap}>
+      <View style={styles.brandRow}>
+        <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={styles.brandIcon} />
+        <ThemedText style={styles.brandWordmark}>apparently you.</ThemedText>
+      </View>
+      <View style={styles.introGap}>
+        <ThemedText type="title" style={styles.heading}>
+          Quick one first.
+        </ThemedText>
+        <ThemedText style={styles.subcopy}>Apparently You is for ages 13 and up. How old are you?</ThemedText>
+      </View>
+      <View style={styles.fieldGroup}>
+        <Pressable style={styles.pill} onPress={() => onAnswer('under13')}>
+          <ThemedText style={styles.pillText}>Under 13</ThemedText>
+        </Pressable>
+        <Pressable style={styles.pill} onPress={() => onAnswer('13to17')}>
+          <ThemedText style={styles.pillText}>13 to 17</ThemedText>
+        </Pressable>
+        <Pressable style={styles.pill} onPress={() => onAnswer('18plus')}>
+          <ThemedText style={styles.pillText}>18 or older</ThemedText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+// Terminal state -- never advanced past, matching the Welcome screen's own standalone render
+// pattern. No continue path, no data collected beyond this screen (see handleAgeGateAnswer).
+function AgeBlockedStep() {
+  return (
+    <View style={welcomeStyles.container}>
+      <SafeAreaView style={welcomeStyles.safeArea}>
+        <View style={welcomeStyles.content}>
+          <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={welcomeStyles.loop} />
+          <ThemedText style={welcomeStyles.wordmark}>apparently you.</ThemedText>
+          <ThemedText style={welcomeStyles.hero}>Apparently, you have to wait a bit.</ThemedText>
+          <ThemedText style={welcomeStyles.support}>
+            Apparently You is for ages 13 and up. Come back and see us once you&apos;re old enough — we&apos;ll be here.
+          </ThemedText>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
 type BasicInfoStepProps = {
   firstName: string;
   onFirstName: (value: string) => void;
@@ -303,7 +408,10 @@ function BasicInfoStep({
 }: BasicInfoStepProps) {
   return (
     <View style={styles.stepGap}>
-      <BrandSignature variant="full" />
+      <View style={styles.brandRow}>
+        <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={styles.brandIcon} />
+        <ThemedText style={styles.brandWordmark}>apparently you.</ThemedText>
+      </View>
       <View style={styles.introGap}>
         <ThemedText type="title" style={styles.heading}>
           A little about you.
@@ -317,7 +425,7 @@ function BasicInfoStep({
           value={firstName}
           onChangeText={onFirstName}
           placeholder="First name"
-          placeholderTextColor={Brand.inkSecondary}
+          placeholderTextColor={Celestial.textMuted}
           style={styles.textInput}
           autoCapitalize="words"
           autoCorrect={false}
@@ -362,7 +470,7 @@ function BasicInfoStep({
             value={customGender}
             onChangeText={onCustomGender}
             placeholder="Optional — describe it your way"
-            placeholderTextColor={Brand.inkSecondary}
+            placeholderTextColor={Celestial.textMuted}
             style={styles.textInput}
             autoCorrect={false}
             returnKeyType="done"
@@ -380,7 +488,7 @@ function BasicInfoStep({
 function TransitionStep({ onContinue }: { onContinue: () => void }) {
   return (
     <View style={[styles.stepGap, styles.centeredStep]}>
-      <BrandSignature variant="hero" />
+      <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={styles.heroIcon} />
       <ThemedText style={styles.transitionEyebrow}>Before we get nosy...</ThemedText>
       <ThemedText type="title" style={[styles.heading, styles.centerText]}>
         Give us your version.
@@ -457,7 +565,7 @@ function FinalStep({
 }) {
   return (
     <View style={[styles.stepGap, styles.centeredStep]}>
-      <BrandSignature variant="hero" />
+      <Image source={WELCOME_LOOP_SOURCE} resizeMode="contain" style={styles.heroIcon} />
       <ThemedText type="title" style={[styles.heading, styles.centerText]}>
         Oh, we have thoughts.
       </ThemedText>
@@ -475,18 +583,18 @@ function FinalStep({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0E8DD',
+    backgroundColor: '#17000F',
   },
   safeArea: {
     flex: 1,
     width: '100%',
     alignSelf: 'center',
-    backgroundColor: '#FFF9F5',
+    backgroundColor: Celestial.background,
     ...Platform.select({
       web: {
         marginVertical: 28,
         borderRadius: 28,
-        boxShadow: '0 24px 64px rgba(23, 21, 29, 0.10)',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.35)',
         overflow: 'hidden',
       },
       default: {},
@@ -509,14 +617,48 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   backText: {
-    color: Brand.violet,
+    color: Celestial.textPrimary,
     fontSize: 14,
     fontWeight: '700',
   },
-  progress: {
-    color: Brand.inkSecondary,
-    fontSize: 13,
-    fontWeight: '700',
+  progressRow: {
+    flexDirection: 'row',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+  },
+  progressSegment: {
+    height: 4,
+    flex: 1,
+    maxWidth: 28,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  progressSegmentFilled: {
+    backgroundColor: Brand.gold,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandIcon: {
+    width: 28,
+    height: 28,
+  },
+  brandWordmark: {
+    color: Celestial.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  // Matches BrandSignature's own 'hero' ICON_SIZE (48) for visual parity with every other
+  // screen still using that component — only the image source differs here (see
+  // WELCOME_LOOP_SOURCE's own comment for why).
+  heroIcon: {
+    width: 48,
+    height: 48,
   },
   stepGap: {
     gap: Spacing.four,
@@ -527,9 +669,15 @@ const styles = StyleSheet.create({
   spacer: {
     flexGrow: 1,
   },
+  // flexGrow + centered justify (rather than a fixed top padding) — these two steps are short
+  // on content by design (one brand moment, one headline, one CTA), so they now center as a
+  // single composed moment within the full screen instead of pinning near the top and leaving
+  // bare, unintentional-looking space below the CTA.
   centeredStep: {
+    flexGrow: 1,
     alignItems: 'center',
-    paddingTop: Spacing.five,
+    justifyContent: 'center',
+    paddingBottom: Spacing.six,
   },
   centerText: {
     textAlign: 'center',
@@ -537,15 +685,21 @@ const styles = StyleSheet.create({
   introGap: {
     gap: Spacing.two,
   },
+  // Matches Today/Read's exact "major identity moment" treatment (src/app/(tabs)/index.tsx's
+  // own `prompt` style) literally, value for value — same family/style/weight — rather than
+  // the shared Type.display token (which several other untouched screens also consume), so
+  // this reads as the same voice without touching anything outside onboarding.
   heading: {
-    color: Brand.ink,
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '800',
-    letterSpacing: -0.8,
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: Celestial.textPrimary,
+    fontSize: 29,
+    lineHeight: 36,
+    letterSpacing: -0.3,
   },
   subcopy: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '600',
@@ -554,19 +708,19 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   fieldLabel: {
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     fontSize: 15,
     fontWeight: '800',
   },
   textInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Celestial.glassFill,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Celestial.glassBorder,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     fontSize: 16,
-    color: Brand.ink,
+    color: Celestial.textPrimary,
   },
   pillWrap: {
     flexDirection: 'row',
@@ -578,15 +732,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
-    backgroundColor: '#FFFFFF',
+    borderColor: Celestial.glassBorder,
+    backgroundColor: Celestial.glassFill,
   },
   pillSelected: {
     backgroundColor: Brand.pink,
     borderColor: Brand.pink,
   },
   pillText: {
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -616,11 +770,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   questionPrompt: {
-    color: Brand.ink,
+    fontFamily: Fonts?.serif,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    color: Celestial.textPrimary,
     fontSize: 26,
-    lineHeight: 31,
-    fontWeight: '800',
-    letterSpacing: -0.6,
+    lineHeight: 33,
+    letterSpacing: -0.3,
   },
   choiceList: {
     gap: Spacing.two,
@@ -633,12 +789,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Celestial.glassFill,
     borderWidth: 1,
-    borderColor: '#F0E6E8',
+    borderColor: Celestial.glassBorder,
   },
   choiceCardSelected: {
-    backgroundColor: '#FFE5EF',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     borderColor: Brand.pink,
   },
   choiceBadge: {
@@ -647,13 +803,13 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F3FF',
+    backgroundColor: 'rgba(255,255,255,0.14)',
   },
   choiceBadgeSelected: {
     backgroundColor: Brand.pink,
   },
   choiceBadgeText: {
-    color: Brand.violet,
+    color: Celestial.textPrimary,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -662,7 +818,7 @@ const styles = StyleSheet.create({
   },
   choiceText: {
     flex: 1,
-    color: Brand.ink,
+    color: Celestial.textPrimary,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '700',
@@ -673,7 +829,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   finalGreeting: {
-    color: Brand.inkSecondary,
+    color: Celestial.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },
