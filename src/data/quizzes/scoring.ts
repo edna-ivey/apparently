@@ -471,19 +471,26 @@ export const reconstructResultDisplay = (definition: QuizDefinition, record: Qui
 };
 
 // The approved share-safe "kicker" for a structuredRead result is its own already-approved
-// closing thought — every structuredRead's tryThis array ends with one or more lines starting
-// "Apparently, ..." that form that closing beat (verified across all 10 registered
-// structuredRead results at the time this was written). Derived, never duplicated: finds that
-// line and returns everything from there to the end of tryThis, so it can never drift out of
-// sync with tryThis and nothing is rewritten/summarized/generated. Returns [] (never invented
-// filler) if no such line exists — callers must treat that as "no share-safe kicker available"
-// rather than fabricate one.
-export const deriveShareKicker = (tryThis: string[]): string[] => {
+// closing thought. The original 10 structuredRead results (verified at the time this was
+// written) end their tryThis array with one or more lines starting "Apparently, ..." that form
+// that closing beat — derived, never duplicated, from there to the end of tryThis. Later
+// structuredRead content (keep-you-around, be-so-serious) instead carries its own
+// "Apparently, ..." line as the archetype's top-level `kicker` field, with tryThis left as pure
+// practical advice — a second, equally real place the exact same already-approved closing
+// thought already lives. fallbackKicker is that field, passed in by the one caller
+// (resolveShareableResultContent) that already has it on hand; used ONLY when tryThis itself
+// has no such line, and only if it actually starts with "Apparently," — this is content
+// selection between two existing authored fields, never invented/rewritten/summarized text.
+// Still returns [] (never invented filler) if neither source has one.
+export const deriveShareKicker = (tryThis: string[], fallbackKicker?: string): string[] => {
   const startIndex = tryThis.findIndex((line) => /^Apparently,/i.test(line.trim()));
-  if (startIndex === -1) {
-    return [];
+  if (startIndex !== -1) {
+    return tryThis.slice(startIndex);
   }
-  return tryThis.slice(startIndex);
+  if (fallbackKicker && /^Apparently,/i.test(fallbackKicker.trim())) {
+    return [fallbackKicker];
+  }
+  return [];
 };
 
 // Sharing-safe subset of a result's display content, resolved directly from a definition +
@@ -536,7 +543,7 @@ export const resolveShareableResultContent = (definition: QuizDefinition, result
       traits: archetype.traits ?? [],
       resultSubtitle: archetype.resultSubtitle,
       structuredRead: archetype.structuredRead,
-      shareKicker: archetype.structuredRead ? deriveShareKicker(archetype.structuredRead.tryThis) : undefined,
+      shareKicker: archetype.structuredRead ? deriveShareKicker(archetype.structuredRead.tryThis, archetype.kicker) : undefined,
     };
   }
 

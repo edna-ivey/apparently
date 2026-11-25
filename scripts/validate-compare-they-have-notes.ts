@@ -87,12 +87,28 @@ for (const definition of COMPARE_QUIZZES) {
 for (const definition of COMPARE_QUIZZES) {
   for (const archetype of definition.archetypes) {
     if (!archetype.structuredRead) continue;
-    const kicker = deriveShareKicker(archetype.structuredRead.tryThis);
+    // Real call signature as of the fallback fix: pass the archetype's own top-level `kicker`
+    // as the fallback source, exactly as resolveShareableResultContent does below -- this is
+    // the SAME two already-approved fields the real app reads, not a test-only shortcut.
+    const kicker = deriveShareKicker(archetype.structuredRead.tryThis, archetype.kicker);
     assert(kicker.length > 0, `${definition.id}/${archetype.id}: has an identifiable "Apparently, ..." share-safe kicker`);
+    // Never rewritten: every returned line must be verbatim from tryThis OR be the archetype's
+    // own unmodified top-level kicker string -- the two, and only two, sources deriveShareKicker
+    // is allowed to read from. Never anything synthesized/summarized.
+    const fromTryThis = kicker.every((line) => archetype.structuredRead!.tryThis.includes(line));
+    const isExactFallbackKicker = kicker.length === 1 && kicker[0] === archetype.kicker;
     assert(
-      kicker.every((line) => archetype.structuredRead!.tryThis.includes(line)),
-      `${definition.id}/${archetype.id}: kicker lines are a verbatim subset of tryThis (never rewritten)`,
+      fromTryThis || isExactFallbackKicker,
+      `${definition.id}/${archetype.id}: kicker is a verbatim subset of tryThis, or exactly the archetype's own top-level kicker (never rewritten)`,
     );
+    // Confirm WHICH source this specific result is actually drawing from, so a future content
+    // edit that silently breaks one path can't hide behind the other.
+    if (!fromTryThis) {
+      assert(
+        /^Apparently,/i.test(archetype.kicker?.trim() ?? ''),
+        `${definition.id}/${archetype.id}: the fallback kicker genuinely starts with "Apparently," (not a different field accidentally matching by shape)`,
+      );
+    }
 
     const shareable = resolveShareableResultContent(definition, archetype.id);
     assert(shareable !== null, `${definition.id}/${archetype.id}: resolveShareableResultContent succeeds`);
